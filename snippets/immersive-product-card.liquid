@@ -1,0 +1,165 @@
+{% comment %}
+  Renders a product card for the immersive store experience
+  
+  Accepts:
+  - product: {Object} Product object
+  
+  Usage:
+  {% render 'immersive-product-card', product: product %}
+{% endcomment %}
+
+<article class="immersive-product-card" data-product-id="{{ product.id }}">
+  
+  {%- if product.featured_image -%}
+    <a href="{{ product.url }}" aria-label="View {{ product.title }}" class="immersive-product-link">
+      <img 
+        class="immersive-product-image"
+        src="{{ product.featured_image | image_url: width: 600 }}"
+        srcset="{{ product.featured_image | image_url: width: 300 }} 300w,
+                {{ product.featured_image | image_url: width: 600 }} 600w,
+                {{ product.featured_image | image_url: width: 900 }} 900w"
+        sizes="(max-width: 768px) 100vw, 300px"
+        alt="{{ product.featured_image.alt | default: product.title | escape }}"
+        loading="lazy"
+        width="600"
+        height="800"
+      >
+      
+      {%- if product.images[1] -%}
+        <img 
+          class="immersive-product-image-hover"
+          src="{{ product.images[1] | image_url: width: 600 }}"
+          alt="{{ product.images[1].alt | default: product.title | escape }}"
+          loading="lazy"
+          width="600"
+          height="800"
+          style="position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 0.3s ease;"
+        >
+      {%- endif -%}
+    </a>
+  {%- else -%}
+    <div class="immersive-product-image immersive-product-image-placeholder" 
+         style="background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.3); font-size: 12px;">
+      {{ 'products.product.no_image' | t | default: 'No Image' }}
+    </div>
+  {%- endif -%}
+
+  <div class="immersive-product-info">
+    
+    {%- if product.vendor != blank -%}
+      <div class="immersive-product-vendor" style="font-size: 11px; color: rgba(212, 175, 55, 0.8); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+        {{ product.vendor }}
+      </div>
+    {%- endif -%}
+    
+    <h3 class="immersive-product-title">
+      <a href="{{ product.url }}" style="color: inherit; text-decoration: none;">
+        {{ product.title }}
+      </a>
+    </h3>
+
+    {%- if product.metafields.custom.short_description != blank -%}
+      <p class="immersive-product-description" style="font-size: 12px; color: rgba(255,255,255,0.6); margin: 8px 0; line-height: 1.4;">
+        {{ product.metafields.custom.short_description | truncate: 80 }}
+      </p>
+    {%- endif -%}
+
+    <div class="immersive-product-price">
+      {%- if product.compare_at_price > product.price -%}
+        <span class="immersive-product-price-compare" style="text-decoration: line-through; opacity: 0.5; font-size: 14px; margin-right: 8px;">
+          {{ product.compare_at_price | money }}
+        </span>
+        <span class="immersive-product-price-sale" style="color: #ff6b6b;">
+          {{ product.price | money }}
+        </span>
+      {%- elsif product.price_varies -%}
+        <span>{{ 'products.product.from_text' | t | default: 'From' }} {{ product.price_min | money }}</span>
+      {%- else -%}
+        <span>{{ product.price | money }}</span>
+      {%- endif -%}
+    </div>
+
+    {%- if product.available -%}
+      <form method="post" action="/cart/add" class="immersive-product-form" data-product-form>
+        
+        {%- if product.variants.size > 1 -%}
+          <select 
+            name="id" 
+            class="immersive-variant-select"
+            style="width: 100%; padding: 8px; margin-bottom: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(212,175,55,0.3); color: #fff; border-radius: 4px; font-size: 12px; cursor: pointer;"
+            aria-label="Select variant"
+          >
+            {%- for variant in product.variants -%}
+              <option 
+                value="{{ variant.id }}"
+                {% unless variant.available %}disabled{% endunless %}
+                data-price="{{ variant.price | money }}"
+              >
+                {{ variant.title }}
+                {%- unless variant.available %} - {{ 'products.product.sold_out' | t | default: 'Sold Out' }}{% endunless -%}
+                - {{ variant.price | money }}
+              </option>
+            {%- endfor -%}
+          </select>
+        {%- else -%}
+          <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+        {%- endif -%}
+
+        <button 
+          type="submit" 
+          class="immersive-add-to-cart"
+          {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}
+          aria-label="Add {{ product.title }} to cart"
+        >
+          {%- if product.selected_or_first_available_variant.available -%}
+            {{ 'products.product.add_to_cart' | t | default: 'Add to Cart' }}
+          {%- else -%}
+            {{ 'products.product.sold_out' | t | default: 'Sold Out' }}
+          {%- endif -%}
+        </button>
+      </form>
+    {%- else -%}
+      <button 
+        class="immersive-add-to-cart" 
+        disabled
+        style="opacity: 0.5; cursor: not-allowed;"
+        aria-label="Product unavailable"
+      >
+        {{ 'products.product.sold_out' | t | default: 'Sold Out' }}
+      </button>
+    {%- endif -%}
+
+    {%- if product.tags contains 'new' -%}
+      <div class="immersive-product-badge" style="position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #d4af37 0%, #f4e5a1 100%); color: #000; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 1px;">
+        NEW
+      </div>
+    {%- endif -%}
+
+  </div>
+
+</article>
+
+<style>
+  .immersive-product-card {
+    position: relative;
+  }
+
+  .immersive-product-link {
+    position: relative;
+    display: block;
+    overflow: hidden;
+  }
+
+  .immersive-product-card:hover .immersive-product-image-hover {
+    opacity: 1 !important;
+  }
+
+  .immersive-variant-select:focus {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+  }
+
+  .immersive-variant-select option:disabled {
+    color: rgba(255, 255, 255, 0.3);
+  }
+</style>
