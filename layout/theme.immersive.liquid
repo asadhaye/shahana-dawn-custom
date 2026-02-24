@@ -85,26 +85,6 @@
     {% endstyle %}
 
     {{ 'immersive-style.css' | asset_url | stylesheet_tag }}
-
-    <!-- Load Three.js and expose to window -->
-    <script src="{{ 'three.min.js' | asset_url }}"></script>
-    <script>
-      // Expose THREE to window for section scripts
-      if (typeof THREE !== 'undefined') {
-        window.THREE = THREE;
-        console.log('✅ THREE.js loaded and exposed to window');
-      }
-    </script>
-    
-    <!-- Load Lenis and expose to window -->
-    <script src="{{ 'lenis.min.js' | asset_url }}"></script>
-    <script>
-      // Expose Lenis to window for section scripts
-      if (typeof Lenis !== 'undefined') {
-        window.Lenis = Lenis;
-        console.log('✅ Lenis loaded and exposed to window');
-      }
-    </script>
     
     <!-- Image URLs for WebGL (processed by Liquid) -->
     <script>
@@ -128,7 +108,11 @@
 
     </main>
 
+    <!-- Load Three.js and Lenis libraries -->
+    <script src="{{ 'three.min.js' | asset_url }}" defer></script>
+    <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
+    
     <!-- Immersive Store Initialization -->
-    <script src="{{ 'immersive-init.js' | asset_url }}"></script>
+    <script src="{{ 'immersive-init.js' | asset_url }}" defer></script>
   </body>
 </html>

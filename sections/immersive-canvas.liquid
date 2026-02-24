@@ -161,17 +161,7 @@
       this.sectionId = section.dataset.sectionId;
       this.scrollProgress = 0;
       this.time = 0;
-      
-      // Check for required libraries
-      if (typeof window.THREE === 'undefined') {
-        console.error('THREE.js not found on window');
-        return;
-      }
-      
-      if (typeof window.Lenis === 'undefined') {
-        console.error('Lenis not found on window');
-        return;
-      }
+      this.initialized = false;
       
       this.init();
     }
@@ -179,13 +169,24 @@
     init() {
       console.log('🎨 Initializing Immersive Canvas Section:', this.sectionId);
       
-      // Wait for immersive:ready event
-      document.addEventListener('immersive:ready', () => {
-        this.initWebGL();
-        this.initHotspots();
-        this.initGlassPanel();
-        this.startAnimation();
-      }, { once: true });
+      // Wait for immersive:ready event or check if already ready
+      if (window.THREE && window.Lenis && window.lenis) {
+        this.onReady();
+      } else {
+        document.addEventListener('immersive:ready', () => this.onReady(), { once: true });
+      }
+    }
+    
+    onReady() {
+      if (this.initialized) return;
+      this.initialized = true;
+      
+      console.log('✅ Libraries ready, initializing WebGL...');
+      
+      this.initWebGL();
+      this.initHotspots();
+      this.initGlassPanel();
+      this.startAnimation();
     }
     
     initWebGL() {
