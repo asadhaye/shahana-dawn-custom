@@ -86,11 +86,11 @@
 
     {{ 'immersive-style.css' | asset_url | stylesheet_tag }}
 
-    <!-- Three.js from official CDN -->
-    <script src="https://threejs.org/build/three.min.js" defer></script>
+    <!-- Three.js r172 (local) -->
+    <script src="{{ 'three.min.js' | asset_url }}" defer></script>
     
-    <!-- Lenis Smooth Scroll -->
-    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer></script>
+    <!-- Lenis Smooth Scroll (local) -->
+    <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
 
     <!-- Immersive Store Configuration -->
     <script src="{{ 'immersive-config.js' | asset_url }}" defer></script>
