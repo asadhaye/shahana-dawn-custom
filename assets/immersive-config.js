@@ -10,8 +10,9 @@ window.ImmersiveConfig = {
   // ============================================
   images: {
     // Replace these with your Shopify asset filenames
-    exterior: 'exterior-image.jpg',      // The dissolving image (Canvas One)
-    interior: 'lounge-interior.jpg',     // The revealing image (Canvas Two)
+    exterior: 'immersive-base.png',      // The dissolving image (Canvas One)
+    interior: 'immersive-base.png',      // The revealing image (Canvas Two)
+    depth: 'immersive-depth.png',        // Depth map for parallax effects
   },
 
   // ============================================

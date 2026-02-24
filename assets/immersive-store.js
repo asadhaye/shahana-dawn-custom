@@ -50,6 +50,7 @@
     uniform float uProgress;
     uniform vec2 uResolution;
     uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
     
     varying vec2 vUv;
     
@@ -165,6 +166,7 @@
     uniform float uProgress;
     uniform vec2 uResolution;
     uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
     
     varying vec2 vUv;
     
@@ -345,29 +347,47 @@
     // Create full-screen plane geometry
     const geometry = new THREE.PlaneGeometry(2, 2);
 
-    // Load placeholder textures
-    // TODO: Replace these URLs with actual Shopify asset URLs
+    // Load Shahana Collection images using URLs from HTML
     const textureLoader = new THREE.TextureLoader();
     
-    // Placeholder: Exterior image for Canvas One
+    // Get asset URLs from window object (set in HTML by Liquid)
+    const baseImageUrl = window.IMMERSIVE_ASSETS?.baseImage || '';
+    const depthImageUrl = window.IMMERSIVE_ASSETS?.depthImage || '';
+    
+    console.log('🎨 Loading textures:', { baseImageUrl, depthImageUrl });
+    
+    // Base image for Canvas One (dissolve effect)
     const textureOne = textureLoader.load(
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80',
-      () => console.log('✅ Texture One loaded')
+      baseImageUrl,
+      () => console.log('✅ Base texture loaded'),
+      undefined,
+      (err) => console.error('❌ Error loading base texture:', err)
     );
     
-    // Placeholder: Interior lounge image for Canvas Two
+    // Base image for Canvas Two (reveal effect)
     const textureTwo = textureLoader.load(
-      'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=80',
-      () => console.log('✅ Texture Two loaded')
+      baseImageUrl,
+      () => console.log('✅ Reveal texture loaded'),
+      undefined,
+      (err) => console.error('❌ Error loading reveal texture:', err)
+    );
+    
+    // Depth map for parallax effects
+    const depthMap = textureLoader.load(
+      depthImageUrl,
+      () => console.log('✅ Depth map loaded'),
+      undefined,
+      (err) => console.error('❌ Error loading depth map:', err)
     );
 
-    // Create shader materials
+    // Create shader materials with depth map support
     materialOne = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uProgress: { value: 0 },
         uResolution: { value: new THREE.Vector2(viewportWidth, viewportHeight) },
-        tDiffuse: { value: textureOne }
+        tDiffuse: { value: textureOne },
+        tDepth: { value: depthMap }
       },
       vertexShader: vertexShader,
       fragmentShader: fragmentShaderOne,
@@ -379,7 +399,8 @@
         uTime: { value: 0 },
         uProgress: { value: 0 },
         uResolution: { value: new THREE.Vector2(viewportWidth, viewportHeight) },
-        tDiffuse: { value: textureTwo }
+        tDiffuse: { value: textureOne },
+        tDepth: { value: depthMap }
       },
       vertexShader: vertexShader,
       fragmentShader: fragmentShaderTwo,

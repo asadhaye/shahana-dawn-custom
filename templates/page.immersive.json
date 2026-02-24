@@ -1,14 +1,48 @@
 {
   "layout": "theme.immersive",
   "sections": {
-    "main": {
-      "type": "main-page",
-      "disabled": true,
+    "immersive_canvas": {
+      "type": "immersive-canvas",
+      "blocks": {
+        "hotspot_1": {
+          "type": "hotspot",
+          "settings": {
+            "label": "DESIGNER HOUSES",
+            "collection": "designer-houses",
+            "position_top": 35,
+            "position_left": 25
+          }
+        },
+        "hotspot_2": {
+          "type": "hotspot",
+          "settings": {
+            "label": "OCCASIONS",
+            "collection": "occasions",
+            "position_top": 50,
+            "position_left": 60
+          }
+        },
+        "hotspot_3": {
+          "type": "hotspot",
+          "settings": {
+            "label": "FEATURED COLLECTIONS",
+            "collection": "featured",
+            "position_top": 65,
+            "position_left": 35
+          }
+        }
+      },
+      "block_order": [
+        "hotspot_1",
+        "hotspot_2",
+        "hotspot_3"
+      ],
       "settings": {
+        "hotspot_trigger": 0.9
       }
     }
   },
   "order": [
-    "main"
+    "immersive_canvas"
   ]
 }

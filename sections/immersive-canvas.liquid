@@ -1,0 +1,423 @@
+<section id="immersive-store-{{ section.id }}" class="immersive-store" data-section-id="{{ section.id }}">
+  <div
+    id="canvas-wrapper-{{ section.id }}"
+    class="immersive-store__canvas-wrapper"
+    data-base-url="{{ section.settings.base_image | image_url: width: 2000 }}"
+    data-depth-url="{{ section.settings.depth_map | image_url: width: 2000 }}"
+  >
+    <canvas
+      id="canvas-one-{{ section.id }}"
+      class="immersive-store__canvas"
+      aria-hidden="true"
+    ></canvas>
+    <canvas
+      id="canvas-two-{{ section.id }}"
+      class="immersive-store__canvas immersive-store__canvas--secondary"
+      aria-hidden="true"
+    ></canvas>
+
+    <button
+      type="button"
+      class="immersive-store__hotspot hotspot"
+      data-target="area-1"
+      style="--x: 25%; --y: 35%;"
+      aria-label="{{ 'sections.immersive_store.hotspot_1_label' | t | escape }}"
+    ></button>
+    <button
+      type="button"
+      class="immersive-store__hotspot hotspot"
+      data-target="area-2"
+      style="--x: 65%; --y: 60%;"
+      aria-label="{{ 'sections.immersive_store.hotspot_2_label' | t | escape }}"
+    ></button>
+  </div>
+
+  <aside
+    id="glass-panel-{{ section.id }}"
+    class="immersive-store__panel hidden"
+    aria-live="polite"
+  >
+    <header class="immersive-store__panel-header">
+      <h3 class="immersive-store__panel-title">{{ 'sections.immersive_store.panel_title' | t }}</h3>
+      <button
+        type="button"
+        id="close-panel-{{ section.id }}"
+        class="immersive-store__panel-close"
+      >
+        {{ 'sections.immersive_store.close' | t }}
+      </button>
+    </header>
+    <div id="panel-content-{{ section.id }}" class="immersive-store__panel-content"></div>
+  </aside>
+</section>
+
+{% stylesheet %}
+.immersive-store {
+  position: relative;
+  padding: 3rem 1.5rem;
+}
+
+.immersive-store__canvas-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: radial-gradient(circle at top, rgba(255,255,255,0.1), rgba(0,0,0,0.8));
+}
+
+.immersive-store__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.immersive-store__canvas--secondary {
+  display: none;
+}
+
+.immersive-store__hotspot {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: rgba(124, 58, 237, 0.9);
+  box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.35);
+  cursor: pointer;
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
+}
+
+.immersive-store__hotspot:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.immersive-store__hotspot:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 0 0 0.5rem rgba(124, 58, 237, 0.25);
+}
+
+.immersive-store__panel {
+  position: fixed;
+  inset-inline: auto 1.5rem;
+  bottom: 1.5rem;
+  max-width: min(420px, 90vw);
+  padding: 1.25rem 1.25rem 1.5rem;
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(18px);
+  color: #f9fafb;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 30;
+}
+
+.immersive-store__panel.hidden {
+  display: none;
+}
+
+.immersive-store__panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.immersive-store__panel-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.immersive-store__panel-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+}
+
+.immersive-store__panel-close:hover {
+  background-color: rgba(148, 163, 184, 0.16);
+}
+
+.immersive-store__panel-content {
+  font-size: 0.875rem;
+}
+{% endstylesheet %}
+
+{% javascript %}
+(() => {
+  const initImmersiveStore = (sectionEl) => {
+    if (!sectionEl) return
+
+    const sectionId = sectionEl.dataset.sectionId
+    const wrapper = document.getElementById(`canvas-wrapper-${sectionId}`)
+    const canvas = document.getElementById(`canvas-one-${sectionId}`)
+    const canvasTwo = document.getElementById(`canvas-two-${sectionId}`)
+
+    if (canvasTwo) {
+      canvasTwo.style.display = 'none'
+    }
+
+    if (!wrapper || !canvas) {
+      console.warn('ImmersiveStore: Required elements not found.')
+      return
+    }
+
+    const immersiveStore = {
+      wrapper,
+      canvas,
+      canvasTwo,
+      scrollProgress: 0,
+      mouse: null,
+      targetMouse: null,
+      scene: null,
+      camera: null,
+      renderer: null,
+      material: null,
+      lenis: null,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      animationFrameId: null
+    }
+
+    const hasThree = typeof window !== 'undefined' && typeof window.THREE !== 'undefined'
+    if (!hasThree) {
+      console.warn('ImmersiveStore: THREE not found on window.')
+      return
+    }
+
+    const { THREE } = window
+
+    const initLenis = () => {
+      immersiveStore.lenis = window.lenis
+      if (!immersiveStore.lenis) {
+        window.setTimeout(initLenis, 50)
+        return
+      }
+
+      immersiveStore.lenis.on('scroll', (e) => {
+        immersiveStore.scrollProgress = e.progress
+        if (immersiveStore.material) {
+          immersiveStore.material.uniforms.uScroll.value = immersiveStore.scrollProgress
+        }
+      })
+    }
+
+    const initThree = () => {
+      immersiveStore.width = window.innerWidth
+      immersiveStore.height = window.innerHeight
+
+      immersiveStore.scene = new THREE.Scene()
+      immersiveStore.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+      immersiveStore.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
+      immersiveStore.renderer.setSize(immersiveStore.width, immersiveStore.height)
+
+      const geometry = new THREE.PlaneGeometry(2, 2)
+
+      const baseUrl = wrapper.dataset.baseUrl || ''
+      const depthUrl = wrapper.dataset.depthUrl || ''
+
+      if (!baseUrl || !depthUrl) {
+        console.warn('ImmersiveStore: Base or depth texture URLs not found.')
+        return
+      }
+
+      const loader = new THREE.TextureLoader()
+      const baseTex = loader.load(baseUrl)
+      const depthTex = loader.load(depthUrl)
+
+      immersiveStore.material = new THREE.ShaderMaterial({
+        uniforms: {
+          uBase: { value: baseTex },
+          uDepth: { value: depthTex },
+          uMouse: { value: new THREE.Vector2(0, 0) },
+          uScroll: { value: 0 },
+          uResolution: { value: new THREE.Vector2(immersiveStore.width, immersiveStore.height) }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          uniform sampler2D uBase;
+          uniform sampler2D uDepth;
+          uniform vec2 uMouse;
+          uniform float uScroll;
+          uniform vec2 uResolution;
+
+          void main() {
+            float depth = texture2D(uDepth, vUv).r;
+            vec2 parallax = uMouse * depth * 0.05;
+            parallax.y += uScroll * depth * 0.02;
+            vec2 uv = vUv + parallax;
+            vec4 color = texture2D(uBase, uv);
+            gl_FragColor = color;
+          }
+        `,
+        transparent: true
+      })
+
+      const mesh = new THREE.Mesh(geometry, immersiveStore.material)
+      immersiveStore.scene.add(mesh)
+    }
+
+    const initHotspots = () => {
+      const hotspots = sectionEl.querySelectorAll('.hotspot')
+      const glassPanel = document.getElementById(`glass-panel-${sectionId}`)
+      const panelContent = document.getElementById(`panel-content-${sectionId}`)
+      const closeBtn = document.getElementById(`close-panel-${sectionId}`)
+
+      hotspots.forEach((hotspot) => {
+        hotspot.addEventListener('click', () => {
+          const target = hotspot.getAttribute('data-target')
+          if (target) fetchProducts(target, glassPanel, panelContent)
+        })
+      })
+
+      if (closeBtn && glassPanel) {
+        closeBtn.addEventListener('click', () => {
+          glassPanel.classList.add('hidden')
+        })
+      }
+    }
+
+    const fetchProducts = async (target, glassPanel, panelContent) => {
+      if (!glassPanel || !panelContent) return
+
+      panelContent.innerHTML = '<p>Loading immersive collection...</p>'
+      glassPanel.classList.remove('hidden')
+
+      try {
+        const response = await window.fetch('/?section_id=immersive-product-grid')
+        const html = await response.text()
+        const parser = new window.DOMParser()
+        const doc = parser.parseFromString(html, 'text/html')
+        const gridContent = doc.querySelector('.immersive-product-grid')
+
+        if (gridContent) {
+          panelContent.innerHTML = gridContent.innerHTML
+        } else {
+          panelContent.innerHTML = '<p>No products found for this area.</p>'
+        }
+      } catch (error) {
+        console.error('ImmersiveStore fetch error:', error)
+        panelContent.innerHTML = '<p>Failed to load products. Please try again.</p>'
+      }
+    }
+
+    const onMouseMove = (event) => {
+      if (!immersiveStore.mouse || !immersiveStore.targetMouse) return
+      immersiveStore.targetMouse.x = event.clientX / window.innerWidth - 0.5
+      immersiveStore.targetMouse.y = event.clientY / window.innerHeight - 0.5
+    }
+
+    const onResize = () => {
+      immersiveStore.width = window.innerWidth
+      immersiveStore.height = window.innerHeight
+
+      if (immersiveStore.renderer) {
+        immersiveStore.renderer.setSize(immersiveStore.width, immersiveStore.height)
+      }
+
+      if (immersiveStore.material) {
+        immersiveStore.material.uniforms.uResolution.value.set(immersiveStore.width, immersiveStore.height)
+      }
+    }
+
+    const animate = () => {
+      immersiveStore.animationFrameId = window.requestAnimationFrame(animate)
+
+      if (immersiveStore.mouse && immersiveStore.targetMouse) {
+        immersiveStore.mouse.lerp(immersiveStore.targetMouse, 0.05)
+        if (immersiveStore.material) {
+          immersiveStore.material.uniforms.uMouse.value.copy(immersiveStore.mouse)
+        }
+      }
+
+      if (immersiveStore.scene && immersiveStore.camera && immersiveStore.renderer) {
+        immersiveStore.renderer.render(immersiveStore.scene, immersiveStore.camera)
+      }
+    }
+
+    immersiveStore.mouse = new THREE.Vector2(0, 0)
+    immersiveStore.targetMouse = new THREE.Vector2(0, 0)
+
+    initLenis()
+    initThree()
+    initHotspots()
+    animate()
+
+    const resizeHandler = () => onResize()
+    const mouseHandler = (event) => onMouseMove(event)
+
+    window.addEventListener('resize', resizeHandler)
+    window.addEventListener('mousemove', mouseHandler)
+
+    sectionEl.addEventListener('shopify:section:unload', () => {
+      window.removeEventListener('resize', resizeHandler)
+      window.removeEventListener('mousemove', mouseHandler)
+      if (immersiveStore.animationFrameId) {
+        window.cancelAnimationFrame(immersiveStore.animationFrameId)
+      }
+    })
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-section-id]').forEach((sectionEl) => {
+      if (sectionEl.id.startsWith('immersive-store-')) {
+        initImmersiveStore(sectionEl)
+      }
+    })
+  })
+
+  document.addEventListener('shopify:section:load', (event) => {
+    const sectionEl = event.target
+    if (sectionEl && sectionEl.id && sectionEl.id.startsWith('immersive-store-')) {
+      initImmersiveStore(sectionEl)
+    }
+  })
+})();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Immersive store",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Background images"
+    },
+    {
+      "type": "image_picker",
+      "id": "base_image",
+      "label": "Base image"
+    },
+    {
+      "type": "image_picker",
+      "id": "depth_map",
+      "label": "Depth map image"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Immersive store"
+    }
+  ]
+}
+{% endschema %}
