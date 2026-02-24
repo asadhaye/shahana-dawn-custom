@@ -1,12 +1,12 @@
 # Immersive Store Validation Summary
 
-## Validation Status: ✅ PASSED
+## Validation Status: ✅ ALL PASSED
 
-The immersive canvas section has been validated using Shopify Dev MCP and all issues have been resolved.
+Both the immersive canvas section and page template have been validated using Shopify Dev MCP and all issues have been resolved.
 
 ## Issues Found and Fixed
 
-### Missing Translation Keys
+### 1. Missing Translation Keys (sections/immersive-canvas.liquid)
 The section was using translation keys that didn't exist in the locale file:
 
 1. `sections.immersive_store.hotspot_1_label`
@@ -14,8 +14,7 @@ The section was using translation keys that didn't exist in the locale file:
 3. `sections.immersive_store.panel_title`
 4. `sections.immersive_store.close`
 
-### Resolution
-Added the following translations to `locales/en.default.json`:
+**Resolution:** Added the following translations to `locales/en.default.json`:
 
 ```json
 "immersive_store": {
@@ -26,28 +25,45 @@ Added the following translations to `locales/en.default.json`:
 }
 ```
 
+### 2. Invalid Block Types (templates/page.immersive.json)
+The template was referencing blocks with type "hotspot" that don't exist in the section schema.
+
+**Error:** `Invalid value for type in block 'hotspot_1'. Type must be defined in schema.`
+
+**Resolution:** Removed all block references from the template since the current section uses hardcoded hotspots. The template now simply includes the section without blocks.
+
 ## Validation Results
 
+### Section Validation
+**File:** `sections/immersive-canvas.liquid`
 **Artifact ID:** artifact-97d47ce9-f5cf-4b0b-b760-c14d5aea2df8
 **Revision:** 2
 **Status:** ✅ SUCCESS
-**Details:** Theme file sections/immersive-canvas.liquid passed all checks from Shopify's Theme Check.
+
+### Template Validation
+**File:** `templates/page.immersive.json`
+**Artifact ID:** artifact-b471ebea-c6cd-4d0f-b61c-e1fce63e6f41
+**Revision:** 1
+**Status:** ✅ SUCCESS
 
 ## Files Updated
 
-1. `sections/immersive-canvas.liquid` - Immersive WebGL section (validated)
+1. `sections/immersive-canvas.liquid` - Immersive WebGL section (validated ✅)
 2. `locales/en.default.json` - Added missing translation keys
-3. All changes committed and pushed to GitHub
+3. `templates/page.immersive.json` - Removed invalid block references (validated ✅)
+4. All changes committed and pushed to GitHub
 
 ## Next Steps
 
-The immersive store section is now ready to use:
+The immersive store is now fully validated and ready to use:
 
 1. Open Shopify theme editor
-2. Add "Immersive store" section to any page
-3. Upload your base image and depth map in section settings
-4. Test the WebGL rendering and interactions
-5. Customize hotspot positions and labels as needed
+2. Navigate to Pages → Create a new page or edit existing
+3. Assign the "page.immersive" template to the page
+4. The immersive canvas section will load automatically
+5. Upload your base image and depth map in section settings
+6. Test the WebGL rendering and interactions
+7. Customize hotspot positions in the section code if needed
 
 ## Dev Server Status
 
