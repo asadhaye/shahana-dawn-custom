@@ -50,6 +50,7 @@
     uniform float uProgress;
     uniform vec2 uResolution;
     uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
     
     varying vec2 vUv;
     
@@ -165,6 +166,7 @@
     uniform float uProgress;
     uniform vec2 uResolution;
     uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
     
     varying vec2 vUv;
     
@@ -345,29 +347,35 @@
     // Create full-screen plane geometry
     const geometry = new THREE.PlaneGeometry(2, 2);
 
-    // Load placeholder textures
-    // TODO: Replace these URLs with actual Shopify asset URLs
+    // Load Shahana Collection images
     const textureLoader = new THREE.TextureLoader();
     
-    // Placeholder: Exterior image for Canvas One
+    // Base image for Canvas One (dissolve effect)
     const textureOne = textureLoader.load(
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80',
-      () => console.log('✅ Texture One loaded')
+      '{{ "immersive-base.png" | asset_url }}',
+      () => console.log('✅ Base texture loaded')
     );
     
-    // Placeholder: Interior lounge image for Canvas Two
+    // Depth map for Canvas Two (parallax reveal)
     const textureTwo = textureLoader.load(
-      'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=80',
-      () => console.log('✅ Texture Two loaded')
+      '{{ "immersive-depth.png" | asset_url }}',
+      () => console.log('✅ Depth texture loaded')
+    );
+    
+    // Also load depth map for Canvas One to use in parallax
+    const depthMap = textureLoader.load(
+      '{{ "immersive-depth.png" | asset_url }}',
+      () => console.log('✅ Depth map loaded')
     );
 
-    // Create shader materials
+    // Create shader materials with depth map support
     materialOne = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uProgress: { value: 0 },
         uResolution: { value: new THREE.Vector2(viewportWidth, viewportHeight) },
-        tDiffuse: { value: textureOne }
+        tDiffuse: { value: textureOne },
+        tDepth: { value: depthMap }
       },
       vertexShader: vertexShader,
       fragmentShader: fragmentShaderOne,
@@ -379,7 +387,8 @@
         uTime: { value: 0 },
         uProgress: { value: 0 },
         uResolution: { value: new THREE.Vector2(viewportWidth, viewportHeight) },
-        tDiffuse: { value: textureTwo }
+        tDiffuse: { value: textureOne },
+        tDepth: { value: depthMap }
       },
       vertexShader: vertexShader,
       fragmentShader: fragmentShaderTwo,
