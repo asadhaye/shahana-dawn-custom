@@ -364,6 +364,12 @@
     }
   },
   "sections": {
+       "immersive_store": {
+      "panel_title": "Shahana Collection",
+      "base_image": "Storefront base image",
+      "depth_map": "Storefront depth map"
+    },
+  },
     "all": {
       "animation": {
         "content": "Animations",
@@ -409,8 +415,7 @@
         },
         "options__5": {
           "label": "Extra extra large"
-        }
-      },
+        },
       "image_shape": {
         "options__1": {
           "label": "Default"

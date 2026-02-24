@@ -34,26 +34,11 @@
     <script src="{{ 'details-disclosure.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'details-modal.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'search-form.js' | asset_url }}" defer="defer"></script>
-    
-    {%- comment -%}Three.js and Lenis for Immersive Store{%- endcomment -%}
-    <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
-    <script src="{{ 'lenis.min.js' | asset_url }}" defer="defer"></script>
-    <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        if (typeof Lenis !== 'undefined') {
-          window.lenis = new Lenis({
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            smooth: true
-          });
-          function raf(time) {
-            window.lenis.raf(time);
-            requestAnimationFrame(raf);
-          }
-          requestAnimationFrame(raf);
-        }
-      });
-    </script>
+
+    {%- if template.name == 'page.immersive' -%}
+      <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
+      <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
+    {%- endif -%}
 
     {%- if settings.animations_reveal_on_scroll -%}
       <script src="{{ 'animations.js' | asset_url }}" defer="defer"></script>
@@ -287,16 +272,13 @@
       {{ 'component-discounts.css' | asset_url | stylesheet_tag }}
     {%- endif -%}
 
-    {%- unless settings.type_body_font.system? -%}
-      {% comment %}theme-check-disable AssetPreload{% endcomment %}
-      <link rel="preload" as="font" href="{{ settings.type_body_font | font_url }}" type="font/woff2" crossorigin>
-      {% comment %}theme-check-enable AssetPreload{% endcomment %}
-    {%- endunless -%}
-    {%- unless settings.type_header_font.system? -%}
-      {% comment %}theme-check-disable AssetPreload{% endcomment %}
-      <link rel="preload" as="font" href="{{ settings.type_header_font | font_url }}" type="font/woff2" crossorigin>
-      {% comment %}theme-check-enable AssetPreload{% endcomment %}
-    {%- endunless -%}
+   {% unless settings.type_body_font.system? %}
+  {{ settings.type_body_font | font_url | preload_tag: as: 'font', type: 'font/woff2', crossorigin: true }}
+{% endunless %}
+
+{% unless settings.type_header_font.system? %}
+  {{ settings.type_header_font | font_url | preload_tag: as: 'font', type: 'font/woff2', crossorigin: true }}
+{% endunless %}
 
     {%- if localization.available_countries.size > 1 or localization.available_languages.size > 1 -%}
       {{ 'component-localization-form.css' | asset_url | stylesheet_tag: preload: true }}
@@ -328,13 +310,17 @@
       {%- render 'cart-drawer' -%}
     {%- endif -%}
 
-    {% sections 'header-group' %}
+    {%- if template.name != 'page.immersive' -%}
+      {% sections 'header-group' %}
+    {%- endif -%}
 
     <main id="MainContent" class="content-for-layout focus-none" role="main" tabindex="-1">
       {{ content_for_layout }}
     </main>
 
-    {% sections 'footer-group' %}
+    {%- if template.name != 'page.immersive' -%}
+      {% sections 'footer-group' %}
+    {%- endif -%}
 
     <ul hidden>
       <li id="a11y-refresh-page-message">{{ 'accessibility.refresh_page' | t }}</li>
