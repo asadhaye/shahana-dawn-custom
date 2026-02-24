@@ -59,25 +59,24 @@ The new section-based approach is cleaner and more maintainable:
 
 ## Files Structure
 
-### Active Files (Section-Based Approach)
+### Active Files
 - ✅ `sections/immersive-canvas.liquid` - Main immersive section (self-contained)
 - ✅ `templates/page.immersive.json` - Page template (uses standard layout)
 - ✅ `layout/theme.liquid` - Standard layout with global THREE and Lenis
 - ✅ `sections/immersive-product-grid.liquid` - Product grid for glass panel
 - ✅ `snippets/immersive-product-card.liquid` - Product card component
 
-### Legacy Files (No Longer Used)
-- `layout/theme.immersive.liquid` - Custom layout (replaced by standard layout)
-- `assets/immersive-store.js` - Standalone JavaScript (now embedded in section)
-- `assets/immersive-style.css` - Standalone styles (now embedded in section)
-- `assets/immersive-config.js` - Configuration file (no longer needed)
-- `assets/immersive-init.js` - Initialization script (no longer needed)
+### Required Assets
+- ✅ `assets/immersive-base.png` - Your uploaded base image
+- ✅ `assets/immersive-depth.png` - Your uploaded depth map
+- ✅ `assets/three.min.js` - Three.js library (downloaded locally)
+- ✅ `assets/lenis.min.js` - Lenis smooth scroll library (downloaded locally)
 
 ### Assets
 - ✅ `assets/immersive-base.png` - Your uploaded base image
 - ✅ `assets/immersive-depth.png` - Your uploaded depth map
-- ⏳ `assets/three.min.js` - NEEDS DOWNLOAD
-- ⏳ `assets/lenis.min.js` - NEEDS DOWNLOAD
+- ✅ `assets/three.min.js` - Downloaded Three.js library
+- ✅ `assets/lenis.min.js` - Downloaded Lenis library
 
 ## Testing Checklist
 
