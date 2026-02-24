@@ -87,13 +87,21 @@
     {{ 'immersive-style.css' | asset_url | stylesheet_tag }}
 
     <!-- Three.js r172 -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.min.js" defer></script>
     
     <!-- Lenis Smooth Scroll -->
-    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer></script>
 
     <!-- Immersive Store Configuration -->
-    <script src="{{ 'immersive-config.js' | asset_url }}"></script>
+    <script src="{{ 'immersive-config.js' | asset_url }}" defer></script>
+    
+    <!-- Image URLs for WebGL (processed by Liquid) -->
+    <script>
+      window.IMMERSIVE_ASSETS = {
+        baseImage: "{{ 'immersive-base.png' | asset_url }}",
+        depthImage: "{{ 'immersive-depth.png' | asset_url }}"
+      };
+    </script>
   </head>
 
   <body class="immersive-body">

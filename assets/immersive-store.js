@@ -347,29 +347,37 @@
     // Create full-screen plane geometry
     const geometry = new THREE.PlaneGeometry(2, 2);
 
-    // Load Shahana Collection images using Shopify asset URLs
+    // Load Shahana Collection images using URLs from HTML
     const textureLoader = new THREE.TextureLoader();
     
-    // Get asset URLs - these will be processed by Liquid
-    const baseImageUrl = "{{ 'immersive-base.png' | asset_url }}";
-    const depthImageUrl = "{{ 'immersive-depth.png' | asset_url }}";
+    // Get asset URLs from window object (set in HTML by Liquid)
+    const baseImageUrl = window.IMMERSIVE_ASSETS?.baseImage || '';
+    const depthImageUrl = window.IMMERSIVE_ASSETS?.depthImage || '';
+    
+    console.log('🎨 Loading textures:', { baseImageUrl, depthImageUrl });
     
     // Base image for Canvas One (dissolve effect)
     const textureOne = textureLoader.load(
       baseImageUrl,
-      () => console.log('✅ Base texture loaded from:', baseImageUrl)
+      () => console.log('✅ Base texture loaded'),
+      undefined,
+      (err) => console.error('❌ Error loading base texture:', err)
     );
     
     // Base image for Canvas Two (reveal effect)
     const textureTwo = textureLoader.load(
       baseImageUrl,
-      () => console.log('✅ Reveal texture loaded')
+      () => console.log('✅ Reveal texture loaded'),
+      undefined,
+      (err) => console.error('❌ Error loading reveal texture:', err)
     );
     
     // Depth map for parallax effects
     const depthMap = textureLoader.load(
       depthImageUrl,
-      () => console.log('✅ Depth map loaded from:', depthImageUrl)
+      () => console.log('✅ Depth map loaded'),
+      undefined,
+      (err) => console.error('❌ Error loading depth map:', err)
     );
 
     // Create shader materials with depth map support
