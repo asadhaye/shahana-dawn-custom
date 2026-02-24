@@ -49,25 +49,29 @@ Once libraries are downloaded:
 
 ## Architecture Improvements
 
-The new section-based approach is cleaner:
+The new section-based approach is cleaner and more maintainable:
 - ✅ Self-contained section with embedded styles and scripts
-- ✅ No custom layout needed
+- ✅ Uses standard theme layout (no custom layout needed)
 - ✅ Can be added to any page via theme editor
 - ✅ Easier to maintain and customize
 - ✅ Works with Shopify's section rendering API
+- ✅ No external CSS/JS file dependencies (except Three.js and Lenis)
 
 ## Files Structure
 
-### New Section-Based Files
-- ✅ `sections/immersive-canvas.liquid` - Main immersive section
-- ✅ `layout/theme.liquid` - Updated with global THREE and Lenis
-- ✅ `DOWNLOAD-LIBRARIES.md` - Library download instructions
+### Active Files (Section-Based Approach)
+- ✅ `sections/immersive-canvas.liquid` - Main immersive section (self-contained)
+- ✅ `templates/page.immersive.json` - Page template (uses standard layout)
+- ✅ `layout/theme.liquid` - Standard layout with global THREE and Lenis
+- ✅ `sections/immersive-product-grid.liquid` - Product grid for glass panel
+- ✅ `snippets/immersive-product-card.liquid` - Product card component
 
-### Legacy Files (Still Available)
-- `layout/theme.immersive.liquid` - Custom layout approach
-- `templates/page.immersive.json` - Custom template
-- `assets/immersive-store.js` - Standalone JavaScript
-- `assets/immersive-style.css` - Standalone styles
+### Legacy Files (No Longer Used)
+- `layout/theme.immersive.liquid` - Custom layout (replaced by standard layout)
+- `assets/immersive-store.js` - Standalone JavaScript (now embedded in section)
+- `assets/immersive-style.css` - Standalone styles (now embedded in section)
+- `assets/immersive-config.js` - Configuration file (no longer needed)
+- `assets/immersive-init.js` - Initialization script (no longer needed)
 
 ### Assets
 - ✅ `assets/immersive-base.png` - Your uploaded base image
