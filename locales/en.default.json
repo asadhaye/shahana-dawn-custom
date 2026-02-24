@@ -267,6 +267,15 @@
     }
   },
   "sections": {
+    "immersive_store": {
+      "hotspot_1_label": "Explore collection area 1",
+      "hotspot_2_label": "Explore collection area 2",
+      "panel_title": "Shahana Collection",
+      "close": "Close"
+    },
+    "immersive_canvas": {
+      "close_panel": "Close panel"
+    },
     "announcements": {
       "previous_announcement": "Previous announcement",
       "next_announcement": "Next announcement",
