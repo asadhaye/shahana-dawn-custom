@@ -1,5 +1,4 @@
 {
-  "layout": "theme.immersive",
   "sections": {
     "immersive_canvas": {
       "type": "immersive-canvas",
