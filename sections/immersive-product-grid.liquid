@@ -1,185 +1,109 @@
 {% comment %}
   SHAHANA COLLECTION - IMMERSIVE PRODUCT GRID
-  This section is loaded dynamically via AJAX
-  Displays products from a specified collection
+  This section is loaded dynamically via AJAX.
+  It displays products from a specified collection for the immersive store.
 {% endcomment %}
 
 {%- liquid
   assign collection_handle = section.settings.collection
-  
+
   if collection_handle == blank
     assign collection_handle = 'all'
   endif
-  
+
   assign collection = collections[collection_handle]
   assign products_to_show = section.settings.products_per_page | default: 8
 -%}
 
 <div class="immersive-product-grid-wrapper">
-  
-  {%- if collection.title -%}
-    <h2 style="color: #d4af37; font-size: 28px; font-weight: 700; letter-spacing: 2px; margin: 0 0 30px 0; text-transform: uppercase;">
+  {%- if collection and collection.title != blank -%}
+    <h2 class="immersive-product-grid__title">
       {{ collection.title }}
     </h2>
   {%- endif -%}
 
-  {%- if collection.description != blank -%}
-    <div style="color: rgba(255,255,255,0.7); font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
+  {%- if collection and collection.description != blank -%}
+    <div class="immersive-product-grid__description">
       {{ collection.description }}
     </div>
   {%- endif -%}
 
   <div class="immersive-product-grid">
-    
-    {%- if collection.products.size > 0 -%}
-      {%- for product in collection.products limit: products_to_show -%}
-        
-        <article class="immersive-product-card" data-product-id="{{ product.id }}">
-          
-          {%- if product.featured_image -%}
-            <a href="{{ product.url }}" aria-label="View {{ product.title }}">
-              <img 
-                class="immersive-product-image"
-                src="{{ product.featured_image | image_url: width: 600 }}"
-                srcset="{{ product.featured_image | image_url: width: 300 }} 300w,
-                        {{ product.featured_image | image_url: width: 600 }} 600w,
-                        {{ product.featured_image | image_url: width: 900 }} 900w"
-                sizes="(max-width: 768px) 100vw, 300px"
-                alt="{{ product.featured_image.alt | escape }}"
-                loading="lazy"
-                width="600"
-                height="800"
-              >
-            </a>
-          {%- else -%}
-            <div class="immersive-product-image" style="background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.3);">
-              No Image
-            </div>
-          {%- endif -%}
-
-          <div class="immersive-product-info">
-            
-            <h3 class="immersive-product-title">
-              <a href="{{ product.url }}" style="color: inherit; text-decoration: none;">
-                {{ product.title }}
-              </a>
-            </h3>
-
-            <div class="immersive-product-price">
-              {%- if product.compare_at_price > product.price -%}
-                <span style="text-decoration: line-through; opacity: 0.5; font-size: 14px; margin-right: 8px;">
-                  {{ product.compare_at_price | money }}
-                </span>
-              {%- endif -%}
-              
-              {%- if product.price_varies -%}
-                <span>From {{ product.price_min | money }}</span>
-              {%- else -%}
-                <span>{{ product.price | money }}</span>
-              {%- endif -%}
-            </div>
-
-            {%- if product.available -%}
-              <form method="post" action="/cart/add" class="immersive-product-form">
-                <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
-                
-                {%- if product.variants.size > 1 -%}
-                  <select 
-                    name="id" 
-                    class="immersive-variant-select"
-                    style="width: 100%; padding: 8px; margin-bottom: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(212,175,55,0.3); color: #fff; border-radius: 4px; font-size: 12px;"
-                  >
-                    {%- for variant in product.variants -%}
-                      <option 
-                        value="{{ variant.id }}"
-                        {% unless variant.available %}disabled{% endunless %}
-                      >
-                        {{ variant.title }}
-                        {%- unless variant.available %} - Sold Out{% endunless -%}
-                        - {{ variant.price | money }}
-                      </option>
-                    {%- endfor -%}
-                  </select>
-                {%- endif -%}
-
-                <button 
-                  type="submit" 
-                  class="immersive-add-to-cart"
-                  {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}
-                >
-                  {%- if product.selected_or_first_available_variant.available -%}
-                    Add to Cart
-                  {%- else -%}
-                    Sold Out
-                  {%- endif -%}
-                </button>
-              </form>
-            {%- else -%}
-              <button 
-                class="immersive-add-to-cart" 
-                disabled
-                style="opacity: 0.5; cursor: not-allowed;"
-              >
-                Sold Out
-              </button>
-            {%- endif -%}
-
-          </div>
-
-        </article>
-
-      {%- endfor -%}
+    {%- if collection and collection.products_count > 0 -%}
+      {%- paginate collection.products by products_to_show -%}
+        <div class="immersive-product-grid__inner">
+          {%- for product in collection.products -%}
+            {% render 'immersive-product-card', product: product %}
+          {%- endfor -%}
+        </div>
+      {%- endpaginate -%}
     {%- else -%}
-      
-      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.5);">
-        <p style="font-size: 18px; margin-bottom: 10px;">No products found</p>
-        <p style="font-size: 14px;">This collection is currently empty.</p>
-      </div>
-
+      <p class="immersive-product-grid__empty">
+        {{ 'sections.immersive.product_grid.empty' | t }}
+      </p>
     {%- endif -%}
-
   </div>
-
-  {%- if collection.products.size > products_to_show -%}
-    <div style="text-align: center; margin-top: 40px;">
-      <a 
-        href="{{ collection.url }}"
-        style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #d4af37 0%, #f4e5a1 50%, #d4af37 100%); color: #000; text-decoration: none; font-weight: 700; letter-spacing: 1px; border-radius: 4px; text-transform: uppercase; font-size: 13px; transition: transform 0.3s ease;"
-        onmouseover="this.style.transform='translateY(-2px)'"
-        onmouseout="this.style.transform='translateY(0)'"
-      >
-        View All {{ collection.title }}
-      </a>
-    </div>
-  {%- endif -%}
-
 </div>
+
+{% stylesheet %}
+  .immersive-product-grid-wrapper {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .immersive-product-grid__title {
+    color: #d4af37;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    margin: 0 0 1.5rem 0;
+    text-transform: uppercase;
+  }
+
+  .immersive-product-grid__description {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .immersive-product-grid {
+    display: grid;
+  }
+
+  .immersive-product-grid__inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .immersive-product-grid__empty {
+    font-size: 0.875rem;
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
-  "name": "Immersive Product Grid",
-  "tag": "section",
-  "class": "section-immersive-product-grid",
+  "name": "Immersive product grid",
   "settings": [
     {
       "type": "collection",
       "id": "collection",
-      "label": "Collection",
-      "info": "Select the collection to display"
+      "label": "Collection"
     },
     {
       "type": "range",
       "id": "products_per_page",
-      "min": 4,
-      "max": 24,
-      "step": 2,
-      "default": 8,
-      "label": "Products per page"
+      "label": "Products to show",
+      "min": 1,
+      "max": 20,
+      "step": 1,
+      "default": 8
     }
   ],
   "presets": [
     {
-      "name": "Immersive Product Grid"
+      "name": "Immersive product grid"
     }
   ]
 }
