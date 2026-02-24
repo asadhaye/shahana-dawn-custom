@@ -86,14 +86,25 @@
 
     {{ 'immersive-style.css' | asset_url | stylesheet_tag }}
 
-    <!-- Three.js r172 (local) -->
-    <script src="{{ 'three.min.js' | asset_url }}" defer></script>
+    <!-- Load Three.js and expose to window -->
+    <script src="{{ 'three.min.js' | asset_url }}"></script>
+    <script>
+      // Expose THREE to window for section scripts
+      if (typeof THREE !== 'undefined') {
+        window.THREE = THREE;
+        console.log('✅ THREE.js loaded and exposed to window');
+      }
+    </script>
     
-    <!-- Lenis Smooth Scroll (local) -->
-    <script src="{{ 'lenis.min.js' | asset_url }}" defer></script>
-
-    <!-- Immersive Store Configuration -->
-    <script src="{{ 'immersive-config.js' | asset_url }}" defer></script>
+    <!-- Load Lenis and expose to window -->
+    <script src="{{ 'lenis.min.js' | asset_url }}"></script>
+    <script>
+      // Expose Lenis to window for section scripts
+      if (typeof Lenis !== 'undefined') {
+        window.Lenis = Lenis;
+        console.log('✅ Lenis loaded and exposed to window');
+      }
+    </script>
     
     <!-- Image URLs for WebGL (processed by Liquid) -->
     <script>
@@ -112,56 +123,12 @@
     <!-- Main container with extended height for scroll -->
     <main id="MainContent" class="immersive-main" role="main" tabindex="-1">
       
-      <!-- Sticky canvas wrapper -->
-      <div id="canvas-wrapper" style="position: sticky; top: 0; width: 100vw; height: 100vh; overflow: hidden; background: #000;">
-        
-        <!-- Canvas Two: The Lounge Reveal (bottom layer) -->
-        <canvas id="canvas-two" style="position: absolute; top: 0; left: 0; z-index: 1;"></canvas>
-        
-        <!-- Canvas One: The Exterior Dissolve (top layer) -->
-        <canvas id="canvas-one" style="position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;"></canvas>
-        
-        <!-- UI Layer for hotspots and interactions -->
-        <div id="ui-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;">
-          
-          <!-- Hotspot 1: Designer Houses -->
-          <div class="hotspot" data-collection="designer-houses" style="position: absolute; top: 35%; left: 25%;">
-            <div class="hotspot-dot"></div>
-            <div class="hotspot-label">DESIGNER HOUSES</div>
-          </div>
-          
-          <!-- Hotspot 2: Occasions -->
-          <div class="hotspot" data-collection="occasions" style="position: absolute; top: 50%; left: 60%;">
-            <div class="hotspot-dot"></div>
-            <div class="hotspot-label">OCCASIONS</div>
-          </div>
-          
-          <!-- Hotspot 3: Featured Collections -->
-          <div class="hotspot" data-collection="featured" style="position: absolute; top: 65%; left: 35%;">
-            <div class="hotspot-dot"></div>
-            <div class="hotspot-label">FEATURED COLLECTIONS</div>
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Glass Panel for Product Grid (hidden off-screen) -->
-      <aside id="glass-panel">
-        <button id="close-panel" aria-label="Close panel">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-        <div id="panel-content"></div>
-      </aside>
-
       <!-- Content for Layout (required by Shopify) -->
       {{ content_for_layout }}
 
     </main>
 
-    <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
+    <!-- Immersive Store Initialization -->
+    <script src="{{ 'immersive-init.js' | asset_url }}"></script>
   </body>
 </html>
