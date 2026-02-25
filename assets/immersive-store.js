@@ -1,18 +1,18 @@
 const STORE_ROOMS = {
   storefront: {
-    baseTextureUrl: "/immersive/storefront-base.jpg",
-    depthMapUrl: "/immersive/storefront-depth.jpg",
+    baseTextureUrl: "/immersive/storefront-base.png",
+    depthMapUrl: "/immersive/storefront-depth.png",
     hotspots: [
       { x: 50, y: 70, label: "Enter store", targetRoom: "lounge" }
     ]
   },
   lounge: {
-    baseTextureUrl: "/immersive/lounge-base.jpg",
-    depthMapUrl: "/immersive/lounge-depth.jpg",
+    baseTextureUrl: "/immersive/lounge-base.png",
+    depthMapUrl: "/immersive/lounge-depth.png",
     hotspots: [
       { x: 25, y: 50, label: "Designer houses", targetRoom: "designer" },
       { x: 50, y: 55, label: "Occasions", targetRoom: "festive" },
-      { x: 75, y: 50, label: "Eid edit 2026", targetCollection: "eid-edit-2026" }
+      { x: 75, y: 50, label: "Featured Collections", targetCollection: "eid-edit-2026" }
     ]
   },
   designer: {
@@ -67,7 +67,7 @@ const fragmentShaderSource = `
   vec2 parallaxUv(vec2 uv, sampler2D depthTex, vec2 mouse) {
     float depth = texture2D(depthTex, uv).r;
     vec2 centeredMouse = mouse - 0.5;
-    float strength = 0.05;
+    float strength = 0.02;
     vec2 offset = centeredMouse * strength * depth;
     return uv + offset;
   }
