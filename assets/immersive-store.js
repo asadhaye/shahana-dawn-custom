@@ -289,6 +289,17 @@ function renderHotspots(roomKey) {
   }
 }
 
+function transitionPanelContent(panel, render) {
+  if (!panel) return;
+  if (document.startViewTransition) {
+    document.startViewTransition(function () {
+      render();
+    });
+  } else {
+    render();
+  }
+}
+
 function openCollectionPanel(collectionHandle) {
   var panel = document.getElementById(glassPanelId);
   if (!panel) return;
@@ -304,10 +315,73 @@ function openCollectionPanel(collectionHandle) {
     })
     .then(function (html) {
       if (!html) return;
-      panel.innerHTML = html;
-      panel.setAttribute("data-open", "true");
-      panel.style.transform = "translateX(0%)";
-      panel.style.opacity = "1";
+
+      function render() {
+        panel.innerHTML = html;
+        panel.setAttribute("data-open", "true");
+        panel.style.transform = "translateX(0%)";
+        panel.style.opacity = "1";
+
+        panel.onclick = function (event) {
+          var target = event.target;
+          var card = target.closest(".immersive-product-card");
+          if (!card) return;
+
+          var handle = card.getAttribute("data-product-handle");
+          if (!handle) return;
+
+          event.preventDefault();
+          openProductPanel(handle, collectionHandle);
+        };
+      }
+
+      transitionPanelContent(panel, render);
+    })
+    .catch(function () {});
+}
+
+function openProductPanel(productHandle, collectionHandle) {
+  var panel = document.getElementById(glassPanelId);
+  if (!panel) return;
+
+  var url = new URL(window.location.href);
+  url.searchParams.set("section_id", "glass-product");
+  url.searchParams.set("product_handle", productHandle);
+
+  if (collectionHandle) {
+    url.searchParams.set("collection_handle", collectionHandle);
+  }
+
+  fetch(url.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+    .then(function (response) {
+      if (!response.ok) return "";
+      return response.text();
+    })
+    .then(function (html) {
+      if (!html) return;
+
+      function render() {
+        panel.innerHTML = html;
+        panel.setAttribute("data-open", "true");
+        panel.style.transform = "translateX(0%)";
+        panel.style.opacity = "1";
+
+        panel.onclick = function (event) {
+          var target = event.target;
+
+          var backButton = target.closest(".glass-product-section__back");
+          if (backButton) {
+            var backHandle = backButton.getAttribute("data-collection-handle");
+            if (backHandle) {
+              event.preventDefault();
+              openCollectionPanel(backHandle);
+            }
+            return;
+          }
+        };
+      }
+
+      transitionPanelContent(panel, render);
     })
     .catch(function () {});
 }

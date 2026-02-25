@@ -291,7 +291,8 @@
     },
     "immersive": {
       "product_grid": {
-      "empty": "No products found"
+      "empty": "No products found",
+      "back_to_collection": "Back to collection"
     },
     "product_card": {
       "view_product": "View {{ title }}",

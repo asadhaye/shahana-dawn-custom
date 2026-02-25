@@ -1,0 +1,234 @@
+{% liquid
+  assign product_handle = request.params.product_handle
+  assign originating_collection_handle = request.params.collection_handle
+  assign panel_product = nil
+
+  if product_handle != blank
+    assign panel_product = all_products[product_handle]
+  endif
+%}
+
+<section class="glass-product-section" aria-label="Product detail">
+  {% if panel_product %}
+    <header class="glass-product-section__header">
+      {% if originating_collection_handle != blank %}
+        <button
+          type="button"
+          class="glass-product-section__back"
+          data-collection-handle="{{ originating_collection_handle }}"
+        >
+          {{ 'sections.immersive.product_grid.back_to_collection' | t }}
+        </button>
+      {% endif %}
+
+      <div class="glass-product-section__title-wrap">
+        <h2 class="glass-product-section__title">{{ panel_product.title | escape }}</h2>
+        {% if panel_product.vendor != blank %}
+          <p class="glass-product-section__vendor">{{ panel_product.vendor | escape }}</p>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="glass-product-section__layout">
+      <div class="glass-product-section__media">
+        {% if panel_product.media.size > 0 %}
+          <div class="glass-product-section__media-main">
+            {{ panel_product.media | first | media_tag }}
+          </div>
+          {% if panel_product.media.size > 1 %}
+            <div class="glass-product-section__media-thumbs">
+              {% for media in panel_product.media offset: 1 %}
+                <button type="button" class="glass-product-section__thumb" data-media-index="{{ forloop.index0 }}">
+                  {{ media | media_tag }}
+                </button>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="glass-product-section__info">
+        {% if panel_product.description != blank %}
+          <div class="glass-product-section__description">
+            {{ panel_product.description }}
+          </div>
+        {% endif %}
+
+        <div class="glass-product-section__price">
+          {% if panel_product.compare_at_price_max > panel_product.price %}
+            <span class="glass-product-section__price-compare">
+              {{ panel_product.compare_at_price_max | money }}
+            </span>
+            <span class="glass-product-section__price-sale">
+              {{ panel_product.price | money }}
+            </span>
+          {% else %}
+            <span>{{ panel_product.price | money }}</span>
+          {% endif %}
+        </div>
+
+        {% form 'product', panel_product, class: 'glass-product-section__form' %}
+          {% if panel_product.has_only_default_variant == false %}
+            <div class="glass-product-section__variants">
+              {% for option in panel_product.options_with_values %}
+                <label class="glass-product-section__option-label">
+                  {{ option.name }}
+                  <select name="options[{{ option.name }}]" class="glass-product-section__select">
+                    {% for value in option.values %}
+                      <option value="{{ value | escape }}">
+                        {{ value }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </label>
+              {% endfor %}
+            </div>
+          {% else %}
+            <input type="hidden" name="id" value="{{ panel_product.selected_or_first_available_variant.id }}">
+          {% endif %}
+
+          <button
+            type="submit"
+            class="glass-product-section__add-to-cart"
+            {% unless panel_product.available %}disabled{% endunless %}
+          >
+            {% if panel_product.available %}
+              {{ 'products.product.add_to_cart' | t }}
+            {% else %}
+              {{ 'products.product.sold_out' | t }}
+            {% endif %}
+          </button>
+        {% endform %}
+      </div>
+    </div>
+  {% else %}
+    <p class="glass-panel-section__empty">{{ 'sections.immersive.product_grid.empty' | t }}</p>
+  {% endif %}
+</section>
+
+{% stylesheet %}
+.glass-product-section {
+  padding: 1.5rem 1.5rem 2rem;
+}
+
+.glass-product-section__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.glass-product-section__back {
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  background: rgba(15, 23, 42, 0.85);
+  color: #f9fafb;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.glass-product-section__back:hover {
+  background: rgba(30, 64, 175, 0.9);
+}
+
+.glass-product-section__title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.glass-product-section__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.glass-product-section__vendor {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.glass-product-section__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+.glass-product-section__media-main {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.glass-product-section__media-thumbs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.glass-product-section__thumb {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.glass-product-section__info {
+  font-size: 0.875rem;
+}
+
+.glass-product-section__description {
+  margin-bottom: 1rem;
+}
+
+.glass-product-section__price {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.glass-product-section__price-compare {
+  text-decoration: line-through;
+  opacity: 0.5;
+  margin-right: 0.5rem;
+}
+
+.glass-product-section__price-sale {
+  color: #ff6b6b;
+}
+
+.glass-product-section__option-label {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.glass-product-section__select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.8);
+  color: #f9fafb;
+  font-size: 0.875rem;
+}
+
+.glass-product-section__add-to-cart {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Glass product panel",
+  "settings": []
+}
+{% endschema %}
