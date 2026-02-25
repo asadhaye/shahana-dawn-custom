@@ -11,10 +11,7 @@
   "sections": {
     "immersive_canvas": {
       "type": "immersive-canvas",
-      "settings": {
-        "base_image": "shopify://shop_images/immersive-base.png",
-        "depth_map": "shopify://shop_images/immersive-depth.png"
-      }
+      "settings": {}
     }
   },
   "order": [

@@ -14,13 +14,6 @@
     "announcement-bar": {
       "type": "announcement-bar",
       "blocks": {
-        "announcement_DKUhLz": {
-          "type": "announcement",
-          "settings": {
-            "text": "missing translation: \"t:sections.announcement-bar.blocks.announcement.settings.text.default\" is not present in any of the [\"en\"] schema locale files",
-            "link": ""
-          }
-        },
         "announcement-bar-0": {
           "type": "announcement",
           "settings": {
@@ -30,18 +23,9 @@
         }
       },
       "block_order": [
-        "announcement_DKUhLz",
         "announcement-bar-0"
       ],
-      "settings": {
-        "auto_rotate": false,
-        "change_slides_speed": 5,
-        "color_scheme": "",
-        "show_line_separator": true,
-        "show_social": false,
-        "enable_country_selector": false,
-        "enable_language_selector": false
-      }
+      "settings": {}
     },
     "header": {
       "type": "header",
@@ -53,10 +37,8 @@
         "sticky_header_type": "on-scroll-up",
         "show_line_separator": true,
         "color_scheme": "scheme-1",
-        "menu_color_scheme": "",
         "enable_country_selector": true,
         "enable_language_selector": true,
-        "enable_customer_avatar": true,
         "margin_bottom": 0,
         "padding_top": 20,
         "padding_bottom": 20
