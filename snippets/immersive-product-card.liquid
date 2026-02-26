@@ -1,16 +1,20 @@
 {% doc %}
   Renders a product card used inside the immersive store experience.
 
-  @param {product} product - The product to render
+  @param {product} product - The product to be rendered
 
   @example
   {% render 'immersive-product-card', product: product %}
 {% enddoc %}
 
-<article class="immersive-product-card" data-product-id="{{ product.id }}">
+<article
+  class="immersive-product-card"
+  data-product-id="{{ product.id }}"
+  data-product-handle="{{ product.handle }}"
+>
   {%- if product.featured_image -%}
-    <a
-      href="{{ product.url }}"
+    <button
+      type="button"
       class="immersive-product-link"
       aria-label="{{ 'sections.immersive.product_card.view_product' | t: title: product.title | escape }}"
     >
@@ -37,7 +41,7 @@
           height="800"
         >
       {%- endif -%}
-    </a>
+    </button>
   {%- else -%}
     <div class="immersive-product-image immersive-product-image-placeholder">
       {{ 'products.product.no_image' | t }}
@@ -52,9 +56,9 @@
     {%- endif -%}
 
     <h3 class="immersive-product-title">
-      <a href="{{ product.url }}" class="immersive-product-title-link">
+      <button type="button" class="immersive-product-title-link">
         {{ product.title }}
-      </a>
+      </button>
     </h3>
 
     {%- if product.metafields.custom.short_description != blank -%}
@@ -81,7 +85,7 @@
     </div>
 
     {%- if product.available -%}
-      <form method="post" action=" {{ routes.cart_add_url }}" class="immersive-product-form" data-product-form>
+      <form method="post" action="{{ routes.cart_add_url }}" class="immersive-product-form" data-product-form>
         {%- if product.variants.size > 1 -%}
           <label class="visually-hidden" for="immersive-variant-select-{{ product.id }}">
             {{ 'sections.immersive.product_card.select_variant' | t }}
@@ -149,6 +153,10 @@
     position: relative;
     display: block;
     overflow: hidden;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
   }
 
   .immersive-product-image-hover {
@@ -188,8 +196,13 @@
   }
 
   .immersive-product-title-link {
+    border: none;
+    padding: 0;
+    background: transparent;
     color: inherit;
     text-decoration: none;
+    text-align: left;
+    cursor: pointer;
   }
 
   .immersive-product-description {

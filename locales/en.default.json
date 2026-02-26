@@ -282,6 +282,12 @@
       "panel_title": "Shahana Collection",
       "base_image": "Storefront base image",
       "depth_map": "Storefront depth map",
+      "explore_heading": "Explore",
+      "nav_exterior": "Exterior",
+      "nav_lounge": "Lounge",
+      "nav_designer": "Designer houses",
+      "nav_festive": "Festive gallery",
+      "nav_eid_edit": "Eid edit 2026",
       "hotspot_1_label": "Explore collection area 1",
       "hotspot_2_label": "Explore collection area 2",
       "close": "Close"
@@ -291,7 +297,8 @@
     },
     "immersive": {
       "product_grid": {
-      "empty": "No products found"
+      "empty": "No products found",
+      "back_to_collection": "Back to collection"
     },
     "product_card": {
       "view_product": "View {{ title }}",
