@@ -1,26 +1,32 @@
 {% liquid
-  assign product_handle = request.params.product_handle
   assign originating_collection_handle = request.params.collection_handle
-  assign panel_product = nil
-
-  if product_handle != blank
-    assign panel_product = all_products[product_handle]
+  
+  # When rendered from /products/{handle}?section_id=glass-product, 
+  # the product object is automatically available
+  if product
+    assign panel_product = product
+  else
+    # Fallback: try to get from all_products if product_handle param exists
+    assign product_handle = request.params.product_handle
+    if product_handle != blank
+      assign panel_product = all_products[product_handle]
+    endif
   endif
 %}
 
 <section class="glass-product-section" aria-label="Product detail">
   {% if panel_product %}
-    <header class="glass-product-section__header">
-      {% if originating_collection_handle != blank %}
-        <button
-          type="button"
-          class="glass-product-section__back"
-          data-collection-handle="{{ originating_collection_handle }}"
-        >
-          {{ 'sections.immersive.product_grid.back_to_collection' | t }}
-        </button>
-      {% endif %}
+    {% if originating_collection_handle != blank %}
+      <button
+        type="button"
+        class="glass-product-section__back"
+        data-collection-handle="{{ originating_collection_handle }}"
+      >
+        {{ 'sections.immersive.product_grid.back_to_collection' | t }}
+      </button>
+    {% endif %}
 
+    <header class="glass-product-section__header">
       <div class="glass-product-section__title-wrap">
         <h2 class="glass-product-section__title">{{ panel_product.title | escape }}</h2>
         {% if panel_product.vendor != blank %}
@@ -33,7 +39,22 @@
       <div class="glass-product-section__media">
         {% if panel_product.media.size > 0 %}
           <div class="glass-product-section__media-main">
-            {{ panel_product.media | first | media_tag }}
+            {% if panel_product.featured_media.media_type == 'image' %}
+              <img 
+                src="{{ panel_product.featured_media | image_url: width: 800 }}" 
+                srcset="{{ panel_product.featured_media | image_url: width: 400 }} 400w,
+                        {{ panel_product.featured_media | image_url: width: 600 }} 600w,
+                        {{ panel_product.featured_media | image_url: width: 800 }} 800w,
+                        {{ panel_product.featured_media | image_url: width: 1000 }} 1000w"
+                sizes="(max-width: 600px) 100vw, 500px"
+                alt="{{ panel_product.featured_media.alt | escape }}"
+                width="800"
+                height="1067"
+                loading="eager"
+              >
+            {% else %}
+              {{ panel_product.media | first | media_tag }}
+            {% endif %}
           </div>
           {% if panel_product.media.size > 1 %}
             <div class="glass-product-section__media-thumbs">
@@ -70,18 +91,21 @@
         {% form 'product', panel_product, class: 'glass-product-section__form' %}
           {% if panel_product.has_only_default_variant == false %}
             <div class="glass-product-section__variants">
-              {% for option in panel_product.options_with_values %}
-                <label class="glass-product-section__option-label">
-                  {{ option.name }}
-                  <select name="options[{{ option.name }}]" class="glass-product-section__select">
-                    {% for value in option.values %}
-                      <option value="{{ value | escape }}">
-                        {{ value }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                </label>
-              {% endfor %}
+              <div class="glass-product-section__variant-buttons" role="radiogroup" aria-label="Select variant">
+                {% for variant in panel_product.variants %}
+                  <button
+                    type="button"
+                    class="glass-product-section__variant-button"
+                    data-variant-id="{{ variant.id }}"
+                    data-available="{{ variant.available }}"
+                    aria-label="{{ variant.title }}"
+                    {% unless variant.available %}disabled{% endunless %}
+                  >
+                    {{ variant.title | split: ' / ' | first }}
+                  </button>
+                {% endfor %}
+              </div>
+              <input type="hidden" name="id" class="glass-product-section__variant-input" value="{{ panel_product.selected_or_first_available_variant.id }}">
             </div>
           {% else %}
             <input type="hidden" name="id" value="{{ panel_product.selected_or_first_available_variant.id }}">
@@ -89,18 +113,153 @@
 
           <button
             type="submit"
+            name="property[buy_now]"
             class="glass-product-section__add-to-cart"
             {% unless panel_product.available %}disabled{% endunless %}
+            aria-label="{{ 'products.product.buy_now' | t }} - {{ panel_product.title | escape }}"
           >
             {% if panel_product.available %}
-              {{ 'products.product.add_to_cart' | t }}
+              {{ 'products.product.buy_now' | t }}
             {% else %}
               {{ 'products.product.sold_out' | t }}
             {% endif %}
           </button>
         {% endform %}
+
+        {%- comment -%} Eid Delivery Badge {%- endcomment -%}
+        {% if panel_product.metafields.custom.eid_delivery %}
+          <div class="glass-product-section__eid-badge">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 2L12.5 7.5L18.5 8.5L14.25 12.5L15.5 18.5L10 15.5L4.5 18.5L5.75 12.5L1.5 8.5L7.5 7.5L10 2Z" fill="currentColor"/>
+            </svg>
+            <span>{{ panel_product.metafields.custom.eid_delivery }}</span>
+          </div>
+        {% endif %}
+
+        {%- comment -%} Collapsible Sections {%- endcomment -%}
+        <div class="glass-product-section__collapsibles">
+          {%- comment -%} Care Instructions {%- endcomment -%}
+          <details class="glass-product-section__collapsible">
+            <summary class="glass-product-section__collapsible-title">
+              <span>Care Instructions</span>
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </summary>
+            <div class="glass-product-section__collapsible-content">
+              {% if panel_product.metafields.custom.care_instructions %}
+                {{ panel_product.metafields.custom.care_instructions }}
+              {% else %}
+                <ul>
+                  <li>Dry clean only</li>
+                  <li>Do not bleach</li>
+                  <li>Iron on low heat</li>
+                  <li>Store in a cool, dry place</li>
+                </ul>
+              {% endif %}
+            </div>
+          </details>
+
+          {%- comment -%} Size Chart {%- endcomment -%}
+          <details class="glass-product-section__collapsible">
+            <summary class="glass-product-section__collapsible-title">
+              <span>Size Chart</span>
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </summary>
+            <div class="glass-product-section__collapsible-content">
+              {% if panel_product.metafields.custom.size_chart %}
+                {{ panel_product.metafields.custom.size_chart }}
+              {% else %}
+                <table class="glass-product-section__size-table">
+                  <thead>
+                    <tr>
+                      <th>Size</th>
+                      <th>Bust</th>
+                      <th>Waist</th>
+                      <th>Hip</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>S</td>
+                      <td>34-36"</td>
+                      <td>26-28"</td>
+                      <td>36-38"</td>
+                    </tr>
+                    <tr>
+                      <td>M</td>
+                      <td>38-40"</td>
+                      <td>30-32"</td>
+                      <td>40-42"</td>
+                    </tr>
+                    <tr>
+                      <td>L</td>
+                      <td>42-44"</td>
+                      <td>34-36"</td>
+                      <td>44-46"</td>
+                    </tr>
+                    <tr>
+                      <td>XL</td>
+                      <td>46-48"</td>
+                      <td>38-40"</td>
+                      <td>48-50"</td>
+                    </tr>
+                  </tbody>
+                </table>
+              {% endif %}
+            </div>
+          </details>
+
+          {%- comment -%} Disclaimer {%- endcomment -%}
+          <details class="glass-product-section__collapsible">
+            <summary class="glass-product-section__collapsible-title">
+              <span>Disclaimer</span>
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </summary>
+            <div class="glass-product-section__collapsible-content">
+              {% if panel_product.metafields.custom.disclaimer %}
+                {{ panel_product.metafields.custom.disclaimer }}
+              {% else %}
+                <p>Product color may slightly vary due to photographic lighting sources or your monitor settings. Actual colors and details may differ from images shown.</p>
+              {% endif %}
+            </div>
+          </details>
+        </div>
       </div>
     </div>
+
+    {%- comment -%} You May Also Like Section {%- endcomment -%}
+    {% if originating_collection_handle != blank %}
+      {% assign related_collection = collections[originating_collection_handle] %}
+      {% if related_collection and related_collection.products.size > 1 %}
+        <div class="glass-product-section__related">
+          <h3 class="glass-product-section__related-title">You May Also Like</h3>
+          <div class="glass-product-section__related-grid">
+            {% for product in related_collection.products limit: 4 %}
+              {% unless product.id == panel_product.id %}
+                <div class="glass-product-section__related-item" data-product-handle="{{ product.handle }}">
+                  {% if product.featured_image %}
+                    <img 
+                      src="{{ product.featured_image | image_url: width: 300 }}" 
+                      alt="{{ product.title | escape }}" 
+                      width="300" 
+                      height="400" 
+                      loading="lazy"
+                    >
+                  {% endif %}
+                  <p class="glass-product-section__related-item-title">{{ product.title | escape }}</p>
+                  <p class="glass-product-section__related-item-price">{{ product.price | money }}</p>
+                </div>
+              {% endunless %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
   {% else %}
     <p class="glass-panel-section__empty">{{ 'sections.immersive.product_grid.empty' | t }}</p>
   {% endif %}
@@ -108,14 +267,14 @@
 
 {% stylesheet %}
 .glass-product-section {
-  padding: 1.5rem 1.5rem 2rem;
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .glass-product-section__header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
 .glass-product-section__back {
@@ -128,6 +287,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
+  margin-bottom: 1rem;
 }
 
 .glass-product-section__back:hover {
@@ -135,59 +295,106 @@
 }
 
 .glass-product-section__title-wrap {
-  flex: 1;
-  min-width: 0;
+  margin-top: 0.5rem;
 }
 
 .glass-product-section__title {
-  margin: 0;
-  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
   font-weight: 600;
+  color: #ffffff;
+  text-align: center;
 }
 
 .glass-product-section__vendor {
-  margin: 0.25rem 0 0;
+  margin: 0;
   font-size: 0.875rem;
-  opacity: 0.8;
+  color: rgba(212, 175, 55, 0.9);
+  text-align: center;
 }
 
 .glass-product-section__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.glass-product-section__media {
+  width: 100%;
+  max-width: 500px;
 }
 
 .glass-product-section__media-main {
   border-radius: 0.75rem;
   overflow: hidden;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+}
+
+.glass-product-section__media-main img,
+.glass-product-section__media-main video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .glass-product-section__media-thumbs {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .glass-product-section__thumb {
-  border: none;
+  border: 2px solid transparent;
   padding: 0;
   background: transparent;
   cursor: pointer;
   border-radius: 0.5rem;
   overflow: hidden;
+  width: 60px;
+  height: 80px;
+  transition: border-color 0.2s ease;
+}
+
+.glass-product-section__thumb:hover {
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.glass-product-section__thumb img,
+.glass-product-section__thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .glass-product-section__info {
+  width: 100%;
+  max-width: 500px;
   font-size: 0.875rem;
+  text-align: center;
 }
 
 .glass-product-section__description {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  text-align: left;
+}
+
+.glass-product-section__description h3 {
+  color: #ffffff;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .glass-product-section__price {
-  margin-bottom: 1rem;
-  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .glass-product-section__price-compare {
@@ -200,29 +407,235 @@
   color: #ff6b6b;
 }
 
-.glass-product-section__option-label {
-  display: block;
-  margin-bottom: 0.75rem;
+.glass-product-section__variants {
+  margin-bottom: 1.5rem;
 }
 
-.glass-product-section__select {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  margin-top: 0.25rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(148, 163, 184, 0.6);
-  background: rgba(15, 23, 42, 0.8);
-  color: #f9fafb;
+.glass-product-section__variant-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.glass-product-section__variant-button {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #ffffff;
+  border-radius: 8px;
   font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.glass-product-section__variant-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(212, 175, 55, 0.5);
+  transform: translateY(-1px);
+}
+
+.glass-product-section__variant-button:focus {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+.glass-product-section__variant-button.active {
+  border: 2px solid #d4af37;
+  background: rgba(212, 175, 55, 0.2);
+}
+
+.glass-product-section__variant-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.glass-product-section__variant-input {
+  display: none;
 }
 
 .glass-product-section__add-to-cart {
   width: 100%;
-  padding: 0.75rem 1rem;
-  margin-top: 0.75rem;
+  max-width: 300px;
+  padding: 0.875rem 2rem;
+  margin: 0 auto;
   border-radius: 999px;
   border: none;
+  background: rgba(212, 175, 55, 0.9);
+  color: #000;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.glass-product-section__add-to-cart:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 1);
+  transform: translateY(-2px);
+}
+
+.glass-product-section__add-to-cart:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Eid Delivery Badge */
+.glass-product-section__eid-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.5rem auto 0;
+  padding: 0.75rem 1.5rem;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  border-radius: 999px;
+  color: rgb(134, 239, 172);
+  font-size: 0.875rem;
+  font-weight: 500;
+  max-width: fit-content;
+}
+
+.glass-product-section__eid-badge svg {
+  flex-shrink: 0;
+}
+
+/* Collapsible Sections */
+.glass-product-section__collapsibles {
+  margin-top: 2rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.glass-product-section__collapsible {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.glass-product-section__collapsible-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  cursor: pointer;
+  font-weight: 500;
+  color: #ffffff;
+  list-style: none;
+  user-select: none;
+}
+
+.glass-product-section__collapsible-title::-webkit-details-marker {
+  display: none;
+}
+
+.glass-product-section__collapsible-title svg {
+  transition: transform 0.2s ease;
+  color: rgba(212, 175, 55, 0.9);
+}
+
+.glass-product-section__collapsible[open] .glass-product-section__collapsible-title svg {
+  transform: rotate(180deg);
+}
+
+.glass-product-section__collapsible-content {
+  padding-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  text-align: left;
+}
+
+.glass-product-section__collapsible-content ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.glass-product-section__collapsible-content li {
+  margin-bottom: 0.5rem;
+}
+
+.glass-product-section__collapsible-content p {
+  margin: 0;
+}
+
+/* Size Chart Table */
+.glass-product-section__size-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.glass-product-section__size-table th,
+.glass-product-section__size-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.glass-product-section__size-table th {
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 600;
+  color: rgba(212, 175, 55, 0.9);
+}
+
+.glass-product-section__size-table td {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Related Products */
+.glass-product-section__related {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.glass-product-section__related-title {
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+}
+
+.glass-product-section__related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.glass-product-section__related-item {
+  cursor: pointer;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.glass-product-section__related-item:hover {
+  transform: translateY(-4px);
+}
+
+.glass-product-section__related-item img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  display: block;
+}
+
+.glass-product-section__related-item-title {
+  margin: 0.75rem 0.5rem 0.25rem;
+  font-size: 0.875rem;
+  color: #ffffff;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glass-product-section__related-item-price {
+  margin: 0 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: rgba(212, 175, 55, 0.9);
+  font-weight: 600;
 }
 {% endstylesheet %}
 

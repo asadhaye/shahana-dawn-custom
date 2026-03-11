@@ -1,49 +1,53 @@
 const STORE_ROOMS = {
   storefront: {
-    // Exterior view (arrival)
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/immersive-base.png?v=1771996316",
+    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/immersive-base.png?v=1771996316", // Use mobile-optimized image here
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/immersive-depth.png?v=1771996334",
-    hotspots: [
-      { x: 50, y: 60, label: "Enter store", targetRoom: "lounge" }
+    hotspots:[
+      { x: 50, y: 40, label: "Enter store", targetRoom: "lounge" }
     ]
   },
 
   lounge: {
-    // VIP Lounge interior
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-base.png?v=1772029869",
+    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-base.png?v=1772029869", // Use mobile-optimized image here
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-depth-map.png?v=1772030053",
-    hotspots: [
-      // Brands / Designers
-      { x: 20, y: 40, label: "Suffuse", targetCollection: "suffuse" },
-      { x: 20, y: 50, label: "Soraya", targetCollection: "soraya" },
-      { x: 20, y: 60, label: "Saad Bin Shahzad", targetCollection: "saad-bin-shahzad" },
-
-      // Occasions (e.g., floating neon signs)
+    hotspots:[
+      { x: 25, y: 45, label: "Designer Houses", targetRoom: "designer_houses" },
       { x: 55, y: 40, label: "Eid collection", targetCollection: "eid-collection" },
       { x: 55, y: 50, label: "Bridal & mehndi", targetRoom: "bridal_room" },
       { x: 55, y: 60, label: "Luxury formals", targetRoom: "festive" },
       { x: 55, y: 70, label: "Casual pret", targetCollection: "casual-pret" },
-
-      // Quick “Featured” shortcut
       { x: 85, y: 50, label: "Featured", targetRoom: "featured_room" }
     ]
   },
 
+  designer_houses: {
+    // Replace these URLs with your dark glass monolith image URLs later
+    baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737",
+    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737", // Use mobile-optimized image here
+    depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733",
+    hotspots:[
+      { x: 25, y: 45, label: "Suffuse", targetCollection: "suffuse" },
+      { x: 50, y: 35, label: "Soraya", targetCollection: "soraya" },
+      { x: 75, y: 45, label: "Saad Bin Shahzad", targetCollection: "saad-bin-shahzad" },
+      { x: 50, y: 85, label: "Back to lounge", targetRoom: "lounge" }
+    ]
+  },
+
   bridal_room: {
-    // A dedicated Bridal & Mehndi room
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261",
-    hotspots: [
+    hotspots:[
       { x: 35, y: 45, label: "Bridal & mehndi", targetCollection: "bridal-mehndi" },
       { x: 10, y: 90, label: "Back to lounge", targetRoom: "lounge" }
     ]
   },
 
   festive: {
-    // Festive / luxury gallery
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/festive-base.png?v=1772034395",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/festive-depth.png?v=1772034391",
-    hotspots: [
+    hotspots:[
       { x: 35, y: 40, label: "Luxury formals", targetCollection: "luxury-formals" },
       { x: 50, y: 50, label: "Luxury pret", targetCollection: "luxury-pret" },
       { x: 65, y: 60, label: "Casual pret", targetCollection: "casual-pret" },
@@ -52,10 +56,9 @@ const STORE_ROOMS = {
   },
 
   featured_room: {
-    // Featured collections: Mommy & Me, Unstitched, etc.
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/featured-base.png?v=YOUR_HASH",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/featured-depth.png?v=YOUR_HASH",
-    hotspots: [
+    hotspots:[
       { x: 35, y: 40, label: "Mommy and me", targetCollection: "mommy-and-me" },
       { x: 50, y: 50, label: "Luxury pret", targetCollection: "luxury-pret" },
       { x: 65, y: 60, label: "Casual pret", targetCollection: "casual-pret" },
@@ -76,6 +79,9 @@ let transitioning = false;
 const immersiveCanvasId = "immersive-canvas";
 const uiLayerId = "ui-layer";
 const glassPanelId = "glass-panel";
+
+// Content cache for performance
+var contentCache = {};
 
 const vertexShaderSource = `
   varying vec2 vUv;
@@ -98,7 +104,7 @@ const fragmentShaderSource = `
   vec2 parallaxUv(vec2 uv, sampler2D depthTex, vec2 mouse) {
     float depth = texture2D(depthTex, uv).r;
     vec2 centeredMouse = mouse - 0.5;
-    float strength = 0.03;
+    float strength = 0.04;
     vec2 offset = centeredMouse * strength * depth;
     return uv + offset;
   }
@@ -121,7 +127,10 @@ function getRoomTextureUrls(roomKey) {
   var room = STORE_ROOMS[roomKey];
   if (!room) return null;
 
-  var baseUrl = room.baseTextureUrl;
+  // Detect if mobile (viewport width < 768px)
+  var isMobile = window.innerWidth < 768;
+  
+  var baseUrl = isMobile && room.mobileBaseTextureUrl ? room.mobileBaseTextureUrl : room.baseTextureUrl;
   var depthUrl = room.depthMapUrl;
 
   if (roomKey === "storefront") {
@@ -141,7 +150,8 @@ function getRoomTextureUrls(roomKey) {
   return {
     baseTextureUrl: baseUrl,
     depthMapUrl: depthUrl,
-    hotspots: room.hotspots
+    hotspots: room.hotspots,
+    isMobile: isMobile
   };
 }
 
@@ -155,7 +165,7 @@ function initImmersiveScene() {
   renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
   scene = new THREE.Scene();
-  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.2, 10);
   camera.position.z = 1;
 
   var geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
@@ -209,6 +219,43 @@ function handleResize() {
   var height = canvas.clientHeight;
   if (width === 0 || height === 0) return;
   renderer.setSize(width, height, false);
+  
+  // Use cover behavior on desktop (>= 768px), contain on mobile (< 768px)
+  var isMobile = width < 768;
+  
+  if (camera && planeMesh) {
+    var canvasAspect = width / height;
+    var imageAspect = 16 / 9; // Assuming most room images are landscape ~16:9
+    
+    if (isMobile) {
+      // Mobile: use contain to show full image without cropping text
+      if (canvasAspect > imageAspect) {
+        // Canvas is wider than image - fit to height
+        var scale = imageAspect / canvasAspect;
+        planeMesh.scale.set(scale, 1, 1);
+      } else {
+        // Canvas is taller than image - fit to width
+        var scale = canvasAspect / imageAspect;
+        planeMesh.scale.set(1, scale, 1);
+      }
+      // Reset position for mobile
+      planeMesh.position.x = 0;
+    } else {
+      // Desktop: use cover to fill screen
+      if (canvasAspect > imageAspect) {
+        // Canvas is wider than image - fit to width, crop top/bottom
+        var scale = canvasAspect / imageAspect;
+        planeMesh.scale.set(1, scale, 1);
+        planeMesh.position.x = 0;
+      } else {
+        // Canvas is taller than image - fit to height, crop left/right
+        var scale = imageAspect / canvasAspect;
+        planeMesh.scale.set(scale, 1, 1);
+        // Shift right to show more of the left side where text is
+        planeMesh.position.x = 0.15;
+      }
+    }
+  }
 }
 
 function animate() {
@@ -331,31 +378,249 @@ function transitionPanelContent(panel, render) {
   }
 }
 
+// Helper function to close the panel smoothly
+function closePanel() {
+  var panel = document.getElementById(glassPanelId);
+  if (!panel) return;
+  
+  panel.removeAttribute("data-open");
+  
+  // Wait for the CSS transition to finish before hiding from DOM
+  setTimeout(function() {
+    panel.classList.add("hidden");
+  }, 400); 
+}
+
+function fetchWithCache(url) {
+  if (contentCache[url]) {
+    return Promise.resolve(contentCache[url]);
+  }
+  
+  return fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error('Network response was not ok: ' + response.status);
+      }
+      return response.text();
+    })
+    .then(function(html) {
+      contentCache[url] = html;
+      return html;
+    });
+}
+
+function setupVariantButtons(panel) {
+  var buttons = panel.querySelectorAll('.immersive-variant-button, .glass-product-section__variant-button');
+  var hiddenInput = panel.querySelector('.immersive-variant-input, .glass-product-section__variant-input');
+  
+  if (buttons.length === 0) return;
+  
+  buttons.forEach(function(button, index) {
+    button.addEventListener('click', function() {
+      if (button.disabled) return;
+      
+      // Remove active state from all buttons
+      buttons.forEach(function(btn) {
+        btn.classList.remove('active');
+      });
+      
+      // Add active state to clicked button
+      button.classList.add('active');
+      
+      // Update hidden input
+      var variantId = button.getAttribute('data-variant-id');
+      if (hiddenInput && variantId) {
+        hiddenInput.value = variantId;
+      }
+    });
+    
+    // Add keyboard navigation
+    button.addEventListener('keydown', function(event) {
+      if (button.disabled) return;
+      
+      // Enter or Space to activate
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        button.click();
+      }
+      
+      // Arrow key navigation
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        var nextIndex = index + 1;
+        while (nextIndex < buttons.length) {
+          if (!buttons[nextIndex].disabled) {
+            buttons[nextIndex].focus();
+            break;
+          }
+          nextIndex++;
+        }
+      }
+      
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        var prevIndex = index - 1;
+        while (prevIndex >= 0) {
+          if (!buttons[prevIndex].disabled) {
+            buttons[prevIndex].focus();
+            break;
+          }
+          prevIndex--;
+        }
+      }
+    });
+  });
+  
+  // Set first available variant as active
+  var firstAvailable = panel.querySelector('.immersive-variant-button:not([disabled]), .glass-product-section__variant-button:not([disabled])');
+  if (firstAvailable) {
+    firstAvailable.click();
+  }
+}
+
+function setupBuyNowForm(panel) {
+  var forms = panel.querySelectorAll('form[data-product-form], .glass-product-section__form');
+  
+  forms.forEach(function(form) {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      
+      // Validate variant selection
+      var variantInput = form.querySelector('.immersive-variant-input, .glass-product-section__variant-input, input[name="id"]');
+      if (!variantInput || !variantInput.value) {
+        showErrorFeedback(panel, 'Please select a size');
+        return;
+      }
+      
+      var formData = new FormData(form);
+      
+      // Add to cart first
+      fetch('/cart/add.js', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(response) {
+        if (!response.ok) {
+          return response.json().then(function(error) {
+            throw new Error(error.description || 'Unable to add to cart');
+          });
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        // Show success feedback
+        showCartFeedback(panel);
+        
+        // Redirect to checkout
+        setTimeout(function() {
+          window.location.href = '/checkout';
+        }, 500);
+      })
+      .catch(function(error) {
+        console.error('Error adding to cart:', error);
+        showErrorFeedback(panel, error.message || 'Unable to add product to cart. Please try again.');
+      });
+    });
+  });
+}
+
+function showCartFeedback(panel) {
+  var feedback = document.createElement('div');
+  feedback.className = 'immersive-cart-feedback';
+  feedback.textContent = 'Added to cart!';
+  feedback.style.cssText = 'position: fixed; top: 20px; right: 20px; background: rgba(212, 175, 55, 0.9); color: #000; padding: 1rem 1.5rem; border-radius: 8px; z-index: 10000; font-weight: 600;';
+  
+  document.body.appendChild(feedback);
+  
+  setTimeout(function() {
+    feedback.style.opacity = '0';
+    feedback.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() {
+      if (feedback.parentNode) {
+        document.body.removeChild(feedback);
+      }
+    }, 300);
+  }, 2000);
+}
+
+function showErrorFeedback(panel, message) {
+  var feedback = document.createElement('div');
+  feedback.className = 'immersive-error-feedback';
+  feedback.textContent = message;
+  feedback.style.cssText = 'position: fixed; top: 20px; right: 20px; background: rgba(239, 68, 68, 0.9); color: #fff; padding: 1rem 1.5rem; border-radius: 8px; z-index: 10000; font-weight: 600; cursor: pointer;';
+  
+  document.body.appendChild(feedback);
+  
+  var dismissFeedback = function() {
+    feedback.style.opacity = '0';
+    feedback.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() {
+      if (feedback.parentNode) {
+        document.body.removeChild(feedback);
+      }
+    }, 300);
+  };
+  
+  // Allow manual dismissal
+  feedback.addEventListener('click', dismissFeedback);
+  
+  // Auto-dismiss after 4 seconds
+  setTimeout(dismissFeedback, 4000);
+}
+
 function openCollectionPanel(collectionHandle) {
   var panel = document.getElementById(glassPanelId);
   if (!panel) return;
 
-  var url = new URL(window.location.href);
-  url.searchParams.set("section_id", "glass-panel");
-  url.searchParams.set("collection_handle", collectionHandle);
+  // Remove hidden class so CSS transitions work
+  panel.classList.remove("hidden");
 
-  fetch(url.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
-    .then(function (response) {
-      if (!response.ok) return "";
-      return response.text();
-    })
+  // Fetch from the collection URL with section_id parameter
+  var fetchUrl = "/collections/" + collectionHandle + "?section_id=glass-panel";
+  
+  console.log('Fetching collection:', collectionHandle, 'URL:', fetchUrl);
+
+  fetchWithCache(fetchUrl)
     .then(function (html) {
-      if (!html) return;
+      console.log('Collection response received, length:', html ? html.length : 0);
+      if (!html) {
+        showErrorFeedback(panel, 'Unable to load collection. Please try again.');
+        return;
+      }
 
       function render() {
-        panel.innerHTML = html;
-        panel.setAttribute("data-open", "true");
-        panel.style.transform = "translateX(0%)";
-        panel.style.opacity = "1";
+        // Inject into the content div, NOT the whole panel, to save the close button!
+        var contentArea = panel.querySelector(".immersive-store__panel-content");
+        if (contentArea) {
+          contentArea.innerHTML = html;
+        } else {
+          panel.innerHTML = html;
+        }
 
+        panel.setAttribute("data-open", "true");
+
+        // Setup variant buttons after content is injected
+        setupVariantButtons(panel);
+        
+        // Setup buy now form handler
+        setupBuyNowForm(panel);
+
+        // Setup click handlers for this panel
         panel.onclick = function (event) {
-          var target = event.target;
-          var card = target.closest(".immersive-product-card");
+          // 1. Handle backdrop click (clicking outside content)
+          if (event.target === panel) {
+            closePanel();
+            return;
+          }
+
+          // 2. Handle Close Button
+          if (event.target.closest(".immersive-store__panel-close")) {
+            closePanel();
+            return;
+          }
+
+          // 3. Handle Product Card Click
+          var card = event.target.closest(".immersive-product-card");
           if (!card) return;
 
           var handle = card.getAttribute("data-product-handle");
@@ -368,39 +633,67 @@ function openCollectionPanel(collectionHandle) {
 
       transitionPanelContent(panel, render);
     })
-    .catch(function () {});
+    .catch(function (error) { 
+      console.error("Error fetching collection:", collectionHandle, error);
+      showErrorFeedback(panel, 'Unable to load collection "' + collectionHandle + '". Please check your connection and try again.');
+    });
 }
 
 function openProductPanel(productHandle, collectionHandle) {
   var panel = document.getElementById(glassPanelId);
   if (!panel) return;
 
-  var url = new URL(window.location.href);
-  url.searchParams.set("section_id", "glass-product");
-  url.searchParams.set("product_handle", productHandle);
+  panel.classList.remove("hidden");
 
+  // Always fetch from product URL - the product object is only available there
+  var fetchUrl = "/products/" + productHandle + "?section_id=glass-product";
+  
+  // Pass collection handle as a parameter so the back button works
   if (collectionHandle) {
-    url.searchParams.set("collection_handle", collectionHandle);
+    fetchUrl += "&collection_handle=" + collectionHandle;
   }
 
-  fetch(url.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
-    .then(function (response) {
-      if (!response.ok) return "";
-      return response.text();
-    })
+  console.log('Fetching product:', productHandle, 'from collection:', collectionHandle, 'URL:', fetchUrl);
+
+  fetchWithCache(fetchUrl)
     .then(function (html) {
-      if (!html) return;
+      console.log('Product response received, length:', html ? html.length : 0);
+      if (!html) {
+        showErrorFeedback(panel, 'Unable to load product details. Please try again.');
+        return;
+      }
 
       function render() {
-        panel.innerHTML = html;
+        var contentArea = panel.querySelector(".immersive-store__panel-content");
+        if (contentArea) {
+          contentArea.innerHTML = html;
+        } else {
+          panel.innerHTML = html;
+        }
+
         panel.setAttribute("data-open", "true");
-        panel.style.transform = "translateX(0%)";
-        panel.style.opacity = "1";
+
+        // Setup variant buttons after content is injected
+        setupVariantButtons(panel);
+        
+        // Setup buy now form handler
+        setupBuyNowForm(panel);
 
         panel.onclick = function (event) {
-          var target = event.target;
+          // 1. Handle backdrop click
+          if (event.target === panel) {
+            closePanel();
+            return;
+          }
 
-          var backButton = target.closest(".glass-product-section__back");
+          // 2. Handle Close Button
+          if (event.target.closest(".immersive-store__panel-close")) {
+            closePanel();
+            return;
+          }
+
+          // 3. Handle Back Button (PDP -> Collection)
+          var backButton = event.target.closest(".glass-product-section__back");
           if (backButton) {
             var backHandle = backButton.getAttribute("data-collection-handle");
             if (backHandle) {
@@ -409,54 +702,81 @@ function openProductPanel(productHandle, collectionHandle) {
             }
             return;
           }
+
+          // 4. Handle Related Product Click
+          var relatedItem = event.target.closest(".glass-product-section__related-item");
+          if (relatedItem) {
+            var relatedHandle = relatedItem.getAttribute("data-product-handle");
+            if (relatedHandle) {
+              event.preventDefault();
+              openProductPanel(relatedHandle, collectionHandle);
+            }
+            return;
+          }
         };
       }
 
       transitionPanelContent(panel, render);
     })
-    .catch(function () {});
+    .catch(function (error) { 
+      console.error("Error fetching product:", error);
+      showErrorFeedback(panel, 'Unable to load product. Please check your connection and try again.');
+    });
 }
 
 function bindImmersiveNav() {
-  var nav = document.querySelector(".immersive-nav");
-  if (!nav) return;
+  var menuToggle = document.getElementById("menu-toggle");
+  var menuPanel = document.getElementById("immersive-menu");
+  
+  if (!menuToggle || !menuPanel) return;
 
-  var links = nav.querySelectorAll(".immersive-nav__link");
-
-  function setActive(link) {
-    links.forEach(function (l) {
-      l.classList.remove("immersive-nav__link--active");
-    });
-    if (link) {
-      link.classList.add("immersive-nav__link--active");
+  // 1. Toggle Menu Open/Close
+  menuToggle.addEventListener("click", function () {
+    var isOpen = menuPanel.classList.contains("is-open");
+    
+    if (isOpen) {
+      // Close it
+      menuPanel.classList.remove("is-open");
+      menuToggle.textContent = "Menu";
+      menuToggle.setAttribute("aria-expanded", "false");
+    } else {
+      // Open it
+      menuPanel.classList.add("is-open");
+      menuToggle.textContent = "Close";
+      menuToggle.setAttribute("aria-expanded", "true");
     }
-  }
+  });
 
-  nav.addEventListener("click", function (event) {
-    var button = event.target.closest(".immersive-nav__link");
+  // 2. Handle Clicks Inside the Menu
+  menuPanel.addEventListener("click", function (event) {
+    var button = event.target.closest("button[data-room], button[data-collection]");
     if (!button) return;
 
     var roomKey = button.getAttribute("data-room");
     var collectionHandle = button.getAttribute("data-collection");
 
+    // Close the menu automatically when a link is clicked
+    menuPanel.classList.remove("is-open");
+    menuToggle.textContent = "Menu";
+    menuToggle.setAttribute("aria-expanded", "false");
+
+    // Route the user
     if (roomKey) {
       event.preventDefault();
-      setActive(button);
       goToRoom(roomKey);
-      return;
-    }
-
-    if (collectionHandle) {
+    } else if (collectionHandle) {
       event.preventDefault();
-      setActive(button);
       openCollectionPanel(collectionHandle);
-      return;
     }
   });
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initImmersiveScene);
+  document.addEventListener("DOMContentLoaded", function() {
+    initImmersiveScene();
+    bindImmersiveNav();
+  });
 } else {
   initImmersiveScene();
+  bindImmersiveNav();
 }

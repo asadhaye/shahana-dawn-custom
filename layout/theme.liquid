@@ -35,8 +35,8 @@
     <script src="{{ 'details-modal.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'search-form.js' | asset_url }}" defer="defer"></script>
 
-    {%- comment -%}Three.js + immersive scene manager only on immersive page{%- endcomment -%}
-    {%- if template == 'page.immersive' -%}
+    {%- comment -%}Three.js + immersive scene manager on immersive page and homepage{%- endcomment -%}
+    {%- if template == 'page.immersive' or template == 'index' -%}
       <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
       <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
@@ -310,7 +310,7 @@
       {%- render 'cart-drawer' -%}
     {%- endif -%}
 
-    {%- if template != 'page.immersive' -%}
+    {%- if template != 'page.immersive' and template != 'index' -%}
       {% sections 'header-group' %}
     {%- endif -%}
 
@@ -318,7 +318,7 @@
       {{ content_for_layout }}
     </main>
 
-    {%- if template != 'page.immersive' -%}
+    {%- if template != 'page.immersive' and template != 'index' -%}
       {% sections 'footer-group' %}
     {%- endif -%}
 

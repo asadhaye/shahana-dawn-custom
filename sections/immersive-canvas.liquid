@@ -19,7 +19,8 @@
   endif
 %}
 
-<section id="immersive-store-{{ section.id }}" class="immersive-store" data-section-id="{{ section.id }}">
+<section id="immersive-store-{{ section.id }}" class="immersive-store" data-section-id="{{ section.id }}"   data-collections-base-url="{{ routes.collections_url }}"
+>
   <div
     class="immersive-store__canvas-wrapper"
     data-base-url="{{ base_url }}"
@@ -31,60 +32,66 @@
     ></canvas>
     <div id="ui-layer"></div>
   </div>
-   <nav class="immersive-nav" aria-label="Explore rooms">
-    <div class="immersive-nav__inner">
-      <h3 class="immersive-nav__heading">
-        {{ 'sections.immersive_store.explore_heading' | t }}
-      </h3>
-      <ul class="immersive-nav__list">
-        <li class="immersive-nav__item">
-          <button
-            type="button"
-            class="immersive-nav__link immersive-nav__link--active"
-            data-room="storefront"
-          >
-            {{ 'sections.immersive_store.nav_exterior' | t }}
-          </button>
+  
+  <!-- NEW: Fixed Header -->
+  <header class="immersive-header">
+    <div class="immersive-header__left">
+      <!-- Logo moved to center -->
+    </div>
+    <div class="immersive-header__center">
+      <a href="{{ routes.root_url }}" class="immersive-header__logo">
+        <img 
+          src="https://cdn.shopify.com/s/files/1/0594/0435/3692/files/Logo-2-Embossed.png?v=1670588524" 
+          alt="{{ shop.name }}" 
+          width="150" 
+          height="50"
+          loading="eager"
+        />
+      </a>
+    </div>
+    <div class="immersive-header__right">
+      <button id="cart-toggle" class="immersive-header__btn">
+        Cart ({{ cart.item_count | default: 0 }})
+      </button>
+    </div>
+  </header>
+
+  <!-- MENU Button - Bottom Left -->
+  <div class="immersive-menu-trigger">
+    <button id="menu-toggle" class="immersive-header__btn" aria-expanded="false">
+      Menu
+    </button>
+  </div>
+
+  <!-- NEW: Slide-Out Menu Overlay -->
+  <div id="immersive-menu" class="immersive-menu" role="dialog" aria-modal="true">
+    <div class="immersive-menu__inner">
+      <ul class="immersive-menu__list">
+        <li style="--delay: 1">
+          <button type="button" data-room="storefront">Storefront</button>
         </li>
-        <li class="immersive-nav__item">
-          <button
-            type="button"
-            class="immersive-nav__link"
-            data-room="lounge"
-          >
-            {{ 'sections.immersive_store.nav_lounge' | t }}
-          </button>
+        <li style="--delay: 2">
+          <button type="button" data-room="lounge">Lounge</button>
         </li>
-        <li class="immersive-nav__item">
-          <button
-            type="button"
-            class="immersive-nav__link"
-            data-room="designer"
-          >
-            {{ 'sections.immersive_store.nav_designer' | t }}
-          </button>
+        <li style="--delay: 3">
+          <button type="button" data-room="designer_houses">Designer Houses</button>
         </li>
-        <li class="immersive-nav__item">
-          <button
-            type="button"
-            class="immersive-nav__link"
-            data-room="festive"
-          >
-            {{ 'sections.immersive_store.nav_festive' | t }}
-          </button>
+        <li style="--delay: 4">
+          <button type="button" data-room="festive">Festive Gallery</button>
         </li>
-        <li class="immersive-nav__item">
-          <button
-            type="button"
-            class="immersive-nav__link"
-            data-collection="eid-edit-2026"
-          >
-            {{ 'sections.immersive_store.nav_eid_edit' | t }}
-          </button>
+        <li style="--delay: 5" class="mt-6">
+          <button type="button" data-collection="eid-edit-2026">Eid Edit 2026</button>
         </li>
       </ul>
+
+      <ul class="immersive-menu__footer">
+        <li style="--delay: 6"><a href="/pages/faq">FAQ</a></li>
+        <li style="--delay: 7"><a href="/policies/terms-of-service">Terms</a></li>
+        <li style="--delay: 8"><a href="/policies/privacy-policy">Privacy</a></li>
+      </ul>
     </div>
-  </nav>
+  </div>
+
   <aside
     id="glass-panel"
     class="immersive-store__panel hidden"
@@ -103,7 +110,12 @@
   </aside>
 </section>
 
+<script src="{{ 'immersive-store.js' | asset_url }}" defer></script>
+
 {% stylesheet %}
+/* ============================================================================
+   1. BASE LAYOUT & CANVAS
+   ============================================================================ */
 .immersive-store {
   position: relative;
   min-height: 100vh;
@@ -118,7 +130,6 @@
   background: radial-gradient(circle at top, rgba(15,23,42,0.4), rgba(0,0,0,1));
 }
 
-/* Canvas used by Three.js */
 #immersive-canvas {
   position: absolute;
   inset: 0;
@@ -127,14 +138,15 @@
   display: block;
 }
 
-/* Overlay layer where JS injects hotspots */
+/* ============================================================================
+   2. UI LAYER & HOTSPOTS
+   ============================================================================ */
 #ui-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-/* Hotspot buttons generated by renderHotspots() */
 #ui-layer .immersive-hotspot {
   pointer-events: auto;
   padding: 0.75rem 1.5rem;
@@ -159,99 +171,241 @@
 #ui-layer .immersive-hotspot:hover {
   transform: translate(-50%, -50%) scale(1.05);
   box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
-  border-color: rgba(244, 197, 94, 0.9);
+  border-color: rgba(212, 175, 55, 0.9);
 }
 
-/* Left-side Explore navigation */
-.immersive-nav {
+/* ============================================================================
+   3. FIXED HEADER
+   ============================================================================ */
+.immersive-header {
   position: absolute;
-  inset-block: 0;
+  top: 0;
   left: 0;
+  width: 100%;
+  padding: 1.5rem 2rem;
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  padding: 7rem 1.5rem 4rem;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
   pointer-events: none;
-  z-index: 20;
 }
 
-.immersive-nav__inner {
+.immersive-header__center {
   pointer-events: auto;
 }
 
-.immersive-nav__heading {
-  margin: 0 0 1.5rem;
-  font-size: 0.875rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.8;
+.immersive-header__logo {
+  display: block;
+  max-width: 150px;
+  height: auto;
 }
 
-.immersive-nav__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.immersive-header__logo img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
 }
 
-.immersive-nav__item + .immersive-nav__item {
-  margin-top: 0.5rem;
-}
-
-.immersive-nav__link {
-  border: none;
+.immersive-header__btn {
+  pointer-events: auto;
   background: transparent;
-  color: #f9fafb;
-  font: inherit;
-  font-size: 1.4rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  border-radius: 4px;
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.immersive-header__btn:hover {
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+/* Menu Button - Bottom Left */
+.immersive-menu-trigger {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.immersive-menu-trigger .immersive-header__btn {
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .immersive-header {
+    padding: 1rem;
+  }
+  
+  .immersive-header__logo {
+    max-width: 100px;
+  }
+  
+  .immersive-menu-trigger {
+    bottom: 1rem;
+    left: 1rem;
+  }
+}
+
+/* ============================================================================
+   4. SLIDE-OUT MENU
+   ============================================================================ */
+.immersive-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(400px, calc(100vw - 80px));
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  z-index: 90;
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1), visibility 500ms;
+}
+
+.immersive-menu.is-open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.immersive-menu__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 8rem 2rem 4rem;
+}
+
+.immersive-menu__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.immersive-menu__list li,
+.immersive-menu__footer li {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-15px);
+  pointer-events: none;
+  transition: opacity 1000ms ease-in-out, visibility 1000ms, transform 1000ms ease-in-out;
+  transition-delay: calc(var(--delay) * 50ms + 200ms);
+}
+
+.mt-6 { margin-top: 2rem; }
+
+.immersive-menu.is-open .immersive-menu__list li,
+.immersive-menu.is-open .immersive-menu__footer li {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.immersive-menu__list button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
   text-transform: uppercase;
   cursor: pointer;
-  opacity: 0.85;
-  transform: translateX(0);
-  transition: opacity 200ms ease-out, transform 200ms ease-out, color 200ms ease-out;
+  padding: 0.5rem 0;
+  text-align: left;
+  transition: color 0.3s ease, transform 0.3s ease;
 }
 
-.immersive-nav__link:hover {
-  opacity: 1;
-  transform: translateX(4px);
+.immersive-menu__list button:hover {
+  color: #d4af37;
+  transform: translateX(10px);
 }
 
-.immersive-nav__link--active {
-  opacity: 1;
-  color: #facc15;
+.immersive-menu__footer {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1.5rem;
 }
 
-/* Glass panel that slides in when a collection is opened */
+.immersive-menu__footer a {
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.immersive-menu__footer a:hover {
+  color: #fff;
+}
+
+/* ============================================================================
+   5. GLASS PANEL - Full Screen Overlay
+   ============================================================================ */
 #glass-panel {
   position: fixed;
   top: 0;
-  right: 0;
-  width: min(420px, 100vw);
+  left: 0;
+  width: 100vw;
   height: 100vh;
-  transform: translateX(100%);
   opacity: 0;
-  transition: transform 0.4s ease, opacity 0.4s ease;
-  background: rgba(15, 23, 42, 0.96);
-  color: #f9fafb;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.65);
-  z-index: 40;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  z-index: 110;
   overflow-y: auto;
 }
 
-/* Panel content styling */
-.immersive-store__panel {
-  max-width: min(420px, 100vw);
-  padding: 1.25rem 1.25rem 1.5rem;
-  border-radius: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+#glass-panel.hidden {
+  display: none;
 }
 
-.immersive-store__panel.hidden {
-  display: none;
+#glass-panel[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Blurred background overlay */
+#glass-panel::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: -1;
+}
+
+.immersive-store__panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .immersive-store__panel {
+    padding: 1.5rem;
+  }
 }
 
 .immersive-store__panel-header {
@@ -259,39 +413,44 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
-  padding-bottom: 0.75rem;
+  padding: 1.5rem 2rem;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .immersive-store__panel-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.5rem;
   font-weight: 600;
+  color: #f9fafb;
 }
 
 .immersive-store__panel-close {
   border: none;
-  background: transparent;
-  color: inherit;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f9fafb;
   font-size: 0.875rem;
   cursor: pointer;
-  padding: 0.25rem 0.75rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 999px;
+  transition: background-color 0.2s ease;
 }
 
 .immersive-store__panel-close:hover {
-  background-color: rgba(148, 163, 184, 0.16);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .immersive-store__panel-content {
-  font-size: 0.875rem;
+  flex: 1;
 }
 {% endstylesheet %}
 
 {% schema %}
 {
   "name": "t:sections.immersive_store.name",
-  "settings": [
+  "settings":[
     {
       "type": "image_picker",
       "id": "base_image",
@@ -303,7 +462,7 @@
       "label": "t:sections.immersive_store.settings.depth_map.label"
     }
   ],
-  "presets": [
+  "presets":[
     {
       "name": "t:sections.immersive_store.presets.name"
     }

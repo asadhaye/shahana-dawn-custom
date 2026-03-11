@@ -68,59 +68,53 @@
     {%- endif -%}
 
     <div class="immersive-product-price">
-      {%- if product.compare_at_price > product.price -%}
-        <span class="immersive-product-price-compare">
-          {{ product.compare_at_price | money }}
-        </span>
-        <span class="immersive-product-price-sale">
-          {{ product.price | money }}
-        </span>
-      {%- elsif product.price_varies -%}
-        <span>
-          {{ 'products.product.from_text' | t }} {{ product.price_min | money }}
-        </span>
-      {%- else -%}
-        <span>{{ product.price | money }}</span>
-      {%- endif -%}
-    </div>
+  {%- if product.compare_at_price_max > product.price_min -%}
+    <span class="immersive-product-price-compare">
+      {{ product.compare_at_price_max | money }}
+    </span>
+    <span class="immersive-product-price-sale">
+      {{ product.price_min | money }}
+    </span>
+  {%- elsif product.price_varies -%}
+    <span>
+      {{ 'products.product.from_text' | t }} {{ product.price_min | money }}
+    </span>
+  {%- else -%}
+    <span>{{ product.price_min | money }}</span>
+  {%- endif -%}
+</div>
 
     {%- if product.available -%}
       <form method="post" action="{{ routes.cart_add_url }}" class="immersive-product-form" data-product-form>
         {%- if product.variants.size > 1 -%}
-          <label class="visually-hidden" for="immersive-variant-select-{{ product.id }}">
-            {{ 'sections.immersive.product_card.select_variant' | t }}
-          </label>
-          <select
-            id="immersive-variant-select-{{ product.id }}"
-            name="id"
-            class="immersive-variant-select"
-          >
+          <div class="immersive-variant-buttons" role="radiogroup" aria-label="{{ 'sections.immersive.product_card.select_variant' | t }}">
             {%- for variant in product.variants -%}
-              <option
-                value="{{ variant.id }}"
+              <button
+                type="button"
+                class="immersive-variant-button"
+                data-variant-id="{{ variant.id }}"
+                data-available="{{ variant.available }}"
+                aria-label="{{ variant.title }}"
                 {% unless variant.available %}disabled{% endunless %}
-                data-price="{{ variant.price | money }}"
               >
-                {{ variant.title }}
-                {%- unless variant.available -%}
-                  – {{ 'products.product.sold_out' | t }}
-                {%- endunless -%}
-                – {{ variant.price | money }}
-              </option>
+                {{ variant.title | split: ' / ' | first }}
+              </button>
             {%- endfor -%}
-          </select>
+          </div>
+          <input type="hidden" name="id" class="immersive-variant-input" value="{{ product.selected_or_first_available_variant.id }}">
         {%- else -%}
           <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
         {%- endif -%}
 
         <button
           type="submit"
+          name="property[buy_now]"
           class="immersive-add-to-cart"
           {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}
-          aria-label="{{ 'sections.immersive.product_card.add_to_cart_aria' | t: title: product.title | escape }}"
+          aria-label="{{ 'products.product.buy_now' | t }} - {{ product.title | escape }}"
         >
           {%- if product.selected_or_first_available_variant.available -%}
-            {{ 'products.product.add_to_cart' | t }}
+            {{ 'products.product.buy_now' | t }}
           {%- else -%}
             {{ 'products.product.sold_out' | t }}
           {%- endif -%}
@@ -147,6 +141,19 @@
 {% stylesheet %}
   .immersive-product-card {
     position: relative;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+
+  .immersive-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2);
+    border-color: rgba(212, 175, 55, 0.3);
   }
 
   .immersive-product-link {
@@ -157,11 +164,25 @@
     padding: 0;
     background: transparent;
     cursor: pointer;
+    aspect-ratio: 3 / 4;
+    width: 100%;
+  }
+
+  .immersive-product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
   }
 
   .immersive-product-image-hover {
     position: absolute;
     inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -181,18 +202,24 @@
 
   .immersive-product-info {
     position: relative;
+    padding: 1.25rem;
   }
 
   .immersive-product-vendor {
-    font-size: 11px;
-    color: rgba(212, 175, 55, 0.8);
+    font-size: 0.75rem;
+    color: rgba(212, 175, 55, 0.9);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
   }
 
   .immersive-product-title {
-    margin: 0;
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.4;
   }
 
   .immersive-product-title-link {
@@ -203,23 +230,31 @@
     text-decoration: none;
     text-align: left;
     cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .immersive-product-title-link:hover {
+    color: rgba(212, 175, 55, 1);
   }
 
   .immersive-product-description {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    margin: 8px 0;
-    line-height: 1.4;
+    font-size: 0.875rem;
+    color: rgba(249, 250, 251, 0.7);
+    margin: 0.5rem 0;
+    line-height: 1.5;
   }
 
   .immersive-product-price {
-    font-size: 14px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #ffffff;
   }
 
   .immersive-product-price-compare {
     text-decoration: line-through;
     opacity: 0.5;
-    margin-right: 8px;
+    margin-right: 0.5rem;
+    font-size: 1rem;
   }
 
   .immersive-product-price-sale {
@@ -227,28 +262,52 @@
   }
 
   .immersive-product-form {
-    margin-top: 8px;
+    margin-top: 1rem;
   }
 
-  .immersive-variant-select {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 12px;
+  .immersive-variant-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .immersive-variant-button {
+    padding: 0.5rem 1rem;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(212, 175, 55, 0.3);
     color: #ffffff;
-    border-radius: 4px;
-    font-size: 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
     cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
-  .immersive-variant-select:focus {
+  .immersive-variant-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(212, 175, 55, 0.5);
+    transform: translateY(-1px);
+  }
+
+  .immersive-variant-button:focus {
     outline: 2px solid #d4af37;
     outline-offset: 2px;
   }
 
-  .immersive-variant-select option:disabled {
-    color: rgba(255, 255, 255, 0.3);
+  .immersive-variant-button.active {
+    border: 2px solid #d4af37;
+    background: rgba(212, 175, 55, 0.2);
+  }
+
+  .immersive-variant-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .immersive-variant-input {
+    display: none;
   }
 
   .immersive-add-to-cart {
