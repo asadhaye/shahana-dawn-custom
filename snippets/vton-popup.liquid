@@ -6,7 +6,7 @@
   - Convert user and product images to Base64
   - Send both to a Vercel endpoint
   
-  Backend (Vercel) responsibilities:
+  Backend responsibilities:
   - Use Puter/Nano Banana (or any AI) to generate the try-on image
   - Return { success: true, generated_image: "<base64>" }
 {% enddoc %}
@@ -38,6 +38,7 @@
         </label>
         <img
           id="vton-user-preview"
+          src=""
           alt="Your uploaded photo"
           style="display: none;"
           width="600"
@@ -60,6 +61,7 @@
         <h4>Your virtual fitting</h4>
         <img
           id="result-image-element"
+          src=""
           alt="Virtual try-on result"
           width="600"
           height="800"

@@ -10,22 +10,18 @@ const STORE_ROOMS = {
 
   lounge: {
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-base.png?v=1772029869",
-    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-base.png?v=1772029869", // Use mobile-optimized image here
+    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-base.png?v=1772029869",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-depth-map.png?v=1772030053",
     hotspots:[
       { x: 25, y: 45, label: "Designer Houses", targetRoom: "designer_houses" },
-      { x: 55, y: 40, label: "Eid collection", targetCollection: "eid-collection" },
-      { x: 55, y: 50, label: "Bridal & mehndi", targetRoom: "bridal_room" },
-      { x: 55, y: 60, label: "Luxury formals", targetRoom: "festive" },
-      { x: 55, y: 70, label: "Casual pret", targetCollection: "casual-pret" },
-      { x: 85, y: 50, label: "Featured", targetRoom: "featured_room" }
+      { x: 50, y: 45, label: "Occasions", targetRoom: "occasions" },
+      { x: 75, y: 45, label: "Featured Collections", targetRoom: "featured_collections" }
     ]
   },
 
   designer_houses: {
-    // Replace these URLs with your dark glass monolith image URLs later
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737",
-    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737", // Use mobile-optimized image here
+    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733",
     hotspots:[
       { x: 25, y: 45, label: "Suffuse", targetCollection: "suffuse" },
@@ -35,35 +31,30 @@ const STORE_ROOMS = {
     ]
   },
 
-  bridal_room: {
-    baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254",
-    depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261",
+  occasions: {
+    // Replace with your occasions room image URLs
+    baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-base.png?v=YOUR_HASH",
+    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-base.png?v=YOUR_HASH",
+    depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-depth.png?v=YOUR_HASH",
     hotspots:[
-      { x: 35, y: 45, label: "Bridal & mehndi", targetCollection: "bridal-mehndi" },
-      { x: 10, y: 90, label: "Back to lounge", targetRoom: "lounge" }
+      { x: 25, y: 40, label: "Eid Collection", targetCollection: "eid-collection" },
+      { x: 42, y: 50, label: "Bridal & Mehndi", targetCollection: "bridal-mehndi" },
+      { x: 58, y: 40, label: "Luxury Formals", targetCollection: "luxury-formals" },
+      { x: 75, y: 50, label: "Casual Pret", targetCollection: "casual-pret" },
+      { x: 50, y: 85, label: "Back to lounge", targetRoom: "lounge" }
     ]
   },
 
-  festive: {
-    baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/festive-base.png?v=1772034395",
-    depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/festive-depth.png?v=1772034391",
-    hotspots:[
-      { x: 35, y: 40, label: "Luxury formals", targetCollection: "luxury-formals" },
-      { x: 50, y: 50, label: "Luxury pret", targetCollection: "luxury-pret" },
-      { x: 65, y: 60, label: "Casual pret", targetCollection: "casual-pret" },
-      { x: 10, y: 90, label: "Back to lounge", targetRoom: "lounge" }
-    ]
-  },
-
-  featured_room: {
+  featured_collections: {
+    // Replace with your featured collections room image URLs
     baseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/featured-base.png?v=YOUR_HASH",
+    mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/featured-base.png?v=YOUR_HASH",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/featured-depth.png?v=YOUR_HASH",
     hotspots:[
-      { x: 35, y: 40, label: "Mommy and me", targetCollection: "mommy-and-me" },
-      { x: 50, y: 50, label: "Luxury pret", targetCollection: "luxury-pret" },
-      { x: 65, y: 60, label: "Casual pret", targetCollection: "casual-pret" },
-      { x: 50, y: 75, label: "Unstitched", targetCollection: "unstitched" },
-      { x: 10, y: 90, label: "Back to lounge", targetRoom: "lounge" }
+      { x: 25, y: 40, label: "SS5 Summer Pret 26", targetCollection: "summer-pret-26-eid-edit-saad-bin-shahzad" },
+      { x: 50, y: 50, label: "Suffuse Luxury Pret", targetCollection: "luxury-pret-suffuse" },
+      { x: 75, y: 40, label: "Soraya Eid Pret", targetCollection: "lumene-festive-25-26-soraya-official" },
+      { x: 50, y: 85, label: "Back to lounge", targetRoom: "lounge" }
     ]
   }
 };
