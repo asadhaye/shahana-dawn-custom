@@ -126,6 +126,8 @@
           </button>
         {% endform %}
 
+        {%- render 'vton-popup', product: panel_product -%}
+
         {%- comment -%} Eid Delivery Badge {%- endcomment -%}
         {% if panel_product.metafields.custom.eid_delivery %}
           <div class="glass-product-section__eid-badge">
