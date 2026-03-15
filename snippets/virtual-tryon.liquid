@@ -1,0 +1,209 @@
+{% doc %}
+  Renders a virtual try-on UI for product pages.
+
+  Frontend responsibilities:
+  - Capture the customer's photo via file input
+  - Read basic product metadata (title, description) and product image URL
+  - POST this data to a Vercel /api/tryon endpoint
+  - Display the returned image URL from the backend
+
+  Backend responsibilities (in /api/tryon):
+  - Accept JSON such as:
+      {
+        "user_image_base64": "<data URL or raw base64>",
+        "product_image_base64": "<data URL or raw base64>",
+        "product_title": "<string>",
+        "product_description": "<string>"
+      }
+  - Use /lib helpers for CORS, image processing, caching, rate limiting, and MiniMax calls
+  - Return:
+      {
+        "success": true,
+        "image_url": "<final image URL>"
+      }
+{% enddoc %}
+
+<div
+  class="virtual-tryon-container"
+  id="virtual-tryon-container"
+  data-product-title="{{ product.title | escape }}"
+  data-product-description="{{ product.description | strip_html | escape | truncate: 200 }}"
+  data-product-image-url="{{ product.featured_image | image_url: width: 1024 }}"
+>
+  <h3>Virtual Try-On</h3>
+  
+  <div class="tryon-upload">
+    <label for="virtual-tryon-user-photo">Upload your photo:</label>
+    <input type="file" id="virtual-tryon-user-photo" accept="image/*" />
+  </div>
+  
+  <button id="virtual-tryon-btn" class="btn btn-primary" disabled>
+    Try this item on
+  </button>
+  
+  <div id="virtual-tryon-result" style="display: none;">
+    <h4>Your virtual try-on</h4>
+    <img
+      id="virtual-tryon-result-img"
+      src=""
+      alt="Virtual try-on result"
+      width="600"
+      height="900"
+    />
+  </div>
+  
+  <div id="virtual-tryon-loading" style="display: none;">
+    <p>Generating your look...</p>
+  </div>
+</div>
+
+{% javascript %}
+(function() {
+  const container = document.getElementById('virtual-tryon-container');
+  if (!container) return;
+
+  const userPhotoInput = document.getElementById('virtual-tryon-user-photo');
+  const tryOnBtn = document.getElementById('virtual-tryon-btn');
+  const resultImg = document.getElementById('virtual-tryon-result-img');
+  const resultContainer = document.getElementById('virtual-tryon-result');
+  const loadingSpinner = document.getElementById('virtual-tryon-loading');
+
+  if (!userPhotoInput || !tryOnBtn || !resultImg || !resultContainer || !loadingSpinner) {
+    return;
+  }
+
+  const productTitle = container.getAttribute('data-product-title') || '';
+  const productDescription = container.getAttribute('data-product-description') || '';
+  const productImageUrlRaw = container.getAttribute('data-product-image-url') || '';
+  const productImageUrl = typeof productImageUrlRaw === 'string'
+    ? productImageUrlRaw
+    : String(productImageUrlRaw);
+
+  let userImageDataUrl = null;
+  let cachedProductImageDataUrl = null;
+
+  // Handle user photo upload
+  userPhotoInput.addEventListener('change', async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    try {
+      userImageDataUrl = await fileToDataUrl(file);
+      tryOnBtn.disabled = false;
+    } catch (err) {
+      console.error('Error reading user file:', err);
+      alert('Could not read your photo. Please try a different image.');
+    }
+  });
+
+  // Handle try-on request
+  tryOnBtn.addEventListener('click', async () => {
+    if (!userImageDataUrl) return;
+
+    try {
+      tryOnBtn.disabled = true;
+      loadingSpinner.style.display = 'block';
+      resultContainer.style.display = 'none';
+
+      // Cache product image as second input image
+      if (!cachedProductImageDataUrl) {
+        const resolvedProductUrl = productImageUrl.startsWith('//')
+          ? 'https:' + productImageUrl
+          : productImageUrl;
+
+        cachedProductImageDataUrl = await urlToDataUrl(resolvedProductUrl);
+      }
+
+      const response = await fetch('https://your-vercel-app.vercel.app/api/tryon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_image_base64: userImageDataUrl,
+          product_image_base64: cachedProductImageDataUrl,
+          product_title: productTitle,
+          product_description: productDescription,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data && data.success) {
+        if (data.image_url) {
+          resultImg.src = data.image_url;
+        } else if (data.image_base64) {
+          resultImg.src = `data:image/png;base64,${data.image_base64}`;
+        } else {
+          throw new Error('No image_url or image_base64 in response');
+        }
+
+        resultContainer.style.display = 'block';
+      } else {
+        console.error('Try-on API error:', data);
+        alert('Failed to generate try-on. Please try again.');
+      }
+    } catch (error) {
+      console.error('Try-on error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      tryOnBtn.disabled = false;
+      loadingSpinner.style.display = 'none';
+    }
+  });
+
+  // Utility: convert a File to a data URL (can be kept parallel with /lib/image-processor on server)
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Utility: fetch an image URL and convert it to a data URL
+  async function urlToDataUrl(url) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to load product image for try-on');
+    }
+
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+})();
+{% endjavascript %}
+
+{% stylesheet %}
+.virtual-tryon-container {
+  padding: 20px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.virtual-tryon-container h3 {
+  margin-top: 0;
+}
+
+.tryon-upload {
+  margin-bottom: 15px;
+}
+
+#virtual-tryon-result-img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+#virtual-tryon-loading {
+  text-align: center;
+  padding: 20px;
+}
+{% endstylesheet %}
