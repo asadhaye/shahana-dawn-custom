@@ -13,9 +13,9 @@ const STORE_ROOMS = {
     mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-base.png?v=1772029869",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/store-depth-map.png?v=1772030053",
     hotspots:[
-      { x: 25, y: 45, label: "Designer Houses", targetRoom: "designer_houses" },
-      { x: 50, y: 45, label: "Occasions", targetRoom: "occasions" },
-      { x: 75, y: 45, label: "Featured Collections", targetRoom: "featured_collections" }
+      { x: 25, y: 27, label: "Designer Houses", targetRoom: "designer_houses" },
+      { x: 50, y: 27, label: "Occasions", targetRoom: "occasions" },
+      { x: 75, y: 28, label: "Featured Collections", targetRoom: "featured_collections" }
     ]
   },
 
@@ -24,10 +24,10 @@ const STORE_ROOMS = {
     mobileBaseTextureUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737",
     depthMapUrl: "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733",
     hotspots:[
-      { x: 25, y: 45, label: "Suffuse", targetCollection: "suffuse" },
-      { x: 50, y: 35, label: "Soraya", targetCollection: "soraya" },
-      { x: 75, y: 45, label: "Saad Bin Shahzad", targetCollection: "saad-bin-shahzad" },
-      { x: 50, y: 85, label: "Back to lounge", targetRoom: "lounge" }
+      { x: 13, y: 40, label: "Suffuse", targetCollection: "suffuse" },
+      { x: 50, y: 45, label: "Soraya", targetCollection: "soraya" },
+      { x: 87, y: 40, label: "Saad Bin Shahzad", targetCollection: "saad-bin-shahzad" },
+      { x: 50, y: 90, label: "Back to lounge", targetRoom: "lounge" }
     ]
   },
 
@@ -67,6 +67,13 @@ let uniforms;
 let currentRoomKey = null;
 let transitioning = false;
 
+// Texture cache to avoid re-loading and enable VRAM disposal
+var textureCache = {};
+var isMobileDevice = window.innerWidth < 768;
+var textureWidth = isMobileDevice ? 1200 : 1920;
+// Reduce parallax intensity on mobile to save GPU
+var parallaxStrength = isMobileDevice ? 0.02 : 0.04;
+
 const immersiveCanvasId = "immersive-canvas";
 const uiLayerId = "ui-layer";
 const glassPanelId = "glass-panel";
@@ -91,12 +98,12 @@ const fragmentShaderSource = `
   uniform sampler2D uDepth2;
   uniform float uTransitionProgress;
   uniform vec2 uMouse;
+  uniform float uParallaxStrength;
 
   vec2 parallaxUv(vec2 uv, sampler2D depthTex, vec2 mouse) {
     float depth = texture2D(depthTex, uv).r;
     vec2 centeredMouse = mouse - 0.5;
-    float strength = 0.04;
-    vec2 offset = centeredMouse * strength * depth;
+    vec2 offset = centeredMouse * uParallaxStrength * depth;
     return uv + offset;
   }
 
@@ -118,10 +125,7 @@ function getRoomTextureUrls(roomKey) {
   var room = STORE_ROOMS[roomKey];
   if (!room) return null;
 
-  // Detect if mobile (viewport width < 768px)
-  var isMobile = window.innerWidth < 768;
-  
-  var baseUrl = isMobile && room.mobileBaseTextureUrl ? room.mobileBaseTextureUrl : room.baseTextureUrl;
+  var baseUrl = isMobileDevice && room.mobileBaseTextureUrl ? room.mobileBaseTextureUrl : room.baseTextureUrl;
   var depthUrl = room.depthMapUrl;
 
   if (roomKey === "storefront") {
@@ -129,30 +133,38 @@ function getRoomTextureUrls(roomKey) {
     if (wrapper) {
       var dataBaseUrl = wrapper.getAttribute("data-base-url");
       var dataDepthUrl = wrapper.getAttribute("data-depth-url");
-      if (dataBaseUrl) {
-        baseUrl = dataBaseUrl;
-      }
-      if (dataDepthUrl) {
-        depthUrl = dataDepthUrl;
-      }
+      if (dataBaseUrl) baseUrl = dataBaseUrl;
+      if (dataDepthUrl) depthUrl = dataDepthUrl;
     }
   }
 
-  return {
-    baseTextureUrl: baseUrl,
-    depthMapUrl: depthUrl,
-    hotspots: room.hotspots,
-    isMobile: isMobile
-  };
+  return { baseTextureUrl: baseUrl, depthMapUrl: depthUrl, hotspots: room.hotspots };
+}
+
+// Preload a room's textures in the background (called on hotspot hover)
+function preloadRoom(roomKey) {
+  var roomData = getRoomTextureUrls(roomKey);
+  if (!roomData) return;
+  var cacheKey = roomData.baseTextureUrl + "|" + roomData.depthMapUrl;
+  if (textureCache[cacheKey]) return; // already cached
+  loadRoomTextures(roomData, function() {}); // load silently into cache
 }
 
 function initImmersiveScene() {
   var canvas = document.getElementById(immersiveCanvasId);
   var uiLayer = document.getElementById(uiLayerId);
-  if (!canvas || !uiLayer || !window.THREE) return;
+  if (!canvas || !uiLayer) return;
 
-  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  // WebGL fallback - show static image if WebGL not supported
+  if (!window.THREE || !isWebGLSupported()) {
+    showWebGLFallback(canvas);
+    return;
+  }
+
+  showLoader();
+
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isMobileDevice });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.5 : 2));
   renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
   scene = new THREE.Scene();
@@ -172,7 +184,8 @@ function initImmersiveScene() {
     uTexture2: { value: placeholder },
     uDepth2: { value: placeholder },
     uTransitionProgress: { value: 0 },
-    uMouse: { value: new THREE.Vector2(0.5, 0.5) }
+    uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+    uParallaxStrength: { value: parallaxStrength }
   };
 
   var material = new THREE.ShaderMaterial({
@@ -192,6 +205,56 @@ function initImmersiveScene() {
   animate();
 
   goToRoom("storefront", true);
+}
+
+function isWebGLSupported() {
+  try {
+    var testCanvas = document.createElement("canvas");
+    return !!(testCanvas.getContext("webgl") || testCanvas.getContext("experimental-webgl"));
+  } catch (e) {
+    return false;
+  }
+}
+
+function showWebGLFallback(canvas) {
+  var room = STORE_ROOMS["storefront"];
+  if (!room) return;
+  var wrapper = canvas.parentElement;
+  if (!wrapper) return;
+  var img = document.createElement("img");
+  img.src = room.baseTextureUrl;
+  img.alt = "";
+  img.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;";
+  wrapper.appendChild(img);
+  canvas.style.display = "none";
+  // Still render hotspots
+  renderHotspots("storefront");
+}
+
+function showLoader() {
+  var wrapper = document.querySelector(".immersive-store__canvas-wrapper");
+  if (!wrapper) return;
+  var loader = document.createElement("div");
+  loader.id = "immersive-loader";
+  loader.innerHTML = '<div class="immersive-loader__ring"></div>';
+  loader.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;pointer-events:none;";
+  loader.querySelector(".immersive-loader__ring").style.cssText = "width:48px;height:48px;border:3px solid rgba(212,175,55,0.2);border-top-color:#d4af37;border-radius:50%;animation:immersive-spin 0.8s linear infinite;";
+  // Inject keyframes once
+  if (!document.getElementById("immersive-loader-style")) {
+    var style = document.createElement("style");
+    style.id = "immersive-loader-style";
+    style.textContent = "@keyframes immersive-spin{to{transform:rotate(360deg)}}";
+    document.head.appendChild(style);
+  }
+  wrapper.appendChild(loader);
+}
+
+function hideLoader() {
+  var loader = document.getElementById("immersive-loader");
+  if (!loader) return;
+  loader.style.transition = "opacity 0.4s ease";
+  loader.style.opacity = "0";
+  setTimeout(function() { loader.remove(); }, 400);
 }
 
 function handleMouseMove(event) {
@@ -269,56 +332,94 @@ function goToRoom(roomKey, initial) {
     uiLayer.style.opacity = "0";
   }
 
-  var loader = new THREE.TextureLoader();
+  loadRoomTextures(roomData, function(baseTexture, depthTexture) {
+    if (initial || currentRoomKey === null) {
+      uniforms.uTexture1.value = baseTexture;
+      uniforms.uDepth1.value = depthTexture;
+      uniforms.uTexture2.value = baseTexture;
+      uniforms.uDepth2.value = depthTexture;
+      currentRoomKey = roomKey;
+      uiLayer.style.opacity = "1";
+      renderHotspots(roomKey);
+      hideLoader();
+      return;
+    }
 
-  var baseTexture = loader.load(roomData.baseTextureUrl, function (tex) {
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-  });
-  var depthTexture = loader.load(roomData.depthMapUrl, function (tex) {
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-  });
+    // Dispose old textures from VRAM before transitioning
+    var oldBase = uniforms.uTexture1.value;
+    var oldDepth = uniforms.uDepth1.value;
 
-  if (initial || currentRoomKey === null) {
-    uniforms.uTexture1.value = baseTexture;
-    uniforms.uDepth1.value = depthTexture;
     uniforms.uTexture2.value = baseTexture;
     uniforms.uDepth2.value = depthTexture;
-    currentRoomKey = roomKey;
-    uiLayer.style.opacity = "1";
-    renderHotspots(roomKey);
+
+    transitioning = true;
+    var duration = 800;
+    var start = performance.now();
+    var startProgress = uniforms.uTransitionProgress.value;
+
+    function step(now) {
+      var elapsed = now - start;
+      var t = Math.min(elapsed / duration, 1);
+      var eased = t * t * (3 - 2 * t);
+      uniforms.uTransitionProgress.value = startProgress + (1 - startProgress) * eased;
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        // Dispose old textures if not cached (cached ones stay in memory)
+        if (oldBase && !isCachedTexture(oldBase)) oldBase.dispose();
+        if (oldDepth && !isCachedTexture(oldDepth)) oldDepth.dispose();
+
+        uniforms.uTexture1.value = uniforms.uTexture2.value;
+        uniforms.uDepth1.value = uniforms.uDepth2.value;
+        uniforms.uTransitionProgress.value = 0;
+        currentRoomKey = roomKey;
+        transitioning = false;
+        renderHotspots(roomKey);
+        uiLayer.style.opacity = "1";
+      }
+    }
+
+    requestAnimationFrame(step);
+  });
+}
+
+function loadRoomTextures(roomData, callback) {
+  var cacheKey = roomData.baseTextureUrl + "|" + roomData.depthMapUrl;
+
+  if (textureCache[cacheKey]) {
+    callback(textureCache[cacheKey].base, textureCache[cacheKey].depth);
     return;
   }
 
-  uniforms.uTexture2.value = baseTexture;
-  uniforms.uDepth2.value = depthTexture;
+  var loader = new THREE.TextureLoader();
+  var loaded = { base: null, depth: null };
 
-  transitioning = true;
-  var duration = 800;
-  var start = performance.now();
-  var startProgress = uniforms.uTransitionProgress.value;
-
-  function step(now) {
-    var elapsed = now - start;
-    var t = Math.min(elapsed / duration, 1);
-    var eased = t * t * (3 - 2 * t);
-    uniforms.uTransitionProgress.value = startProgress + (1 - startProgress) * eased;
-
-    if (t < 1) {
-      requestAnimationFrame(step);
-    } else {
-      uniforms.uTexture1.value = uniforms.uTexture2.value;
-      uniforms.uDepth1.value = uniforms.uDepth2.value;
-      uniforms.uTransitionProgress.value = 0;
-      currentRoomKey = roomKey;
-      transitioning = false;
-      renderHotspots(roomKey);
-      uiLayer.style.opacity = "1";
-    }
+  function onBothLoaded() {
+    if (!loaded.base || !loaded.depth) return;
+    textureCache[cacheKey] = { base: loaded.base, depth: loaded.depth };
+    callback(loaded.base, loaded.depth);
   }
 
-  requestAnimationFrame(step);
+  loader.load(roomData.baseTextureUrl, function(tex) {
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    loaded.base = tex;
+    onBothLoaded();
+  });
+
+  loader.load(roomData.depthMapUrl, function(tex) {
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    loaded.depth = tex;
+    onBothLoaded();
+  });
+}
+
+function isCachedTexture(texture) {
+  return Object.values(textureCache).some(function(entry) {
+    return entry.base === texture || entry.depth === texture;
+  });
 }
 
 function renderHotspots(roomKey) {
@@ -346,6 +447,13 @@ function renderHotspots(roomKey) {
           openCollectionPanel(hotspot.targetCollection);
         }
       });
+
+      // Preload next room textures on hover
+      if (hotspot.targetRoom) {
+        button.addEventListener("mouseenter", function() {
+          preloadRoom(hotspot.targetRoom);
+        }, { once: true });
+      }
 
       uiLayer.appendChild(button);
     });

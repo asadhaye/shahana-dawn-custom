@@ -1,0 +1,209 @@
+/* =============================================================================
+   Immersive Theme - Global styles for search, cart, and supporting pages
+   Complements the immersive canvas homepage/collection/product experience
+   ============================================================================= */
+
+/* Base: dark background with subtle texture */
+body {
+  background-color: #0a0f1e !important;
+  background-image: radial-gradient(ellipse at top, rgba(30, 41, 59, 0.8), #0a0f1e) !important;
+  color: #f1f5f9 !important;
+  min-height: 100vh;
+}
+
+/* Header overrides */
+.header,
+.header-wrapper {
+  background: rgba(10, 15, 30, 0.95) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15) !important;
+}
+
+.header__heading-link,
+.header__menu-item,
+.header a {
+  color: #f1f5f9 !important;
+}
+
+.header__menu-item:hover,
+.header a:hover {
+  color: #d4af37 !important;
+}
+
+/* Search page */
+.template-search .search__title,
+.template-search h1,
+.template-search h2 {
+  color: #ffffff;
+}
+
+.template-search .search-modal__form,
+.template-search .search-form,
+.template-search .field {
+  border: 2px solid rgba(212, 175, 55, 0.8) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.template-search input[type="search"],
+.template-search .field__input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f1f5f9 !important;
+  border: 2px solid rgba(212, 175, 55, 0.8) !important;
+  border-radius: 8px !important;
+}
+
+.template-search input[type="search"]:focus,
+.template-search .field__input:focus {
+  border-color: #d4af37 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
+}
+
+.template-search input[type="search"]::placeholder,
+.template-search .field__input::placeholder {
+  color: rgba(241, 245, 249, 0.4) !important;
+}
+
+.template-search .field__button,
+.template-search .search-form__submit {
+  color: #d4af37 !important;
+}
+
+/* Product cards on search results */
+.template-search .card-wrapper,
+.template-search .card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.template-search .card-wrapper:hover,
+.template-search .card:hover {
+  border-color: rgba(212, 175, 55, 0.4) !important;
+  transform: translateY(-3px);
+}
+
+.template-search .card__heading a,
+.template-search .card__information .caption {
+  color: #f1f5f9 !important;
+}
+
+.template-search .price {
+  color: #d4af37 !important;
+}
+
+/* Facets / filters */
+.template-search .facets__summary,
+.template-search .facets-vertical .facets__summary {
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.template-search .facets__label {
+  color: rgba(241, 245, 249, 0.7) !important;
+}
+
+/* Buttons */
+.template-search .button,
+.template-search button[type="submit"] {
+  background: rgba(212, 175, 55, 0.9) !important;
+  color: #000 !important;
+  border: none !important;
+}
+
+.template-search .button:hover {
+  background: #d4af37 !important;
+}
+
+/* Cart page */
+.template-cart .cart__title,
+.template-cart h1 {
+  color: #ffffff;
+}
+
+.template-cart .cart-item__name,
+.template-cart .cart-item__details {
+  color: #f1f5f9 !important;
+}
+
+.template-cart .cart-item__price,
+.template-cart .totals__total-value {
+  color: #d4af37 !important;
+}
+
+.template-cart .cart__footer {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-top: 1px solid rgba(212, 175, 55, 0.15) !important;
+}
+
+.template-cart .cart__checkout-button {
+  background: rgba(212, 175, 55, 0.9) !important;
+  color: #000 !important;
+  border-radius: 999px !important;
+}
+
+.template-cart .cart__checkout-button:hover {
+  background: #d4af37 !important;
+}
+
+/* Predictive search dropdown */
+predictive-search .predictive-search,
+.predictive-search {
+  background: rgba(10, 15, 30, 0.97) !important;
+  border: 1px solid rgba(212, 175, 55, 0.2) !important;
+  backdrop-filter: blur(20px);
+}
+
+.predictive-search__item {
+  color: #f1f5f9 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.predictive-search__item:hover,
+.predictive-search__item--link:hover {
+  background: rgba(212, 175, 55, 0.08) !important;
+}
+
+.predictive-search__item-heading {
+  color: #ffffff !important;
+}
+
+.predictive-search__item .price {
+  color: #d4af37 !important;
+}
+
+/* Footer */
+.footer {
+  background: rgba(5, 8, 18, 0.98) !important;
+  border-top: 1px solid rgba(212, 175, 55, 0.1) !important;
+  color: rgba(241, 245, 249, 0.6) !important;
+}
+
+.footer a {
+  color: rgba(241, 245, 249, 0.6) !important;
+}
+
+.footer a:hover {
+  color: #d4af37 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0f1e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.6);
+}
