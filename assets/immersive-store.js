@@ -174,9 +174,13 @@ function initImmersiveScene() {
   var geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
   var textureLoader = new THREE.TextureLoader();
-  var placeholder = textureLoader.load("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAmsB9UHZHs8AAAAASUVORK5CYII=");
+
+  // Create a 1x1 black pixel texture directly without loading
+  var placeholderData = new Uint8Array([0, 0, 0, 255]);
+  var placeholder = new THREE.DataTexture(placeholderData, 1, 1);
   placeholder.minFilter = THREE.LinearFilter;
   placeholder.magFilter = THREE.LinearFilter;
+  placeholder.needsUpdate = true;
 
   uniforms = {
     uTexture1: { value: placeholder },
@@ -623,6 +627,89 @@ function setupBuyNowForm(panel) {
   });
 }
 
+function setupVirtualTryOn(panel) {
+  var container = panel.querySelector('#virtual-tryon-container');
+  if (!container) return;
+
+  var userPhotoInput = container.querySelector('#virtual-tryon-user-photo');
+  var tryOnBtn = container.querySelector('#virtual-tryon-btn');
+  var resultImg = container.querySelector('#virtual-tryon-result-img');
+  var resultContainer = container.querySelector('#virtual-tryon-result');
+  var loadingSpinner = container.querySelector('#virtual-tryon-loading');
+
+  if (!userPhotoInput || !tryOnBtn) return;
+
+  var productTitle = container.getAttribute('data-product-title') || '';
+  var productDescription = container.getAttribute('data-product-description') || '';
+  var productImageUrlRaw = container.getAttribute('data-product-image-url') || '';
+  var productImageUrl = productImageUrlRaw.startsWith('//') ? 'https:' + productImageUrlRaw : productImageUrlRaw;
+
+  var userImageDataUrl = null;
+  var cachedProductImageDataUrl = null;
+
+  userPhotoInput.addEventListener('change', function(event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      userImageDataUrl = reader.result;
+      tryOnBtn.disabled = false;
+    };
+    reader.onerror = function() {
+      alert('Could not read your photo. Please try a different image.');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  tryOnBtn.addEventListener('click', async function() {
+    if (!userImageDataUrl) return;
+    try {
+      tryOnBtn.disabled = true;
+      if (loadingSpinner) loadingSpinner.style.display = 'block';
+      if (resultContainer) resultContainer.style.display = 'none';
+
+      if (!cachedProductImageDataUrl && productImageUrl) {
+        var res = await fetch(productImageUrl);
+        var blob = await res.blob();
+        cachedProductImageDataUrl = await new Promise(function(resolve, reject) {
+          var r = new FileReader();
+          r.onload = function() { resolve(r.result); };
+          r.onerror = reject;
+          r.readAsDataURL(blob);
+        });
+      }
+
+      var response = await fetch('https://scuk-vton.vercel.app/api/tryon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_image_base64: userImageDataUrl,
+          product_image_base64: cachedProductImageDataUrl,
+          product_title: productTitle,
+          product_description: productDescription,
+        }),
+      });
+
+      var data = await response.json();
+
+      if (data && data.success) {
+        var src = data.image_url || (data.image_base64 ? 'data:image/png;base64,' + data.image_base64 : null);
+        if (!src) throw new Error('No image in response');
+        if (resultImg) { resultImg.src = src; resultImg.hidden = false; }
+        if (resultContainer) resultContainer.style.display = 'block';
+      } else {
+        alert('Failed to generate try-on. Please try again.');
+      }
+    } catch (error) {
+      console.error('Try-on error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      tryOnBtn.disabled = false;
+      if (loadingSpinner) loadingSpinner.style.display = 'none';
+    }
+  });
+}
+
 function showCartFeedback(panel) {
   var feedback = document.createElement('div');
   feedback.className = 'immersive-cart-feedback';
@@ -704,6 +791,9 @@ function openCollectionPanel(collectionHandle) {
         // Setup buy now form handler
         setupBuyNowForm(panel);
 
+        // Setup virtual try-on
+        setupVirtualTryOn(panel);
+
         // Setup click handlers for this panel
         panel.onclick = function (event) {
           // 1. Handle backdrop click (clicking outside content)
@@ -777,6 +867,9 @@ function openProductPanel(productHandle, collectionHandle) {
         
         // Setup buy now form handler
         setupBuyNowForm(panel);
+
+        // Setup virtual try-on
+        setupVirtualTryOn(panel);
 
         panel.onclick = function (event) {
           // 1. Handle backdrop click
