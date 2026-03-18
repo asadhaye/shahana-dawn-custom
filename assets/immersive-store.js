@@ -642,18 +642,36 @@ function setupVirtualTryOn(panel) {
   var productTitle = container.getAttribute('data-product-title') || '';
   var productDescription = container.getAttribute('data-product-description') || '';
   var productImageUrlRaw = container.getAttribute('data-product-image-url') || '';
-  var productImageUrl = productImageUrlRaw.startsWith('//') ? 'https:' + productImageUrlRaw : productImageUrlRaw;
+  var productImageUrl = productImageUrlRaw.startsWith('//') ? 'https:' + productImageUrlRaw
+    : productImageUrlRaw.startsWith('/') ? window.location.origin + productImageUrlRaw
+    : productImageUrlRaw;
 
   var userImageDataUrl = null;
-  var cachedProductImageDataUrl = null;
 
   userPhotoInput.addEventListener('change', function(event) {
     var file = event.target.files && event.target.files[0];
     if (!file) return;
     var reader = new FileReader();
-    reader.onload = function() {
-      userImageDataUrl = reader.result;
-      tryOnBtn.disabled = false;
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        // Resize to max 1024px to keep payload under 1MB
+        var MAX = 1024;
+        var w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        userImageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        tryOnBtn.disabled = false;
+      };
+      img.onerror = function() {
+        alert('Could not read your photo. Please try a different image.');
+      };
+      img.src = e.target.result;
     };
     reader.onerror = function() {
       alert('Could not read your photo. Please try a different image.');
@@ -668,23 +686,12 @@ function setupVirtualTryOn(panel) {
       if (loadingSpinner) loadingSpinner.style.display = 'block';
       if (resultContainer) resultContainer.style.display = 'none';
 
-      if (!cachedProductImageDataUrl && productImageUrl) {
-        var res = await fetch(productImageUrl);
-        var blob = await res.blob();
-        cachedProductImageDataUrl = await new Promise(function(resolve, reject) {
-          var r = new FileReader();
-          r.onload = function() { resolve(r.result); };
-          r.onerror = reject;
-          r.readAsDataURL(blob);
-        });
-      }
-
       var response = await fetch('https://scuk-vton.vercel.app/api/tryon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_image_base64: userImageDataUrl,
-          product_image_base64: cachedProductImageDataUrl,
+          product_image_url: productImageUrl,
           product_title: productTitle,
           product_description: productDescription,
         }),
