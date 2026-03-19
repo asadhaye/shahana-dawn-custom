@@ -28,7 +28,7 @@
   id="virtual-tryon-container"
   data-product-title="{{ product.title | escape }}"
   data-product-description="{{ product.description | strip_html | escape | truncate: 200 }}"
-  data-product-image-url="{{ product.featured_image | image_url: width: 1024 }}"
+  data-product-image-url="{{ product.featured_image | image_url: width: 1024 | prepend: 'https:' }}"
 >
   <h3>Virtual Try-On</h3>
   
@@ -74,13 +74,13 @@
   margin-bottom: 15px;
 }
 
-virtual-tryon-result-img {
+#virtual-tryon-result-img {
   max-width: 100%;
   border-radius: 8px;
   margin-top: 10px;
 }
 
-virtual-tryon-loading {
+#virtual-tryon-loading {
   text-align: center;
   padding: 20px;
 }
