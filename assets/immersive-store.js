@@ -684,22 +684,44 @@ function setupImageParallax(panel) {
 }
 
 function setupShareButton(panel) {
-  var btn = panel.querySelector('.glass-product-section__share-btn');
-  if (!btn) return;
-  var confirm = panel.querySelector('.glass-product-section__share-confirm');
-  btn.addEventListener('click', function() {
-    var url = btn.getAttribute('data-product-url');
-    var title = btn.getAttribute('data-product-title');
-    if (navigator.share) {
-      navigator.share({ title: title, url: url }).catch(function() {});
-    } else {
-      navigator.clipboard.writeText(url).then(function() {
-        if (confirm) {
-          confirm.textContent = 'Link copied!';
-          setTimeout(function() { confirm.textContent = ''; }, 2500);
-        }
-      });
-    }
+  var buttons = panel.querySelectorAll('.glass-product-section__share-btn');
+  if (!buttons.length) return;
+
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var url = encodeURIComponent(btn.getAttribute('data-product-url') || window.location.href);
+      var title = encodeURIComponent(btn.getAttribute('data-product-title') || document.title);
+      var platform = btn.getAttribute('data-platform');
+      var shareUrl;
+
+      switch (platform) {
+        case 'whatsapp':
+          shareUrl = 'https://wa.me/?text=' + title + '%20' + url;
+          break;
+        case 'facebook':
+          shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + url;
+          break;
+        case 'instagram':
+          // Instagram has no direct web share URL — copy link instead
+          navigator.clipboard.writeText(decodeURIComponent(url)).then(function() {
+            btn.textContent = '✓ Copied!';
+            setTimeout(function() { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg> Instagram'; }, 2500);
+          });
+          return;
+        case 'tiktok':
+          // TikTok has no direct web share — copy link
+          navigator.clipboard.writeText(decodeURIComponent(url)).then(function() {
+            btn.textContent = '✓ Copied!';
+            setTimeout(function() { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg> TikTok'; }, 2500);
+          });
+          return;
+        default:
+          return;
+      }
+
+      window.open(shareUrl, '_blank', 'noopener,width=600,height=500');
+    });
   });
 }
 
@@ -732,9 +754,9 @@ function setupVirtualTryOn(panel) {
     }
 
     // Update filename label and preview
-    var uploadText = container.querySelector('#vtryon-upload-text');
-    var uploadIcon = container.querySelector('#vtryon-upload-icon');
-    var preview    = container.querySelector('#vtryon-preview');
+    var uploadText = container.querySelector('.vtryon__upload-text');
+    var uploadIcon = container.querySelector('.vtryon__upload-icon');
+    var preview    = container.querySelector('.vtryon__preview');
     if (uploadText) uploadText.textContent = file.name;
 
     var reader = new FileReader();
@@ -793,7 +815,7 @@ function setupVirtualTryOn(panel) {
       var data = await response.json();
 
       if (data && data.success) {
-        var src = data.image_url || (data.image_base64 ? 'data:image/png;base64,' + data.image_base64 : null);
+        var src = data.image_base64 || data.image_url || null;
         if (!src) throw new Error('No image in response');
         if (resultImg) { resultImg.src = src; resultImg.hidden = false; }
         if (resultContainer) resultContainer.style.display = 'block';
