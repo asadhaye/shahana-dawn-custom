@@ -726,9 +726,26 @@ function setupVirtualTryOn(panel) {
 
   userPhotoInput.addEventListener('change', function(event) {
     var file = event.target.files && event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      tryOnBtn.disabled = true;
+      return;
+    }
+
+    // Update filename label and preview
+    var uploadText = container.querySelector('#vtryon-upload-text');
+    var uploadIcon = container.querySelector('#vtryon-upload-icon');
+    var preview    = container.querySelector('#vtryon-preview');
+    if (uploadText) uploadText.textContent = file.name;
+
     var reader = new FileReader();
     reader.onload = function(e) {
+      // Show thumbnail preview
+      if (preview && uploadIcon) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        uploadIcon.style.display = 'none';
+      }
+
       var img = new Image();
       img.onload = function() {
         // Resize to max 1024px to keep payload under 1MB
