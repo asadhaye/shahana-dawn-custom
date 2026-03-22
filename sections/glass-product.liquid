@@ -131,6 +131,13 @@
           </button>
         {% endform %}
 
+        <div class="glass-product-section__delivery">
+          <svg style="height:18px;float:left;margin-right:8px;margin-top:1px;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M20 6h-2V4c0-.55-.45-1-1-1s-1 .45-1 1v2H8V4c0-.55-.45-1-1-1s-1 .45-1 1v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 14H4V10h16v10z"/>
+          </svg>
+          <span>Get it between <strong><span class="delivery-from">…</span> – <span class="delivery-to">…</span></strong></span>
+        </div>
+
         <div class="glass-product-section__share">
           <span class="glass-product-section__share-label">Share</span>
           <div class="glass-product-section__share-buttons">
@@ -404,6 +411,9 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  will-change: transform;
+  transform: scale(1.06);
+  transition: transform 0.1s ease-out;
 }
 
 .glass-product-section__media-thumbs {
@@ -755,6 +765,31 @@
 .glass-product-section__share-btn--facebook:hover  { background: rgba(24, 119, 242, 0.12); border-color: rgba(24, 119, 242, 0.5); color: #1877f2; }
 .glass-product-section__share-btn--instagram:hover { background: rgba(225, 48, 108, 0.12); border-color: rgba(225, 48, 108, 0.5); color: #e1306c; }
 .glass-product-section__share-btn--tiktok:hover    { background: rgba(255, 255, 255, 0.1);  border-color: rgba(255, 255, 255, 0.4); color: #fff; }
+/* Delivery estimate */
+.glass-product-section__delivery {
+  display: flex;
+  align-items: flex-start;
+  margin: 1rem auto 0;
+  padding: 0.7rem 1rem;
+  background: rgba(212, 175, 55, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: rgba(212, 175, 55, 0.85);
+  max-width: 360px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.glass-product-section__delivery svg {
+  color: #d4af37;
+  margin-top: 1px;
+}
+
+.glass-product-section__delivery strong {
+  color: #d4af37;
+}
+
 {% endstylesheet %}
 
 {% schema %}

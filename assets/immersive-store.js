@@ -664,6 +664,7 @@ function setupBuyNowForm(panel) {
 }
 
 function setupImageParallax(panel) {
+  // Collection grid cards
   var cards = panel.querySelectorAll('.immersive-product-card');
   cards.forEach(function(card) {
     var imgs = card.querySelectorAll('.immersive-product-image, .immersive-product-image-hover');
@@ -676,11 +677,54 @@ function setupImageParallax(panel) {
       });
     });
     card.addEventListener('mouseleave', function() {
-      imgs.forEach(function(img) {
-        img.style.transform = '';
-      });
+      imgs.forEach(function(img) { img.style.transform = ''; });
     });
   });
+
+  // Product panel main image
+  var mediaMain = panel.querySelector('.glass-product-section__media-main');
+  if (mediaMain) {
+    var img = mediaMain.querySelector('img');
+    if (img) {
+      // overflow:hidden is already on the container — scale the img slightly so parallax doesn't show edges
+      img.style.transition = 'transform 0.1s ease-out';
+      img.style.transform = 'scale(1.06)';
+      mediaMain.addEventListener('mousemove', function(e) {
+        var rect = mediaMain.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width - 0.5;
+        var y = (e.clientY - rect.top) / rect.height - 0.5;
+        img.style.transform = 'scale(1.06) translate(' + (x * 14) + 'px, ' + (y * 14) + 'px)';
+      });
+      mediaMain.addEventListener('mouseleave', function() {
+        img.style.transform = 'scale(1.06)';
+      });
+    }
+  }
+}
+
+function setupDeliveryDates(panel) {
+  var fromEl = panel.querySelector('.delivery-from');
+  var toEl   = panel.querySelector('.delivery-to');
+  if (!fromEl || !toEl) return;
+
+  function addDays(date, days) {
+    var d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+  function skipWeekend(date) {
+    var day = date.getDay();
+    if (day === 0) date.setDate(date.getDate() + 1);
+    else if (day === 6) date.setDate(date.getDate() + 2);
+    return date;
+  }
+  function fmt(date) {
+    return date.toLocaleDateString('en-GB', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  var today = new Date();
+  fromEl.textContent = fmt(skipWeekend(addDays(today, 14)));
+  toEl.textContent   = fmt(skipWeekend(addDays(today, 24)));
 }
 
 function setupShareButton(panel) {
@@ -1055,6 +1099,9 @@ function openProductPanel(productHandle, collectionHandle) {
 
         // Setup share button
         setupShareButton(panel);
+
+        // Setup delivery dates
+        setupDeliveryDates(panel);
 
         // Setup virtual try-on
         setupVirtualTryOn(panel);
