@@ -37,7 +37,7 @@
 
     {%- comment -%}Three.js + immersive scene manager on immersive page and homepage{%- endcomment -%}
     {%- if template == 'page.immersive' or template == 'index' -%}
-      <script src="{{ 'three.min.js' | asset_url }}"></script>
+      <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
       <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
 

@@ -1,62 +1,44 @@
 {% doc %}
   Renders a virtual try-on UI for product pages.
+  Calls the IDM-VTON backend at VTON_API_URL/api/tryon.
 
-  Frontend responsibilities:
-  - Capture the customer's photo via file input
-  - Read basic product metadata (title, description) and product image URL
-  - POST this data to a Vercel /api/tryon endpoint
-  - Display the returned image URL from the backend
-
-  Backend responsibilities (in /api/tryon):
-  - Accept JSON such as:
-      {
-        "user_image_base64": "<data URL or raw base64>",
-        "product_image_base64": "<data URL or raw base64>",
-        "product_title": "<string>",
-        "product_description": "<string>"
-      }
-  - Use /lib helpers for CORS, image processing, caching, rate limiting, and MiniMax calls
-  - Return:
-      {
-        "success": true,
-        "image_url": "<final image URL>"
-      }
+  Usage: {% render 'virtual-tryon', product: product %}
 {% enddoc %}
 
 <div
   class="virtual-tryon-container"
   id="virtual-tryon-container"
-  data-product-title="{{ product.title | escape }}"
-  data-product-description="{{ product.description | strip_html | escape | truncate: 200 }}"
   data-product-image-url="{{ product.featured_image | image_url: width: 1024 | prepend: 'https:' }}"
+  data-api-url="{{ settings.vton_api_url | default: 'https://scuk-vton.vercel.app' }}"
 >
   <h3>Virtual Try-On</h3>
-  
+
   <div class="tryon-upload">
     <label for="virtual-tryon-user-photo">Upload your photo:</label>
     <input type="file" id="virtual-tryon-user-photo" accept="image/*" />
   </div>
-  
+
   <button id="virtual-tryon-btn" class="btn btn-primary" disabled>
     Try this item on
   </button>
-  
-  <div id="virtual-tryon-result" style="display: none;">
+
+  <div id="virtual-tryon-error" style="display:none;" role="alert"></div>
+
+  <div id="virtual-tryon-loading" style="display:none;">
+    <p>Generating your look… this takes ~30 seconds</p>
+  </div>
+
+  <div id="virtual-tryon-result" style="display:none;">
     <h4>Your virtual try-on</h4>
     <img
       id="virtual-tryon-result-img"
       alt="Virtual try-on result"
       width="600"
       height="900"
-      hidden
+      style="max-width:100%;border-radius:8px;margin-top:10px;"
     />
-    </div>
-  <div id="virtual-tryon-loading" style="display: none;">
-    <p>Generating your look...</p>
   </div>
-
 </div>
-
 
 {% stylesheet %}
 .virtual-tryon-container {
@@ -65,23 +47,85 @@
   border-radius: 8px;
   margin-top: 20px;
 }
-
-.virtual-tryon-container h3 {
-  margin-top: 0;
-}
-
-.tryon-upload {
-  margin-bottom: 15px;
-}
-
-#virtual-tryon-result-img {
-  max-width: 100%;
-  border-radius: 8px;
+.virtual-tryon-container h3 { margin-top: 0; }
+.tryon-upload { margin-bottom: 15px; }
+#virtual-tryon-loading { text-align: center; padding: 20px; }
+#virtual-tryon-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 4px;
+  padding: 10px;
   margin-top: 10px;
 }
-
-#virtual-tryon-loading {
-  text-align: center;
-  padding: 20px;
-}
 {% endstylesheet %}
+
+{% javascript %}
+(function () {
+  const container = document.getElementById('virtual-tryon-container');
+  if (!container) return;
+
+  const fileInput  = document.getElementById('virtual-tryon-user-photo');
+  const btn        = document.getElementById('virtual-tryon-btn');
+  const loading    = document.getElementById('virtual-tryon-loading');
+  const resultBox  = document.getElementById('virtual-tryon-result');
+  const resultImg  = document.getElementById('virtual-tryon-result-img');
+  const errorBox   = document.getElementById('virtual-tryon-error');
+
+  const productImageUrl = container.dataset.productImageUrl;
+  const apiUrl          = (container.dataset.apiUrl || '').replace(/\/$/, '');
+
+  // Enable button once a file is chosen
+  fileInput.addEventListener('change', () => {
+    btn.disabled = !fileInput.files.length;
+  });
+
+  btn.addEventListener('click', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // Reset UI
+    errorBox.style.display = 'none';
+    errorBox.textContent   = '';
+    resultBox.style.display = 'none';
+    loading.style.display  = 'block';
+    btn.disabled = true;
+
+    try {
+      // Convert user photo to base64
+      const userBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const response = await fetch(`${apiUrl}/api/tryon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_image_base64: userBase64,
+          product_image_url: productImageUrl,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Try-on failed. Please try again.');
+      }
+
+      const imageUrl = data.image_url || (data.image_base64 ? data.image_base64 : null);
+      if (!imageUrl) throw new Error('No image returned from server.');
+
+      resultImg.src = imageUrl;
+      resultBox.style.display = 'block';
+    } catch (err) {
+      errorBox.textContent   = err.message;
+      errorBox.style.display = 'block';
+    } finally {
+      loading.style.display = 'none';
+      btn.disabled = false;
+    }
+  });
+})();
+{% endjavascript %}

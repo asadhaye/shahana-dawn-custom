@@ -1,0 +1,20 @@
+{
+  "name": "dawn-tests",
+  "version": "1.0.0",
+  "description": "Property-based and unit tests for immersive store glass panel",
+  "scripts": {
+    "test": "jest --forceExit",
+    "test:run": "jest --testPathPattern=glass-panel --forceExit"
+  },
+  "devDependencies": {
+    "fast-check": "^3.23.2",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  }
+}

@@ -39,16 +39,20 @@ The implementation draws inspiration from:
 
 ### Key Features
 
-✅ Dual-canvas WebGL rendering with Three.js
-✅ Custom fragment shaders with Sobel edge detection
-✅ Lenis smooth scroll integration
-✅ Interactive hotspots with pulsing animations
-✅ Glassmorphism product panels
-✅ AJAX-powered product loading
-✅ Full Shopify cart integration
+✅ Single-canvas WebGL rendering with Three.js r172
+✅ Custom GLSL fragment shaders with parallax depth effect
+✅ Mouse-driven parallax using depth maps
+✅ Interactive hotspots with room navigation and collection browsing
+✅ Full-screen glassmorphism overlay panel (100vw × 100vh)
+✅ Button-based variant selector (replaces dropdowns)
+✅ Buy Now → direct checkout flow via `/cart/add.js`
+✅ Virtual Try-On via external AI API
+✅ AJAX-powered product loading with in-memory content cache
+✅ Full Shopify Section Rendering API integration
 ✅ Responsive design (desktop, tablet, mobile)
-✅ Accessibility compliant (WCAG)
-✅ Production-ready with error handling
+✅ Keyboard navigation and ARIA attributes (WCAG AA)
+✅ WebGL fallback for unsupported browsers
+✅ Texture cache with VRAM disposal on room transitions
 
 
 ---
@@ -60,11 +64,12 @@ The implementation draws inspiration from:
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
 | **3D Engine** | Three.js | r172 | WebGL rendering, scene management |
-| **Smooth Scroll** | Lenis | 1.0.42 | Scroll-driven animations |
-| **Frontend** | Vanilla JavaScript | ES6+ | Core logic, no framework dependencies |
+| **Frontend** | Vanilla JavaScript | ES5+ | Core logic, no framework dependencies |
 | **Templating** | Shopify Liquid | - | Dynamic content rendering |
-| **Styling** | CSS3 | - | Glassmorphism, animations |
-| **API** | Shopify Section Rendering | - | AJAX product loading |
+| **Styling** | CSS3 (embedded in `{% stylesheet %}`) | - | Glassmorphism, animations |
+| **API** | Shopify Section Rendering | - | AJAX product/collection loading |
+| **Cart API** | Shopify `/cart/add.js` | - | Add to cart + checkout redirect |
+| **Virtual Try-On** | External AI API (scuk-vton.vercel.app) | - | AI-powered outfit try-on |
 
 ### System Architecture
 
@@ -130,70 +135,75 @@ Shopify Cart Updated
 
 ## 3. Custom Files Created
 
-### Complete File List
+### Custom Files Created
 
 ```
 dawn/
 ├── assets/
-│   └── immersive-store.js              ✨ NEW (700 lines)
-│       • WebGL engine with dual renderers
-│       • Custom GLSL shaders
-│       • Lenis scroll integration
-│       • Hotspot system
-│       • AJAX routing
+│   └── immersive-store.js              ✨ NEW (~981 lines)
+│       • WebGL engine with single renderer, dual-texture shader
+│       • Custom GLSL parallax + crossfade shaders
+│       • Room navigation and texture cache
+│       • Hotspot rendering with preload-on-hover
+│       • AJAX routing with in-memory content cache
+│       • Variant button handler (setupVariantButtons)
+│       • Buy Now form handler (setupBuyNowForm)
+│       • Virtual Try-On handler (setupVirtualTryOn)
+│       • Cart/error toast feedback
+│       • WebGL fallback for unsupported browsers
 │
 ├── sections/
-│   ├── immersive-canvas.liquid         ✨ NEW (150 lines)
+│   ├── immersive-canvas.liquid         ✨ NEW
 │   │   • Main immersive experience section
-│   │   • Canvas setup and UI layer
-│   │   • Navigation menu
-│   │   • Glass panel container
-│   │   • Embedded CSS using {% stylesheet %} blocks
+│   │   • Canvas + UI layer + fixed header + slide-out menu
+│   │   • Full-screen glass panel container (aside#glass-panel)
+│   │   • All CSS embedded in {% stylesheet %} block
 │   │
-│   ├── glass-panel.liquid              ✨ NEW (100 lines)
-│   │   • Collection product grid
-│   │   • AJAX endpoint for collections
-│   │   • Embedded CSS using {% stylesheet %} blocks
+│   ├── glass-panel.liquid              ✨ NEW
+│   │   • Collection product grid (Section Rendering API endpoint)
+│   │   • Fetched via /collections/{handle}?section_id=glass-panel
+│   │   • collection object available automatically in Liquid context
+│   │   • Empty/not-found states handled
+│   │   • All CSS embedded in {% stylesheet %} block
 │   │
-│   ├── glass-product.liquid            ✨ NEW (150 lines)
+│   ├── glass-product.liquid            ✨ NEW
 │   │   • Individual product detail view
-│   │   • Variant selection
-│   │   • Add to cart form
-│   │   • Embedded CSS using {% stylesheet %} blocks
+│   │   • Button-based variant selector
+│   │   • Buy Now form
+│   │   • Back button to collection
+│   │   • Virtual Try-On section
+│   │   • All CSS embedded in {% stylesheet %} block
 │   │
-│   └── immersive-product-grid.liquid   ✨ NEW (150 lines)
-│       • Product grid section
-│       • Pagination support
-│       • Embedded CSS using {% stylesheet %} blocks
+│   └── immersive-product-grid.liquid   ✨ NEW
+│       • Standalone product grid section
 │
 ├── snippets/
-│   └── immersive-product-card.liquid   ✨ NEW (200 lines)
-│       • Reusable product card component
-│       • Image hover effects
-│       • Variant selection
-│       • Add to cart functionality
-│       • Embedded CSS using {% stylesheet %} blocks
+│   ├── immersive-product-card.liquid   ✨ NEW
+│   │   • 2:3 portrait aspect ratio image container
+│   │   • Hover image swap (second product image)
+│   │   • Button-based variant selector with ARIA
+│   │   • Buy Now button (name="property[buy_now]")
+│   │   • Glassmorphism card styling
+│   │   • All CSS embedded in {% stylesheet %} block
+│   │
+│   └── virtual-tryon.liquid            ✨ NEW
+│       • Virtual Try-On UI component
+│       • Photo upload + resize/compress client-side
+│       • Result image display
 │
 ├── locales/
 │   ├── en.default.json                 ✨ MODIFIED
-│   │   • Added immersive store translations
-│   │
 │   └── en.default.schema.json          ✨ MODIFIED
-│       • Added immersive store schema translations
 │
-├── layout/
-│   └── theme.liquid                    ✨ MODIFIED
-│       • Added Three.js and Lenis library loading
-│       • Added immersive-store.js loading
-│
-└── immersive/                          📁 NEW FOLDER
-    ├── immersive-base.png              🖼️ Storefront base texture
-    ├── immersive-depth.png             🖼️ Storefront depth map
-    ├── lounge-base.png                 🖼️ Lounge base texture
-    └── lounge-depth.png                🖼️ Lounge depth map
+└── layout/
+    └── theme.liquid                    ✨ MODIFIED
+        • Three.js loaded via asset_url (local file, not CDN)
 ```
 
-**Note**: All CSS is embedded within Liquid files using `{% stylesheet %}` blocks. There is no separate `immersive-style.css` file.
+**Important notes**:
+- All CSS is embedded within Liquid files using `{% stylesheet %}` blocks — there is **no** separate `immersive-style.css`
+- Three.js is loaded locally (`dawn/assets/three.min.js`) due to Shopify MIME type restrictions on CDN scripts
+- Lenis is no longer used — the experience is viewport-height, not scroll-driven
 
 ### File Sizes & Metrics
 
@@ -474,101 +484,204 @@ function renderHotspots(roomKey) {
 
 ### 4.5 AJAX Collection Loading
 
+Collections are fetched using Shopify's Section Rendering API. The key is fetching from the **collection URL** so the `collection` Liquid object is automatically available in context:
+
 ```javascript
 function openCollectionPanel(collectionHandle) {
-  const panel = document.getElementById(glassPanelId);
+  var panel = document.getElementById(glassPanelId);
   if (!panel) return;
-  
-  const url = new URL(window.location.href);
-  url.searchParams.set("section_id", "glass-panel");
-  url.searchParams.set("collection_handle", collectionHandle);
-  
-  fetch(url.toString(), { 
-    headers: { "X-Requested-With": "XMLHttpRequest" } 
-  })
-    .then(function (response) {
-      if (!response.ok) return "";
-      return response.text();
-    })
-    .then(function (html) {
-      if (!html) return;
-      
+
+  panel.classList.remove("hidden");
+
+  // Fetch from collection URL — this makes `collection` available in Liquid
+  var fetchUrl = "/collections/" + collectionHandle + "?section_id=glass-panel";
+
+  fetchWithCache(fetchUrl)
+    .then(function(html) {
       function render() {
-        panel.innerHTML = html;
+        var contentArea = panel.querySelector(".immersive-store__panel-content");
+        if (contentArea) {
+          contentArea.innerHTML = html;
+        }
         panel.setAttribute("data-open", "true");
-        panel.style.transform = "translateX(0%)";
-        panel.style.opacity = "1";
-        
-        // Attach product card click handlers
-        panel.onclick = function (event) {
-          const target = event.target;
-          const card = target.closest(".immersive-product-card");
+
+        setupVariantButtons(panel);
+        setupBuyNowForm(panel);
+        setupVirtualTryOn(panel);
+
+        panel.onclick = function(event) {
+          if (event.target === panel) { closePanel(); return; }
+          if (event.target.closest(".immersive-store__panel-close")) { closePanel(); return; }
+
+          var card = event.target.closest(".immersive-product-card");
           if (!card) return;
-          
-          const handle = card.getAttribute("data-product-handle");
-          if (!handle) return;
-          
-          event.preventDefault();
-          openProductPanel(handle, collectionHandle);
+          var handle = card.getAttribute("data-product-handle");
+          if (handle) openProductPanel(handle, collectionHandle);
         };
       }
-      
       transitionPanelContent(panel, render);
     })
-    .catch(function () {});
+    .catch(function(error) {
+      showErrorFeedback(panel, 'Unable to load collection "' + collectionHandle + '".');
+    });
 }
 ```
 
-### 4.6 Product Detail Panel
+**Why `/collections/{handle}?section_id=glass-panel`?**  
+Shopify's Section Rendering API renders the named section in the context of the given URL. Fetching from the collection URL means the `collection` Liquid object is automatically populated — no manual `collections[handle]` lookup needed.
+
+### 4.6 Content Cache
+
+All fetched section HTML is cached in memory to avoid redundant network requests:
+
+```javascript
+var contentCache = {};
+
+function fetchWithCache(url) {
+  if (contentCache[url]) {
+    return Promise.resolve(contentCache[url]);
+  }
+  return fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+    .then(function(response) {
+      if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
+      return response.text();
+    })
+    .then(function(html) {
+      contentCache[url] = html;
+      return html;
+    });
+}
+```
+
+### 4.7 Product Detail Panel
 
 ```javascript
 function openProductPanel(productHandle, collectionHandle) {
-  const panel = document.getElementById(glassPanelId);
+  var panel = document.getElementById(glassPanelId);
   if (!panel) return;
-  
-  const url = new URL(window.location.href);
-  url.searchParams.set("section_id", "glass-product");
-  url.searchParams.set("product_handle", productHandle);
-  
-  if (collectionHandle) {
-    url.searchParams.set("collection_handle", collectionHandle);
-  }
-  
-  fetch(url.toString(), { 
-    headers: { "X-Requested-With": "XMLHttpRequest" } 
-  })
-    .then(function (response) {
-      if (!response.ok) return "";
-      return response.text();
-    })
-    .then(function (html) {
-      if (!html) return;
-      
+
+  panel.classList.remove("hidden");
+
+  // Fetch from product URL — product object is only available there
+  var fetchUrl = "/products/" + productHandle + "?section_id=glass-product";
+  if (collectionHandle) fetchUrl += "&collection_handle=" + collectionHandle;
+
+  fetchWithCache(fetchUrl)
+    .then(function(html) {
       function render() {
-        panel.innerHTML = html;
+        var contentArea = panel.querySelector(".immersive-store__panel-content");
+        if (contentArea) contentArea.innerHTML = html;
         panel.setAttribute("data-open", "true");
-        panel.style.transform = "translateX(0%)";
-        panel.style.opacity = "1";
-        
-        // Attach back button handler
-        panel.onclick = function (event) {
-          const target = event.target;
-          const backButton = target.closest(".glass-product-section__back");
-          
+
+        setupVariantButtons(panel);
+        setupBuyNowForm(panel);
+        setupVirtualTryOn(panel);
+
+        panel.onclick = function(event) {
+          if (event.target === panel) { closePanel(); return; }
+          if (event.target.closest(".immersive-store__panel-close")) { closePanel(); return; }
+
+          var backButton = event.target.closest(".glass-product-section__back");
           if (backButton) {
-            const backHandle = backButton.getAttribute("data-collection-handle");
-            if (backHandle) {
-              event.preventDefault();
-              openCollectionPanel(backHandle);
-            }
+            var backHandle = backButton.getAttribute("data-collection-handle");
+            if (backHandle) openCollectionPanel(backHandle);
             return;
           }
         };
       }
-      
       transitionPanelContent(panel, render);
     })
-    .catch(function () {});
+    .catch(function(error) {
+      showErrorFeedback(panel, 'Unable to load product. Please try again.');
+    });
+}
+```
+
+### 4.8 Buy Now Flow
+
+The Buy Now button POSTs to `/cart/add.js` then redirects to `/checkout`:
+
+```javascript
+function setupBuyNowForm(panel) {
+  var forms = panel.querySelectorAll('form[data-product-form], .glass-product-section__form');
+  forms.forEach(function(form) {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      var variantInput = form.querySelector('.immersive-variant-input, input[name="id"]');
+      if (!variantInput || !variantInput.value) {
+        showErrorFeedback(panel, 'Please select a size');
+        return;
+      }
+
+      fetch('/cart/add.js', { method: 'POST', body: new FormData(form) })
+        .then(function(response) {
+          if (!response.ok) return response.json().then(function(e) { throw new Error(e.description); });
+          return response.json();
+        })
+        .then(function() {
+          showCartFeedback(panel);
+          setTimeout(function() { window.location.href = '/checkout'; }, 500);
+        })
+        .catch(function(error) {
+          showErrorFeedback(panel, error.message || 'Unable to add to cart. Please try again.');
+        });
+    });
+  });
+}
+```
+
+### 4.9 Virtual Try-On
+
+The Virtual Try-On feature is available on the product detail panel. It resizes the user's photo client-side before sending to the AI API:
+
+```javascript
+function setupVirtualTryOn(panel) {
+  var container = panel.querySelector('#virtual-tryon-container');
+  if (!container) return;
+
+  // Photo upload → resize to max 1024px → compress to JPEG 0.85
+  userPhotoInput.addEventListener('change', function(event) {
+    var file = event.target.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var MAX = 1024;
+        var w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        userImageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        tryOnBtn.disabled = false;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // POST to try-on API
+  tryOnBtn.addEventListener('click', async function() {
+    var response = await fetch('https://scuk-vton.vercel.app/api/tryon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_image_base64: userImageDataUrl,
+        product_image_url: productImageUrl,
+        product_title: productTitle,
+        product_description: productDescription,
+      }),
+    });
+    var data = await response.json();
+    if (data && data.success) {
+      resultImg.src = data.image_url || 'data:image/png;base64,' + data.image_base64;
+      resultContainer.style.display = 'block';
+    }
+  });
 }
 ```
 
@@ -973,11 +1086,13 @@ Change grid columns in `sections/glass-panel.liquid` within the `{% stylesheet %
 
 #### Glass Panel States
 
-1. **Closed**: `transform: translateX(100%)`
-2. **Opening**: Slide-in animation (400ms)
-3. **Open**: `transform: translateX(0%)`
-4. **Loading**: Content fetching
-5. **Transitioning**: Content swap with View Transitions API
+1. **Closed/Hidden**: `display: none` (`.hidden` class)
+2. **Opening**: `display` restored, `opacity` transitions from 0 → 1 (400ms)
+3. **Open**: `data-open="true"`, `opacity: 1`, `pointer-events: auto`
+4. **Loading**: Content fetching in progress
+5. **Transitioning**: Content swap with View Transitions API (if supported)
+
+The glass panel is a **full-screen fixed overlay** (`position: fixed; inset: 0; width: 100vw; height: 100vh`) with a blurred dark backdrop (`backdrop-filter: blur(20px); background: rgba(15, 23, 42, 0.7)`). The canvas remains visible and blurred behind it.
 
 #### Room States
 
@@ -1161,45 +1276,77 @@ if (document.readyState === "loading") {
 <article class="immersive-product-card"
          data-product-id="{{ product.id }}"
          data-product-handle="{{ product.handle }}">
-  
-  <!-- Product image -->
+
+  <!-- Product image (2:3 portrait, hover swap) -->
   {%- if product.featured_image -%}
-    <button type="button" class="immersive-product-link">
+    <button type="button" class="immersive-product-link"
+            aria-label="{{ 'sections.immersive.product_card.view_product' | t: title: product.title | escape }}">
       <img class="immersive-product-image"
            src="{{ product.featured_image | image_url: width: 600 }}"
-           srcset="..."
-           sizes="..."
-           alt="{{ product.featured_image.alt | escape }}"
-           loading="lazy">
-      
-      <!-- Hover image -->
+           srcset="... 300w, ... 600w, ... 900w"
+           sizes="(max-width: 768px) 100vw, 300px"
+           alt="{{ product.featured_image.alt | default: product.title | escape }}"
+           loading="lazy" width="600" height="800">
       {%- if product.images[1] -%}
         <img class="immersive-product-image-hover"
              src="{{ product.images[1] | image_url: width: 600 }}"
-             alt="{{ product.images[1].alt | escape }}"
-             loading="lazy">
+             alt="{{ product.images[1].alt | default: product.title | escape }}"
+             loading="lazy" width="600" height="800">
       {%- endif -%}
     </button>
   {%- endif -%}
-  
+
   <!-- Product info -->
   <div class="immersive-product-info">
     <div class="immersive-product-vendor">{{ product.vendor }}</div>
     <h3 class="immersive-product-title">{{ product.title }}</h3>
-    <div class="immersive-product-price">{{ product.price | money }}</div>
-    
-    <!-- Add to cart form -->
-    <form method="post" action="{{ routes.cart_add_url }}">
-      <select name="id">
-        {%- for variant in product.variants -%}
-          <option value="{{ variant.id }}">{{ variant.title }}</option>
-        {%- endfor -%}
-      </select>
-      <button type="submit">Add to cart</button>
-    </form>
+    <div class="immersive-product-price">{{ product.price_min | money }}</div>
+
+    <!-- Button-based variant selector (replaces dropdown) -->
+    {%- if product.available -%}
+      <form method="post" action="{{ routes.cart_add_url }}" class="immersive-product-form" data-product-form>
+        {%- if product.variants.size > 1 -%}
+          <div class="immersive-variant-buttons" role="radiogroup"
+               aria-label="{{ 'sections.immersive.product_card.select_variant' | t }}">
+            {%- for variant in product.variants -%}
+              <button type="button" class="immersive-variant-button"
+                      data-variant-id="{{ variant.id }}"
+                      data-available="{{ variant.available }}"
+                      aria-label="{{ variant.title }}"
+                      {% unless variant.available %}disabled{% endunless %}>
+                {{ variant.title | split: ' / ' | first }}
+              </button>
+            {%- endfor -%}
+          </div>
+          <input type="hidden" name="id" class="immersive-variant-input"
+                 value="{{ product.selected_or_first_available_variant.id }}">
+        {%- else -%}
+          <input type="hidden" name="id"
+                 value="{{ product.selected_or_first_available_variant.id }}">
+        {%- endif -%}
+
+        <!-- Buy Now button (adds to cart + redirects to /checkout) -->
+        <button type="submit" name="property[buy_now]" class="immersive-add-to-cart"
+                {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}
+                aria-label="{{ 'products.product.buy_now' | t }} - {{ product.title | escape }}">
+          {%- if product.selected_or_first_available_variant.available -%}
+            {{ 'products.product.buy_now' | t }}
+          {%- else -%}
+            {{ 'products.product.sold_out' | t }}
+          {%- endif -%}
+        </button>
+      </form>
+    {%- endif -%}
   </div>
 </article>
 ```
+
+**Key design decisions**:
+- Image container uses `aspect-ratio: 2 / 3` (portrait) with `object-fit: cover`
+- Hover image (second product image) fades in on card hover
+- Variant buttons replace `<select>` — first segment of title only (e.g. "S" not "S / Red")
+- `name="property[buy_now]"` on the submit button signals Shopify to redirect to checkout
+- JavaScript (`setupVariantButtons`, `setupBuyNowForm`) is attached after HTML injection
 
 ### 8.4 Event Flow Diagram
 
@@ -1226,34 +1373,42 @@ Visual Feedback
 
 ### 9.1 Section Rendering API
 
-The implementation uses Shopify's Section Rendering API for dynamic content loading:
+The implementation uses Shopify's Section Rendering API for dynamic content loading. The critical pattern is fetching from the **resource URL** (not the current page URL) so the correct Liquid objects are available:
 
 ```javascript
-// Request format
-const url = new URL(window.location.href);
-url.searchParams.set("section_id", "glass-panel");
-url.searchParams.set("collection_handle", "suffuse");
+// Collection panel — fetch from collection URL so `collection` is available in Liquid
+var fetchUrl = "/collections/" + collectionHandle + "?section_id=glass-panel";
 
-fetch(url.toString(), {
+// Product panel — fetch from product URL so `product` is available in Liquid
+var fetchUrl = "/products/" + productHandle + "?section_id=glass-product";
+if (collectionHandle) fetchUrl += "&collection_handle=" + collectionHandle;
+
+fetch(fetchUrl, {
   headers: { "X-Requested-With": "XMLHttpRequest" }
 })
 ```
 
-**API Response**: Returns rendered HTML of the section with provided parameters.
+**API Response**: Returns rendered HTML of the named section in the context of the given URL.
 
-### 9.2 Collection Access
+### 9.2 Collection Access in Liquid
+
+When fetched via `/collections/{handle}?section_id=glass-panel`, the `collection` object is automatically available:
 
 ```liquid
 {% liquid
-  assign collection_handle = request.params.collection_handle
-  assign panel_collection = collections[collection_handle]
+  comment
+    collection object is automatically available when rendered at /collections/{handle}
+  endcomment
+  assign panel_collection = collection
 %}
 
 {% if panel_collection %}
   <h2>{{ panel_collection.title }}</h2>
-  {% for product in panel_collection.products %}
+  {% for product in panel_collection.products limit: 50 %}
     {% render 'immersive-product-card', product: product %}
   {% endfor %}
+{% else %}
+  <p>Collection not found.</p>
 {% endif %}
 ```
 
@@ -1272,28 +1427,36 @@ fetch(url.toString(), {
 {% endif %}
 ```
 
-### 9.4 Cart Integration
+### 9.4 Cart Integration (Buy Now)
+
+The Buy Now flow adds to cart via AJAX then redirects to `/checkout`:
 
 ```liquid
-{% form 'product', panel_product %}
-  {% if panel_product.has_only_default_variant == false %}
-    <select name="options[{{ option.name }}]">
-      {% for value in option.values %}
-        <option value="{{ value | escape }}">{{ value }}</option>
-      {% endfor %}
-    </select>
-  {% else %}
-    <input type="hidden" name="id" value="{{ panel_product.selected_or_first_available_variant.id }}">
-  {% endif %}
-  
-  <button type="submit">
-    {% if panel_product.available %}
-      {{ 'products.product.add_to_cart' | t }}
-    {% else %}
+<form method="post" action="{{ routes.cart_add_url }}" class="immersive-product-form" data-product-form>
+  <input type="hidden" name="id" class="immersive-variant-input"
+         value="{{ product.selected_or_first_available_variant.id }}">
+
+  <button type="submit" name="property[buy_now]" class="immersive-add-to-cart"
+          {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}
+          aria-label="{{ 'products.product.buy_now' | t }} - {{ product.title | escape }}">
+    {%- if product.selected_or_first_available_variant.available -%}
+      {{ 'products.product.buy_now' | t }}
+    {%- else -%}
       {{ 'products.product.sold_out' | t }}
-    {% endif %}
+    {%- endif -%}
   </button>
-{% endform %}
+</form>
+```
+
+JavaScript intercepts the submit, POSTs to `/cart/add.js`, then redirects:
+
+```javascript
+fetch('/cart/add.js', { method: 'POST', body: new FormData(form) })
+  .then(function(response) { return response.json(); })
+  .then(function() {
+    showCartFeedback(panel); // Golden toast: "Added to cart!"
+    setTimeout(function() { window.location.href = '/checkout'; }, 500);
+  });
 ```
 
 ### 9.5 Metafields Support
@@ -1576,13 +1739,15 @@ fetch(url.toString(), {
 
 ### 11.1 Performance Metrics
 
-| Metric | Target | Actual |
-|--------|--------|--------|
-| Initial Load | < 3s | ~2.5s |
-| FPS (Desktop) | 60 FPS | 60 FPS |
-| FPS (Mobile) | 30+ FPS | 45 FPS |
-| Bundle Size | < 150 KB | ~91 KB |
-| Image Size | < 2 MB | ~1.5 MB |
+| Metric | Target | Notes |
+|--------|--------|-------|
+| FPS (Desktop) | 60 FPS | rAF loop, pixel ratio capped at 2x |
+| FPS (Mobile) | 30+ FPS | Pixel ratio capped at 1.5x, reduced parallax |
+| Texture Cache | In-memory | VRAM disposal on room transition |
+| Content Cache | In-memory | Section HTML cached by URL |
+| Image Loading | Lazy | `loading="lazy"` on all product images |
+
+**Known bottleneck**: `immersive-store.js` initializes WebGL eagerly on `DOMContentLoaded`. The performance spec (`.kiro/specs/immersive-store-performance/`) tracks a fix using `IntersectionObserver` to defer initialization until the canvas is near the viewport.
 
 ### 11.2 Optimization Techniques
 
@@ -2293,32 +2458,38 @@ function trapFocus(element) {
 
 ### Project Summary
 
-The Shahana Collection Immersive Store is a production-ready WebGL shopping experience that successfully combines:
+The Shahana Collection Immersive Store is a production-ready WebGL shopping experience that combines:
 
-✅ **Technical Excellence**: Custom shaders, optimized rendering, smooth animations
-✅ **User Experience**: Intuitive navigation, seamless transitions, responsive design
-✅ **Shopify Integration**: Native cart, AJAX loading, section rendering
-✅ **Performance**: 60 FPS, < 3s load time, optimized assets
-✅ **Accessibility**: WCAG compliant, keyboard navigation, screen reader support
-✅ **Maintainability**: Well-documented, modular code, easy customization
+✅ **Technical Excellence**: Custom GLSL shaders, parallax depth maps, smooth room transitions
+✅ **User Experience**: Full-screen glassmorphism overlay, button variant selectors, Buy Now checkout
+✅ **Shopify Integration**: Section Rendering API, `/cart/add.js`, native product/collection objects
+✅ **Virtual Try-On**: AI-powered outfit try-on via external API
+✅ **Performance**: Texture cache, content cache, lazy images, VRAM disposal
+✅ **Accessibility**: ARIA attributes, keyboard navigation, focus indicators, WCAG AA colours
+✅ **Maintainability**: Self-contained Liquid sections, all CSS in `{% stylesheet %}` blocks
 
 ### Key Achievements
 
-- **700 lines** of production JavaScript
-- **1,450 lines** of Liquid templates
-- **5 custom sections** for dynamic content
-- **10+ collections** supported
-- **Multiple rooms** with smooth transitions
-- **Full cart integration** with Shopify
-- **Comprehensive documentation** (this file!)
+- ~981 lines of production JavaScript (`immersive-store.js`)
+- 5 custom Liquid sections/snippets
+- Full-screen glassmorphism panel with collection + product + virtual try-on views
+- Button-based variant selector replacing all dropdowns
+- Direct Buy Now → checkout flow
+- 22 implementation tasks completed across the glass panel improvements spec
+
+### Active Specs
+
+| Spec | Location | Status |
+|------|----------|--------|
+| Glass Panel Improvements | `.kiro/specs/immersive-store-glass-panel-improvements/` | ✅ Complete |
+| Performance Optimization | `.kiro/specs/immersive-store-performance/` | 🔄 In progress |
 
 ### Next Steps
 
-1. **Deploy to production** and monitor performance
-2. **Gather user feedback** and iterate
-3. **Add analytics** to track engagement
-4. **Implement Phase 2 features** based on priorities
-5. **Optimize for mobile** based on real-world usage
+1. Execute performance spec tasks (IntersectionObserver-deferred init)
+2. Compress/convert room textures to WebP
+3. Add analytics to track hotspot clicks and room transitions
+4. Test Virtual Try-On end-to-end on production store
 
 ### Support & Resources
 

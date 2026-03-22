@@ -627,6 +627,46 @@ function setupBuyNowForm(panel) {
   });
 }
 
+function setupImageParallax(panel) {
+  var cards = panel.querySelectorAll('.immersive-product-card');
+  cards.forEach(function(card) {
+    var imgs = card.querySelectorAll('.immersive-product-image, .immersive-product-image-hover');
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      imgs.forEach(function(img) {
+        img.style.transform = 'translate(' + (x * 12) + 'px, ' + (y * 12) + 'px) scale(1.08)';
+      });
+    });
+    card.addEventListener('mouseleave', function() {
+      imgs.forEach(function(img) {
+        img.style.transform = '';
+      });
+    });
+  });
+}
+
+function setupShareButton(panel) {
+  var btn = panel.querySelector('.glass-product-section__share-btn');
+  if (!btn) return;
+  var confirm = panel.querySelector('.glass-product-section__share-confirm');
+  btn.addEventListener('click', function() {
+    var url = btn.getAttribute('data-product-url');
+    var title = btn.getAttribute('data-product-title');
+    if (navigator.share) {
+      navigator.share({ title: title, url: url }).catch(function() {});
+    } else {
+      navigator.clipboard.writeText(url).then(function() {
+        if (confirm) {
+          confirm.textContent = 'Link copied!';
+          setTimeout(function() { confirm.textContent = ''; }, 2500);
+        }
+      });
+    }
+  });
+}
+
 function setupVirtualTryOn(panel) {
   var container = panel.querySelector('#virtual-tryon-container');
   if (!container) return;
@@ -798,6 +838,9 @@ function openCollectionPanel(collectionHandle) {
         // Setup buy now form handler
         setupBuyNowForm(panel);
 
+        // Setup image parallax on product cards
+        setupImageParallax(panel);
+
         // Setup virtual try-on
         setupVirtualTryOn(panel);
 
@@ -874,6 +917,12 @@ function openProductPanel(productHandle, collectionHandle) {
         
         // Setup buy now form handler
         setupBuyNowForm(panel);
+
+        // Setup image parallax on product cards
+        setupImageParallax(panel);
+
+        // Setup share button
+        setupShareButton(panel);
 
         // Setup virtual try-on
         setupVirtualTryOn(panel);

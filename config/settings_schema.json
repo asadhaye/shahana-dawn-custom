@@ -1447,5 +1447,17 @@
         "default": "scheme-1"
       }
     ]
+  },
+  {
+    "name": "Virtual Try-On",
+    "settings": [
+      {
+        "type": "text",
+        "id": "vton_api_url",
+        "label": "Try-On API URL",
+        "default": "https://scuk-vton.vercel.app",
+        "info": "Base URL of the deployed scuk-vton Vercel API (no trailing slash)"
+      }
+    ]
   }
 ]
