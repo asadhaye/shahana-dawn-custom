@@ -799,51 +799,88 @@ function setupVirtualTryOn(panel) {
     if (!userImageDataUrl) return;
 
     var statusText = container.querySelector('.vtryon__status');
+    var errorBox   = container.querySelector('.vtryon__error');
     var seconds = 0;
     var timer = null;
 
     function setStatus(msg) { if (statusText) statusText.textContent = msg; }
+    function showError(msg) {
+      if (errorBox) { errorBox.textContent = msg; errorBox.style.display = 'block'; }
+      setStatus('');
+    }
 
     try {
       tryOnBtn.disabled = true;
       if (resultContainer) resultContainer.style.display = 'none';
+      if (errorBox) errorBox.style.display = 'none';
       if (loadingSpinner) loadingSpinner.style.display = 'block';
 
-      setStatus('Uploading images…');
+      // Step 1: Upload user photo to Vercel Blob via /api/upload
+      setStatus('Uploading your photo…');
+      var blob = await (function() {
+        return new Promise(function(resolve, reject) {
+          // Convert base64 data URL to Blob for FormData
+          var byteString = atob(userImageDataUrl.split(',')[1]);
+          var ab = new ArrayBuffer(byteString.length);
+          var ia = new Uint8Array(ab);
+          for (var i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+          resolve(new Blob([ab], { type: 'image/jpeg' }));
+        });
+      })();
+
+      var formData = new FormData();
+      formData.append('file', blob, 'photo.jpg');
+
+      var uploadRes = await fetch('https://scuk-vton.vercel.app/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      var uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || 'Upload failed');
+
+      var userImageUrl = uploadData.url;
+
+      // Step 2: Call /api/tryon with URLs only — start status timer
+      setStatus('Processing embroidery & texture details…');
       timer = setInterval(function() {
         seconds++;
-        if (seconds === 5)  setStatus('Processing embroidery & texture details…');
-        if (seconds === 15) setStatus('Generating realistic drapes…');
-        if (seconds === 30) setStatus('Finalizing your look… almost there!');
+        if (seconds === 10) setStatus('Generating realistic drapes…');
+        if (seconds === 25) setStatus('Finalizing your look… almost there!');
       }, 1000);
 
-      var response = await fetch('https://scuk-vton.vercel.app/api/tryon', {
+      var tryonRes = await fetch('https://scuk-vton.vercel.app/api/tryon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_image_base64: userImageDataUrl,
+          user_image_url: userImageUrl,
           product_image_url: productImageUrl,
           garment_description: productTitle || 'Luxury Pakistani ethnic wear',
           full_body: true,
         }),
       });
 
-      var data = await response.json();
-
-      if (data && data.success) {
-        var src = data.image_base64 || data.image_url || null;
-        if (!src) throw new Error('No image in response');
-        setStatus('Looking great!');
-        if (resultImg) { resultImg.src = src; resultImg.hidden = false; }
-        if (resultContainer) resultContainer.style.display = 'block';
-      } else {
-        throw new Error(data.error || 'Generation failed. Please try again.');
+      if (!tryonRes.ok) {
+        var errData = await tryonRes.json().catch(function() { return {}; });
+        throw new Error(errData.error || 'Try-on failed');
       }
+
+      // Step 3: Result is streamed as image/jpeg — create object URL
+      var imgBlob = await tryonRes.blob();
+      var objectUrl = URL.createObjectURL(imgBlob);
+
+      setStatus('Looking great!');
+      if (resultImg) {
+        // Revoke previous object URL to avoid memory leaks
+        if (resultImg._objectUrl) URL.revokeObjectURL(resultImg._objectUrl);
+        resultImg._objectUrl = objectUrl;
+        resultImg.src = objectUrl;
+        resultImg.hidden = false;
+      }
+      if (resultContainer) resultContainer.style.display = 'block';
+
     } catch (error) {
       console.error('Try-on error:', error);
-      setStatus('Error: ' + error.message);
-      var errorBox = container.querySelector('.vtryon__error');
-      if (errorBox) { errorBox.textContent = error.message; errorBox.style.display = 'block'; }
+      showError(error.message);
     } finally {
       clearInterval(timer);
       tryOnBtn.disabled = false;
