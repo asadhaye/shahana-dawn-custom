@@ -9,6 +9,7 @@
   class="vtryon"
   id="virtual-tryon-container"
   data-product-image-url="{{ product.featured_image | image_url: width: 768 | prepend: 'https:' }}"
+  data-product-title="{{ product.title | escape }}"
   data-api-url="{{ settings.vton_api_url | default: 'https://scuk-vton.vercel.app' }}"
 >
   <div class="vtryon__header">
@@ -259,6 +260,7 @@
 
   const productImageUrl = container.dataset.productImageUrl;
   const apiUrl          = (container.dataset.apiUrl || '').replace(/\/$/, '');
+  const productTitle    = container.dataset.productTitle || 'Pakistani ethnic wear';
 
   fileInput.addEventListener('change', () => {
     if (fileInput.files.length) {
@@ -295,35 +297,76 @@
     loading.style.display   = 'block';
     btn.disabled = true;
 
+    let statusEl = loading.querySelector('.vtryon__status');
+    function setStatus(msg) { if (statusEl) statusEl.textContent = msg; }
+
     try {
-      const userBase64 = await new Promise((resolve, reject) => {
+      // Step 1: Resize client-side to 768x1024
+      setStatus('Preparing your photo…');
+      const resizedBlob = await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 768; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 768, 1024);
+            const scale = Math.min(768 / img.width, 1024 / img.height);
+            const x = (768 - img.width * scale) / 2;
+            const y = (1024 - img.height * scale) / 2;
+            ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+            canvas.toBlob(resolve, 'image/jpeg', 0.8);
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
 
-      const response = await fetch(`${apiUrl}/api/tryon`, {
+      // Step 2: Upload raw binary to /api/upload
+      setStatus('Uploading your photo…');
+      const uploadRes = await fetch(`${apiUrl}/api/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: resizedBlob,
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || 'Upload failed');
+
+      // Step 3: Call /api/tryon with URLs only
+      setStatus('Processing embroidery & texture details…');
+      let seconds = 0;
+      const timer = setInterval(() => {
+        seconds++;
+        if (seconds === 10) setStatus('Generating realistic drapes…');
+        if (seconds === 25) setStatus('Finalizing your look… almost there!');
+      }, 1000);
+
+      const tryonRes = await fetch(`${apiUrl}/api/tryon`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_image_base64: userBase64,
+          user_image_url: uploadData.url,
           product_image_url: productImageUrl,
           full_body: true,
-          garment_description: 'full body garment',
+          garment_description: productTitle,
         }),
       });
+      clearInterval(timer);
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Try-on failed. Please try again.');
+      if (!tryonRes.ok) {
+        const errData = await tryonRes.json().catch(() => ({}));
+        throw new Error(errData.error || 'Try-on failed. Please try again.');
       }
 
-      const imageUrl = data.image_base64 || data.image_url || null;
-      if (!imageUrl) throw new Error('No image returned from server.');
-
-      resultImg.src = imageUrl;
+      // Step 4: Result is streamed as image/jpeg
+      const imgBlob = await tryonRes.blob();
+      const objectUrl = URL.createObjectURL(imgBlob);
+      setStatus('Looking great!');
+      resultImg.src = objectUrl;
       resultImg.onload = () => { resultBox.style.display = 'block'; };
       resultImg.onerror = () => { throw new Error('Result image failed to load.'); };
     } catch (err) {

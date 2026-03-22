@@ -828,12 +828,10 @@ function setupVirtualTryOn(panel) {
         });
       })();
 
-      var formData = new FormData();
-      formData.append('file', blob, 'photo.jpg');
-
       var uploadRes = await fetch('https://scuk-vton.vercel.app/api/upload', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob,
       });
       var uploadData = await uploadRes.json();
       if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || 'Upload failed');
