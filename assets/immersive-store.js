@@ -81,6 +81,24 @@ const glassPanelId = "glass-panel";
 // Content cache for performance
 var contentCache = {};
 
+// Session state persistence — survives refresh, cleared on tab close
+var STATE_KEY = 'immersive_state';
+
+function saveState(patch) {
+  try {
+    var current = JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
+    sessionStorage.setItem(STATE_KEY, JSON.stringify(Object.assign(current, patch)));
+  } catch(e) {}
+}
+
+function loadState() {
+  try { return JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function clearState() {
+  try { sessionStorage.removeItem(STATE_KEY); } catch(e) {}
+}
+
 const vertexShaderSource = `
   varying vec2 vUv;
   void main() {
@@ -208,7 +226,22 @@ function initImmersiveScene() {
 
   animate();
 
-  goToRoom("storefront", true);
+  // Restore previous session state, or start at storefront
+  var state = loadState();
+  var startRoom = state.room || 'storefront';
+  goToRoom(startRoom, true);
+
+  // Restore open panel after room loads
+  if (state.panel === 'product' && state.product) {
+    // Small delay to let the room render first
+    setTimeout(function() {
+      openProductPanel(state.product, state.collection);
+    }, 400);
+  } else if (state.panel === 'collection' && state.collection) {
+    setTimeout(function() {
+      openCollectionPanel(state.collection);
+    }, 400);
+  }
 }
 
 function isWebGLSupported() {
@@ -327,6 +360,8 @@ function goToRoom(roomKey, initial) {
   if (transitioning) return;
   var roomData = getRoomTextureUrls(roomKey);
   if (!roomData) return;
+
+  saveState({ room: roomKey, panel: null, product: null, collection: null });
 
   var uiLayer = document.getElementById(uiLayerId);
   if (!uiLayer) return;
@@ -487,6 +522,7 @@ function closePanel() {
   if (!panel) return;
   
   panel.removeAttribute("data-open");
+  saveState({ panel: null, product: null, collection: null });
   
   // Wait for the CSS transition to finish before hiding from DOM
   setTimeout(function() {
@@ -802,6 +838,7 @@ function showErrorFeedback(panel, message) {
 }
 
 function openCollectionPanel(collectionHandle) {
+  saveState({ panel: 'collection', collection: collectionHandle, product: null });
   var panel = document.getElementById(glassPanelId);
   if (!panel) return;
 
@@ -879,6 +916,7 @@ function openCollectionPanel(collectionHandle) {
 }
 
 function openProductPanel(productHandle, collectionHandle) {
+  saveState({ panel: 'product', product: productHandle, collection: collectionHandle || null });
   var panel = document.getElementById(glassPanelId);
   if (!panel) return;
 
