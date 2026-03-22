@@ -773,31 +773,40 @@ function setupVirtualTryOn(panel) {
   var container = panel.querySelector('#virtual-tryon-container');
   if (!container) return;
 
-  var userPhotoInput = container.querySelector('#virtual-tryon-user-photo');
-  var tryOnBtn = container.querySelector('#virtual-tryon-btn');
-  var resultImg = container.querySelector('#virtual-tryon-result-img');
+  // If not signed in, the gate UI is shown — no JS needed
+  if (container.getAttribute('data-signed-in') !== 'true') return;
+
+  var userPhotoInput  = container.querySelector('#virtual-tryon-user-photo');
+  var tryOnBtn        = container.querySelector('#virtual-tryon-btn');
+  var resultImg       = container.querySelector('#virtual-tryon-result-img');
   var resultContainer = container.querySelector('#virtual-tryon-result');
-  var loadingSpinner = container.querySelector('#virtual-tryon-loading');
+  var loadingSpinner  = container.querySelector('#virtual-tryon-loading');
+  var quotaBadge      = container.querySelector('#vtryon-quota-badge');
 
   if (!userPhotoInput || !tryOnBtn) return;
 
-  var productTitle = container.getAttribute('data-product-title') || '';
-  var productDescription = container.getAttribute('data-product-description') || '';
+  var productTitle       = container.getAttribute('data-product-title') || '';
   var productImageUrlRaw = container.getAttribute('data-product-image-url') || '';
-  var productImageUrl = productImageUrlRaw.startsWith('//') ? 'https:' + productImageUrlRaw
+  var productImageUrl    = productImageUrlRaw.startsWith('//') ? 'https:' + productImageUrlRaw
     : productImageUrlRaw.startsWith('/') ? window.location.origin + productImageUrlRaw
     : productImageUrlRaw;
+
+  var customerId         = container.getAttribute('data-customer-id') || '';
+  var customerToken      = container.getAttribute('data-customer-token') || '';
+  var isRecentPurchaser  = container.getAttribute('data-is-recent-purchaser') === 'true';
+  var quotaMax           = parseInt(container.getAttribute('data-quota-max') || '1', 10);
+
+  // Show quota badge
+  if (quotaBadge) {
+    quotaBadge.textContent = quotaMax + ' try-on' + (quotaMax !== 1 ? 's' : '') + ' available';
+  }
 
   var userImageDataUrl = null;
 
   userPhotoInput.addEventListener('change', function(event) {
     var file = event.target.files && event.target.files[0];
-    if (!file) {
-      tryOnBtn.disabled = true;
-      return;
-    }
+    if (!file) { tryOnBtn.disabled = true; return; }
 
-    // Update filename label and preview
     var uploadText = container.querySelector('.vtryon__upload-text');
     var uploadIcon = container.querySelector('.vtryon__upload-icon');
     var preview    = container.querySelector('.vtryon__preview');
@@ -805,17 +814,13 @@ function setupVirtualTryOn(panel) {
 
     var reader = new FileReader();
     reader.onload = function(e) {
-      // Show thumbnail preview
       if (preview && uploadIcon) {
         preview.src = e.target.result;
         preview.style.display = 'block';
         uploadIcon.style.display = 'none';
       }
-
       var img = new Image();
       img.onload = function() {
-        // Resize to 768x1024 with contain + white background
-        // Matches server-side Sharp processImageForVton exactly
         var canvas = document.createElement('canvas');
         canvas.width = 768; canvas.height = 1024;
         var ctx = canvas.getContext('2d');
@@ -828,14 +833,10 @@ function setupVirtualTryOn(panel) {
         userImageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
         tryOnBtn.disabled = false;
       };
-      img.onerror = function() {
-        alert('Could not read your photo. Please try a different image.');
-      };
+      img.onerror = function() { alert('Could not read your photo. Please try a different image.'); };
       img.src = e.target.result;
     };
-    reader.onerror = function() {
-      alert('Could not read your photo. Please try a different image.');
-    };
+    reader.onerror = function() { alert('Could not read your photo. Please try a different image.'); };
     reader.readAsDataURL(file);
   });
 
@@ -859,11 +860,10 @@ function setupVirtualTryOn(panel) {
       if (errorBox) errorBox.style.display = 'none';
       if (loadingSpinner) loadingSpinner.style.display = 'block';
 
-      // Step 1: Upload user photo to Vercel Blob via /api/upload
+      // Step 1: Upload user photo as raw binary
       setStatus('Uploading your photo…');
       var blob = await (function() {
         return new Promise(function(resolve, reject) {
-          // Convert base64 data URL to Blob for FormData
           var byteString = atob(userImageDataUrl.split(',')[1]);
           var ab = new ArrayBuffer(byteString.length);
           var ia = new Uint8Array(ab);
@@ -882,7 +882,7 @@ function setupVirtualTryOn(panel) {
 
       var userImageUrl = uploadData.url;
 
-      // Step 2: Call /api/tryon with URLs only — start status timer
+      // Step 2: Call /api/tryon with customer auth + quota fields
       setStatus('Processing embroidery & texture details…');
       timer = setInterval(function() {
         seconds++;
@@ -898,26 +898,43 @@ function setupVirtualTryOn(panel) {
           product_image_url: productImageUrl,
           garment_description: productTitle || 'Luxury Pakistani ethnic wear',
           full_body: true,
+          customer_id: customerId,
+          customer_token: customerToken,
+          is_recent_purchaser: isRecentPurchaser,
         }),
       });
 
       if (!tryonRes.ok) {
         var errData = await tryonRes.json().catch(function() { return {}; });
+        // Handle quota exceeded with a friendly message
+        if (errData.code === 'quota_exceeded') {
+          throw new Error(errData.error || 'You have used all your try-ons.');
+        }
+        if (errData.code === 'auth_required') {
+          throw new Error('Please sign in to use Virtual Try-On.');
+        }
         throw new Error(errData.error || 'Try-on failed');
       }
 
-      // Step 3: Result is streamed as image/jpeg — create object URL
+      // Step 3: Result streamed as image/jpeg
       var imgBlob = await tryonRes.blob();
       var objectUrl = URL.createObjectURL(imgBlob);
 
+      // Update quota badge
+      var quotaUsed = parseInt(tryonRes.headers.get('X-Quota-Used') || '1', 10);
+      var quotaMaxHeader = parseInt(tryonRes.headers.get('X-Quota-Max') || String(quotaMax), 10);
+      var remaining = quotaMaxHeader - quotaUsed;
+      if (quotaBadge) {
+        quotaBadge.textContent = remaining + ' try-on' + (remaining !== 1 ? 's' : '') + ' remaining';
+        if (remaining === 0) quotaBadge.style.color = 'rgba(252,165,165,0.8)';
+      }
+
       setStatus('Looking great!');
       if (resultImg) {
-        // Revoke previous object URL to avoid memory leaks
         if (resultImg._objectUrl) URL.revokeObjectURL(resultImg._objectUrl);
         resultImg._objectUrl = objectUrl;
         resultImg.src = objectUrl;
-        resultImg.hidden = false;
-      }
+        resultImg.hidden = false;      }
       if (resultContainer) resultContainer.style.display = 'block';
 
     } catch (error) {
