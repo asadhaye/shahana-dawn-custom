@@ -770,17 +770,16 @@ function setupVirtualTryOn(panel) {
 
       var img = new Image();
       img.onload = function() {
-        // Resize to max 1024px to keep payload under 1MB
-        var MAX = 1024;
-        var w = img.width, h = img.height;
-        if (w > MAX || h > MAX) {
-          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-          else { w = Math.round(w * MAX / h); h = MAX; }
-        }
+        // Resize to 768x1024 to match IDM-VTON's expected input dimensions
         var canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        userImageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        canvas.width = 768; canvas.height = 1024;
+        var ctx = canvas.getContext('2d');
+        // cover fit — crop to fill 768x1024 keeping top (face) in frame
+        var scale = Math.max(768 / img.width, 1024 / img.height);
+        var sw = 768 / scale, sh = 1024 / scale;
+        var sx = (img.width - sw) / 2, sy = 0;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 768, 1024);
+        userImageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
         tryOnBtn.disabled = false;
       };
       img.onerror = function() {
@@ -807,8 +806,7 @@ function setupVirtualTryOn(panel) {
         body: JSON.stringify({
           user_image_base64: userImageDataUrl,
           product_image_url: productImageUrl,
-          product_title: productTitle,
-          product_description: productDescription,
+          garment_description: productTitle || 'garment',
         }),
       });
 
