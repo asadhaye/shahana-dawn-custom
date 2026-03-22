@@ -39,7 +39,7 @@
 
   <div id="virtual-tryon-loading" class="vtryon__loading" style="display:none;" aria-live="polite">
     <div class="vtryon__spinner" aria-hidden="true"></div>
-    <p>Generating your look<span class="vtryon__dots"></span></p>
+    <p class="vtryon__status">Generating your look…</p>
     <p class="vtryon__loading-sub">This takes about 30–45 seconds</p>
   </div>
 
@@ -194,6 +194,14 @@
   color: rgba(212, 175, 55, 0.85);
 }
 
+.vtryon__status {
+  margin: 0.25rem 0 0;
+  font-size: 0.88rem;
+  color: rgba(212, 175, 55, 0.85);
+  min-height: 1.3em;
+  transition: opacity 0.3s;
+}
+
 .vtryon__loading-sub {
   font-size: 0.75rem !important;
   color: rgba(212, 175, 55, 0.45) !important;
@@ -211,18 +219,6 @@
 
 @keyframes vtryon-spin {
   to { transform: rotate(360deg); }
-}
-
-.vtryon__dots::after {
-  content: '';
-  animation: vtryon-dots 1.5s steps(4, end) infinite;
-}
-
-@keyframes vtryon-dots {
-  0%   { content: ''; }
-  25%  { content: '.'; }
-  50%  { content: '..'; }
-  75%  { content: '...'; }
 }
 
 /* Result */

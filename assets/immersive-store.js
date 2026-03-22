@@ -770,16 +770,18 @@ function setupVirtualTryOn(panel) {
 
       var img = new Image();
       img.onload = function() {
-        // Resize to 768x1024 to match IDM-VTON's expected input dimensions
+        // Resize to 768x1024 with contain + white background
+        // Matches server-side Sharp processImageForVton exactly
         var canvas = document.createElement('canvas');
         canvas.width = 768; canvas.height = 1024;
         var ctx = canvas.getContext('2d');
-        // cover fit — crop to fill 768x1024 keeping top (face) in frame
-        var scale = Math.max(768 / img.width, 1024 / img.height);
-        var sw = 768 / scale, sh = 1024 / scale;
-        var sx = (img.width - sw) / 2, sy = 0;
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 768, 1024);
-        userImageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 768, 1024);
+        var scale = Math.min(768 / img.width, 1024 / img.height);
+        var x = (768 - img.width * scale) / 2;
+        var y = (1024 - img.height * scale) / 2;
+        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        userImageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
         tryOnBtn.disabled = false;
       };
       img.onerror = function() {
@@ -795,10 +797,25 @@ function setupVirtualTryOn(panel) {
 
   tryOnBtn.addEventListener('click', async function() {
     if (!userImageDataUrl) return;
+
+    var statusText = container.querySelector('.vtryon__status');
+    var seconds = 0;
+    var timer = null;
+
+    function setStatus(msg) { if (statusText) statusText.textContent = msg; }
+
     try {
       tryOnBtn.disabled = true;
-      if (loadingSpinner) loadingSpinner.style.display = 'block';
       if (resultContainer) resultContainer.style.display = 'none';
+      if (loadingSpinner) loadingSpinner.style.display = 'block';
+
+      setStatus('Uploading images…');
+      timer = setInterval(function() {
+        seconds++;
+        if (seconds === 5)  setStatus('Processing embroidery & texture details…');
+        if (seconds === 15) setStatus('Generating realistic drapes…');
+        if (seconds === 30) setStatus('Finalizing your look… almost there!');
+      }, 1000);
 
       var response = await fetch('https://scuk-vton.vercel.app/api/tryon', {
         method: 'POST',
@@ -806,7 +823,8 @@ function setupVirtualTryOn(panel) {
         body: JSON.stringify({
           user_image_base64: userImageDataUrl,
           product_image_url: productImageUrl,
-          garment_description: productTitle || 'garment',
+          garment_description: productTitle || 'Luxury Pakistani ethnic wear',
+          full_body: true,
         }),
       });
 
@@ -815,15 +833,19 @@ function setupVirtualTryOn(panel) {
       if (data && data.success) {
         var src = data.image_base64 || data.image_url || null;
         if (!src) throw new Error('No image in response');
+        setStatus('Looking great!');
         if (resultImg) { resultImg.src = src; resultImg.hidden = false; }
         if (resultContainer) resultContainer.style.display = 'block';
       } else {
-        alert('Failed to generate try-on. Please try again.');
+        throw new Error(data.error || 'Generation failed. Please try again.');
       }
     } catch (error) {
       console.error('Try-on error:', error);
-      alert('An error occurred. Please try again.');
+      setStatus('Error: ' + error.message);
+      var errorBox = container.querySelector('.vtryon__error');
+      if (errorBox) { errorBox.textContent = error.message; errorBox.style.display = 'block'; }
     } finally {
+      clearInterval(timer);
       tryOnBtn.disabled = false;
       if (loadingSpinner) loadingSpinner.style.display = 'none';
     }
