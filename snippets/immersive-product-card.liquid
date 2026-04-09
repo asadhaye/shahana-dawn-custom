@@ -140,7 +140,7 @@
     </div>
 
     {%- if product.available -%}
-      <form method="post" action="{{ routes.cart_add_url }}" class="immersive-product-form" data-product-form>
+      {%- form 'product', product, class: 'immersive-product-form', data-product-form: '' -%}
         {%- if product.variants.size > 1 -%}
           <div
             class="immersive-variant-buttons"
@@ -190,7 +190,7 @@
           {%- endif -%}
         </button>
         {{ form | payment_button }}
-      </form>
+      {%- endform -%}
     {%- else -%}
       <button
         class="immersive-add-to-cart immersive-add-to-cart--disabled"
