@@ -1300,6 +1300,12 @@
     "name": "t:settings_schema.social-media.name",
     "settings": [
       {
+        "type": "image_picker",
+        "id": "social_sharing_image",
+        "label": "t:settings_schema.social-media.settings.social_sharing_image.label",
+        "info": "t:settings_schema.social-media.settings.social_sharing_image.info"
+      },
+      {
         "type": "text",
         "id": "social_facebook_link",
         "label": "t:settings_schema.social-media.settings.social_facebook_link.label",

@@ -470,10 +470,231 @@
       },
       "depth_map": {
         "label": "Depth map image"
+      },
+      "base_image_desktop": {
+        "label": "Base image (desktop)"
+      },
+      "base_image_mobile": {
+        "label": "Base image (mobile)"
+      },
+      "depth_map_desktop": {
+        "label": "Depth map (desktop)"
+      },
+      "depth_map_mobile": {
+        "label": "Depth map (mobile)"
+      },
+      "header_storefront_room": {
+        "content": "Storefront room"
+      },
+      "header_lounge_room": {
+        "content": "Lounge room"
+      },
+      "header_designer_houses_room": {
+        "content": "Designer Houses room"
+      },
+      "header_occasions_room": {
+        "content": "Occasions room"
+      },
+      "header_featured_collections_room": {
+        "content": "Featured Collections room"
+      },
+      "hotspot_collection": {
+        "label_1": "Hotspot 1 — Collection",
+        "label_2": "Hotspot 2 — Collection",
+        "label_3": "Hotspot 3 — Collection",
+        "label_4": "Hotspot 4 — Collection"
+      },
+      "hotspot_label": {
+        "label_1": "Hotspot 1 — Label",
+        "label_2": "Hotspot 2 — Label",
+        "label_3": "Hotspot 3 — Label",
+        "label_4": "Hotspot 4 — Label"
+      },
+      "enable_vto": {
+        "label": "Enable Virtual Try-On"
+      },
+      "vto_require_login": {
+        "label": "Require login for Virtual Try-On"
+      },
+      "vto_allowed_tags": {
+        "label": "Restrict VTO to customer tag",
+        "info": "Leave blank to allow all customers. Enter a single tag to restrict access."
+      },
+      "best_sellers_collection": {
+        "label": "Best sellers collection"
+      },
+      "new_arrivals_collection": {
+        "label": "New arrivals collection"
+      },
+      "faq_url": {
+        "label": "FAQ page link"
+      },
+      "menu": {
+        "label": "Navigation menu"
+      },
+      "header_ticker": {
+        "content": "Ticker bar"
+      },
+      "ticker_text": {
+        "label": "Ticker messages",
+        "info": "Separate messages with a pipe character  |"
+      },
+      "header_onboarding": {
+        "content": "Welcome screen"
+      },
+      "onboarding_enabled": {
+        "label": "Show welcome screen",
+        "info": "Display an intro overlay when visitors first arrive"
+      },
+      "onboarding_title": {
+        "label": "Title"
+      },
+      "onboarding_description": {
+        "label": "Description"
+      },
+      "onboarding_dismiss_label": {
+        "label": "Button label"
+      },
+      "onboarding_show_once": {
+        "label": "Show once per visitor",
+        "info": "When enabled, the welcome screen only appears on the first visit. Disable to show it every time."
       }
     },
     "presets": {
       "name": "Immersive store"
+    }
+  },
+  "immersive_product_grid": {
+    "name": "Immersive product grid",
+    "settings": {
+      "collection": {
+        "label": "Collection"
+      },
+      "products_per_page": {
+        "label": "Products to show"
+      },
+      "header_grid_layout": {
+        "content": "Grid layout"
+      },
+      "columns_desktop": {
+        "label": "Number of columns on desktop"
+      },
+      "columns_mobile": {
+        "label": "Number of columns on mobile",
+        "options__1": { "label": "1 column" },
+        "options__2": { "label": "2 columns" }
+      },
+      "header_product_card": {
+        "content": "Product card"
+      },
+      "image_ratio": {
+        "label": "Image ratio",
+        "options__1": { "label": "Adapt to image" },
+        "options__2": { "label": "Portrait" },
+        "options__3": { "label": "Square" }
+      },
+      "show_secondary_image": {
+        "label": "Show second image on hover"
+      },
+      "show_vendor": {
+        "label": "Show vendor"
+      },
+      "show_description": {
+        "label": "Show collection description"
+      }
+    },
+    "presets": {
+      "name": "Immersive product grid"
+    }
+  },
+  "glass_product": {
+    "name": "Glass product panel",
+    "settings": {
+      "header_media": {
+        "content": "Media"
+      },
+      "media_size": {
+        "label": "Media width",
+        "options__1": { "label": "Small" },
+        "options__2": { "label": "Medium" },
+        "options__3": { "label": "Large" }
+      },
+      "constrain_to_viewport": {
+        "label": "Constrain media to screen height"
+      },
+      "header_product_info": {
+        "content": "Product information"
+      },
+      "show_vendor": {
+        "label": "Show vendor"
+      },
+      "show_rating": {
+        "label": "Show product rating",
+        "info": "To display a rating, add a product rating app."
+      },
+      "show_share_buttons": {
+        "label": "Show social sharing buttons"
+      },
+      "show_delivery_estimate": {
+        "label": "Show delivery estimate"
+      },
+      "header_related": {
+        "content": "Related products"
+      },
+      "show_related": {
+        "label": "Show related products"
+      },
+      "related_products_limit": {
+        "label": "Maximum related products"
+      },
+      "header_vto": {
+        "content": "Virtual Try-On"
+      },
+      "enable_virtual_tryon": {
+        "label": "Enable Virtual Try-On"
+      }
+    }
+  },
+
+  "immersive_editorial": {
+    "name": "Immersive Editorial",
+    "settings": {
+      "room_key": {
+        "label": "Room",
+        "options__1": { "label": "Designer Houses" },
+        "options__2": { "label": "Occasions" },
+        "options__3": { "label": "Featured Collections" }
+      },
+      "layout": {
+        "label": "Layout",
+        "options__1": { "label": "Designer tiles" },
+        "options__2": { "label": "Collection banners" },
+        "options__3": { "label": "Story segments" },
+        "options__4": { "label": "Horizontal gallery" }
+      },
+
+      "hero_background_image": { "label": "Hero background image" },
+      "hero_eyebrow": { "label": "Eyebrow text" },
+      "hero_heading": { "label": "Hero heading" },
+      "hero_subheading": { "label": "Hero subheading" }
+    },
+    "blocks": {
+      "banner": {
+        "name": "Banner",
+        "settings": {
+          "image": { "label": "Image" },
+          "logo": { "label": "Brand logo" },
+          "heading": { "label": "Heading" },
+          "body": { "label": "Body" },
+          "cta_label": { "label": "Button label" },
+          "cta_url": { "label": "Button link" },
+          "collection": { "label": "Collection" },
+          "depth_layer": { "label": "Parallax depth" }
+        }
+      }
+    },
+    "presets": {
+      "name": "Immersive Editorial"
     }
   },
 

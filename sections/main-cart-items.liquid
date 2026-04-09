@@ -34,6 +34,18 @@
       </a>
     </div>
 
+    {%- if cart.item_count > 0 -%}
+      <div class="immersive-bridge-btn__wrapper">
+        {%-
+          render 'immersive-bridge-btn',
+          bridge_url: '/pages/immersive?view=immersive',
+          bridge_label: 'sections.immersive_journey_bridges.cart_cta' | t,
+          bridge_aria: 'sections.immersive_journey_bridges.cart_cta_aria' | t,
+          bridge_class: 'cart'
+        -%}
+      </div>
+    {%- endif -%}
+
     <div class="cart__warnings">
       <h1 class="cart__empty-text">{{ 'sections.cart.empty' | t }}</h1>
       <a href="{{ routes.all_products_collection_url }}" class="button">

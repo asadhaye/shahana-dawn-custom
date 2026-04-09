@@ -5,6 +5,15 @@
   <h1 class="title title--primary inline-richtext{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--fade-in{% endif %}">
     {{ section.settings.title }}
   </h1>
+  <div class="immersive-bridge-btn__wrapper">
+    {%-
+      render 'immersive-bridge-btn',
+      bridge_url: '/pages/immersive?view=immersive',
+      bridge_label: 'sections.immersive_journey_bridges.collections_list_cta' | t,
+      bridge_aria: 'sections.immersive_journey_bridges.collections_list_cta_aria' | t,
+      bridge_class: 'collections-list'
+    -%}
+  </div>
   {%- liquid
     case section.settings.sort
       when 'products_high', 'products_low'
@@ -17,9 +26,9 @@
       assign collections = collections | reverse
     endif
 
-    assign moduloResult = 28 | modulo: section.settings.columns_desktop
+    assign modulo_result = 28 | modulo: section.settings.columns_desktop
     assign paginate_by = 30
-    if moduloResult == 0
+    if modulo_result == 0
       assign paginate_by = 28
     endif
   -%}

@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "WebGL + Fallback Integrity Checker",
+  "description": "When immersive canvas, JS engine, or Three.js changes, verify that DOM selectors, init hooks, and the WebGL fallback are all still consistent across Liquid and JS.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "sections/immersive-canvas.liquid",
+      "assets/immersive-store.js",
+      "assets/three.min.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "An immersive WebGL file was just edited. Run an integrity check across sections/immersive-canvas.liquid, assets/immersive-store.js, and assets/three.min.js:\n\n1. DOM selector integrity — verify that every ID and class referenced in immersive-store.js (e.g. #immersive-canvas, #ui-layer, glass panel container, menu triggers) still exists in immersive-canvas.liquid with the same selector. Flag any mismatches.\n\n2. Init hook integrity — confirm that bindImmersiveInit() is still wired up correctly for both the index and page.immersive templates. Check that the [data-immersive-launch] button is present in the Liquid and that the JS listener attaches to it.\n\n3. Fallback integrity — confirm that showWebGLFallback() (or equivalent) can still render a non-WebGL experience (static image + hotspots) without leaving a black screen. Check that the fallback container element exists in the Liquid.\n\nIf you find a mismatch between JS selectors and Liquid structure:\n- Propose the minimal fix: either update the selector in immersive-store.js OR restore the element in the Liquid file — whichever is less disruptive.\n- Apply the fix directly if it is clear and safe.\n\nIf selectors or structure changed, also update any relevant architecture notes in IMMERSIVE-STORE.md to describe the new structure.\n\nIf a change is too large to assess confidently, add a \"TODO: verify WebGL integrity for X\" note in IMMERSIVE-STORE.md with a reference to the changed file."
+  }
+}

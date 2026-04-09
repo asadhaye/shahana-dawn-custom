@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Immersive Accessibility & Focus Guard",
+  "description": "When immersive dialog, VTO, or CSS files change, verify ARIA roles, focus management helpers, and keyboard navigation are still intact — and propose patches if any invariants are broken.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "sections/immersive-canvas.liquid",
+      "sections/glass-product.liquid",
+      "snippets/virtual-tryon.liquid",
+      "assets/immersive-store.js",
+      "assets/immersive-theme.css"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "An immersive accessibility-relevant file was just edited. Run an accessibility and focus management audit across sections/immersive-canvas.liquid, sections/glass-product.liquid, snippets/virtual-tryon.liquid, assets/immersive-store.js, and assets/immersive-theme.css:\n\n1. ARIA integrity — for every dialog (glass panel, immersive menu, virtual try-on):\n   - Confirm role=\"dialog\", aria-modal=\"true\", and aria-labelledby are present and point to an existing element\n   - Confirm the close button has a visible label or aria-label\n   - Confirm error/status regions use role=\"alert\" aria-live=\"assertive\" or role=\"status\" aria-live=\"polite\" as appropriate\n\n2. Focus management — verify the focus helpers (openDialogFocus(), closeDialogFocus(), or equivalent) are still correctly called:\n   - On open: focus moves to the close button or first heading inside the dialog\n   - On close: focus returns to the trigger element that opened the dialog\n   - Selectors used in JS still match elements that exist in the current Liquid markup\n\n3. Focus trap — confirm Tab and Shift+Tab cycle within the open dialog and do not escape to background content\n\n4. Escape key — confirm pressing Escape closes the active dialog and restores focus\n\n5. CSS focus visibility — check that :focus-visible styles in immersive-theme.css are not overridden or removed for interactive elements inside dialogs\n\n6. Reduced motion — confirm @media (prefers-reduced-motion: reduce) overrides are still present for animated elements\n\nIf any invariant is broken:\n- Propose a specific patch to restore correct focus management, ARIA attributes, or keyboard handling\n- Apply the fix directly if it is clear and safe\n\nIf patterns changed (e.g., migrated to native <dialog>, changed panel toggle mechanism), update the \"Dialog focus management\" and \"Accessibility\" sections in IMMERSIVE-STORE.md to describe the new approach."
+  }
+}

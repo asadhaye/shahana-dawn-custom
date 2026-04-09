@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Immersive Performance Monitor",
+  "description": "When immersive JS or CSS changes, audit texture CDN params, renderer settings, parallax values, and animation durations for performance regressions — and document tradeoffs or improvements.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "assets/immersive-store.js",
+      "assets/immersive-theme.css"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "An immersive performance-relevant file was just edited. Run a performance audit across assets/immersive-store.js and assets/immersive-theme.css:\n\n1. Texture CDN params — for every texture URL in STORE_ROOMS (baseTextureUrl, mobileBaseTextureUrl, depthMapUrl, mobileDepthMapUrl and any equivalents):\n   - Desktop images should use &width=1600&quality=75 or lower\n   - Mobile images should use &width=900&quality=75 or lower\n   - Depth maps should use quality=60 or lower\n   - Flag any URL that exceeds these thresholds as a potential performance regression\n\n2. Renderer settings — check renderer.setPixelRatio(...):\n   - Desktop cap should be Math.min(devicePixelRatio, 2) or lower\n   - Mobile cap should be Math.min(devicePixelRatio, 1.5) or lower\n   - Flag any increase above these caps\n\n3. Animation values — review parallaxStrength, lerpFactor, and CSS transition/animation durations:\n   - Flag values that are heavier than the documented defaults (parallaxStrength > 0.04 desktop / 0.02 mobile)\n   - Confirm parallax and camera animations are disabled when prefers-reduced-motion is true\n   - Flag any new keyframe animations or transitions added without a reduced-motion override\n\n4. CSS — scan immersive-theme.css for new animations, large box-shadows, backdrop-filter, or will-change declarations that could cause paint/composite regressions on mobile\n\n5. Document findings:\n   - If changes look like they may harm performance: add a brief \"Performance considerations\" note in IMMERSIVE-STORE.md explaining the tradeoff and recommend less costly defaults\n   - If changes improve performance (lower pixelRatio, smaller textures, lighter animations): append a \"Performance improvements\" bullet to docs/settings-changelog.md (create if it doesn't exist)\n   - If no performance impact: do nothing\n\nOnly update docs when there is something meaningful to record."
+  }
+}

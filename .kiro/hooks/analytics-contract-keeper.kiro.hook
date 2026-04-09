@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Analytics Contract Keeper",
+  "description": "When immersive JS or analytics-instrumented Liquid files change, audit all trackImmersiveEvent calls, verify GA4 and Meta Pixel contracts, and keep the analytics events table in IMMERSIVE-STORE.md accurate.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "assets/immersive-store.js",
+      "sections/glass-product.liquid",
+      "sections/immersive-canvas.liquid",
+      "snippets/virtual-tryon.liquid"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "An analytics-relevant file was just edited. Audit all analytics instrumentation across assets/immersive-store.js, sections/glass-product.liquid, sections/immersive-canvas.liquid, and snippets/virtual-tryon.liquid:\n\n1. Event inventory — find every trackImmersiveEvent() call (or equivalent gtag/fbq call) and build a current list of:\n   - Event name\n   - When it fires\n   - Key parameters in the payload\n   - GA4 event name (should be immersive_* prefixed)\n   - Meta Pixel mapping (e.g. AddToCart, ViewContent, or custom event name)\n\n2. GA4 contract — for every event verify:\n   - Event name uses the immersive_ prefix as documented\n   - Payload includes event_category: 'immersive_store'\n   - Payload includes immersive_surface: 'immersive-3d-store'\n   - Flag any event that deviates from this contract\n\n3. Meta Pixel contract — for every window.fbq() call verify:\n   - Standard events (AddToCart, ViewContent, etc.) are used where appropriate\n   - Custom events are named consistently and documented\n   - Flag any fbq call that maps to an undocumented or inconsistent event name\n\n4. Doc sync — compare the current event inventory against the Analytics events table in IMMERSIVE-STORE.md:\n   - Add any new events not yet in the table (with: when it fires, key parameters, GA4 name, Meta name)\n   - Update any events whose name, payload, or mapping changed\n   - If an event was renamed, add a note: \"Event formerly known as X is now Y\"\n   - Remove entries for events that no longer exist\n\nApply doc updates directly. If a code-level contract violation is found (wrong prefix, missing required parameter), propose a minimal patch to fix it — apply if safe and clear."
+  }
+}

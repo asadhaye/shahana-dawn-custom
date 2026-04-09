@@ -483,6 +483,7 @@
     <script src="{{ 'product-model.js' | asset_url }}" defer></script>
   {%- endif -%}
 
+  {% # theme-check-disable UnusedAssign %}
   {%- liquid
     if product.selected_or_first_available_variant.featured_media
       assign seo_media = product.selected_or_first_available_variant.featured_media
@@ -490,6 +491,7 @@
       assign seo_media = product.featured_media
     endif
   -%}
+  {% # theme-check-enable UnusedAssign %}
 
   <script type="application/ld+json">
     {{ product | structured_data }}

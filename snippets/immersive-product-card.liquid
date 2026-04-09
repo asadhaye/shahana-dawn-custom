@@ -2,6 +2,8 @@
   Renders a product card used inside the immersive store experience.
 
   @param {product} product - The product to be rendered
+  @param {boolean} [show_vendor] - Show the product vendor. Default: true
+  @param {boolean} [show_secondary_image] - Show second image on hover. Default: true
 
   @example
   {% render 'immersive-product-card', product: product %}
@@ -13,34 +15,82 @@
   data-product-handle="{{ product.handle }}"
 >
   {%- if product.featured_image -%}
-    <button
-      type="button"
+    <a
+      href="{{ product.url }}"
       class="immersive-product-link"
+      data-product-handle="{{ product.handle }}"
       aria-label="{{ 'sections.immersive.product_card.view_product' | t: title: product.title | escape }}"
     >
-      <img
-        class="immersive-product-image"
-        src="{{ product.featured_image | image_url: width: 600 }}"
-        srcset="{{ product.featured_image | image_url: width: 300 }} 300w,
-                {{ product.featured_image | image_url: width: 600 }} 600w,
-                {{ product.featured_image | image_url: width: 900 }} 900w"
-        sizes="(max-width: 768px) 100vw, 300px"
-        alt="{{ product.featured_image.alt | default: product.title | escape }}"
-        loading="lazy"
-        width="600"
-        height="800"
-      >
-
-      {%- if product.images[1] -%}
+      <div data-parallax-container data-parallax-intensity="12">
         <img
-          class="immersive-product-image-hover"
-          src="{{ product.images[1] | image_url: width: 600 }}"
-          alt="{{ product.images[1].alt | default: product.title | escape }}"
+          class="immersive-product-image"
+          src="{{ product.featured_image | image_url: width: 600 }}"
+          srcset="
+            {{ product.featured_image | image_url: width: 300 }} 300w,
+            {{ product.featured_image | image_url: width: 600 }} 600w,
+            {{ product.featured_image | image_url: width: 900 }} 900w
+          "
+          sizes="(max-width: 768px) 100vw, 300px"
+          alt="{{ product.featured_image.alt | default: product.title | escape }}"
           loading="lazy"
           width="600"
           height="800"
+          data-parallax-image
         >
-      {%- endif -%}
+
+        {%- if product.images[1] and show_secondary_image != false -%}
+          <img
+            class="immersive-product-image-hover"
+            src="{{ product.images[1] | image_url: width: 600 }}"
+            alt="{{ product.images[1].alt | default: product.title | escape }}"
+            loading="lazy"
+            width="600"
+            height="800"
+            data-parallax-image
+          >
+        {%- endif -%}
+      </div>
+    </a>
+    <button
+      type="button"
+      class="immersive-product-card__wishlist-toggle"
+      data-wishlist-toggle
+      data-product-handle="{{ product.handle }}"
+      aria-pressed="false"
+      aria-label="{{ 'sections.immersive_store.wishlist.save' | t: title: product.title | escape }}"
+      data-label-save="{{ 'sections.immersive_store.wishlist.save' | t: title: product.title | escape }}"
+      data-label-saved="{{ 'sections.immersive_store.wishlist.saved' | t: title: product.title | escape }}"
+    >
+      <svg
+        class="immersive-product-card__heart immersive-product-card__heart--outline"
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+      <svg
+        class="immersive-product-card__heart immersive-product-card__heart--filled"
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
     </button>
   {%- else -%}
     <div class="immersive-product-image immersive-product-image-placeholder">
@@ -49,16 +99,20 @@
   {%- endif -%}
 
   <div class="immersive-product-info">
-    {%- if product.vendor != blank -%}
+    {%- if product.vendor != blank and show_vendor != false -%}
       <div class="immersive-product-vendor">
         {{ product.vendor }}
       </div>
     {%- endif -%}
 
     <h3 class="immersive-product-title">
-      <button type="button" class="immersive-product-title-link">
+      <a
+        href="{{ product.url }}"
+        class="immersive-product-title-link"
+        data-product-handle="{{ product.handle }}"
+      >
         {{ product.title }}
-      </button>
+      </a>
     </h3>
 
     {%- if product.metafields.custom.short_description != blank -%}
@@ -68,57 +122,74 @@
     {%- endif -%}
 
     <div class="immersive-product-price">
-  {%- if product.compare_at_price_max > product.price_min -%}
-    <span class="immersive-product-price-compare">
-      {{ product.compare_at_price_max | money }}
-    </span>
-    <span class="immersive-product-price-sale">
-      {{ product.price_min | money }}
-    </span>
-  {%- elsif product.price_varies -%}
-    <span>
-      {{ 'products.product.from_text' | t }} {{ product.price_min | money }}
-    </span>
-  {%- else -%}
-    <span>{{ product.price_min | money }}</span>
-  {%- endif -%}
-</div>
+      {%- if product.compare_at_price_max > product.price_min -%}
+        <span class="immersive-product-price-compare">
+          {{ product.compare_at_price_max | money }}
+        </span>
+        <span class="immersive-product-price-sale">
+          {{ product.price_min | money }}
+        </span>
+      {%- elsif product.price_varies -%}
+        <span>
+          {{ 'products.product.from_text' | t }}
+          {{ product.price_min | money }}
+        </span>
+      {%- else -%}
+        <span>{{ product.price_min | money }}</span>
+      {%- endif -%}
+    </div>
 
     {%- if product.available -%}
       <form method="post" action="{{ routes.cart_add_url }}" class="immersive-product-form" data-product-form>
         {%- if product.variants.size > 1 -%}
-          <div class="immersive-variant-buttons" role="radiogroup" aria-label="{{ 'sections.immersive.product_card.select_variant' | t }}">
+          <div
+            class="immersive-variant-buttons"
+            role="radiogroup"
+            aria-label="{{ 'sections.immersive.product_card.select_variant' | t }}"
+          >
             {%- for variant in product.variants -%}
               <button
                 type="button"
+                role="radio"
                 class="immersive-variant-button"
                 data-variant-id="{{ variant.id }}"
                 data-available="{{ variant.available }}"
+                aria-checked="{% if forloop.first %}true{% else %}false{% endif %}"
                 aria-label="{{ variant.title }}"
-                {% unless variant.available %}disabled{% endunless %}
+                {% unless variant.available %}
+                  disabled
+                {% endunless %}
               >
                 {{ variant.title | split: ' / ' | first }}
               </button>
             {%- endfor -%}
           </div>
-          <input type="hidden" name="id" class="immersive-variant-input" value="{{ product.selected_or_first_available_variant.id }}">
+          <input
+            type="hidden"
+            name="id"
+            class="immersive-variant-input"
+            value="{{ product.selected_or_first_available_variant.id }}"
+          >
         {%- else -%}
           <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
         {%- endif -%}
 
         <button
           type="submit"
-          name="property[buy_now]"
+          name="add"
           class="immersive-add-to-cart"
-          {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}
-          aria-label="{{ 'products.product.buy_now' | t }} - {{ product.title | escape }}"
+          {% unless product.selected_or_first_available_variant.available %}
+            disabled
+          {% endunless %}
+          aria-label="{{ 'products.product.add_to_cart' | t }} - {{ product.title | escape }}"
         >
           {%- if product.selected_or_first_available_variant.available -%}
-            {{ 'products.product.buy_now' | t }}
+            {{ 'products.product.add_to_cart' | t }}
           {%- else -%}
             {{ 'products.product.sold_out' | t }}
           {%- endif -%}
         </button>
+        {{ form | payment_button }}
       </form>
     {%- else -%}
       <button
@@ -160,10 +231,7 @@
     position: relative;
     display: block;
     overflow: hidden;
-    border: none;
-    padding: 0;
-    background: transparent;
-    cursor: pointer;
+    text-decoration: none;
     aspect-ratio: 2 / 3;
     width: 100%;
   }
@@ -221,7 +289,7 @@
     margin: 0 0 0.5rem;
     font-size: 1rem;
     font-weight: 600;
-    color: #ffffff;
+    color: #d4af37;
     line-height: 1.4;
   }
 
@@ -234,6 +302,7 @@
     text-align: left;
     cursor: pointer;
     transition: color 0.2s ease;
+    display: block;
   }
 
   .immersive-product-title-link:hover {
@@ -250,7 +319,7 @@
   .immersive-product-price {
     font-size: 1.125rem;
     font-weight: 600;
-    color: #ffffff;
+    color: #d4af37;
   }
 
   .immersive-product-price-compare {
@@ -279,7 +348,7 @@
     padding: 0.5rem 1rem;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(212, 175, 55, 0.3);
-    color: #ffffff;
+    color: #d4af37;
     border-radius: 8px;
     font-size: 0.875rem;
     cursor: pointer;
@@ -323,7 +392,7 @@
     background: rgba(212, 175, 55, 0.15);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    color: #ffffff;
+    color: #d4af37;
     font-weight: 600;
     transition: background 0.2s ease, transform 0.2s ease;
   }
@@ -338,6 +407,27 @@
     cursor: not-allowed;
   }
 
+  /* Accelerated checkout buttons (Shop Pay, Apple Pay, etc.) */
+  .immersive-product-form .shopify-payment-button {
+    margin-top: 0.5rem;
+  }
+
+  .immersive-product-form .shopify-payment-button__button {
+    border-radius: 4px;
+    min-height: 36px;
+    font-size: 12px;
+  }
+
+  .immersive-product-form .shopify-payment-button__button--unbranded {
+    background: rgba(212, 175, 55, 0.9);
+    color: #000;
+    font-weight: 600;
+  }
+
+  .immersive-product-form .shopify-payment-button__button--unbranded:hover {
+    background: #d4af37;
+  }
+
   .immersive-product-badge {
     position: absolute;
     top: 12px;
@@ -349,5 +439,66 @@
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 1px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-product-card,
+    .immersive-product-image,
+    .immersive-product-image-hover,
+    .immersive-variant-button {
+      transform: none !important;
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+  /* ── Wishlist Toggle (card) ───────────────────────────── */
+  .immersive-product-card__wishlist-toggle {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 32px;
+    height: 32px;
+    background: rgba(10, 15, 30, 0.7);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    z-index: 2;
+    color: #d4af37;
+  }
+
+  .immersive-product-card__wishlist-toggle:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: rgba(212, 175, 55, 0.6);
+    transform: scale(1.1);
+  }
+
+  .immersive-product-card__wishlist-toggle:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+  }
+
+  .immersive-product-card__heart--filled {
+    display: none;
+  }
+
+  .immersive-product-card__wishlist-toggle.is-saved .immersive-product-card__heart--outline {
+    display: none;
+  }
+
+  .immersive-product-card__wishlist-toggle.is-saved .immersive-product-card__heart--filled {
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-product-card__wishlist-toggle {
+      transition: none !important;
+      transform: none !important;
+    }
   }
 {% endstylesheet %}

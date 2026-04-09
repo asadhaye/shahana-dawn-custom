@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "name": "Dawn-Aware Localization & JS String Sync",
+  "description": "When immersive Liquid, JS, or locale files change, audit all user-facing strings — reusing Dawn's existing translation keys wherever possible and only adding new immersive-specific keys when no Dawn key covers the concept.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "sections/immersive-canvas.liquid",
+      "sections/glass-product.liquid",
+      "sections/immersive-product-grid.liquid",
+      "snippets/immersive-product-card.liquid",
+      "snippets/virtual-tryon.liquid",
+      "assets/immersive-store.js",
+      "locales/en.default.json",
+      "locales/en.default.schema.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A localization-relevant file was just edited. This is a Dawn-based theme — reuse Dawn's existing translation keys wherever possible and only add new keys when no suitable Dawn key exists.\n\nAudit across sections/immersive-canvas.liquid, sections/glass-product.liquid, sections/immersive-product-grid.liquid, snippets/immersive-product-card.liquid, snippets/virtual-tryon.liquid, assets/immersive-store.js, locales/en.default.json, and locales/en.default.schema.json:\n\n1. Hard-coded string scan — find every user-visible string in the changed files:\n   - Headings, labels, button text, helper text, error/success messages, empty states, ARIA labels, tooltips\n   - In Liquid: any string not wrapped in the | t filter\n   - In JS (immersive-store.js): any string literal that is user-visible rather than read from a data-* attribute\n\n2. Dawn-first key resolution — for each hard-coded or new string:\n   - First inspect locales/en.default.json for an existing Dawn key (check sections.product, products.product, general, accessibility, cart, and other core Dawn namespaces)\n   - If a Dawn key exists with the same meaning and wording: use it — update the Liquid to reference that key instead of a custom one\n   - Only if no suitable Dawn key exists: add a new key under the appropriate immersive namespace:\n     - sections.immersive_store.* — canvas/shell UI\n     - sections.immersive.product_panel.* — glass product panel\n     - sections.immersive.product_card.* — product cards\n     - sections.immersive.product_grid.* — product grid\n     - sections.virtual_tryon.* — VTO component\n   - Never create a new key whose English text and meaning are nearly identical to an existing Dawn key\n\n3. JS string pipeline — for every user-facing string used in immersive-store.js:\n   - It must come from a data-* attribute rendered by Liquid, not hard-coded in JS\n   - If hard-coded: add or reuse a translation key, expose it via data-* in the relevant Liquid file, and update the JS to read it\n   - Example pattern: data-error-select-variant=\"{{ 'sections.immersive_store.error_select_variant' | t | escape }}\"\n\n4. Duplication check — if any immersive key is effectively duplicating a Dawn key, prefer the Dawn key and remove the duplicate\n\n5. Doc sync — update the \"Locale keys\" section in IMMERSIVE-STORE.md to reflect:\n   - Only immersive-specific keys that actually exist in locales/en.default.json\n   - A clear note for any string that was switched to reuse a Dawn key: \"This string reuses Dawn key X for consistency\"\n\nApply fixes directly where safe and clear. If a change is too broad, add a \"TODO: verify localization for X\" note in IMMERSIVE-STORE.md."
+  }
+}

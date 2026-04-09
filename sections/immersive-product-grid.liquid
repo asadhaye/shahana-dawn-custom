@@ -5,14 +5,10 @@
 {% endcomment %}
 
 {%- liquid
-  assign collection_handle = section.settings.collection
-
-  if collection_handle == blank
-    assign collection_handle = 'all'
-  endif
-
-  assign collection = collections[collection_handle]
+  assign collection = section.settings.collection
   assign products_to_show = section.settings.products_per_page | default: 8
+  assign columns_desktop = section.settings.columns_desktop | default: 3
+  assign columns_mobile = section.settings.columns_mobile | default: '2'
 -%}
 
 <div class="immersive-product-grid-wrapper">
@@ -22,18 +18,22 @@
     </h2>
   {%- endif -%}
 
-  {%- if collection and collection.description != blank -%}
+  {%- if section.settings.show_description and collection and collection.description != blank -%}
     <div class="immersive-product-grid__description">
       {{ collection.description }}
     </div>
   {%- endif -%}
 
-  <div class="immersive-product-grid">
+  <div class="immersive-product-grid immersive-product-grid--{{ columns_desktop }}-col-desktop immersive-product-grid--{{ columns_mobile }}-col-mobile">
     {%- if collection and collection.products_count > 0 -%}
       {%- paginate collection.products by products_to_show -%}
         <div class="immersive-product-grid__inner">
           {%- for product in collection.products -%}
-            {% render 'immersive-product-card', product: product %}
+            {% render 'immersive-product-card',
+              product: product,
+              show_vendor: section.settings.show_vendor,
+              show_secondary_image: section.settings.show_secondary_image
+            %}
           {%- endfor -%}
         </div>
       {%- endpaginate -%}
@@ -73,8 +73,24 @@
 
   .immersive-product-grid__inner {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
+  }
+
+  @media screen and (min-width: 750px) {
+    .immersive-product-grid--3-col-desktop .immersive-product-grid__inner {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .immersive-product-grid--4-col-desktop .immersive-product-grid__inner {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .immersive-product-grid--2-col-desktop .immersive-product-grid__inner {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .immersive-product-grid--1-col-mobile .immersive-product-grid__inner {
+    grid-template-columns: 1fr;
   }
 
   .immersive-product-grid__empty {
@@ -84,26 +100,82 @@
 
 {% schema %}
 {
-  "name": "Immersive product grid",
+  "name": "t:sections.immersive_product_grid.name",
   "settings": [
     {
       "type": "collection",
       "id": "collection",
-      "label": "Collection"
+      "label": "t:sections.immersive_product_grid.settings.collection.label"
     },
     {
       "type": "range",
       "id": "products_per_page",
-      "label": "Products to show",
-      "min": 1,
-      "max": 20,
-      "step": 1,
+      "label": "t:sections.immersive_product_grid.settings.products_per_page.label",
+      "min": 2,
+      "max": 24,
+      "step": 2,
       "default": 8
+    },
+    {
+      "type": "header",
+      "content": "t:sections.immersive_product_grid.settings.header_grid_layout.content"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "label": "t:sections.immersive_product_grid.settings.columns_desktop.label",
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "select",
+      "id": "columns_mobile",
+      "label": "t:sections.immersive_product_grid.settings.columns_mobile.label",
+      "options": [
+        { "value": "1", "label": "t:sections.immersive_product_grid.settings.columns_mobile.options__1.label" },
+        { "value": "2", "label": "t:sections.immersive_product_grid.settings.columns_mobile.options__2.label" }
+      ],
+      "default": "2"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.immersive_product_grid.settings.header_product_card.content"
+    },
+    {
+      "type": "select",
+      "id": "image_ratio",
+      "label": "t:sections.immersive_product_grid.settings.image_ratio.label",
+      "options": [
+        { "value": "adapt", "label": "t:sections.immersive_product_grid.settings.image_ratio.options__1.label" },
+        { "value": "portrait", "label": "t:sections.immersive_product_grid.settings.image_ratio.options__2.label" },
+        { "value": "square", "label": "t:sections.immersive_product_grid.settings.image_ratio.options__3.label" }
+      ],
+      "default": "portrait"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_secondary_image",
+      "label": "t:sections.immersive_product_grid.settings.show_secondary_image.label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_vendor",
+      "label": "t:sections.immersive_product_grid.settings.show_vendor.label",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_description",
+      "label": "t:sections.immersive_product_grid.settings.show_description.label",
+      "default": false
     }
   ],
   "presets": [
     {
-      "name": "Immersive product grid"
+      "name": "t:sections.immersive_product_grid.presets.name"
     }
   ]
 }

@@ -1,0 +1,166 @@
+{% doc %}
+  Renders a high-visibility 2D→3D bridge CTA button (pill style).
+  Used on standard Dawn templates (collection, product, search, cart,
+  collections list, blog, article) to deep-link into the immersive
+  WebGL store.
+
+  @param {string} bridge_url - Destination URL for the bridge link
+  @param {string} bridge_label - Already-translated CTA label text
+  @param {string} bridge_aria - Already-translated aria-label text
+  @param {string} [bridge_class] - Optional CSS modifier suffix (without leading space or dashes, e.g. "collection")
+
+  @example
+  {% render 'immersive-bridge-btn',
+    bridge_url: '/pages/immersive?open_collection=' | append: collection.handle,
+    bridge_label: 'sections.immersive_journey_bridges.collection_cta' | t,
+    bridge_aria: 'sections.immersive_journey_bridges.collection_cta_aria' | t: title: collection.title,
+    bridge_class: 'collection'
+  %}
+{% enddoc %}
+
+<a
+  href="{{ bridge_url }}"
+  class="immersive-bridge-btn{% if bridge_class %} immersive-bridge-btn--{{ bridge_class }}{% endif %}"
+  aria-label="{{ bridge_aria | escape }}"
+  data-immersive-bridge
+>
+  <span class="immersive-bridge-btn__eyebrow" aria-hidden="true">
+    <span class="immersive-bridge-btn__dot"></span>
+    {{- 'sections.immersive_journey_bridges.bridge_eyebrow' | t -}}
+  </span>
+  <span class="immersive-bridge-btn__label" aria-hidden="true">
+    {{- bridge_label | escape -}}
+  </span>
+  <svg
+    class="immersive-bridge-btn__arrow"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+    <polyline points="12 5 19 12 12 19"></polyline>
+  </svg>
+</a>
+
+{% stylesheet %}
+  /* ── Bridge Button (pill) ──────────────────────────────────── */
+  .immersive-bridge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.25rem 0.6rem 1rem;
+    background: linear-gradient(135deg, rgba(10, 15, 30, 0.92) 0%, rgba(20, 14, 4, 0.92) 100%);
+    border: 1.5px solid rgba(212, 175, 55, 0.7);
+    border-radius: 999px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+    cursor: pointer;
+  }
+
+  .immersive-bridge-btn:hover {
+    border-color: #d4af37;
+    background: linear-gradient(135deg, rgba(10, 15, 30, 0.97) 0%, rgba(30, 20, 5, 0.97) 100%);
+    box-shadow: 0 4px 24px rgba(212, 175, 55, 0.22);
+  }
+
+  .immersive-bridge-btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+  }
+
+  /* Eyebrow */
+  .immersive-bridge-btn__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #d4af37;
+    opacity: 0.9;
+  }
+
+  .immersive-bridge-btn__dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #d4af37;
+    flex-shrink: 0;
+    animation: immersive-bridge-btn-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes immersive-bridge-btn-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.7);
+    }
+  }
+
+  /* Label */
+  .immersive-bridge-btn__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+  }
+
+  /* Arrow */
+  .immersive-bridge-btn__arrow {
+    color: #d4af37;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+
+  .immersive-bridge-btn:hover .immersive-bridge-btn__arrow {
+    transform: translateX(3px);
+  }
+
+  /* Wrapper spacing */
+  .immersive-bridge-btn__wrapper {
+    padding: 1rem 0;
+  }
+
+  /* ── Responsive ────────────────────────────────────────────── */
+  @media screen and (max-width: 749px) {
+    .immersive-bridge-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem 1.25rem;
+      min-height: 44px;
+    }
+  }
+
+  @media screen and (max-width: 400px) {
+    .immersive-bridge-btn__eyebrow {
+      display: none;
+    }
+  }
+
+  /* ── Reduced motion ────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-bridge-btn,
+    .immersive-bridge-btn__arrow {
+      transition: none;
+    }
+    .immersive-bridge-btn__dot {
+      animation: none;
+    }
+  }
+{% endstylesheet %}

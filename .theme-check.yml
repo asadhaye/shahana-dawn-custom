@@ -4,5 +4,5 @@ TemplateLength:
   enabled: false
 RemoteAsset:
   enabled: true
-  ignore_files:
+  ignore:
     - sections/ai-virtual-try-on.liquid

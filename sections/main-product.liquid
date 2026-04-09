@@ -485,6 +485,15 @@
                   section_id: section.id,
                   show_pickup_availability: true
                 -%}
+                <div class="immersive-bridge-btn__wrapper">
+                  {%-
+                    render 'immersive-bridge-btn',
+                    bridge_url: '/pages/immersive?view=immersive&open_product=' | append: product.handle,
+                    bridge_label: 'sections.immersive_journey_bridges.product_cta' | t,
+                    bridge_aria: 'sections.immersive_journey_bridges.product_cta_aria' | t: title: product.title,
+                    bridge_class: 'product'
+                  -%}
+                </div>
               {%- when 'rating' -%}
                 {%- if product.metafields.reviews.rating.value != blank -%}
                   <div class="rating-wrapper">
@@ -582,10 +591,12 @@
                                 {% endif %}
                               >
                                 <ul class="list-unstyled" role="list">
+                                  {% # theme-check-disable UndefinedObject %}
                                   {%- for product in recommendations.products
                                     limit: block.settings.products_per_page
                                     offset: continue
                                   -%}
+                                    {% # theme-check-enable UndefinedObject %}
                                     <li>
                                       {%- if block.settings.enable_quick_add -%}
                                         {% assign quick_add = 'standard' %}
@@ -724,6 +735,7 @@
       <script src="{{ 'product-model.js' | asset_url }}" defer></script>
     {%- endif -%}
 
+    {% # theme-check-disable UnusedAssign %}
     {%- liquid
       if product.selected_or_first_available_variant.featured_media
         assign seo_media = product.selected_or_first_available_variant.featured_media
@@ -731,6 +743,7 @@
         assign seo_media = product.featured_media
       endif
     -%}
+    {% # theme-check-enable UnusedAssign %}
 
     <script type="application/ld+json">
       {{ product | structured_data }}

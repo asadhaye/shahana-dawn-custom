@@ -1,491 +1,371 @@
-# ✅ Shahana Collection - Deployment Checklist
+# 48-Hour Deployment Checklist — Immersive Journey Bridges
 
-## Pre-Deployment Checklist
-
-### 📋 Files Ready
-- [ ] `layout/theme.immersive.liquid` created
-- [ ] `templates/page.immersive.json` created
-- [ ] `sections/immersive-product-grid.liquid` created
-- [ ] `assets/immersive-store.js` created
-- [ ] `assets/immersive-style.css` created
-- [ ] `assets/immersive-config.js` created
-- [ ] `snippets/immersive-product-card.liquid` created (optional)
-
-### 🖼️ Images Prepared
-- [ ] Exterior image ready (1920x1080+, < 2MB)
-- [ ] Interior image ready (1920x1080+, < 2MB)
-- [ ] Images optimized (compressed)
-- [ ] Images named correctly:
-  - [ ] `exterior-image.jpg`
-  - [ ] `lounge-interior.jpg`
-
-### 🏪 Shopify Store Ready
-- [ ] Shopify store accessible
-- [ ] Admin access confirmed
-- [ ] Dawn theme installed (or compatible theme)
-- [ ] Theme backup created
+**Deadline:** Friday EOD (48 hours from Wednesday 7 AM)  
+**Status:** Feature complete, ready for verification and deployment  
+**Estimated time:** 4 hours today (Wed) + 2 hours tomorrow (Thu) + 1 hour Friday (deploy)
 
 ---
 
-## Deployment Steps
+## TODAY (Wednesday) — Smoke Test (4 hours)
 
-### Step 1: Upload Files (5 minutes)
+### Phase 1: Verify Core Functionality (1.5 hours)
 
-#### Option A: Shopify CLI (Recommended)
-```bash
-# Navigate to theme directory
-cd dawn
+**Goal:** Confirm all six bridges render correctly and navigate to the right destinations.
 
-# Login to Shopify
-shopify login
+#### 1.1 Collection Bridge
+- [ ] Navigate to any collection page (e.g., `/collections/suffuse`)
+- [ ] Verify pill CTA appears above product grid (dark/gold pill with eyebrow "Explore in 3D")
+- [ ] Verify pill only appears when `collection.products_count > 0`
+- [ ] Click bridge → should navigate to `/?open_collection=suffuse`
+- [ ] Verify collection panel opens in 3D store (glass panel renders)
+- [ ] Verify no console errors
 
-# Push theme
-shopify theme push
+#### 1.2 Search Bridge
+- [ ] Perform a search (e.g., `/search?q=bridal`)
+- [ ] Verify pill CTA appears above search results (only when results exist)
+- [ ] Verify pill does NOT appear when search returns zero results
+- [ ] Click bridge → should navigate to `/?open_search=bridal`
+- [ ] Verify search results panel opens in 3D store
+- [ ] Verify no console errors
 
-# Confirm upload
-✓ Files uploaded successfully
-```
+#### 1.3 Product Bridge
+- [ ] Navigate to any product page (e.g., `/products/suffuse-eid-dress`)
+- [ ] Verify pill CTA appears after buy buttons block
+- [ ] Click bridge → should navigate to `/?open_product=suffuse-eid-dress`
+- [ ] Verify product panel opens in 3D store
+- [ ] Verify no console errors
 
-- [ ] CLI installed and configured
-- [ ] Logged into Shopify
-- [ ] Files pushed successfully
-- [ ] No errors in terminal
+#### 1.4 Cart Bridge
+- [ ] Add a product to cart
+- [ ] Navigate to `/cart`
+- [ ] Verify pill CTA appears after cart heading (only when `cart.item_count > 0`)
+- [ ] Verify pill does NOT appear on empty cart
+- [ ] Click bridge → should navigate to `/pages/immersive-store`
+- [ ] Verify 3D store opens (no specific panel)
+- [ ] Verify no console errors
 
-#### Option B: Theme Editor (Manual)
-1. Go to **Online Store > Themes**
-2. Click **Actions > Edit code**
-3. Upload each file to correct directory:
+#### 1.5 Collections List Bridge
+- [ ] Navigate to `/collections` (collections list page)
+- [ ] Verify pill CTA appears after collections heading
+- [ ] Click bridge → should navigate to `/pages/immersive-store`
+- [ ] Verify 3D store opens
+- [ ] Verify no console errors
 
-**Layout Files:**
-- [ ] Upload `theme.immersive.liquid` to `layout/`
+#### 1.6 Content Bridge (Blog + Article)
+- [ ] Navigate to any blog index (e.g., `/blogs/news`)
+- [ ] Verify pill CTA appears after blog title
+- [ ] Click bridge → should navigate to `/pages/immersive-store`
+- [ ] Navigate to any blog post (e.g., `/blogs/news/post-title`)
+- [ ] Verify pill CTA appears in the article back-link area
+- [ ] Click bridge → should navigate to `/pages/immersive-store`
+- [ ] Verify 3D store opens
+- [ ] Verify no console errors
 
-**Template Files:**
-- [ ] Upload `page.immersive.json` to `templates/`
+### Phase 2: Verify Preference Banner (1 hour)
 
-**Section Files:**
-- [ ] Upload `immersive-product-grid.liquid` to `sections/`
+**Goal:** Confirm preference banner shows/hides correctly and preference logic works.
 
-**Asset Files:**
-- [ ] Upload `immersive-store.js` to `assets/`
-- [ ] Upload `immersive-style.css` to `assets/`
-- [ ] Upload `immersive-config.js` to `assets/`
+#### 2.1 First-time visitor (no preference set)
+- [ ] Open DevTools → Application → Local Storage
+- [ ] Verify `immersive_preferred_mode` key does NOT exist
+- [ ] Navigate to any 2D page (collection, search, product, etc.)
+- [ ] Verify preference banner does NOT appear
+- [ ] Verify no console errors
 
-**Snippet Files (Optional):**
-- [ ] Upload `immersive-product-card.liquid` to `snippets/`
+#### 2.2 After visiting 3D store (preference set)
+- [ ] Navigate to `/pages/immersive-store`
+- [ ] Wait for 3D scene to load
+- [ ] Open DevTools → Application → Local Storage
+- [ ] Verify `immersive_preferred_mode` key now exists with value `'3d'`
+- [ ] Navigate back to a 2D page (e.g., `/collections/suffuse`)
+- [ ] Verify preference banner NOW appears at bottom of page
+- [ ] Verify banner text says "Welcome back — your 3D store is ready."
+- [ ] Verify banner has "Return to 3D Store" CTA link
+- [ ] Verify banner has "Dismiss" button
+- [ ] Verify no console errors
 
-### Step 2: Upload Images (2 minutes)
+#### 2.3 Dismiss preference banner
+- [ ] With preference banner visible, click "Dismiss" button
+- [ ] Verify banner disappears from DOM
+- [ ] Verify focus moves to next element (no focus trap)
+- [ ] Verify `immersive_preferred_mode` key still exists in localStorage (preference not cleared)
+- [ ] Refresh page
+- [ ] Verify banner reappears (preference persists)
+- [ ] Verify no console errors
 
-1. Go to **Online Store > Themes > Actions > Edit code**
-2. Click **Assets** folder
-3. Click **Add a new asset**
-4. Upload images:
-   - [ ] `exterior-image.jpg` uploaded
-   - [ ] `lounge-interior.jpg` uploaded
-5. Note the exact filenames for next step
+#### 2.4 Preference banner not on immersive/index pages
+- [ ] Navigate to `/pages/immersive-store`
+- [ ] Verify preference banner does NOT appear (template guard working)
+- [ ] Navigate to `/` (home)
+- [ ] Verify preference banner does NOT appear (template guard working)
+- [ ] Verify no console errors
 
-### Step 3: Update Image References (1 minute)
+### Phase 3: Verify Device-Aware Behavior (1 hour)
 
-1. Open `assets/immersive-store.js` in Theme Editor
-2. Find lines ~380-390 (texture loading section)
-3. Replace placeholder URLs:
+**Goal:** Confirm reduced motion behavior works. Note: slow connection warning requires the Network Information API (`navigator.connection`), which is only available in Chrome/Edge — skip on Safari/Firefox.
 
-```javascript
-// BEFORE:
-const textureOne = textureLoader.load(
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80',
+#### 3.1 Slow connection warning (Chrome/Edge only)
+- [ ] Open DevTools → Network tab
+- [ ] Set throttling to "Slow 3G"
+- [ ] Navigate to any collection page
+- [ ] Verify bridge pill has `.immersive-bridge-banner--slow-connection` class applied
+- [ ] Verify pill label text changes to warning message: "3D store is optimized for faster connections"
+- [ ] Reset throttling to normal
+- [ ] Verify no console errors
 
-// AFTER:
-const textureOne = textureLoader.load(
-  '{{ "exterior-image.jpg" | asset_url }}',
-```
+> Note: `bridge-behavior.js` targets `[data-immersive-bridge]` elements. On slow connections, the pill label text is replaced with the warning message and the CSS modifier class is applied to the `<a>` element.
 
-4. Do the same for `textureTwo`:
+#### 3.2 Reduced motion preference
+- [ ] Open DevTools → Rendering → Emulate CSS media feature prefers-reduced-motion
+- [ ] Select "prefers-reduced-motion: reduce"
+- [ ] Navigate to any collection page
+- [ ] Verify bridge pill has `.immersive-bridge-banner--reduced-motion` class applied
+- [ ] Verify pulsing dot animation is disabled (CSS `animation: none` via `@media (prefers-reduced-motion: reduce)`)
+- [ ] Verify arrow transition on hover is disabled
+- [ ] Verify bridge is still clickable
+- [ ] Reset prefers-reduced-motion
+- [ ] Verify no console errors
 
-```javascript
-const textureTwo = textureLoader.load(
-  '{{ "lounge-interior.jpg" | asset_url }}',
-```
+#### 3.3 Both slow connection AND reduced motion (Chrome/Edge only)
+- [ ] Enable both slow 3G throttling AND prefers-reduced-motion: reduce
+- [ ] Navigate to any collection page
+- [ ] Verify bridge pill has both modifier classes applied
+- [ ] Verify animations are disabled
+- [ ] Verify bridge is still clickable
+- [ ] Reset both settings
+- [ ] Verify no console errors
 
-- [ ] Texture One URL updated
-- [ ] Texture Two URL updated
-- [ ] File saved
+### Phase 4: Verify No Regressions (0.5 hours)
 
-### Step 4: Create Collections (3 minutes)
+**Goal:** Confirm existing functionality still works.
 
-1. Go to **Products > Collections**
-2. Create three collections:
+#### 4.1 Collection page functionality
+- [ ] Navigate to `/collections/suffuse`
+- [ ] Verify product grid loads
+- [ ] Verify facet filtering still works (click a filter)
+- [ ] Verify pagination still works (if applicable)
+- [ ] Verify bridge pill does NOT interfere with grid layout
+- [ ] Verify no console errors
 
-**Collection 1:**
-- [ ] Name: "Designer Houses"
-- [ ] Handle: `designer-houses` (must be exact)
-- [ ] Add 4-8 products
-- [ ] Add collection image (optional)
+#### 4.2 Search page functionality
+- [ ] Perform a search
+- [ ] Verify search results load
+- [ ] Verify facet filtering still works
+- [ ] Verify bridge pill does NOT interfere with results layout
+- [ ] Verify no console errors
 
-**Collection 2:**
-- [ ] Name: "Occasions"
-- [ ] Handle: `occasions` (must be exact)
-- [ ] Add 4-8 products
-- [ ] Add collection image (optional)
+#### 4.3 Product page functionality
+- [ ] Navigate to any product page
+- [ ] Verify product media loads
+- [ ] Verify variant selector works
+- [ ] Verify "Add to cart" button works
+- [ ] Verify bridge pill does NOT interfere with product layout
+- [ ] Verify no console errors
 
-**Collection 3:**
-- [ ] Name: "Featured Collections"
-- [ ] Handle: `featured` (must be exact)
-- [ ] Add 4-8 products
-- [ ] Add collection image (optional)
+#### 4.4 Cart page functionality
+- [ ] Navigate to `/cart`
+- [ ] Verify cart items display
+- [ ] Verify quantity adjustment works
+- [ ] Verify "Remove" button works
+- [ ] Verify bridge pill does NOT interfere with cart layout
+- [ ] Verify no console errors
 
-**Verify:**
-- [ ] All collections have products
-- [ ] Handles match exactly (lowercase, hyphens)
-- [ ] Products have images
-- [ ] Products have prices
-
-### Step 5: Create Page (1 minute)
-
-1. Go to **Online Store > Pages**
-2. Click **Add page**
-3. Fill in details:
-   - [ ] Title: "Immersive Store" (or your choice)
-   - [ ] Content: Leave blank or add intro text
-4. In right sidebar:
-   - [ ] Template: Select **page.immersive**
-   - [ ] Visibility: Visible
-5. Click **Save**
-6. Note the page URL: `/pages/immersive-store`
-
-- [ ] Page created
-- [ ] Template selected
-- [ ] Page published
-- [ ] URL noted
-
----
-
-## Testing Checklist
-
-### Desktop Testing (5 minutes)
-
-**Browser: Chrome**
-- [ ] Visit page URL
-- [ ] Page loads without errors
-- [ ] Black background visible
-- [ ] Exterior image loads
-- [ ] Scroll down smoothly
-- [ ] Dissolve effect works
-- [ ] Interior image reveals
-- [ ] Hotspots appear at bottom
-- [ ] Hotspots pulse animation works
-- [ ] Hover expands hotspot to pill
-- [ ] Click opens glass panel
-- [ ] Products load in panel
-- [ ] Images display correctly
-- [ ] Prices show correctly
-- [ ] Add to cart works
-- [ ] Close button works
-- [ ] Panel slides out smoothly
-
-**Browser: Firefox**
-- [ ] Repeat all Chrome tests
-- [ ] Note any differences
-
-**Browser: Safari**
-- [ ] Repeat all Chrome tests
-- [ ] Note any differences
-
-### Mobile Testing (5 minutes)
-
-**Device: iPhone**
-- [ ] Visit page URL
-- [ ] Page loads
-- [ ] Scroll works (may not be smooth on iOS)
-- [ ] Dissolve effect works
-- [ ] Hotspots appear
-- [ ] Tap hotspot opens panel
-- [ ] Panel is full-width
-- [ ] Products display in single column
-- [ ] Add to cart works
-- [ ] Close button works
-
-**Device: Android**
-- [ ] Repeat iPhone tests
-- [ ] Note any differences
-
-### Performance Testing (2 minutes)
-
-**Desktop:**
-- [ ] Open DevTools (F12)
-- [ ] Go to Performance tab
-- [ ] Record while scrolling
-- [ ] Check FPS (should be ~60)
-- [ ] Check for errors in Console
-
-**Mobile:**
-- [ ] Use Chrome Remote Debugging
-- [ ] Check FPS (should be 30-60)
-- [ ] Check for errors
-
-### Accessibility Testing (3 minutes)
-
-- [ ] Tab through hotspots (keyboard navigation)
-- [ ] Focus states visible
-- [ ] Screen reader announces hotspot labels
-- [ ] Close button accessible via keyboard
-- [ ] Add to cart buttons accessible
-- [ ] No console errors about accessibility
+#### 4.5 Header/footer functionality
+- [ ] Verify header navigation still works
+- [ ] Verify footer links still work
+- [ ] Verify search box in header still works
+- [ ] Verify cart icon in header still works
+- [ ] Verify no console errors
 
 ---
 
-## Post-Deployment Checklist
+## TOMORROW (Thursday) — Final QA (2 hours)
 
-### Verification (2 minutes)
+### Phase 5: Cross-Browser & Device Testing (1 hour)
 
-- [ ] All files uploaded successfully
-- [ ] No 404 errors in Console
-- [ ] Images load correctly
-- [ ] Shaders compile without errors
-- [ ] Three.js loads from CDN
-- [ ] Lenis loads from CDN
-- [ ] No JavaScript errors
+**Goal:** Verify feature works on all major browsers and devices.
 
-### Configuration (3 minutes)
+#### 5.1 Desktop browsers
+- [ ] Chrome (latest) — all 6 bridges, preference banner, device-aware behavior
+- [ ] Firefox (latest) — all 6 bridges, preference banner
+- [ ] Safari (latest) — all 6 bridges, preference banner
+- [ ] Edge (latest) — all 6 bridges, preference banner
 
-**Optional Customizations:**
-- [ ] Adjust hotspot positions if needed
-- [ ] Change gold color if desired
-- [ ] Modify scroll trigger point
-- [ ] Update hotspot labels
-- [ ] Adjust panel width
+#### 5.2 Mobile devices
+- [ ] iPhone (Safari) — all 6 bridges, preference banner, responsive layout (pill goes full-width at ≤749px)
+- [ ] Android (Chrome) — all 6 bridges, preference banner, responsive layout
+- [ ] Tablet (iPad) — all 6 bridges, preference banner, responsive layout
 
-**Edit `assets/immersive-config.js`:**
-```javascript
-// Example customizations
-colors: {
-  primary: {
-    hex: '#YOUR_COLOR',  // Change gold color
-  }
-},
-scroll: {
-  hotspotTrigger: 0.90,  // Show hotspots earlier
-},
-hotspots: [
-  {
-    position: { top: '40%', left: '30%' }  // Adjust position
-  }
-]
-```
+#### 5.3 Accessibility testing
+- [ ] Keyboard navigation: Tab to bridge pill, verify focus ring visible (gold outline)
+- [ ] Keyboard navigation: Tab through preference banner, verify focus visible
+- [ ] Keyboard navigation: Escape key closes any open panels (existing behavior)
+- [ ] Screen reader (VoiceOver on Mac): Verify bridge `aria-label` is read (e.g., "Explore Suffuse in the 3D Store")
+- [ ] Screen reader: Verify eyebrow/label/arrow are NOT announced (all `aria-hidden="true"`)
+- [ ] Screen reader: Verify preference banner region is announced
 
-- [ ] Customizations made (if any)
-- [ ] File saved
-- [ ] Changes tested
+### Phase 6: Performance & Console Check (1 hour)
 
-### Documentation (1 minute)
+**Goal:** Verify no performance regressions and no console errors.
 
-- [ ] Save page URL for team
-- [ ] Document any customizations made
-- [ ] Note any issues encountered
-- [ ] Share with stakeholders
+#### 6.1 Lighthouse audit
+- [ ] Run Lighthouse on `/` (home page)
+- [ ] Verify LCP is reasonable (target: < 3s on 4G)
+- [ ] Verify CLS is low (target: < 0.1)
+- [ ] Verify no new performance warnings
+- [ ] Run Lighthouse on `/pages/immersive-store`
+- [ ] Verify LCP is reasonable (3D page will be heavier, but should be < 5s)
+- [ ] Verify no new performance warnings
 
----
+#### 6.2 Console check
+- [ ] Open DevTools → Console tab
+- [ ] Navigate through all 6 bridge locations
+- [ ] Verify NO errors or warnings in console
+- [ ] Verify NO 404s for assets (`bridge-behavior.js`, etc.)
+- [ ] Verify NO uncaught exceptions
 
-## Troubleshooting Guide
-
-### Issue: Images Not Loading
-
-**Symptoms:**
-- Black screen with no images
-- Console error: "Failed to load texture"
-
-**Solutions:**
-- [ ] Check image filenames match exactly
-- [ ] Verify Liquid syntax: `{{ "filename.jpg" | asset_url }}`
-- [ ] Confirm images uploaded to assets/
-- [ ] Check file extensions (.jpg vs .jpeg)
-- [ ] Try clearing browser cache
-
-### Issue: Hotspots Not Appearing
-
-**Symptoms:**
-- Scroll to bottom but no hotspots
-
-**Solutions:**
-- [ ] Scroll all the way to 95%+
-- [ ] Check console for JavaScript errors
-- [ ] Verify `immersive-store.js` loaded
-- [ ] Check `scrollProgress` value in console
-- [ ] Try different browser
-
-### Issue: Glass Panel Empty
-
-**Symptoms:**
-- Panel opens but shows loading spinner forever
-
-**Solutions:**
-- [ ] Check collection handles match exactly
-- [ ] Verify collections have products
-- [ ] Check Network tab for 404 errors
-- [ ] Confirm section file uploaded
-- [ ] Test section URL directly: `/?section_id=immersive-product-grid`
-
-### Issue: Shaders Look Wrong
-
-**Symptoms:**
-- No dissolve effect
-- Colors incorrect
-- Glitchy appearance
-
-**Solutions:**
-- [ ] Check WebGL support in browser
-- [ ] Clear browser cache
-- [ ] Check console for shader errors
-- [ ] Verify Three.js loaded (check Network tab)
-- [ ] Try different browser
-- [ ] Check GPU drivers updated
-
-### Issue: Scroll Not Smooth
-
-**Symptoms:**
-- Jerky scrolling
-- No smooth effect
-
-**Solutions:**
-- [ ] Verify Lenis loaded (check Network tab)
-- [ ] Check console for Lenis errors
-- [ ] Note: iOS Safari disables smooth scroll by default
-- [ ] Try desktop browser
-- [ ] Check `immersive-config.js` settings
-
-### Issue: Add to Cart Not Working
-
-**Symptoms:**
-- Button click does nothing
-- Error in console
-
-**Solutions:**
-- [ ] Check product has available variants
-- [ ] Verify form action: `/cart/add`
-- [ ] Check variant ID is valid
-- [ ] Test with different product
-- [ ] Check Shopify cart settings
+#### 6.3 Network tab check
+- [ ] Open DevTools → Network tab
+- [ ] Navigate to a collection page
+- [ ] Verify `bridge-behavior.js` loads successfully
+- [ ] Verify no failed requests
+- [ ] Verify no excessive requests
 
 ---
 
-## Performance Optimization
+## FRIDAY — Deploy & Monitor (1 hour)
 
-### If FPS is Low:
+### Phase 7: Pre-Deployment Final Check (0.25 hours)
 
-- [ ] Reduce `maxPixelRatio` in config (2 → 1)
-- [ ] Lower texture quality in config
-- [ ] Disable animations in config
-- [ ] Compress images further
-- [ ] Test on different device
+- [ ] Verify all Wednesday smoke tests passed
+- [ ] Verify all Thursday QA tests passed
+- [ ] Verify no new issues reported by team
+- [ ] Verify no console errors on production-like environment
 
-### If Load Time is Slow:
+### Phase 8: Deploy to Production (0.5 hours)
 
-- [ ] Compress images (use TinyPNG)
-- [ ] Enable lazy loading
-- [ ] Preload critical assets
-- [ ] Use WebP format if supported
-- [ ] Check CDN performance
+- [ ] Push theme to production via Shopify CLI: `shopify theme push`
+- [ ] Verify deployment completed successfully
+- [ ] Verify no deployment errors in Shopify admin
 
----
+### Phase 9: Post-Deployment Monitoring (0.25 hours)
 
-## Launch Checklist
-
-### Before Going Live:
-
-- [ ] All tests passed
-- [ ] No console errors
-- [ ] Performance acceptable
-- [ ] Mobile experience good
-- [ ] Accessibility verified
-- [ ] Team reviewed
-- [ ] Stakeholder approved
-
-### Going Live:
-
-- [ ] Update navigation to link to page
-- [ ] Add to main menu (optional)
-- [ ] Announce to customers
-- [ ] Monitor analytics
-- [ ] Watch for errors
-
-### Post-Launch:
-
-- [ ] Monitor page views
-- [ ] Track hotspot clicks
-- [ ] Check conversion rate
-- [ ] Gather user feedback
-- [ ] Plan improvements
+- [ ] Monitor error logs for any exceptions
+- [ ] Verify all 6 bridges render correctly on production
+- [ ] Verify preference banner appears on production
+- [ ] Verify no console errors on production
+- [ ] Spot-check on mobile device
+- [ ] Gather initial user feedback
 
 ---
 
-## Support Resources
+## Critical Issues to Watch For
 
-### If You Need Help:
+If you encounter any of these during testing, **STOP and fix immediately** (these are blockers):
 
-**Documentation:**
-- [ ] Read `IMMERSIVE-STORE-README.md`
-- [ ] Check `IMMERSIVE-QUICKSTART.md`
-- [ ] Review `VISUAL-GUIDE.md`
+### 🔴 Blocker 1: Bridge not rendering
+- **Symptom:** Bridge pill doesn't appear on collection/search/product/cart/collections list/content pages
+- **Likely cause:** Snippet not rendered in section, or conditional logic is wrong
+- **Fix:** Check that `{% render 'immersive-bridge-btn' %}` is present in the section and parameters are passed correctly
 
-**Community:**
-- [ ] Shopify Community Forums
-- [ ] Three.js Discord
-- [ ] Stack Overflow
+### 🔴 Blocker 2: Bridge URL parameter not working
+- **Symptom:** Clicking bridge navigates to the immersive store but panel doesn't open
+- **Likely cause:** URL parameter handler not parsing correctly, or panel function not called
+- **Fix:** Check `immersive-store.js` for `open_collection`, `open_product`, `open_search` parameter parsing
 
-**Debug Mode:**
-- [ ] Enable in `immersive-config.js`:
-```javascript
-debug: {
-  enabled: true,
-  showScrollProgress: true,
-  showFPS: true
-}
-```
+### 🔴 Blocker 3: Preference banner not appearing
+- **Symptom:** After visiting 3D store, preference banner doesn't appear on 2D pages
+- **Likely cause:** `writeImmersivePreference()` not called, or localStorage not working
+- **Fix:** Check that `writeImmersivePreference()` is called in `initImmersiveScene()` after `hideLoader()`
+
+### 🔴 Blocker 4: Device-aware behavior not working
+- **Symptom:** Reduced motion animations still play when `prefers-reduced-motion: reduce` is set
+- **Likely cause:** `bridge-behavior.js` not loaded, or CSS `@media (prefers-reduced-motion)` block missing from snippet
+- **Fix:** Check that `bridge-behavior.js` is loaded in `layout/theme.liquid` and the snippet's `{% stylesheet %}` block includes the reduced motion guard
+
+### 🔴 Blocker 5: Console errors
+- **Symptom:** Any JavaScript errors in DevTools console
+- **Likely cause:** Syntax error, missing function, or undefined variable
+- **Fix:** Check error message and trace to source file; fix immediately
+
+---
+
+## Non-Blocking Issues (Can be fixed later)
+
+If you encounter any of these, **document them but proceed with deployment**:
+
+- Minor styling tweaks (spacing, colors, fonts)
+- Animation timing adjustments
+- Localization string improvements
+- Analytics tracking enhancements
 
 ---
 
 ## Success Criteria
 
-### Deployment Successful When:
+✅ **Feature is ready to deploy if:**
+- All 6 bridges render and navigate correctly
+- Preference banner shows/hides correctly
+- Reduced motion behavior works
+- No regressions on existing functionality
+- No console errors
+- No performance regressions
+- All browsers/devices tested pass
 
-- [x] All files uploaded
-- [x] Images loading
-- [x] Scroll effect working
-- [x] Hotspots appearing
-- [x] Panel opening
-- [x] Products loading
-- [x] Add to cart working
-- [x] Mobile responsive
-- [x] No console errors
-- [x] Performance good (30+ FPS)
-
----
-
-## Final Sign-Off
-
-**Deployed By:** ___________________
-
-**Date:** ___________________
-
-**Time:** ___________________
-
-**Store URL:** ___________________
-
-**Page URL:** ___________________
-
-**Notes:**
-```
-_________________________________________________
-_________________________________________________
-_________________________________________________
-```
-
-**Status:** 
-- [ ] ✅ Deployment Successful
-- [ ] ⚠️ Deployment with Issues (see notes)
-- [ ] ❌ Deployment Failed (see notes)
+❌ **Feature is NOT ready if:**
+- Any blocker issue is present
+- Any console errors exist
+- Any regression on existing functionality
+- Performance significantly degraded
 
 ---
 
-**Deployment Complete!** 🎉
+## Time Breakdown
 
-*Your immersive store is now live. Monitor performance and gather feedback for future improvements.*
+| Phase | Time | Status |
+|-------|------|--------|
+| 1. Core functionality | 1.5h | Today |
+| 2. Preference banner | 1h | Today |
+| 3. Device-aware behavior | 1h | Today |
+| 4. No regressions | 0.5h | Today |
+| **Total Today** | **4h** | |
+| 5. Cross-browser/device | 1h | Tomorrow |
+| 6. Performance/console | 1h | Tomorrow |
+| **Total Tomorrow** | **2h** | |
+| 7-9. Deploy & monitor | 1h | Friday |
+| **Total Friday** | **1h** | |
+| **TOTAL** | **7h** | |
+
+---
+
+## Quick Reference: File Locations
+
+| Component | File | Key Function/Note |
+|-----------|------|-------------------|
+| Bridge Pill CTA | `snippets/immersive-bridge-btn.liquid` | Renders pill UI; params: `bridge_url`, `bridge_label`, `bridge_aria`, `bridge_class` |
+| Collection Bridge | `sections/main-collection-product-grid.liquid` | Renders snippet; guarded by `collection.products_count > 0` |
+| Search Bridge | `sections/main-search.liquid` | Renders snippet; guarded by `search.results_count > 0` |
+| Product Bridge | `sections/main-product.liquid` | Renders snippet inside `buy_buttons` block |
+| Cart Bridge | `sections/main-cart-items.liquid` | Renders snippet; guarded by `cart.item_count > 0` |
+| Collections List Bridge | `sections/main-list-collections.liquid` | Renders snippet; always visible |
+| Content Bridge | `sections/main-blog.liquid`, `sections/main-article.liquid` | Renders snippet; always visible |
+| URL Handler | `assets/immersive-store.js` | `safeBindImmersiveInit()` — parses `open_collection`, `open_product`, `open_search` |
+| Preference Manager | `assets/immersive-store.js` | `writeImmersivePreference()`, `readImmersivePreference()` |
+| Device-Aware Behavior | `assets/bridge-behavior.js` | `initBridgeBehavior()` — applies modifier classes to `[data-immersive-bridge]` |
+| Preference Banner | `layout/theme.liquid` | Inline HTML + script; guarded against `page.immersive` and `index` templates |
+| Localization | `locales/en.default.json` | `sections.immersive_journey_bridges.*` |
+
+---
+
+## Next Steps After Deployment
+
+Once deployed and verified on Friday:
+
+1. **Monitor for 24 hours** — Watch error logs and user feedback
+2. **Gather metrics** — Track bridge click-through rates and conversion
+3. **Plan Phase 2** — Metaobjects, analytics dashboard, preference toggle in 3D menu
+4. **Document learnings** — Update internal docs with any issues found
+
+---
+
+**You've got this. 48 hours to verify and deploy. Let's go.** 🚀

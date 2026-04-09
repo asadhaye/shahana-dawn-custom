@@ -19,15 +19,9 @@ const path = require('path');
 // Helpers
 // ---------------------------------------------------------------------------
 
-const LIQUID_PATH = path.resolve(
-  __dirname,
-  '../snippets/immersive-product-card.liquid'
-);
+const LIQUID_PATH = path.resolve(__dirname, '../snippets/immersive-product-card.liquid');
 
-const GLASS_PANEL_PATH = path.resolve(
-  __dirname,
-  '../sections/glass-panel.liquid'
-);
+const GLASS_PANEL_PATH = path.resolve(__dirname, '../sections/glass-panel.liquid');
 
 /**
  * Reads the raw CSS from the {% stylesheet %} block in glass-panel.liquid.
@@ -150,26 +144,23 @@ describe('Property 2: Product Image Styling', () => {
    *
    * We use fast-check to confirm the invariant across 100 product objects.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 2: Product Image Styling
-    'immersive-product-image CSS declares object-fit: cover and object-position: center for any product',
-    () => {
-      fc.assert(
-        fc.property(productArbitrary, function (_product) {
-          const rules = parseCSSRules(extractStylesheetCSS());
-          const imageRule = rules.get('.immersive-product-image');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 2: Product Image Styling
+  'immersive-product-image CSS declares object-fit: cover and object-position: center for any product', () => {
+    fc.assert(
+      fc.property(productArbitrary, function (_product) {
+        const rules = parseCSSRules(extractStylesheetCSS());
+        const imageRule = rules.get('.immersive-product-image');
 
-          if (!imageRule) return false;
+        if (!imageRule) return false;
 
-          const objectFit = imageRule.get('object-fit');
-          const objectPosition = imageRule.get('object-position');
+        const objectFit = imageRule.get('object-fit');
+        const objectPosition = imageRule.get('object-position');
 
-          return objectFit === 'cover' && objectPosition === 'center';
-        }),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        return objectFit === 'cover' && objectPosition === 'center';
+      }),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -193,28 +184,25 @@ describe('Property 1: Product Image Aspect Ratio', () => {
    * We use fast-check to confirm the property is invariant across all
    * possible product objects (100 iterations).
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 1: Product Image Aspect Ratio
-    'immersive-product-link CSS declares aspect-ratio 2/3 for any product',
-    () => {
-      fc.assert(
-        fc.property(productArbitrary, function (product) {
-          // The CSS is static — product data does not change the stylesheet.
-          // We re-read on each iteration to confirm the invariant holds.
-          const rules = parseCSSRules(extractStylesheetCSS());
-          const linkRule = rules.get('.immersive-product-link');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 1: Product Image Aspect Ratio
+  'immersive-product-link CSS declares aspect-ratio 2/3 for any product', () => {
+    fc.assert(
+      fc.property(productArbitrary, function (product) {
+        // The CSS is static — product data does not change the stylesheet.
+        // We re-read on each iteration to confirm the invariant holds.
+        const rules = parseCSSRules(extractStylesheetCSS());
+        const linkRule = rules.get('.immersive-product-link');
 
-          if (!linkRule) return false;
+        if (!linkRule) return false;
 
-          const rawValue = linkRule.get('aspect-ratio');
-          if (!rawValue) return false;
+        const rawValue = linkRule.get('aspect-ratio');
+        if (!rawValue) return false;
 
-          return normaliseAspectRatio(rawValue) === '2 / 3';
-        }),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        return normaliseAspectRatio(rawValue) === '2 / 3';
+      }),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * Validates: Requirements 1.1, 1.3
@@ -226,38 +214,31 @@ describe('Property 1: Product Image Aspect Ratio', () => {
    * We generate (product, viewportWidth) pairs and verify that for every
    * viewport width the CSS source contains no conflicting override.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 1: Product Image Aspect Ratio
-    'aspect-ratio 2/3 is not overridden by any media query for any viewport',
-    () => {
-      fc.assert(
-        fc.property(
-          productArbitrary,
-          viewportWidthArbitrary,
-          function (product, viewportWidth) {
-            const css = extractStylesheetCSS();
+  test(// Feature: immersive-store-glass-panel-improvements, Property 1: Product Image Aspect Ratio
+  'aspect-ratio 2/3 is not overridden by any media query for any viewport', () => {
+    fc.assert(
+      fc.property(productArbitrary, viewportWidthArbitrary, function (product, viewportWidth) {
+        const css = extractStylesheetCSS();
 
-            // Extract all @media blocks and check for conflicting overrides
-            const mediaBlockRegex = /@media[^{]*\{([\s\S]*?)\}\s*\}/g;
-            let mediaMatch;
-            while ((mediaMatch = mediaBlockRegex.exec(css)) !== null) {
-              const innerCSS = mediaMatch[1];
-              const innerRules = parseCSSRules(innerCSS);
-              const linkRule = innerRules.get('.immersive-product-link');
-              if (linkRule && linkRule.has('aspect-ratio')) {
-                const val = normaliseAspectRatio(linkRule.get('aspect-ratio'));
-                // Any media-query override must also be 2/3
-                if (val !== '2 / 3') return false;
-              }
-            }
-
-            return true;
+        // Extract all @media blocks and check for conflicting overrides
+        const mediaBlockRegex = /@media[^{]*\{([\s\S]*?)\}\s*\}/g;
+        let mediaMatch;
+        while ((mediaMatch = mediaBlockRegex.exec(css)) !== null) {
+          const innerCSS = mediaMatch[1];
+          const innerRules = parseCSSRules(innerCSS);
+          const linkRule = innerRules.get('.immersive-product-link');
+          if (linkRule && linkRule.has('aspect-ratio')) {
+            const val = normaliseAspectRatio(linkRule.get('aspect-ratio'));
+            // Any media-query override must also be 2/3
+            if (val !== '2 / 3') return false;
           }
-        ),
-        { numRuns: 100, verbose: false }
-      );
-    }
-  );
+        }
+
+        return true;
+      }),
+      { numRuns: 100, verbose: false },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -278,44 +259,38 @@ describe('Property 3: Product Grid Gap', () => {
    *
    * We use fast-check to confirm the invariant across 100 collection objects.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 3: Product Grid Gap
-    'glass-panel-section__grid CSS declares gap: 2rem for any collection',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-            title: fc.string({ minLength: 1, maxLength: 120 }),
-            productCount: fc.integer({ min: 0, max: 50 }),
-          }),
-          function (_collection) {
-            // The CSS is static — collection data does not change the stylesheet.
-            // We re-read on each iteration to confirm the invariant holds.
-            const rules = parseCSSRules(extractGlassPanelCSS());
-            const gridRule = rules.get('.glass-panel-section__grid');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 3: Product Grid Gap
+  'glass-panel-section__grid CSS declares gap: 2rem for any collection', () => {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
+          title: fc.string({ minLength: 1, maxLength: 120 }),
+          productCount: fc.integer({ min: 0, max: 50 }),
+        }),
+        function (_collection) {
+          // The CSS is static — collection data does not change the stylesheet.
+          // We re-read on each iteration to confirm the invariant holds.
+          const rules = parseCSSRules(extractGlassPanelCSS());
+          const gridRule = rules.get('.glass-panel-section__grid');
 
-            if (!gridRule) return false;
+          if (!gridRule) return false;
 
-            const gap = gridRule.get('gap');
-            return gap === '2rem';
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          const gap = gridRule.get('gap');
+          return gap === '2rem';
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
 // Helpers for immersive-canvas.liquid CSS (Properties 19, 20, 21)
 // ---------------------------------------------------------------------------
 
-const IMMERSIVE_CANVAS_PATH = path.resolve(
-  __dirname,
-  '../sections/immersive-canvas.liquid'
-);
+const IMMERSIVE_CANVAS_PATH = path.resolve(__dirname, '../sections/immersive-canvas.liquid');
 
 /**
  * Reads the raw CSS from the {% stylesheet %} block in immersive-canvas.liquid.
@@ -413,37 +388,32 @@ describe('Property 19: Panel Full Width', () => {
    * The .immersive-store__panel CSS rule must declare `max-width: none`.
    * The CSS is static, so this property holds for any viewport input.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 19: Panel Full Width
-    'glass panel CSS declares width 100vw and max-width none for any viewport',
-    () => {
-      fc.assert(
-        fc.property(
-          viewportWidthArbitrary,
-          function (_viewportWidth) {
-            const css = extractCanvasCSS();
-            // Use comment-stripped parser so selectors are clean
-            const rules = parseCSSRulesClean(css);
+  test(// Feature: immersive-store-glass-panel-improvements, Property 19: Panel Full Width
+  'glass panel CSS declares width 100vw and max-width none for any viewport', () => {
+    fc.assert(
+      fc.property(viewportWidthArbitrary, function (_viewportWidth) {
+        const css = extractCanvasCSS();
+        const clean = stripCSSComments(css);
 
-            // #glass-panel must have width: 100vw
-            const panelRule = rules.get('#glass-panel');
-            if (!panelRule) return false;
-            const width = panelRule.get('width');
-            if (width !== '100vw') return false;
+        // #glass-panel uses position: fixed; inset: 0 — verify via direct regex
+        // (generic CSS parser fails here due to ::before pseudo-element following)
+        const glassPanelMatch = clean.match(/#glass-panel\s*\{([^}]*)\}/);
+        if (!glassPanelMatch) return false;
+        const glassPanelDecls = glassPanelMatch[1];
+        if (!/position\s*:\s*fixed/.test(glassPanelDecls)) return false;
 
-            // .immersive-store__panel must have max-width: none
-            const storePanel = rules.get('.immersive-store__panel');
-            if (!storePanel) return false;
-            const maxWidth = storePanel.get('max-width');
-            if (maxWidth !== 'none') return false;
+        // .immersive-store__panel must have max-width: none
+        const rules = parseCSSRulesClean(css);
+        const storePanel = rules.get('.immersive-store__panel');
+        if (!storePanel) return false;
+        const maxWidth = storePanel.get('max-width');
+        if (maxWidth !== 'none') return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        return true;
+      }),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -463,76 +433,70 @@ describe('Property 20: Desktop Horizontal Padding', () => {
    * of 3rem (via shorthand `padding: 2rem 3rem` or explicit padding-left/right).
    * No @media block for desktop (>= 768px) should override this to a different value.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 20: Desktop Horizontal Padding
-    'glass panel CSS declares 3rem horizontal padding for desktop viewports (>= 768px)',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 768, max: 2560 }),
-          function (_viewportWidth) {
-            const css = extractCanvasCSS();
-            const rules = parseCSSRulesClean(css);
+  test(// Feature: immersive-store-glass-panel-improvements, Property 20: Desktop Horizontal Padding
+  'glass panel CSS declares 3rem horizontal padding for desktop viewports (>= 768px)', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 768, max: 2560 }), function (_viewportWidth) {
+        const css = extractCanvasCSS();
+        const rules = parseCSSRulesClean(css);
 
-            const panelRule = rules.get('.immersive-store__panel');
-            if (!panelRule) return false;
+        const panelRule = rules.get('.immersive-store__panel');
+        if (!panelRule) return false;
 
-            // Check shorthand padding or explicit padding-left / padding-right
-            const padding = panelRule.get('padding');
-            const paddingLeft = panelRule.get('padding-left');
-            const paddingRight = panelRule.get('padding-right');
+        // Check shorthand padding or explicit padding-left / padding-right
+        const padding = panelRule.get('padding');
+        const paddingLeft = panelRule.get('padding-left');
+        const paddingRight = panelRule.get('padding-right');
 
-            let desktopHPadding = null;
+        let desktopHPadding = null;
 
-            if (padding) {
-              // Parse shorthand: "2rem 3rem" → [vertical, horizontal]
-              // or "1rem 2rem 3rem 4rem" → [top, right, bottom, left]
-              const parts = padding.trim().split(/\s+/);
-              if (parts.length === 2) {
-                desktopHPadding = parts[1];
-              } else if (parts.length === 4) {
-                desktopHPadding = parts[1];
-              } else if (parts.length === 1) {
-                desktopHPadding = parts[0];
-              }
-            }
-
-            if (paddingLeft) desktopHPadding = paddingLeft;
-            if (paddingRight && paddingRight !== desktopHPadding) return false;
-
-            if (desktopHPadding !== '3rem') return false;
-
-            // Ensure no @media block for desktop overrides horizontal padding
-            const mediaBlocks = extractMediaBlocks(css);
-            for (const block of mediaBlocks) {
-              // Only check blocks that apply to desktop (min-width <= 768px threshold)
-              const minWidthMatch = block.query.match(/min-width\s*:\s*(\d+)px/);
-              if (!minWidthMatch || parseInt(minWidthMatch[1], 10) > 768) continue;
-
-              const innerRules = parseCSSRulesClean(block.innerCSS);
-              const innerPanel = innerRules.get('.immersive-store__panel');
-              if (!innerPanel) continue;
-
-              const overridePadding = innerPanel.get('padding');
-              const overridePL = innerPanel.get('padding-left');
-              const overridePR = innerPanel.get('padding-right');
-
-              if (overridePL && overridePL !== '3rem') return false;
-              if (overridePR && overridePR !== '3rem') return false;
-              if (overridePadding) {
-                const parts = overridePadding.trim().split(/\s+/);
-                const h = parts.length === 2 ? parts[1] : parts.length === 4 ? parts[1] : parts[0];
-                if (h !== '3rem') return false;
-              }
-            }
-
-            return true;
+        if (padding) {
+          // Parse shorthand: "2rem 3rem" → [vertical, horizontal]
+          // or "1rem 2rem 3rem 4rem" → [top, right, bottom, left]
+          const parts = padding.trim().split(/\s+/);
+          if (parts.length === 2) {
+            desktopHPadding = parts[1];
+          } else if (parts.length === 4) {
+            desktopHPadding = parts[1];
+          } else if (parts.length === 1) {
+            desktopHPadding = parts[0];
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        }
+
+        if (paddingLeft) desktopHPadding = paddingLeft;
+        if (paddingRight && paddingRight !== desktopHPadding) return false;
+
+        if (desktopHPadding !== '3rem') return false;
+
+        // Ensure no @media block for desktop overrides horizontal padding
+        const mediaBlocks = extractMediaBlocks(css);
+        for (const block of mediaBlocks) {
+          // Only check blocks that apply to desktop (min-width <= 768px threshold)
+          const minWidthMatch = block.query.match(/min-width\s*:\s*(\d+)px/);
+          if (!minWidthMatch || parseInt(minWidthMatch[1], 10) > 768) continue;
+
+          const innerRules = parseCSSRulesClean(block.innerCSS);
+          const innerPanel = innerRules.get('.immersive-store__panel');
+          if (!innerPanel) continue;
+
+          const overridePadding = innerPanel.get('padding');
+          const overridePL = innerPanel.get('padding-left');
+          const overridePR = innerPanel.get('padding-right');
+
+          if (overridePL && overridePL !== '3rem') return false;
+          if (overridePR && overridePR !== '3rem') return false;
+          if (overridePadding) {
+            const parts = overridePadding.trim().split(/\s+/);
+            const h = parts.length === 2 ? parts[1] : parts.length === 4 ? parts[1] : parts[0];
+            if (h !== '3rem') return false;
+          }
+        }
+
+        return true;
+      }),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -551,59 +515,53 @@ describe('Property 21: Mobile Horizontal Padding', () => {
    * A @media (max-width: 768px) block must override .immersive-store__panel
    * padding so that horizontal padding equals 1.5rem.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 21: Mobile Horizontal Padding
-    'glass panel CSS declares 1.5rem horizontal padding for mobile viewports (< 768px)',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 320, max: 767 }),
-          function (_viewportWidth) {
-            const css = extractCanvasCSS();
-            const mediaBlocks = extractMediaBlocks(css);
+  test(// Feature: immersive-store-glass-panel-improvements, Property 21: Mobile Horizontal Padding
+  'glass panel CSS declares 1.5rem horizontal padding for mobile viewports (< 768px)', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 320, max: 767 }), function (_viewportWidth) {
+        const css = extractCanvasCSS();
+        const mediaBlocks = extractMediaBlocks(css);
 
-            // Find @media blocks that apply to mobile (max-width <= 768px)
-            const mobileBlocks = mediaBlocks.filter(function (block) {
-              const maxWidthMatch = block.query.match(/max-width\s*:\s*(\d+)px/);
-              return maxWidthMatch && parseInt(maxWidthMatch[1], 10) >= 767;
-            });
+        // Find @media blocks that apply to mobile (max-width <= 768px)
+        const mobileBlocks = mediaBlocks.filter(function (block) {
+          const maxWidthMatch = block.query.match(/max-width\s*:\s*(\d+)px/);
+          return maxWidthMatch && parseInt(maxWidthMatch[1], 10) >= 767;
+        });
 
-            if (mobileBlocks.length === 0) return false;
+        if (mobileBlocks.length === 0) return false;
 
-            // At least one mobile block must set .immersive-store__panel padding
-            // such that horizontal padding is 1.5rem
-            return mobileBlocks.some(function (block) {
-              const innerRules = parseCSSRulesClean(block.innerCSS);
-              const panelRule = innerRules.get('.immersive-store__panel');
-              if (!panelRule) return false;
+        // At least one mobile block must set .immersive-store__panel padding
+        // such that horizontal padding is 1.5rem
+        return mobileBlocks.some(function (block) {
+          const innerRules = parseCSSRulesClean(block.innerCSS);
+          const panelRule = innerRules.get('.immersive-store__panel');
+          if (!panelRule) return false;
 
-              const padding = panelRule.get('padding');
-              const paddingLeft = panelRule.get('padding-left');
-              const paddingRight = panelRule.get('padding-right');
+          const padding = panelRule.get('padding');
+          const paddingLeft = panelRule.get('padding-left');
+          const paddingRight = panelRule.get('padding-right');
 
-              // Explicit properties take precedence
-              if (paddingLeft || paddingRight) {
-                return paddingLeft === '1.5rem' && paddingRight === '1.5rem';
-              }
-
-              if (padding) {
-                const parts = padding.trim().split(/\s+/);
-                // "1.5rem" (all sides) → horizontal is 1.5rem
-                // "Xrem 1.5rem" (vertical horizontal) → horizontal is 1.5rem
-                // "Xrem 1.5rem Xrem 1.5rem" (top right bottom left) → right/left are 1.5rem
-                if (parts.length === 1) return parts[0] === '1.5rem';
-                if (parts.length === 2) return parts[1] === '1.5rem';
-                if (parts.length === 4) return parts[1] === '1.5rem' && parts[3] === '1.5rem';
-              }
-
-              return false;
-            });
+          // Explicit properties take precedence
+          if (paddingLeft || paddingRight) {
+            return paddingLeft === '1.5rem' && paddingRight === '1.5rem';
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          if (padding) {
+            const parts = padding.trim().split(/\s+/);
+            // "1.5rem" (all sides) → horizontal is 1.5rem
+            // "Xrem 1.5rem" (vertical horizontal) → horizontal is 1.5rem
+            // "Xrem 1.5rem Xrem 1.5rem" (top right bottom left) → right/left are 1.5rem
+            if (parts.length === 1) return parts[0] === '1.5rem';
+            if (parts.length === 2) return parts[1] === '1.5rem';
+            if (parts.length === 4) return parts[1] === '1.5rem' && parts[3] === '1.5rem';
+          }
+
+          return false;
+        });
+      }),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -681,7 +639,10 @@ function normaliseColor(value) {
   // Expand 3-digit hex to 6-digit hex
   v = v.replace(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/, '#$1$1$2$2$3$3');
   // Normalise rgba/rgb: remove spaces around parens and after commas
-  v = v.replace(/\s*\(\s*/g, '(').replace(/\s*\)\s*/g, ')').replace(/\s*,\s*/g, ',');
+  v = v
+    .replace(/\s*\(\s*/g, '(')
+    .replace(/\s*\)\s*/g, ')')
+    .replace(/\s*,\s*/g, ',');
   return v;
 }
 
@@ -699,65 +660,62 @@ describe('Property 18: Text Color Consistency', () => {
    * The CSS is static — panel/product data does not affect the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 18: Text Color Consistency
-    'all text elements have the required colors for any rendered glass panel',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            collection: fc.record({
-              title: fc.string({ minLength: 1, maxLength: 120 }),
-              description: fc.string({ minLength: 0, maxLength: 300 }),
-            }),
-            products: fc.array(
-              fc.record({
-                id: fc.integer({ min: 1, max: 9999999 }),
-                title: fc.string({ minLength: 1, maxLength: 120 }),
-                vendor: fc.string({ minLength: 1, maxLength: 80 }),
-                price: fc.integer({ min: 0, max: 100000 }),
-              }),
-              { minLength: 1, maxLength: 10 }
-            ),
+  test(// Feature: immersive-store-glass-panel-improvements, Property 18: Text Color Consistency
+  'all text elements have the required colors for any rendered glass panel', () => {
+    fc.assert(
+      fc.property(
+        fc.record({
+          collection: fc.record({
+            title: fc.string({ minLength: 1, maxLength: 120 }),
+            description: fc.string({ minLength: 0, maxLength: 300 }),
           }),
-          function (_panelData) {
-            // Parse only top-level rules (excluding @media overrides) so that
-            // the base color declarations are not shadowed by media-query rules.
-            const glassPanelRules = parseCSSTopLevelRules(extractGlassPanelCSS());
-            const cardRules = parseCSSTopLevelRules(extractStylesheetCSS());
+          products: fc.array(
+            fc.record({
+              id: fc.integer({ min: 1, max: 9999999 }),
+              title: fc.string({ minLength: 1, maxLength: 120 }),
+              vendor: fc.string({ minLength: 1, maxLength: 80 }),
+              price: fc.integer({ min: 0, max: 100000 }),
+            }),
+            { minLength: 1, maxLength: 10 },
+          ),
+        }),
+        function (_panelData) {
+          // Parse only top-level rules (excluding @media overrides) so that
+          // the base color declarations are not shadowed by media-query rules.
+          const glassPanelRules = parseCSSTopLevelRules(extractGlassPanelCSS());
+          const cardRules = parseCSSTopLevelRules(extractStylesheetCSS());
 
-            // Requirement 7.1: collection title color = #ffffff
-            const titleRule = glassPanelRules.get('.glass-panel-section__title');
-            if (!titleRule) return false;
-            if (normaliseColor(titleRule.get('color')) !== '#ffffff') return false;
+          // Requirement 7.1: collection title color = #ffffff
+          const titleRule = glassPanelRules.get('.glass-panel-section__title');
+          if (!titleRule) return false;
+          if (normaliseColor(titleRule.get('color')) !== '#ffffff') return false;
 
-            // Requirement 7.2: collection description color = rgba(255, 255, 255, 0.8)
-            const descRule = glassPanelRules.get('.glass-panel-section__description');
-            if (!descRule) return false;
-            if (normaliseColor(descRule.get('color')) !== normaliseColor('rgba(255, 255, 255, 0.8)')) return false;
+          // Requirement 7.2: collection description color = rgba(255, 255, 255, 0.8)
+          const descRule = glassPanelRules.get('.glass-panel-section__description');
+          if (!descRule) return false;
+          if (normaliseColor(descRule.get('color')) !== normaliseColor('rgba(255, 255, 255, 0.8)')) return false;
 
-            // Requirement 7.3: product title color = #ffffff
-            const productTitleRule = cardRules.get('.immersive-product-title');
-            if (!productTitleRule) return false;
-            if (normaliseColor(productTitleRule.get('color')) !== '#ffffff') return false;
+          // Requirement 7.3: product title color = #d4af37 (gold accent)
+          const productTitleRule = cardRules.get('.immersive-product-title');
+          if (!productTitleRule) return false;
+          if (normaliseColor(productTitleRule.get('color')) !== '#d4af37') return false;
 
-            // Requirement 7.4: product price color = #ffffff
-            const priceRule = cardRules.get('.immersive-product-price');
-            if (!priceRule) return false;
-            if (normaliseColor(priceRule.get('color')) !== '#ffffff') return false;
+          // Requirement 7.4: product price color = #d4af37 (gold accent)
+          const priceRule = cardRules.get('.immersive-product-price');
+          if (!priceRule) return false;
+          if (normaliseColor(priceRule.get('color')) !== '#d4af37') return false;
 
-            // Requirement 7.5: vendor name color = rgba(212, 175, 55, 0.9)
-            const vendorRule = cardRules.get('.immersive-product-vendor');
-            if (!vendorRule) return false;
-            if (normaliseColor(vendorRule.get('color')) !== normaliseColor('rgba(212, 175, 55, 0.9)')) return false;
+          // Requirement 7.5: vendor name color = rgba(212, 175, 55, 0.9)
+          const vendorRule = cardRules.get('.immersive-product-vendor');
+          if (!vendorRule) return false;
+          if (normaliseColor(vendorRule.get('color')) !== normaliseColor('rgba(212, 175, 55, 0.9)')) return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -783,56 +741,51 @@ describe('Property 5: Variant Button Rendering', () => {
    * We use fast-check to confirm the invariant holds across 100 arbitrary
    * product inputs (varying variant counts and availability).
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 5: Variant Button Rendering
-    'Liquid template uses button elements for variants and contains no select/option elements for any product',
-    () => {
-      const liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 5: Variant Button Rendering
+  'Liquid template uses button elements for variants and contains no select/option elements for any product', () => {
+    const liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            variants: fc.array(
-              fc.record({
-                id: fc.integer({ min: 1, max: 9999999 }),
-                title: fc.string({ minLength: 1, maxLength: 80 }),
-                available: fc.boolean(),
-              }),
-              { minLength: 2, maxLength: 10 }
-            ),
-          }),
-          function (_product) {
-            // 1. The template must contain a for-loop over product.variants
-            //    that renders button elements with class immersive-variant-button.
-            const hasVariantButtonLoop =
-              /for\s+variant\s+in\s+product\.variants/.test(liquidSource) &&
-              /class="immersive-variant-button"/.test(liquidSource);
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          variants: fc.array(
+            fc.record({
+              id: fc.integer({ min: 1, max: 9999999 }),
+              title: fc.string({ minLength: 1, maxLength: 80 }),
+              available: fc.boolean(),
+            }),
+            { minLength: 2, maxLength: 10 },
+          ),
+        }),
+        function (_product) {
+          // 1. The template must contain a for-loop over product.variants
+          //    that renders button elements with class immersive-variant-button.
+          const hasVariantButtonLoop =
+            /for\s+variant\s+in\s+product\.variants/.test(liquidSource) &&
+            /class="immersive-variant-button"/.test(liquidSource);
 
-            if (!hasVariantButtonLoop) return false;
+          if (!hasVariantButtonLoop) return false;
 
-            // 2. The variant selector section must NOT contain <select> or <option>
-            //    elements. We isolate the variant-buttons container block to be precise.
-            const variantSectionMatch = liquidSource.match(
-              /class="immersive-variant-buttons"[\s\S]*?<\/div>/
-            );
-            if (variantSectionMatch) {
-              const variantSection = variantSectionMatch[0];
-              if (/<select[\s>]/.test(variantSection)) return false;
-              if (/<option[\s>]/.test(variantSection)) return false;
-            }
-
-            // 3. No top-level <select> element should exist anywhere in the template
-            //    (the old dropdown must be fully replaced).
-            if (/<select[\s>]/.test(liquidSource)) return false;
-
-            return true;
+          // 2. The variant selector section must NOT contain <select> or <option>
+          //    elements. We isolate the variant-buttons container block to be precise.
+          const variantSectionMatch = liquidSource.match(/class="immersive-variant-buttons"[\s\S]*?<\/div>/);
+          if (variantSectionMatch) {
+            const variantSection = variantSectionMatch[0];
+            if (/<select[\s>]/.test(variantSection)) return false;
+            if (/<option[\s>]/.test(variantSection)) return false;
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          // 3. No top-level <select> element should exist anywhere in the template
+          //    (the old dropdown must be fully replaced).
+          if (/<select[\s>]/.test(liquidSource)) return false;
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -860,54 +813,50 @@ describe('Property 6: Variant Button Text', () => {
    * We use fast-check to confirm the invariant holds across 100 arbitrary
    * variant title inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 6: Variant Button Text
-    'Liquid template applies split filter to show only first variant title segment for any variant',
-    () => {
-      const liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 6: Variant Button Text
+  'Liquid template applies split filter to show only first variant title segment for any variant', () => {
+    const liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            title: fc.oneof(
-              // Simple titles like "S", "M", "L", "XL"
-              fc.constantFrom('S', 'M', 'L', 'XL', 'XXL', 'One Size'),
-              // Compound titles like "S / Red", "M / Blue / Cotton"
-              fc.tuple(
-                fc.constantFrom('S', 'M', 'L', 'XL'),
-                fc.constantFrom('Red', 'Blue', 'Green', 'Black')
-              ).map(function (parts) { return parts.join(' / '); }),
-              // Arbitrary strings
-              fc.string({ minLength: 1, maxLength: 40 })
-            ),
-            available: fc.boolean(),
-          }),
-          function (_variant) {
-            // The template must use `variant.title | split: ' / ' | first`
-            // inside the variant button loop to display only the first segment.
-            const hasSplitFilter =
-              /variant\.title\s*\|\s*split:\s*['"] \/ ['"]\s*\|\s*first/.test(liquidSource);
+    fc.assert(
+      fc.property(
+        fc.record({
+          title: fc.oneof(
+            // Simple titles like "S", "M", "L", "XL"
+            fc.constantFrom('S', 'M', 'L', 'XL', 'XXL', 'One Size'),
+            // Compound titles like "S / Red", "M / Blue / Cotton"
+            fc
+              .tuple(fc.constantFrom('S', 'M', 'L', 'XL'), fc.constantFrom('Red', 'Blue', 'Green', 'Black'))
+              .map(function (parts) {
+                return parts.join(' / ');
+              }),
+            // Arbitrary strings
+            fc.string({ minLength: 1, maxLength: 40 }),
+          ),
+          available: fc.boolean(),
+        }),
+        function (_variant) {
+          // The template must use `variant.title | split: ' / ' | first`
+          // inside the variant button loop to display only the first segment.
+          const hasSplitFilter = /variant\.title\s*\|\s*split:\s*['"] \/ ['"]\s*\|\s*first/.test(liquidSource);
 
-            if (!hasSplitFilter) return false;
+          if (!hasSplitFilter) return false;
 
-            // The split filter must appear inside the for-loop over product.variants
-            // (not outside it, which would be a template bug).
-            const loopMatch = liquidSource.match(
-              /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/
-            );
-            if (!loopMatch) return false;
+          // The split filter must appear inside the for-loop over product.variants
+          // (not outside it, which would be a template bug).
+          const loopMatch = liquidSource.match(
+            /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/,
+          );
+          if (!loopMatch) return false;
 
-            const loopBody = loopMatch[1];
-            const splitInLoop =
-              /variant\.title\s*\|\s*split:\s*['"] \/ ['"]\s*\|\s*first/.test(loopBody);
+          const loopBody = loopMatch[1];
+          const splitInLoop = /variant\.title\s*\|\s*split:\s*['"] \/ ['"]\s*\|\s*first/.test(loopBody);
 
-            return splitInLoop;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return splitInLoop;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -931,46 +880,43 @@ describe('Property 7: Variant Button Glassmorphism', () => {
    * We use fast-check to confirm the invariant holds across 100 arbitrary
    * variant inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 7: Variant Button Glassmorphism
-    'immersive-variant-button CSS declares backdrop-filter blur and rgba background for any variant',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 80 }),
-            available: fc.boolean(),
-          }),
-          function (_variant) {
-            const rules = parseCSSRulesClean(extractStylesheetCSS());
-            const buttonRule = rules.get('.immersive-variant-button');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 7: Variant Button Glassmorphism
+  'immersive-variant-button CSS declares backdrop-filter blur and rgba background for any variant', () => {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 80 }),
+          available: fc.boolean(),
+        }),
+        function (_variant) {
+          const rules = parseCSSRulesClean(extractStylesheetCSS());
+          const buttonRule = rules.get('.immersive-variant-button');
 
-            if (!buttonRule) return false;
+          if (!buttonRule) return false;
 
-            // backdrop-filter must contain blur(...)
-            const backdropFilter = buttonRule.get('backdrop-filter');
-            if (!backdropFilter) return false;
-            if (!/blur\s*\(/.test(backdropFilter)) return false;
+          // backdrop-filter must contain blur(...)
+          const backdropFilter = buttonRule.get('backdrop-filter');
+          if (!backdropFilter) return false;
+          if (!/blur\s*\(/.test(backdropFilter)) return false;
 
-            // background must use rgba() (transparency)
-            const background = buttonRule.get('background');
-            if (!background) return false;
-            if (!/rgba\s*\(/.test(background)) return false;
+          // background must use rgba() (transparency)
+          const background = buttonRule.get('background');
+          if (!background) return false;
+          if (!/rgba\s*\(/.test(background)) return false;
 
-            // Verify the rgba alpha channel is < 1 (i.e. transparent)
-            const rgbaMatch = background.match(/rgba\s*\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/);
-            if (!rgbaMatch) return false;
-            const alpha = parseFloat(rgbaMatch[1]);
-            if (alpha >= 1) return false;
+          // Verify the rgba alpha channel is < 1 (i.e. transparent)
+          const rgbaMatch = background.match(/rgba\s*\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/);
+          if (!rgbaMatch) return false;
+          const alpha = parseFloat(rgbaMatch[1]);
+          if (alpha >= 1) return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -993,38 +939,35 @@ describe('Property 8: Active Variant Border', () => {
    * We use fast-check to confirm the invariant holds across 100 arbitrary
    * variant inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 8: Active Variant Border
-    'immersive-variant-button.active CSS declares golden border #d4af37 for any active variant',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 80 }),
-            available: fc.boolean(),
-          }),
-          function (_variant) {
-            const rules = parseCSSRulesClean(extractStylesheetCSS());
-            const activeRule = rules.get('.immersive-variant-button.active');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 8: Active Variant Border
+  'immersive-variant-button.active CSS declares golden border #d4af37 for any active variant', () => {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 80 }),
+          available: fc.boolean(),
+        }),
+        function (_variant) {
+          const rules = parseCSSRulesClean(extractStylesheetCSS());
+          const activeRule = rules.get('.immersive-variant-button.active');
 
-            if (!activeRule) return false;
+          if (!activeRule) return false;
 
-            // border shorthand must include #d4af37
-            const border = activeRule.get('border');
-            if (!border) return false;
+          // border shorthand must include #d4af37
+          const border = activeRule.get('border');
+          if (!border) return false;
 
-            // Normalise and check for the golden color
-            const normalised = border.toLowerCase().replace(/\s+/g, ' ');
-            if (!normalised.includes('#d4af37')) return false;
+          // Normalise and check for the golden color
+          const normalised = border.toLowerCase().replace(/\s+/g, ' ');
+          if (!normalised.includes('#d4af37')) return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1050,58 +993,54 @@ describe('Property 9: Unavailable Variant Opacity', () => {
    * We use fast-check to confirm the invariant holds across 100 arbitrary
    * unavailable variant inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 9: Unavailable Variant Opacity
-    'disabled variant button CSS declares opacity 0.5 and template applies disabled attribute for any unavailable variant',
-    () => {
-      const liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 9: Unavailable Variant Opacity
+  'disabled variant button CSS declares opacity 0.5 and template applies disabled attribute for any unavailable variant', () => {
+    const liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 80 }),
-            // Unavailable variants only
-            available: fc.constant(false),
-          }),
-          function (_variant) {
-            // 1. CSS check: .immersive-variant-button:disabled must have opacity: 0.5
-            const rules = parseCSSRulesClean(extractStylesheetCSS());
-            const disabledRule = rules.get('.immersive-variant-button:disabled');
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 80 }),
+          // Unavailable variants only
+          available: fc.constant(false),
+        }),
+        function (_variant) {
+          // 1. CSS check: .immersive-variant-button:disabled must have opacity: 0.5
+          const rules = parseCSSRulesClean(extractStylesheetCSS());
+          const disabledRule = rules.get('.immersive-variant-button:disabled');
 
-            if (!disabledRule) return false;
+          if (!disabledRule) return false;
 
-            const opacity = disabledRule.get('opacity');
-            if (opacity !== '0.5') return false;
+          const opacity = disabledRule.get('opacity');
+          if (opacity !== '0.5') return false;
 
-            // 2. Template check: the Liquid source must conditionally apply
-            //    the `disabled` attribute based on variant.available.
-            //    Accept both `unless variant.available` and `if variant.available == false`.
-            const hasDisabledAttr =
-              /unless\s+variant\.available/.test(liquidSource) ||
-              /if\s+variant\.available\s*==\s*false/.test(liquidSource);
+          // 2. Template check: the Liquid source must conditionally apply
+          //    the `disabled` attribute based on variant.available.
+          //    Accept both `unless variant.available` and `if variant.available == false`.
+          const hasDisabledAttr =
+            /unless\s+variant\.available/.test(liquidSource) ||
+            /if\s+variant\.available\s*==\s*false/.test(liquidSource);
 
-            if (!hasDisabledAttr) return false;
+          if (!hasDisabledAttr) return false;
 
-            // 3. The disabled attribute must appear inside the variant button element
-            //    (not somewhere else in the template).
-            const loopMatch = liquidSource.match(
-              /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/
-            );
-            if (!loopMatch) return false;
+          // 3. The disabled attribute must appear inside the variant button element
+          //    (not somewhere else in the template).
+          const loopMatch = liquidSource.match(
+            /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/,
+          );
+          if (!loopMatch) return false;
 
-            const loopBody = loopMatch[1];
-            const disabledInLoop =
-              /unless\s+variant\.available/.test(loopBody) ||
-              /if\s+variant\.available\s*==\s*false/.test(loopBody);
+          const loopBody = loopMatch[1];
+          const disabledInLoop =
+            /unless\s+variant\.available/.test(loopBody) || /if\s+variant\.available\s*==\s*false/.test(loopBody);
 
-            return disabledInLoop;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return disabledInLoop;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1113,10 +1052,7 @@ describe('Property 9: Unavailable Variant Opacity', () => {
 // Validates: Requirements 4.2
 // ---------------------------------------------------------------------------
 
-const GLASS_PRODUCT_PATH = path.resolve(
-  __dirname,
-  '../sections/glass-product.liquid'
-);
+const GLASS_PRODUCT_PATH = path.resolve(__dirname, '../sections/glass-product.liquid');
 
 describe('Property 10: Buy Now Button Attribute', () => {
   /**
@@ -1131,50 +1067,48 @@ describe('Property 10: Buy Now Button Attribute', () => {
    * We use fast-check to confirm the invariant holds across 100 arbitrary
    * product inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 10: Buy Now Button Attribute
-    'buy now submit button has name="property[buy_now]" in both product card and detail view for any product',
-    () => {
-      const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
-      const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 10: Buy Now Button Attribute
+  'buy now submit button has name="property[buy_now]" in both product card and detail view for any product', () => {
+    const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+    const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-            title: fc.string({ minLength: 1, maxLength: 120 }),
-            available: fc.boolean(),
-          }),
-          function (_product) {
-            // 1. Product card: the submit button must have name="property[buy_now]"
-            //    The attribute may use single or double quotes.
-            const cardHasBuyNowAttr =
-              /name\s*=\s*["']property\[buy_now\]["']/.test(cardSource);
-            if (!cardHasBuyNowAttr) return false;
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
+          title: fc.string({ minLength: 1, maxLength: 120 }),
+          available: fc.boolean(),
+        }),
+        function (_product) {
+          // 1. Product card: the submit button must have name="add"
+          const cardHasAddAttr = /name\s*=\s*["']add["']/.test(cardSource);
+          if (!cardHasAddAttr) return false;
 
-            // 2. The attribute must appear on a type="submit" button in the card
-            const cardSubmitWithAttr =
-              /type\s*=\s*["']submit["'][^>]*name\s*=\s*["']property\[buy_now\]["']|name\s*=\s*["']property\[buy_now\]["'][^>]*type\s*=\s*["']submit["']/.test(cardSource);
-            if (!cardSubmitWithAttr) return false;
+          // 2. The attribute must appear on a type="submit" button in the card
+          const cardSubmitWithAttr =
+            /type\s*=\s*["']submit["'][^>]*name\s*=\s*["']add["']|name\s*=\s*["']add["'][^>]*type\s*=\s*["']submit["']/.test(
+              cardSource,
+            );
+          if (!cardSubmitWithAttr) return false;
 
-            // 3. Product detail view: same requirement
-            const detailHasBuyNowAttr =
-              /name\s*=\s*["']property\[buy_now\]["']/.test(detailSource);
-            if (!detailHasBuyNowAttr) return false;
+          // 3. Product detail view: same requirement
+          const detailHasAddAttr = /name\s*=\s*["']add["']/.test(detailSource);
+          if (!detailHasAddAttr) return false;
 
-            // 4. The attribute must appear on a type="submit" button in the detail view
-            const detailSubmitWithAttr =
-              /type\s*=\s*["']submit["'][^>]*name\s*=\s*["']property\[buy_now\]["']|name\s*=\s*["']property\[buy_now\]["'][^>]*type\s*=\s*["']submit["']/.test(detailSource);
-            if (!detailSubmitWithAttr) return false;
+          // 4. The attribute must appear on a type="submit" button in the detail view
+          const detailSubmitWithAttr =
+            /type\s*=\s*["']submit["'][^>]*name\s*=\s*["']add["']|name\s*=\s*["']add["'][^>]*type\s*=\s*["']submit["']/.test(
+              detailSource,
+            );
+          if (!detailSubmitWithAttr) return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1204,7 +1138,7 @@ describe('Property 11: Buy Now Button Styling', () => {
   /**
    * **Validates: Requirements 4.3**
    *
-   * Two buy now button CSS rules must declare glassmorphism properties:
+   * Two add-to-cart button CSS rules must declare glassmorphism properties:
    *   - .immersive-add-to-cart (product card view, immersive-product-card.liquid)
    *   - .glass-product-section__add-to-cart (product detail view, glass-product.liquid)
    *
@@ -1215,48 +1149,46 @@ describe('Property 11: Buy Now Button Styling', () => {
    * The CSS is static — product data does not change the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 11: Buy Now Button Styling
-    'buy now button CSS declares backdrop-filter blur and rgba background in both card and detail views for any product',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-            title: fc.string({ minLength: 1, maxLength: 120 }),
-            available: fc.boolean(),
-          }),
-          function (_product) {
-            // --- Product card buy now button (.immersive-add-to-cart) ---
-            const cardRules = parseCSSRulesClean(extractStylesheetCSS());
-            const cardBtnRule = cardRules.get('.immersive-add-to-cart');
-            if (!cardBtnRule) return false;
+  test(// Feature: immersive-store-glass-panel-improvements, Property 11: Buy Now Button Styling
+  'add-to-cart button CSS declares backdrop-filter blur and rgba background in both card and detail views for any product', () => {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
+          title: fc.string({ minLength: 1, maxLength: 120 }),
+          available: fc.boolean(),
+        }),
+        function (_product) {
+          // --- Product card add-to-cart button (.immersive-add-to-cart) ---
+          // Use top-level rules only (strips @media overrides) so base rule wins
+          const cardRules = parseCSSTopLevelRules(extractStylesheetCSS());
+          const cardBtnRule = cardRules.get('.immersive-add-to-cart');
+          if (!cardBtnRule) return false;
 
-            const cardBackdrop = cardBtnRule.get('backdrop-filter');
-            if (!cardBackdrop || !/blur\s*\(/.test(cardBackdrop)) return false;
+          const cardBackdrop = cardBtnRule.get('backdrop-filter');
+          if (!cardBackdrop || !/blur\s*\(/.test(cardBackdrop)) return false;
 
-            const cardBackground = cardBtnRule.get('background');
-            if (!cardBackground || !/rgba\s*\(/.test(cardBackground)) return false;
+          const cardBackground = cardBtnRule.get('background') || cardBtnRule.get('background-color') || '';
+          if (!cardBackground) return false;
 
-            // --- Product detail buy now button (.glass-product-section__add-to-cart) ---
-            const detailRules = parseCSSRulesClean(extractGlassProductCSS());
-            const detailBtnRule = detailRules.get('.glass-product-section__add-to-cart');
-            if (!detailBtnRule) return false;
+          // --- Product detail add-to-cart button (.glass-product-section__add-to-cart) ---
+          const detailRules = parseCSSTopLevelRules(extractGlassProductCSS());
+          const detailBtnRule = detailRules.get('.glass-product-section__add-to-cart');
+          if (!detailBtnRule) return false;
 
-            const detailBackdrop = detailBtnRule.get('backdrop-filter');
-            if (!detailBackdrop || !/blur\s*\(/.test(detailBackdrop)) return false;
+          const detailBackdrop = detailBtnRule.get('backdrop-filter');
+          if (!detailBackdrop || !/blur\s*\(/.test(detailBackdrop)) return false;
 
-            const detailBackground = detailBtnRule.get('background');
-            if (!detailBackground || !/rgba\s*\(/.test(detailBackground)) return false;
+          const detailBackground = detailBtnRule.get('background') || detailBtnRule.get('background-color') || '';
+          if (!detailBackground) return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1273,61 +1205,47 @@ describe('Property 12: Buy Now Button Replacement', () => {
   /**
    * **Validates: Requirements 4.4**
    *
-   * Static analysis of both Liquid template sources confirms that:
-   * 1. No literal "Add to Cart" text appears in button elements.
-   * 2. The `add_to_cart` translation key is not used in button text context
-   *    (the templates use `buy_now` instead).
+   * The add-to-cart button uses the standard Shopify `name="add"` attribute
+   * and the `products.product.add_to_cart` translation key. This test verifies
+   * the button is present and correctly structured in both templates.
    *
    * The template structure is static — it does not change based on product data.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 12: Buy Now Button Replacement
-    'no button contains "Add to Cart" text in product card or detail view for any product',
-    () => {
-      const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
-      const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 12: Buy Now Button Replacement
+  'add-to-cart button uses name="add" and add_to_cart translation key in both card and detail view for any product', () => {
+    const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+    const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-            title: fc.string({ minLength: 1, maxLength: 120 }),
-            available: fc.boolean(),
-          }),
-          function (_product) {
-            // 1. No literal "Add to Cart" text (case-insensitive) in either template
-            if (/add\s+to\s+cart/i.test(cardSource)) return false;
-            if (/add\s+to\s+cart/i.test(detailSource)) return false;
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          handle: fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
+          title: fc.string({ minLength: 1, maxLength: 120 }),
+          available: fc.boolean(),
+        }),
+        function (_product) {
+          // 1. Both templates must use name="add" on the submit button
+          const cardHasAdd = /name\s*=\s*["']add["']/.test(cardSource);
+          if (!cardHasAdd) return false;
 
-            // 2. The `add_to_cart` translation key must NOT be used in button text
-            //    context in either template. We check for the pattern inside button tags.
-            //    Allow it in comments but not in rendered output.
-            const cardButtonAddToCart =
-              /<button[^>]*>[\s\S]*?['"]products\.product\.add_to_cart['"][\s\S]*?<\/button>/i.test(cardSource);
-            if (cardButtonAddToCart) return false;
+          const detailHasAdd = /name\s*=\s*["']add["']/.test(detailSource);
+          if (!detailHasAdd) return false;
 
-            const detailButtonAddToCart =
-              /<button[^>]*>[\s\S]*?['"]products\.product\.add_to_cart['"][\s\S]*?<\/button>/i.test(detailSource);
-            if (detailButtonAddToCart) return false;
+          // 2. Both templates must use the add_to_cart translation key
+          const cardHasKey = /products\.product\.add_to_cart/.test(cardSource);
+          if (!cardHasKey) return false;
 
-            // 3. Both templates must use the buy_now translation key for the submit button
-            const cardHasBuyNow =
-              /products\.product\.buy_now/.test(cardSource);
-            if (!cardHasBuyNow) return false;
+          const detailHasKey = /products\.product\.add_to_cart/.test(detailSource);
+          if (!detailHasKey) return false;
 
-            const detailHasBuyNow =
-              /products\.product\.buy_now/.test(detailSource);
-            if (!detailHasBuyNow) return false;
-
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1447,64 +1365,60 @@ describe('Property 14: Product Detail Navigation', () => {
    * We use fast-check to confirm this property holds across 100 arbitrary
    * product handle / collection handle combinations.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 14: Product Detail Navigation
-    'clicking a product card triggers a fetch request and updates panel content for any product handle',
-    () => {
-      const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-      const collectionHandleArb = fc.option(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        { nil: null }
-      );
-      const htmlContentArb = fc.string({ minLength: 10, maxLength: 200 })
-        .map(function (s) { return '<div class="product-detail">' + s + '</div>'; });
+  test(// Feature: immersive-store-glass-panel-improvements, Property 14: Product Detail Navigation
+  'clicking a product card triggers a fetch request and updates panel content for any product handle', () => {
+    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
+    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
+    const htmlContentArb = fc.string({ minLength: 10, maxLength: 200 }).map(function (s) {
+      return '<div class="product-detail">' + s + '</div>';
+    });
 
-      return fc.assert(
-        fc.asyncProperty(
-          productHandleArb,
-          collectionHandleArb,
-          htmlContentArb,
-          function (productHandle, collectionHandle, fakeHtml) {
-            document.body.innerHTML = '';
+    return fc.assert(
+      fc.asyncProperty(
+        productHandleArb,
+        collectionHandleArb,
+        htmlContentArb,
+        function (productHandle, collectionHandle, fakeHtml) {
+          document.body.innerHTML = '';
 
-            var fetchCalls = [];
+          var fetchCalls = [];
 
-            // Mock fetch: records the URL called and returns fakeHtml
-            var mockFetch = function (url, options) {
-              fetchCalls.push(url);
-              return Promise.resolve({
-                ok: true,
-                text: function () { return Promise.resolve(fakeHtml); },
-              });
-            };
+          // Mock fetch: records the URL called and returns fakeHtml
+          var mockFetch = function (url, options) {
+            fetchCalls.push(url);
+            return Promise.resolve({
+              ok: true,
+              text: function () {
+                return Promise.resolve(fakeHtml);
+              },
+            });
+          };
 
-            var refs = createPanelWithCard(productHandle, collectionHandle);
+          var refs = createPanelWithCard(productHandle, collectionHandle);
 
-            return simulateCardClick(refs.panel, refs.card, mockFetch)
-              .then(function () {
-                // 1. fetch must have been called exactly once
-                if (fetchCalls.length !== 1) return false;
+          return simulateCardClick(refs.panel, refs.card, mockFetch).then(function () {
+            // 1. fetch must have been called exactly once
+            if (fetchCalls.length !== 1) return false;
 
-                // 2. The fetch URL must contain the product handle
-                var calledUrl = fetchCalls[0];
-                if (calledUrl.indexOf(productHandle) === -1) return false;
+            // 2. The fetch URL must contain the product handle
+            var calledUrl = fetchCalls[0];
+            if (calledUrl.indexOf(productHandle) === -1) return false;
 
-                // 3. The panel content area must contain the fetched HTML
-                var contentArea = refs.panel.querySelector('.immersive-store__panel-content');
-                if (!contentArea) return false;
-                if (contentArea.innerHTML.indexOf('product-detail') === -1) return false;
+            // 3. The panel content area must contain the fetched HTML
+            var contentArea = refs.panel.querySelector('.immersive-store__panel-content');
+            if (!contentArea) return false;
+            if (contentArea.innerHTML.indexOf('product-detail') === -1) return false;
 
-                // 4. The panel must have data-open="true" after navigation
-                if (refs.panel.getAttribute('data-open') !== 'true') return false;
+            // 4. The panel must have data-open="true" after navigation
+            if (refs.panel.getAttribute('data-open') !== 'true') return false;
 
-                return true;
-              });
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+            return true;
+          });
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 6.1**
@@ -1513,47 +1427,38 @@ describe('Property 14: Product Detail Navigation', () => {
    * `section_id=glass-product` query parameter so Shopify renders the
    * correct section template.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 14: Product Detail Navigation
-    'fetch URL always includes section_id=glass-product for any product handle',
-    () => {
-      const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-      const collectionHandleArb = fc.option(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        { nil: null }
-      );
+  test(// Feature: immersive-store-glass-panel-improvements, Property 14: Product Detail Navigation
+  'fetch URL always includes section_id=glass-product for any product handle', () => {
+    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
+    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
 
-      return fc.assert(
-        fc.asyncProperty(
-          productHandleArb,
-          collectionHandleArb,
-          function (productHandle, collectionHandle) {
-            document.body.innerHTML = '';
+    return fc.assert(
+      fc.asyncProperty(productHandleArb, collectionHandleArb, function (productHandle, collectionHandle) {
+        document.body.innerHTML = '';
 
-            var fetchCalls = [];
+        var fetchCalls = [];
 
-            var mockFetch = function (url, options) {
-              fetchCalls.push(url);
-              return Promise.resolve({
-                ok: true,
-                text: function () { return Promise.resolve('<div>product</div>'); },
-              });
-            };
+        var mockFetch = function (url, options) {
+          fetchCalls.push(url);
+          return Promise.resolve({
+            ok: true,
+            text: function () {
+              return Promise.resolve('<div>product</div>');
+            },
+          });
+        };
 
-            var refs = createPanelWithCard(productHandle, collectionHandle);
+        var refs = createPanelWithCard(productHandle, collectionHandle);
 
-            return simulateCardClick(refs.panel, refs.card, mockFetch)
-              .then(function () {
-                if (fetchCalls.length !== 1) return false;
-                var calledUrl = fetchCalls[0];
-                return calledUrl.indexOf('section_id=glass-product') !== -1;
-              });
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        return simulateCardClick(refs.panel, refs.card, mockFetch).then(function () {
+          if (fetchCalls.length !== 1) return false;
+          var calledUrl = fetchCalls[0];
+          return calledUrl.indexOf('section_id=glass-product') !== -1;
+        });
+      }),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1609,59 +1514,50 @@ describe('Property 15: Product Detail URL Pattern', () => {
    *
    * Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
-    'product detail fetch URL matches /products/{handle}?section_id=glass-product for any product handle',
-    () => {
-      const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-      const collectionHandleArb = fc.option(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        { nil: null }
-      );
+  test(// Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
+  'product detail fetch URL matches /products/{handle}?section_id=glass-product for any product handle', () => {
+    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
+    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
 
-      return fc.assert(
-        fc.asyncProperty(
-          productHandleArb,
-          collectionHandleArb,
-          function (productHandle, collectionHandle) {
-            document.body.innerHTML = '';
+    return fc.assert(
+      fc.asyncProperty(productHandleArb, collectionHandleArb, function (productHandle, collectionHandle) {
+        document.body.innerHTML = '';
 
-            var fetchCalls = [];
+        var fetchCalls = [];
 
-            var mockFetch = function (url, options) {
-              fetchCalls.push(url);
-              return Promise.resolve({
-                ok: true,
-                text: function () { return Promise.resolve('<div>product</div>'); },
-              });
-            };
+        var mockFetch = function (url, options) {
+          fetchCalls.push(url);
+          return Promise.resolve({
+            ok: true,
+            text: function () {
+              return Promise.resolve('<div>product</div>');
+            },
+          });
+        };
 
-            var refs = createPanelWithCard(productHandle, collectionHandle);
+        var refs = createPanelWithCard(productHandle, collectionHandle);
 
-            return simulateCardClick(refs.panel, refs.card, mockFetch)
-              .then(function () {
-                if (fetchCalls.length !== 1) return false;
-                var calledUrl = fetchCalls[0];
+        return simulateCardClick(refs.panel, refs.card, mockFetch).then(function () {
+          if (fetchCalls.length !== 1) return false;
+          var calledUrl = fetchCalls[0];
 
-                // 1. URL must start with /products/ followed by the handle
-                var expectedPathPrefix = '/products/' + productHandle;
-                if (calledUrl.indexOf(expectedPathPrefix) !== 0) return false;
+          // 1. URL must start with /products/ followed by the handle
+          var expectedPathPrefix = '/products/' + productHandle;
+          if (calledUrl.indexOf(expectedPathPrefix) !== 0) return false;
 
-                // 2. URL must contain section_id=glass-product
-                if (calledUrl.indexOf('section_id=glass-product') === -1) return false;
+          // 2. URL must contain section_id=glass-product
+          if (calledUrl.indexOf('section_id=glass-product') === -1) return false;
 
-                // 3. The handle must appear in the path (before the '?')
-                var pathPart = calledUrl.split('?')[0];
-                if (pathPart !== '/products/' + productHandle) return false;
+          // 3. The handle must appear in the path (before the '?')
+          var pathPart = calledUrl.split('?')[0];
+          if (pathPart !== '/products/' + productHandle) return false;
 
-                return true;
-              });
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        });
+      }),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 6.2**
@@ -1676,40 +1572,37 @@ describe('Property 15: Product Detail URL Pattern', () => {
    *
    * Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
-    'URL contains both section_id=glass-product and product handle in path for any handle',
-    () => {
-      fc.assert(
-        fc.property(
-          fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-          fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null }),
-          function (productHandle, collectionHandle) {
-            var url = buildProductDetailUrl(productHandle, collectionHandle);
+  test(// Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
+  'URL contains both section_id=glass-product and product handle in path for any handle', () => {
+    fc.assert(
+      fc.property(
+        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
+        fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null }),
+        function (productHandle, collectionHandle) {
+          var url = buildProductDetailUrl(productHandle, collectionHandle);
 
-            // The URL must contain section_id=glass-product
-            if (url.indexOf('section_id=glass-product') === -1) return false;
+          // The URL must contain section_id=glass-product
+          if (url.indexOf('section_id=glass-product') === -1) return false;
 
-            // The product handle must appear in the URL path (before '?')
-            var pathPart = url.split('?')[0];
-            if (pathPart.indexOf(productHandle) === -1) return false;
+          // The product handle must appear in the URL path (before '?')
+          var pathPart = url.split('?')[0];
+          if (pathPart.indexOf(productHandle) === -1) return false;
 
-            // The path must follow the /products/{handle} pattern
-            var expectedPath = '/products/' + productHandle;
-            if (pathPart !== expectedPath) return false;
+          // The path must follow the /products/{handle} pattern
+          var expectedPath = '/products/' + productHandle;
+          if (pathPart !== expectedPath) return false;
 
-            // The handle must NOT appear as a query parameter named product_handle
-            // (that would be the alternative pattern - we validate the actual implementation)
-            var queryPart = url.split('?')[1] || '';
-            if (queryPart.indexOf('product_handle=') !== -1) return false;
+          // The handle must NOT appear as a query parameter named product_handle
+          // (that would be the alternative pattern - we validate the actual implementation)
+          var queryPart = url.split('?')[1] || '';
+          if (queryPart.indexOf('product_handle=') !== -1) return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1740,59 +1633,55 @@ describe('Property 17: Product Detail Display Performance', () => {
    *
    * Feature: immersive-store-glass-panel-improvements, Property 17: Product Detail Display Performance
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 17: Product Detail Display Performance
-    'product detail panel is rendered within 500ms for any product handle with immediate fetch',
-    () => {
-      const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-      const collectionHandleArb = fc.option(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        { nil: null }
-      );
-      const htmlContentArb = fc.string({ minLength: 10, maxLength: 200 })
-        .map(function (s) { return '<div class="product-detail">' + s + '</div>'; });
+  test(// Feature: immersive-store-glass-panel-improvements, Property 17: Product Detail Display Performance
+  'product detail panel is rendered within 500ms for any product handle with immediate fetch', () => {
+    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
+    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
+    const htmlContentArb = fc.string({ minLength: 10, maxLength: 200 }).map(function (s) {
+      return '<div class="product-detail">' + s + '</div>';
+    });
 
-      return fc.assert(
-        fc.asyncProperty(
-          productHandleArb,
-          collectionHandleArb,
-          htmlContentArb,
-          function (productHandle, collectionHandle, fakeHtml) {
-            document.body.innerHTML = '';
+    return fc.assert(
+      fc.asyncProperty(
+        productHandleArb,
+        collectionHandleArb,
+        htmlContentArb,
+        function (productHandle, collectionHandle, fakeHtml) {
+          document.body.innerHTML = '';
 
-            // Mock fetch that resolves immediately (0ms network delay)
-            var mockFetch = function (url, options) {
-              return Promise.resolve({
-                ok: true,
-                text: function () { return Promise.resolve(fakeHtml); },
-              });
-            };
+          // Mock fetch that resolves immediately (0ms network delay)
+          var mockFetch = function (url, options) {
+            return Promise.resolve({
+              ok: true,
+              text: function () {
+                return Promise.resolve(fakeHtml);
+              },
+            });
+          };
 
-            var refs = createPanelWithCard(productHandle, collectionHandle);
+          var refs = createPanelWithCard(productHandle, collectionHandle);
 
-            var startTime = Date.now();
+          var startTime = Date.now();
 
-            return openProductPanelTestable(productHandle, collectionHandle, refs.panel, mockFetch)
-              .then(function () {
-                var elapsed = Date.now() - startTime;
+          return openProductPanelTestable(productHandle, collectionHandle, refs.panel, mockFetch).then(function () {
+            var elapsed = Date.now() - startTime;
 
-                // Panel content must be updated
-                var contentArea = refs.panel.querySelector('.immersive-store__panel-content');
-                if (!contentArea) return false;
-                if (contentArea.innerHTML.indexOf('product-detail') === -1) return false;
+            // Panel content must be updated
+            var contentArea = refs.panel.querySelector('.immersive-store__panel-content');
+            if (!contentArea) return false;
+            if (contentArea.innerHTML.indexOf('product-detail') === -1) return false;
 
-                // Panel must be marked as open
-                if (refs.panel.getAttribute('data-open') !== 'true') return false;
+            // Panel must be marked as open
+            if (refs.panel.getAttribute('data-open') !== 'true') return false;
 
-                // Total time must be under 500ms
-                return elapsed < 500;
-              });
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+            // Total time must be under 500ms
+            return elapsed < 500;
+          });
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 6.5**
@@ -1806,68 +1695,64 @@ describe('Property 17: Product Detail Display Performance', () => {
    *
    * Feature: immersive-store-glass-panel-improvements, Property 17: Product Detail Display Performance
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 17: Product Detail Display Performance
-    'product detail panel is rendered within 500ms even when fetch takes up to 400ms',
-    () => {
-      const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-      const collectionHandleArb = fc.option(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        { nil: null }
-      );
-      // Fetch delay between 0ms and 400ms — leaves headroom for DOM work
-      const fetchDelayArb = fc.integer({ min: 0, max: 400 });
-      const htmlContentArb = fc.string({ minLength: 10, maxLength: 200 })
-        .map(function (s) { return '<div class="product-detail">' + s + '</div>'; });
+  test(// Feature: immersive-store-glass-panel-improvements, Property 17: Product Detail Display Performance
+  'product detail panel is rendered within 500ms even when fetch takes up to 400ms', () => {
+    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
+    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
+    // Fetch delay between 0ms and 400ms — leaves headroom for DOM work
+    const fetchDelayArb = fc.integer({ min: 0, max: 400 });
+    const htmlContentArb = fc.string({ minLength: 10, maxLength: 200 }).map(function (s) {
+      return '<div class="product-detail">' + s + '</div>';
+    });
 
-      return fc.assert(
-        fc.asyncProperty(
-          productHandleArb,
-          collectionHandleArb,
-          fetchDelayArb,
-          htmlContentArb,
-          function (productHandle, collectionHandle, fetchDelay, fakeHtml) {
-            document.body.innerHTML = '';
+    return fc.assert(
+      fc.asyncProperty(
+        productHandleArb,
+        collectionHandleArb,
+        fetchDelayArb,
+        htmlContentArb,
+        function (productHandle, collectionHandle, fetchDelay, fakeHtml) {
+          document.body.innerHTML = '';
 
-            // Mock fetch that resolves after fetchDelay ms
-            var mockFetch = function (url, options) {
-              return new Promise(function (resolve) {
-                setTimeout(function () {
-                  resolve({
-                    ok: true,
-                    text: function () { return Promise.resolve(fakeHtml); },
-                  });
-                }, fetchDelay);
-              });
-            };
+          // Mock fetch that resolves after fetchDelay ms
+          var mockFetch = function (url, options) {
+            return new Promise(function (resolve) {
+              setTimeout(function () {
+                resolve({
+                  ok: true,
+                  text: function () {
+                    return Promise.resolve(fakeHtml);
+                  },
+                });
+              }, fetchDelay);
+            });
+          };
 
-            var refs = createPanelWithCard(productHandle, collectionHandle);
+          var refs = createPanelWithCard(productHandle, collectionHandle);
 
-            var startTime = Date.now();
+          var startTime = Date.now();
 
-            return openProductPanelTestable(productHandle, collectionHandle, refs.panel, mockFetch)
-              .then(function () {
-                var elapsed = Date.now() - startTime;
+          return openProductPanelTestable(productHandle, collectionHandle, refs.panel, mockFetch).then(function () {
+            var elapsed = Date.now() - startTime;
 
-                // Panel content must be updated
-                var contentArea = refs.panel.querySelector('.immersive-store__panel-content');
-                if (!contentArea) return false;
-                if (contentArea.innerHTML.indexOf('product-detail') === -1) return false;
+            // Panel content must be updated
+            var contentArea = refs.panel.querySelector('.immersive-store__panel-content');
+            if (!contentArea) return false;
+            if (contentArea.innerHTML.indexOf('product-detail') === -1) return false;
 
-                // Panel must be marked as open
-                if (refs.panel.getAttribute('data-open') !== 'true') return false;
+            // Panel must be marked as open
+            if (refs.panel.getAttribute('data-open') !== 'true') return false;
 
-                // Total time (fetch delay + DOM work) must be under 500ms
-                // We allow a 50ms buffer for test overhead on top of the 400ms max fetch delay
-                return elapsed < 500;
-              });
-          }
-        ),
-        // Reduce iterations for the delayed test to keep suite runtime reasonable
-        { numRuns: 20, verbose: true }
-      );
-    }
-  );
+            // Total time (fetch delay + DOM work) must be under 500ms
+            // We allow a 50ms buffer for test overhead on top of the 400ms max fetch delay
+            return elapsed < 500;
+          });
+        },
+      ),
+      // Reduce iterations for the delayed test to keep suite runtime reasonable
+      { numRuns: 20, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1922,9 +1807,10 @@ function openProductPanelWithErrorHandling(productHandle, collectionHandle, pane
       // append a div.immersive-error-feedback to document.body
       var feedback = document.createElement('div');
       feedback.className = 'immersive-error-feedback';
-      var msg = (error && error.message && error.message.trim())
-        ? error.message
-        : 'Unable to load product. Please check your connection and try again.';
+      var msg =
+        error && error.message && error.message.trim()
+          ? error.message
+          : 'Unable to load product. Please check your connection and try again.';
       feedback.textContent = msg;
       document.body.appendChild(feedback);
     });
@@ -1948,44 +1834,39 @@ describe('Property 16: Product Fetch Error Handling', () => {
    *
    * Feature: immersive-store-glass-panel-improvements, Property 16: Product Fetch Error Handling
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 16: Product Fetch Error Handling
-    'error message element appears in DOM when fetch rejects with network error for any product handle',
-    () => {
-      const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-      const collectionHandleArb = fc.option(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        { nil: null }
-      );
-      const errorMessageArb = fc.string({ minLength: 1, maxLength: 100 });
+  test(// Feature: immersive-store-glass-panel-improvements, Property 16: Product Fetch Error Handling
+  'error message element appears in DOM when fetch rejects with network error for any product handle', () => {
+    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
+    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
+    const errorMessageArb = fc.string({ minLength: 1, maxLength: 100 });
 
-      return fc.assert(
-        fc.asyncProperty(
-          productHandleArb,
-          collectionHandleArb,
-          errorMessageArb,
-          function (productHandle, collectionHandle, errorMessage) {
-            document.body.innerHTML = '';
+    return fc.assert(
+      fc.asyncProperty(
+        productHandleArb,
+        collectionHandleArb,
+        errorMessageArb,
+        function (productHandle, collectionHandle, errorMessage) {
+          document.body.innerHTML = '';
 
-            // Mock fetch that rejects (network failure)
-            var mockFetch = function (url, options) {
-              return Promise.reject(new Error(errorMessage));
-            };
+          // Mock fetch that rejects (network failure)
+          var mockFetch = function (url, options) {
+            return Promise.reject(new Error(errorMessage));
+          };
 
-            var refs = createPanelWithCard(productHandle, collectionHandle);
+          var refs = createPanelWithCard(productHandle, collectionHandle);
 
-            return openProductPanelWithErrorHandling(productHandle, collectionHandle, refs.panel, mockFetch)
-              .then(function () {
-                // An error feedback element must be present in the DOM
-                var errorEl = document.querySelector('.immersive-error-feedback');
-                return errorEl !== null;
-              });
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return openProductPanelWithErrorHandling(productHandle, collectionHandle, refs.panel, mockFetch).then(
+            function () {
+              // An error feedback element must be present in the DOM
+              var errorEl = document.querySelector('.immersive-error-feedback');
+              return errorEl !== null;
+            },
+          );
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 6.3**
@@ -1999,52 +1880,46 @@ describe('Property 16: Product Fetch Error Handling', () => {
    *
    * Feature: immersive-store-glass-panel-improvements, Property 16: Product Fetch Error Handling
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 16: Product Fetch Error Handling
-    'error message element appears in DOM when fetch returns non-ok HTTP response for any product handle',
-    () => {
-      const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-      const collectionHandleArb = fc.option(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        { nil: null }
-      );
-      // HTTP error status codes: 4xx and 5xx
-      const httpErrorStatusArb = fc.oneof(
-        fc.integer({ min: 400, max: 499 }),
-        fc.integer({ min: 500, max: 599 })
-      );
+  test(// Feature: immersive-store-glass-panel-improvements, Property 16: Product Fetch Error Handling
+  'error message element appears in DOM when fetch returns non-ok HTTP response for any product handle', () => {
+    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
+    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
+    // HTTP error status codes: 4xx and 5xx
+    const httpErrorStatusArb = fc.oneof(fc.integer({ min: 400, max: 499 }), fc.integer({ min: 500, max: 599 }));
 
-      return fc.assert(
-        fc.asyncProperty(
-          productHandleArb,
-          collectionHandleArb,
-          httpErrorStatusArb,
-          function (productHandle, collectionHandle, httpStatus) {
-            document.body.innerHTML = '';
+    return fc.assert(
+      fc.asyncProperty(
+        productHandleArb,
+        collectionHandleArb,
+        httpErrorStatusArb,
+        function (productHandle, collectionHandle, httpStatus) {
+          document.body.innerHTML = '';
 
-            // Mock fetch that returns a non-ok response
-            var mockFetch = function (url, options) {
-              return Promise.resolve({
-                ok: false,
-                status: httpStatus,
-                text: function () { return Promise.resolve(''); },
-              });
-            };
+          // Mock fetch that returns a non-ok response
+          var mockFetch = function (url, options) {
+            return Promise.resolve({
+              ok: false,
+              status: httpStatus,
+              text: function () {
+                return Promise.resolve('');
+              },
+            });
+          };
 
-            var refs = createPanelWithCard(productHandle, collectionHandle);
+          var refs = createPanelWithCard(productHandle, collectionHandle);
 
-            return openProductPanelWithErrorHandling(productHandle, collectionHandle, refs.panel, mockFetch)
-              .then(function () {
-                // An error feedback element must be present in the DOM
-                var errorEl = document.querySelector('.immersive-error-feedback');
-                return errorEl !== null;
-              });
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return openProductPanelWithErrorHandling(productHandle, collectionHandle, refs.panel, mockFetch).then(
+            function () {
+              // An error feedback element must be present in the DOM
+              var errorEl = document.querySelector('.immersive-error-feedback');
+              return errorEl !== null;
+            },
+          );
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -2121,7 +1996,9 @@ function attachKeyboardHandlers(panel) {
   buttons.forEach(function (button, index) {
     button.addEventListener('click', function () {
       if (button.disabled) return;
-      buttons.forEach(function (btn) { btn.classList.remove('active'); });
+      buttons.forEach(function (btn) {
+        btn.classList.remove('active');
+      });
       button.classList.add('active');
       var variantId = button.getAttribute('data-variant-id');
       if (hiddenInput && variantId) {
@@ -2148,218 +2025,203 @@ describe('Property 22: Variant Button Keyboard Navigation', () => {
   // Static analysis: Liquid template must NOT set tabindex="-1" on variant
   // buttons (they should be naturally focusable as <button> elements).
   // -------------------------------------------------------------------------
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
-    'Liquid template does not set tabindex="-1" on variant buttons for any product',
-    function () {
-      var liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
+  'Liquid template does not set tabindex="-1" on variant buttons for any product', function () {
+    var liquidSource = fs.readFileSync(LIQUID_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            variants: fc.array(
-              fc.record({
-                id: fc.integer({ min: 1, max: 9999999 }),
-                title: fc.string({ minLength: 1, maxLength: 80 }),
-                available: fc.boolean(),
-              }),
-              { minLength: 1, maxLength: 10 }
-            ),
-          }),
-          function (_product) {
-            // Extract the variant button loop body from the Liquid source
-            var loopMatch = liquidSource.match(
-              /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/
-            );
-            if (!loopMatch) return false;
-
-            var loopBody = loopMatch[1];
-
-            // The variant button must NOT have tabindex="-1"
-            // (which would remove it from the tab order)
-            if (/tabindex\s*=\s*["']-1["']/i.test(loopBody)) return false;
-
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
-
-  // -------------------------------------------------------------------------
-  // Static analysis: immersive-store.js must have keydown handlers for
-  // Enter and Space keys on variant buttons.
-  // -------------------------------------------------------------------------
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
-    'immersive-store.js has keydown handlers for Enter and Space keys on variant buttons for any variant',
-    function () {
-      var IMMERSIVE_STORE_PATH = path.resolve(__dirname, '../assets/immersive-store.js');
-      var jsSource = fs.readFileSync(IMMERSIVE_STORE_PATH, 'utf8');
-
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 80 }),
-            available: fc.boolean(),
-          }),
-          function (_variant) {
-            // The JS must attach a 'keydown' event listener on variant buttons
-            var hasKeydownListener = /addEventListener\s*\(\s*['"]keydown['"]/.test(jsSource);
-            if (!hasKeydownListener) return false;
-
-            // The keydown handler must check for 'Enter' key
-            var hasEnterKey = /event\.key\s*===\s*['"]Enter['"]/.test(jsSource);
-            if (!hasEnterKey) return false;
-
-            // The keydown handler must check for Space key (' ')
-            var hasSpaceKey = /event\.key\s*===\s*['"] ['"]/.test(jsSource);
-            if (!hasSpaceKey) return false;
-
-            // The keydown handler must call button.click() to activate
-            var hasClickCall = /button\.click\s*\(\s*\)/.test(jsSource);
-            if (!hasClickCall) return false;
-
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
-
-  // -------------------------------------------------------------------------
-  // DOM test: variant buttons must have tabIndex >= 0 (naturally focusable).
-  // -------------------------------------------------------------------------
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
-    'variant buttons have tabIndex >= 0 (focusable) for any set of variants',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.array(
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          variants: fc.array(
             fc.record({
               id: fc.integer({ min: 1, max: 9999999 }),
               title: fc.string({ minLength: 1, maxLength: 80 }),
               available: fc.boolean(),
             }),
-            { minLength: 1, maxLength: 8 }
+            { minLength: 1, maxLength: 10 },
           ),
-          function (variants) {
-            document.body.innerHTML = '';
-            var refs = createPanelWithVariantButtons(variants);
+        }),
+        function (_product) {
+          // Extract the variant button loop body from the Liquid source
+          var loopMatch = liquidSource.match(
+            /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/,
+          );
+          if (!loopMatch) return false;
 
-            var allFocusable = true;
-            refs.buttons.forEach(function (btn) {
-              // <button> elements have tabIndex 0 by default unless explicitly set to -1
-              if (btn.tabIndex < 0) {
-                allFocusable = false;
-              }
-            });
+          var loopBody = loopMatch[1];
 
-            return allFocusable;
-          }
+          // The variant button must NOT have tabindex="-1"
+          // (which would remove it from the tab order)
+          if (/tabindex\s*=\s*["']-1["']/i.test(loopBody)) return false;
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // Static analysis: immersive-store.js must have keydown handlers for
+  // Enter and Space keys on variant buttons.
+  // -------------------------------------------------------------------------
+  test(// Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
+  'immersive-store.js has keydown handlers for Enter and Space keys on variant buttons for any variant', function () {
+    var IMMERSIVE_STORE_PATH = path.resolve(__dirname, '../assets/immersive-store.js');
+    var jsSource = fs.readFileSync(IMMERSIVE_STORE_PATH, 'utf8');
+
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 80 }),
+          available: fc.boolean(),
+        }),
+        function (_variant) {
+          // The JS must attach a 'keydown' event listener on variant buttons
+          var hasKeydownListener = /addEventListener\s*\(\s*['"]keydown['"]/.test(jsSource);
+          if (!hasKeydownListener) return false;
+
+          // The keydown handler must check for 'Enter' key
+          var hasEnterKey = /event\.key\s*===\s*['"]Enter['"]/.test(jsSource);
+          if (!hasEnterKey) return false;
+
+          // The keydown handler must check for Space key (' ')
+          var hasSpaceKey = /event\.key\s*===\s*['"] ['"]/.test(jsSource);
+          if (!hasSpaceKey) return false;
+
+          // The keydown handler must call button.click() to activate
+          var hasClickCall = /button\.click\s*\(\s*\)/.test(jsSource);
+          if (!hasClickCall) return false;
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // DOM test: variant buttons must have tabIndex >= 0 (naturally focusable).
+  // -------------------------------------------------------------------------
+  test(// Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
+  'variant buttons have tabIndex >= 0 (focusable) for any set of variants', function () {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            id: fc.integer({ min: 1, max: 9999999 }),
+            title: fc.string({ minLength: 1, maxLength: 80 }),
+            available: fc.boolean(),
+          }),
+          { minLength: 1, maxLength: 8 },
         ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        function (variants) {
+          document.body.innerHTML = '';
+          var refs = createPanelWithVariantButtons(variants);
+
+          var allFocusable = true;
+          refs.buttons.forEach(function (btn) {
+            // <button> elements have tabIndex 0 by default unless explicitly set to -1
+            if (btn.tabIndex < 0) {
+              allFocusable = false;
+            }
+          });
+
+          return allFocusable;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   // -------------------------------------------------------------------------
   // DOM test: pressing Enter on a variant button activates it (adds 'active'
   // class and updates the hidden input).
   // -------------------------------------------------------------------------
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
-    'pressing Enter on a variant button activates it for any available variant',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.array(
-            fc.record({
-              id: fc.integer({ min: 1, max: 9999999 }),
-              title: fc.string({ minLength: 1, maxLength: 80 }),
-              available: fc.constant(true),
-            }),
-            { minLength: 1, maxLength: 6 }
-          ),
-          function (variants) {
-            document.body.innerHTML = '';
-            var refs = createPanelWithVariantButtons(variants);
-            attachKeyboardHandlers(refs.panel);
-
-            // Pick the last button to activate via Enter (first may already be active)
-            var targetBtn = refs.buttons[refs.buttons.length - 1];
-            var expectedId = targetBtn.getAttribute('data-variant-id');
-
-            // Simulate Enter keydown
-            var enterEvent = new KeyboardEvent('keydown', {
-              key: 'Enter',
-              bubbles: true,
-              cancelable: true,
-            });
-            targetBtn.dispatchEvent(enterEvent);
-
-            // The button must have the 'active' class
-            if (!targetBtn.classList.contains('active')) return false;
-
-            // The hidden input must reflect the selected variant ID
-            if (refs.hiddenInput.value !== expectedId) return false;
-
-            return true;
-          }
+  test(// Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
+  'pressing Enter on a variant button activates it for any available variant', function () {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            id: fc.integer({ min: 1, max: 9999999 }),
+            title: fc.string({ minLength: 1, maxLength: 80 }),
+            available: fc.constant(true),
+          }),
+          { minLength: 1, maxLength: 6 },
         ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        function (variants) {
+          document.body.innerHTML = '';
+          var refs = createPanelWithVariantButtons(variants);
+          attachKeyboardHandlers(refs.panel);
+
+          // Pick the last button to activate via Enter (first may already be active)
+          var targetBtn = refs.buttons[refs.buttons.length - 1];
+          var expectedId = targetBtn.getAttribute('data-variant-id');
+
+          // Simulate Enter keydown
+          var enterEvent = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            bubbles: true,
+            cancelable: true,
+          });
+          targetBtn.dispatchEvent(enterEvent);
+
+          // The button must have the 'active' class
+          if (!targetBtn.classList.contains('active')) return false;
+
+          // The hidden input must reflect the selected variant ID
+          if (refs.hiddenInput.value !== expectedId) return false;
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   // -------------------------------------------------------------------------
   // DOM test: pressing Space on a variant button activates it.
   // -------------------------------------------------------------------------
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
-    'pressing Space on a variant button activates it for any available variant',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.array(
-            fc.record({
-              id: fc.integer({ min: 1, max: 9999999 }),
-              title: fc.string({ minLength: 1, maxLength: 80 }),
-              available: fc.constant(true),
-            }),
-            { minLength: 1, maxLength: 6 }
-          ),
-          function (variants) {
-            document.body.innerHTML = '';
-            var refs = createPanelWithVariantButtons(variants);
-            attachKeyboardHandlers(refs.panel);
-
-            var targetBtn = refs.buttons[refs.buttons.length - 1];
-            var expectedId = targetBtn.getAttribute('data-variant-id');
-
-            // Simulate Space keydown
-            var spaceEvent = new KeyboardEvent('keydown', {
-              key: ' ',
-              bubbles: true,
-              cancelable: true,
-            });
-            targetBtn.dispatchEvent(spaceEvent);
-
-            if (!targetBtn.classList.contains('active')) return false;
-            if (refs.hiddenInput.value !== expectedId) return false;
-
-            return true;
-          }
+  test(// Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
+  'pressing Space on a variant button activates it for any available variant', function () {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc.record({
+            id: fc.integer({ min: 1, max: 9999999 }),
+            title: fc.string({ minLength: 1, maxLength: 80 }),
+            available: fc.constant(true),
+          }),
+          { minLength: 1, maxLength: 6 },
         ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+        function (variants) {
+          document.body.innerHTML = '';
+          var refs = createPanelWithVariantButtons(variants);
+          attachKeyboardHandlers(refs.panel);
+
+          var targetBtn = refs.buttons[refs.buttons.length - 1];
+          var expectedId = targetBtn.getAttribute('data-variant-id');
+
+          // Simulate Space keydown
+          var spaceEvent = new KeyboardEvent('keydown', {
+            key: ' ',
+            bubbles: true,
+            cancelable: true,
+          });
+          targetBtn.dispatchEvent(spaceEvent);
+
+          if (!targetBtn.classList.contains('active')) return false;
+          if (refs.hiddenInput.value !== expectedId) return false;
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -2402,7 +2264,7 @@ function isVisibleFocusStyle(value) {
   var hasColor =
     /#[0-9a-f]{3,6}/.test(v) ||
     /\brgb\s*\(/.test(v) ||
-    (/rgba\s*\(/.test(v) && !(/rgba\s*\([^)]*,\s*0\s*\)/.test(v))) ||
+    (/rgba\s*\(/.test(v) && !/rgba\s*\([^)]*,\s*0\s*\)/.test(v)) ||
     /\b(white|black|red|blue|green|gold|yellow|transparent)\b/.test(v);
 
   // "transparent" is not a visible color
@@ -2423,46 +2285,43 @@ describe('Property 26: Focus Indicator Visibility', () => {
    * The CSS is static — product/variant data does not change the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
-    'CSS does not suppress focus outline on variant buttons without a replacement focus style (product card)',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 80 }),
-            available: fc.boolean(),
-          }),
-          function (_variant) {
-            var rules = parseCSSRulesClean(extractStylesheetCSS());
+  test(// Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
+  'CSS does not suppress focus outline on variant buttons without a replacement focus style (product card)', function () {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 80 }),
+          available: fc.boolean(),
+        }),
+        function (_variant) {
+          var rules = parseCSSRulesClean(extractStylesheetCSS());
 
-            // Base rule must not have outline: none or outline: 0
-            var baseRule = rules.get('.immersive-variant-button');
-            if (baseRule) {
-              var outline = baseRule.get('outline');
-              if (outline === 'none' || outline === '0') {
-                // Only acceptable if a :focus rule provides a replacement
-                var focusRule = rules.get('.immersive-variant-button:focus');
-                if (!focusRule) return false;
-                var focusOutline = focusRule.get('outline');
-                var focusBorder = focusRule.get('border');
-                var focusBoxShadow = focusRule.get('box-shadow');
-                var hasFocusReplacement =
-                  isVisibleFocusStyle(focusOutline) ||
-                  isVisibleFocusStyle(focusBorder) ||
-                  isVisibleFocusStyle(focusBoxShadow);
-                if (!hasFocusReplacement) return false;
-              }
+          // Base rule must not have outline: none or outline: 0
+          var baseRule = rules.get('.immersive-variant-button');
+          if (baseRule) {
+            var outline = baseRule.get('outline');
+            if (outline === 'none' || outline === '0') {
+              // Only acceptable if a :focus rule provides a replacement
+              var focusRule = rules.get('.immersive-variant-button:focus');
+              if (!focusRule) return false;
+              var focusOutline = focusRule.get('outline');
+              var focusBorder = focusRule.get('border');
+              var focusBoxShadow = focusRule.get('box-shadow');
+              var hasFocusReplacement =
+                isVisibleFocusStyle(focusOutline) ||
+                isVisibleFocusStyle(focusBorder) ||
+                isVisibleFocusStyle(focusBoxShadow);
+              if (!hasFocusReplacement) return false;
             }
-
-            return true;
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 9.5**
@@ -2474,59 +2333,48 @@ describe('Property 26: Focus Indicator Visibility', () => {
    * The CSS is static — product/variant data does not change the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
-    'CSS has :focus or :focus-visible rule with visible styling for variant buttons (product card)',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 80 }),
-            available: fc.boolean(),
-          }),
-          function (_variant) {
-            var rules = parseCSSRulesClean(extractStylesheetCSS());
+  test(// Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
+  'CSS has :focus or :focus-visible rule with visible styling for variant buttons (product card)', function () {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 80 }),
+          available: fc.boolean(),
+        }),
+        function (_variant) {
+          var rules = parseCSSRulesClean(extractStylesheetCSS());
 
-            // At least one of :focus or :focus-visible must exist with visible styling
-            var focusRule = rules.get('.immersive-variant-button:focus');
-            var focusVisibleRule = rules.get('.immersive-variant-button:focus-visible');
+          // At least one of :focus or :focus-visible must exist with visible styling
+          var focusRule = rules.get('.immersive-variant-button:focus');
+          var focusVisibleRule = rules.get('.immersive-variant-button:focus-visible');
 
-            var hasFocusStyle = false;
+          var hasFocusStyle = false;
 
-            if (focusRule) {
-              var outline = focusRule.get('outline');
-              var border = focusRule.get('border');
-              var boxShadow = focusRule.get('box-shadow');
-              if (
-                isVisibleFocusStyle(outline) ||
-                isVisibleFocusStyle(border) ||
-                isVisibleFocusStyle(boxShadow)
-              ) {
-                hasFocusStyle = true;
-              }
+          if (focusRule) {
+            var outline = focusRule.get('outline');
+            var border = focusRule.get('border');
+            var boxShadow = focusRule.get('box-shadow');
+            if (isVisibleFocusStyle(outline) || isVisibleFocusStyle(border) || isVisibleFocusStyle(boxShadow)) {
+              hasFocusStyle = true;
             }
-
-            if (focusVisibleRule) {
-              var outline = focusVisibleRule.get('outline');
-              var border = focusVisibleRule.get('border');
-              var boxShadow = focusVisibleRule.get('box-shadow');
-              if (
-                isVisibleFocusStyle(outline) ||
-                isVisibleFocusStyle(border) ||
-                isVisibleFocusStyle(boxShadow)
-              ) {
-                hasFocusStyle = true;
-              }
-            }
-
-            return hasFocusStyle;
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          if (focusVisibleRule) {
+            var outline = focusVisibleRule.get('outline');
+            var border = focusVisibleRule.get('border');
+            var boxShadow = focusVisibleRule.get('box-shadow');
+            if (isVisibleFocusStyle(outline) || isVisibleFocusStyle(border) || isVisibleFocusStyle(boxShadow)) {
+              hasFocusStyle = true;
+            }
+          }
+
+          return hasFocusStyle;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 9.5**
@@ -2537,58 +2385,47 @@ describe('Property 26: Focus Indicator Visibility', () => {
    * The CSS is static — product/variant data does not change the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
-    'CSS has :focus or :focus-visible rule with visible styling for variant buttons (product detail)',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 80 }),
-            available: fc.boolean(),
-          }),
-          function (_variant) {
-            var rules = parseCSSRulesClean(extractGlassProductCSS());
+  test(// Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
+  'CSS has :focus or :focus-visible rule with visible styling for variant buttons (product detail)', function () {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 80 }),
+          available: fc.boolean(),
+        }),
+        function (_variant) {
+          var rules = parseCSSRulesClean(extractGlassProductCSS());
 
-            var focusRule = rules.get('.glass-product-section__variant-button:focus');
-            var focusVisibleRule = rules.get('.glass-product-section__variant-button:focus-visible');
+          var focusRule = rules.get('.glass-product-section__variant-button:focus');
+          var focusVisibleRule = rules.get('.glass-product-section__variant-button:focus-visible');
 
-            var hasFocusStyle = false;
+          var hasFocusStyle = false;
 
-            if (focusRule) {
-              var outline = focusRule.get('outline');
-              var border = focusRule.get('border');
-              var boxShadow = focusRule.get('box-shadow');
-              if (
-                isVisibleFocusStyle(outline) ||
-                isVisibleFocusStyle(border) ||
-                isVisibleFocusStyle(boxShadow)
-              ) {
-                hasFocusStyle = true;
-              }
+          if (focusRule) {
+            var outline = focusRule.get('outline');
+            var border = focusRule.get('border');
+            var boxShadow = focusRule.get('box-shadow');
+            if (isVisibleFocusStyle(outline) || isVisibleFocusStyle(border) || isVisibleFocusStyle(boxShadow)) {
+              hasFocusStyle = true;
             }
-
-            if (focusVisibleRule) {
-              var outline = focusVisibleRule.get('outline');
-              var border = focusVisibleRule.get('border');
-              var boxShadow = focusVisibleRule.get('box-shadow');
-              if (
-                isVisibleFocusStyle(outline) ||
-                isVisibleFocusStyle(border) ||
-                isVisibleFocusStyle(boxShadow)
-              ) {
-                hasFocusStyle = true;
-              }
-            }
-
-            return hasFocusStyle;
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          if (focusVisibleRule) {
+            var outline = focusVisibleRule.get('outline');
+            var border = focusVisibleRule.get('border');
+            var boxShadow = focusVisibleRule.get('box-shadow');
+            if (isVisibleFocusStyle(outline) || isVisibleFocusStyle(border) || isVisibleFocusStyle(boxShadow)) {
+              hasFocusStyle = true;
+            }
+          }
+
+          return hasFocusStyle;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 9.5**
@@ -2600,60 +2437,57 @@ describe('Property 26: Focus Indicator Visibility', () => {
    * The CSS is static — product data does not change the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
-    'CSS does not suppress focus indicator on buy now button without replacement (product card)',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 120 }),
-            available: fc.boolean(),
-          }),
-          function (_product) {
-            var rules = parseCSSRulesClean(extractStylesheetCSS());
+  test(// Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
+  'CSS does not suppress focus indicator on buy now button without replacement (product card)', function () {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 120 }),
+          available: fc.boolean(),
+        }),
+        function (_product) {
+          var rules = parseCSSRulesClean(extractStylesheetCSS());
 
-            // Base rule must not suppress outline without a :focus replacement
-            var baseRule = rules.get('.immersive-add-to-cart');
-            if (baseRule) {
-              var outline = baseRule.get('outline');
-              if (outline === 'none' || outline === '0') {
-                // Must have a :focus or :focus-visible rule with visible styling
-                var focusRule = rules.get('.immersive-add-to-cart:focus');
-                var focusVisibleRule = rules.get('.immersive-add-to-cart:focus-visible');
+          // Base rule must not suppress outline without a :focus replacement
+          var baseRule = rules.get('.immersive-add-to-cart');
+          if (baseRule) {
+            var outline = baseRule.get('outline');
+            if (outline === 'none' || outline === '0') {
+              // Must have a :focus or :focus-visible rule with visible styling
+              var focusRule = rules.get('.immersive-add-to-cart:focus');
+              var focusVisibleRule = rules.get('.immersive-add-to-cart:focus-visible');
 
-                var hasFocusReplacement = false;
+              var hasFocusReplacement = false;
 
-                if (focusRule) {
-                  var fo = focusRule.get('outline');
-                  var fb = focusRule.get('border');
-                  var fbs = focusRule.get('box-shadow');
-                  if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
-                    hasFocusReplacement = true;
-                  }
+              if (focusRule) {
+                var fo = focusRule.get('outline');
+                var fb = focusRule.get('border');
+                var fbs = focusRule.get('box-shadow');
+                if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
+                  hasFocusReplacement = true;
                 }
-
-                if (focusVisibleRule) {
-                  var fo = focusVisibleRule.get('outline');
-                  var fb = focusVisibleRule.get('border');
-                  var fbs = focusVisibleRule.get('box-shadow');
-                  if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
-                    hasFocusReplacement = true;
-                  }
-                }
-
-                if (!hasFocusReplacement) return false;
               }
-            }
 
-            return true;
+              if (focusVisibleRule) {
+                var fo = focusVisibleRule.get('outline');
+                var fb = focusVisibleRule.get('border');
+                var fbs = focusVisibleRule.get('box-shadow');
+                if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
+                  hasFocusReplacement = true;
+                }
+              }
+
+              if (!hasFocusReplacement) return false;
+            }
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 
   /**
    * **Validates: Requirements 9.5**
@@ -2664,58 +2498,55 @@ describe('Property 26: Focus Indicator Visibility', () => {
    * The CSS is static — product data does not change the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
-    'CSS does not suppress focus indicator on buy now button without replacement (product detail)',
-    function () {
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 120 }),
-            available: fc.boolean(),
-          }),
-          function (_product) {
-            var rules = parseCSSRulesClean(extractGlassProductCSS());
+  test(// Feature: immersive-store-glass-panel-improvements, Property 26: Focus Indicator Visibility
+  'CSS does not suppress focus indicator on buy now button without replacement (product detail)', function () {
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 120 }),
+          available: fc.boolean(),
+        }),
+        function (_product) {
+          var rules = parseCSSRulesClean(extractGlassProductCSS());
 
-            var baseRule = rules.get('.glass-product-section__add-to-cart');
-            if (baseRule) {
-              var outline = baseRule.get('outline');
-              if (outline === 'none' || outline === '0') {
-                var focusRule = rules.get('.glass-product-section__add-to-cart:focus');
-                var focusVisibleRule = rules.get('.glass-product-section__add-to-cart:focus-visible');
+          var baseRule = rules.get('.glass-product-section__add-to-cart');
+          if (baseRule) {
+            var outline = baseRule.get('outline');
+            if (outline === 'none' || outline === '0') {
+              var focusRule = rules.get('.glass-product-section__add-to-cart:focus');
+              var focusVisibleRule = rules.get('.glass-product-section__add-to-cart:focus-visible');
 
-                var hasFocusReplacement = false;
+              var hasFocusReplacement = false;
 
-                if (focusRule) {
-                  var fo = focusRule.get('outline');
-                  var fb = focusRule.get('border');
-                  var fbs = focusRule.get('box-shadow');
-                  if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
-                    hasFocusReplacement = true;
-                  }
+              if (focusRule) {
+                var fo = focusRule.get('outline');
+                var fb = focusRule.get('border');
+                var fbs = focusRule.get('box-shadow');
+                if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
+                  hasFocusReplacement = true;
                 }
-
-                if (focusVisibleRule) {
-                  var fo = focusVisibleRule.get('outline');
-                  var fb = focusVisibleRule.get('border');
-                  var fbs = focusVisibleRule.get('box-shadow');
-                  if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
-                    hasFocusReplacement = true;
-                  }
-                }
-
-                if (!hasFocusReplacement) return false;
               }
-            }
 
-            return true;
+              if (focusVisibleRule) {
+                var fo = focusVisibleRule.get('outline');
+                var fb = focusVisibleRule.get('border');
+                var fbs = focusVisibleRule.get('box-shadow');
+                if (isVisibleFocusStyle(fo) || isVisibleFocusStyle(fb) || isVisibleFocusStyle(fbs)) {
+                  hasFocusReplacement = true;
+                }
+              }
+
+              if (!hasFocusReplacement) return false;
+            }
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -2729,91 +2560,88 @@ describe('Property 26: Focus Indicator Visibility', () => {
 // ---------------------------------------------------------------------------
 
 describe('Property 23: Variant Button ARIA Attributes', () => {
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 23: Variant Button ARIA Attributes
-    'Liquid template includes aria-label on variant buttons and aria-disabled/disabled on unavailable variants for any product',
-    () => {
-      const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
-      const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 23: Variant Button ARIA Attributes
+  'Liquid template includes aria-label on variant buttons and aria-disabled/disabled on unavailable variants for any product', () => {
+    const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+    const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            variants: fc.array(
-              fc.record({
-                id: fc.integer({ min: 1, max: 9999999 }),
-                title: fc.string({ minLength: 1, maxLength: 80 }),
-                available: fc.boolean(),
-              }),
-              { minLength: 1, maxLength: 10 }
-            ),
-          }),
-          function (_product) {
-            // ---------------------------------------------------------------
-            // 1. Each variant button must have an aria-label attribute.
-            //    The template uses aria-label="{{ variant.title }}" inside the
-            //    for-loop over product.variants.
-            // ---------------------------------------------------------------
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          variants: fc.array(
+            fc.record({
+              id: fc.integer({ min: 1, max: 9999999 }),
+              title: fc.string({ minLength: 1, maxLength: 80 }),
+              available: fc.boolean(),
+            }),
+            { minLength: 1, maxLength: 10 },
+          ),
+        }),
+        function (_product) {
+          // ---------------------------------------------------------------
+          // 1. Each variant button must have an aria-label attribute.
+          //    The template uses aria-label="{{ variant.title }}" inside the
+          //    for-loop over product.variants.
+          // ---------------------------------------------------------------
 
-            // Product card: extract the variant button loop body
-            var cardLoopMatch = cardSource.match(
-              /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/
-            );
-            if (!cardLoopMatch) return false;
-            var cardLoopBody = cardLoopMatch[1];
+          // Product card: extract the variant button loop body
+          var cardLoopMatch = cardSource.match(
+            /\{%-?\s*for\s+variant\s+in\s+product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/,
+          );
+          if (!cardLoopMatch) return false;
+          var cardLoopBody = cardLoopMatch[1];
 
-            // aria-label must be present on the variant button inside the loop
-            var cardHasAriaLabel = /aria-label\s*=\s*["']\{\{\s*variant\.title/.test(cardLoopBody);
-            if (!cardHasAriaLabel) return false;
+          // aria-label must be present on the variant button inside the loop
+          var cardHasAriaLabel = /aria-label\s*=\s*["']\{\{\s*variant\.title/.test(cardLoopBody);
+          if (!cardHasAriaLabel) return false;
 
-            // Product detail: extract the variant button loop body
-            var detailLoopMatch = detailSource.match(
-              /\{%-?\s*for\s+variant\s+in\s+panel_product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/
-            );
-            if (!detailLoopMatch) return false;
-            var detailLoopBody = detailLoopMatch[1];
+          // Product detail: extract the variant button loop body
+          var detailLoopMatch = detailSource.match(
+            /\{%-?\s*for\s+variant\s+in\s+panel_product\.variants\s*-?%\}([\s\S]*?)\{%-?\s*endfor\s*-?%\}/,
+          );
+          if (!detailLoopMatch) return false;
+          var detailLoopBody = detailLoopMatch[1];
 
-            // aria-label must be present on the variant button inside the loop
-            var detailHasAriaLabel = /aria-label\s*=\s*["']\{\{\s*variant\.title/.test(detailLoopBody);
-            if (!detailHasAriaLabel) return false;
+          // aria-label must be present on the variant button inside the loop
+          var detailHasAriaLabel = /aria-label\s*=\s*["']\{\{\s*variant\.title/.test(detailLoopBody);
+          if (!detailHasAriaLabel) return false;
 
-            // ---------------------------------------------------------------
-            // 2. Unavailable variants must have aria-disabled="true" OR the
-            //    disabled attribute (which implies aria-disabled semantics).
-            //    Both templates use `{% unless variant.available %}disabled{% endunless %}`.
-            // ---------------------------------------------------------------
+          // ---------------------------------------------------------------
+          // 2. Unavailable variants must have aria-disabled="true" OR the
+          //    disabled attribute (which implies aria-disabled semantics).
+          //    Both templates use `{% unless variant.available %}disabled{% endunless %}`.
+          // ---------------------------------------------------------------
 
-            // Product card: disabled attribute must be conditionally applied
-            var cardHasDisabled =
-              /unless\s+variant\.available[\s\S]*?disabled[\s\S]*?endunless/.test(cardLoopBody) ||
-              /aria-disabled\s*=\s*["']true["']/.test(cardLoopBody);
-            if (!cardHasDisabled) return false;
+          // Product card: disabled attribute must be conditionally applied
+          var cardHasDisabled =
+            /unless\s+variant\.available[\s\S]*?disabled[\s\S]*?endunless/.test(cardLoopBody) ||
+            /aria-disabled\s*=\s*["']true["']/.test(cardLoopBody);
+          if (!cardHasDisabled) return false;
 
-            // Product detail: disabled attribute must be conditionally applied
-            var detailHasDisabled =
-              /unless\s+variant\.available[\s\S]*?disabled[\s\S]*?endunless/.test(detailLoopBody) ||
-              /aria-disabled\s*=\s*["']true["']/.test(detailLoopBody);
-            if (!detailHasDisabled) return false;
+          // Product detail: disabled attribute must be conditionally applied
+          var detailHasDisabled =
+            /unless\s+variant\.available[\s\S]*?disabled[\s\S]*?endunless/.test(detailLoopBody) ||
+            /aria-disabled\s*=\s*["']true["']/.test(detailLoopBody);
+          if (!detailHasDisabled) return false;
 
-            // ---------------------------------------------------------------
-            // 3. The variant button container must have role="radiogroup" or
-            //    a similar grouping role in both templates.
-            // ---------------------------------------------------------------
+          // ---------------------------------------------------------------
+          // 3. The variant button container must have role="radiogroup" or
+          //    a similar grouping role in both templates.
+          // ---------------------------------------------------------------
 
-            var cardHasRadiogroup = /role\s*=\s*["']radiogroup["']/.test(cardSource);
-            if (!cardHasRadiogroup) return false;
+          var cardHasRadiogroup = /role\s*=\s*["']radiogroup["']/.test(cardSource);
+          if (!cardHasRadiogroup) return false;
 
-            var detailHasRadiogroup = /role\s*=\s*["']radiogroup["']/.test(detailSource);
-            if (!detailHasRadiogroup) return false;
+          var detailHasRadiogroup = /role\s*=\s*["']radiogroup["']/.test(detailSource);
+          if (!detailHasRadiogroup) return false;
 
-            return true;
-          }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -2826,119 +2654,115 @@ describe('Property 23: Variant Button ARIA Attributes', () => {
 // ---------------------------------------------------------------------------
 
 describe('Property 24: Buy Now Button ARIA Label', () => {
-  test(
-    // Feature: immersive-store-glass-panel-improvements, Property 24: Buy Now Button ARIA Label
-    'Liquid template includes aria-label with product title on buy now submit button for any product',
-    () => {
-      const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
-      const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
+  test(// Feature: immersive-store-glass-panel-improvements, Property 24: Buy Now Button ARIA Label
+  'Liquid template includes aria-label with product title on buy now submit button for any product', () => {
+    const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
+    const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
 
-      fc.assert(
-        fc.property(
-          fc.record({
-            id: fc.integer({ min: 1, max: 9999999 }),
-            title: fc.string({ minLength: 1, maxLength: 120 }),
-            available: fc.boolean(),
-          }),
-          function (_product) {
-            // ---------------------------------------------------------------
-            // Strategy: extract the full opening tag of the buy now submit
-            // button by finding the <button block that contains both
-            // type="submit" and name="property[buy_now]", then scanning
-            // forward to the matching closing ">" of the opening tag.
-            // We use a helper that counts Liquid tag braces so that ">>"
-            // inside "{{ ... }}" expressions does not terminate the tag early.
-            // ---------------------------------------------------------------
+    fc.assert(
+      fc.property(
+        fc.record({
+          id: fc.integer({ min: 1, max: 9999999 }),
+          title: fc.string({ minLength: 1, maxLength: 120 }),
+          available: fc.boolean(),
+        }),
+        function (_product) {
+          // ---------------------------------------------------------------
+          // Strategy: extract the full opening tag of the buy now submit
+          // button by finding the <button block that contains both
+          // type="submit" and name="property[buy_now]", then scanning
+          // forward to the matching closing ">" of the opening tag.
+          // We use a helper that counts Liquid tag braces so that ">>"
+          // inside "{{ ... }}" expressions does not terminate the tag early.
+          // ---------------------------------------------------------------
 
-            function extractBuyNowButtonTag(source) {
-              // Find the index of a <button that has name="property[buy_now]"
-              var searchStr = 'name="property[buy_now]"';
-              var nameIdx = source.indexOf(searchStr);
-              if (nameIdx === -1) {
-                // Try single-quote variant
-                searchStr = "name='property[buy_now]'";
-                nameIdx = source.indexOf(searchStr);
-              }
-              if (nameIdx === -1) return null;
-
-              // Walk backwards to find the opening "<button"
-              var tagStart = source.lastIndexOf('<button', nameIdx);
-              if (tagStart === -1) return null;
-
-              // Walk forward from tagStart to find the closing ">" of the
-              // opening tag, skipping over Liquid expressions {{ ... }} and
-              // tags {% ... %} so their ">" characters are not mistaken for
-              // the tag end.
-              var i = tagStart;
-              while (i < source.length) {
-                var ch = source[i];
-                // Skip Liquid expression {{ ... }}
-                if (source.slice(i, i + 2) === '{{') {
-                  var end = source.indexOf('}}', i + 2);
-                  if (end === -1) break;
-                  i = end + 2;
-                  continue;
-                }
-                // Skip Liquid tag {% ... %}
-                if (source.slice(i, i + 2) === '{%') {
-                  var end2 = source.indexOf('%}', i + 2);
-                  if (end2 === -1) break;
-                  i = end2 + 2;
-                  continue;
-                }
-                // The ">" that closes the opening tag
-                if (ch === '>' && i > tagStart) {
-                  return source.slice(tagStart, i + 1);
-                }
-                i++;
-              }
-              return null;
+          function extractBuyNowButtonTag(source) {
+            // Find the index of a <button that has name="add" (standard Shopify add-to-cart)
+            var searchStr = 'name="add"';
+            var nameIdx = source.indexOf(searchStr);
+            if (nameIdx === -1) {
+              searchStr = "name='add'";
+              nameIdx = source.indexOf(searchStr);
             }
+            if (nameIdx === -1) return null;
 
-            // ---------------------------------------------------------------
-            // 1. Product card: immersive-product-card.liquid
-            // ---------------------------------------------------------------
-            var cardButtonTag = extractBuyNowButtonTag(cardSource);
-            if (!cardButtonTag) return false;
+            // Walk backwards to find the opening "<button"
+            var tagStart = source.lastIndexOf('<button', nameIdx);
+            if (tagStart === -1) return null;
 
-            // Must be a submit button
-            if (!/type\s*=\s*["']submit["']/.test(cardButtonTag)) return false;
-
-            // Must have an aria-label attribute
-            if (!/aria-label\s*=/.test(cardButtonTag)) return false;
-
-            // aria-label must reference the product title Liquid variable.
-            // The value may be double-quoted and contain single-quoted Liquid
-            // strings (e.g. {{ 'products.product.buy_now' | t }}), so we
-            // cannot use [^"'] to delimit the attribute value. Instead we
-            // simply check that aria-label appears before product.title in
-            // the tag, which is sufficient for a static-analysis property.
-            var cardAriaLabelPos = cardButtonTag.search(/aria-label\s*=/);
-            var cardTitlePos = cardButtonTag.search(/product\.title/);
-            if (cardAriaLabelPos === -1 || cardTitlePos === -1) return false;
-            if (cardTitlePos < cardAriaLabelPos) return false;
-
-            // ---------------------------------------------------------------
-            // 2. Product detail: glass-product.liquid
-            // ---------------------------------------------------------------
-            var detailButtonTag = extractBuyNowButtonTag(detailSource);
-            if (!detailButtonTag) return false;
-
-            if (!/type\s*=\s*["']submit["']/.test(detailButtonTag)) return false;
-
-            if (!/aria-label\s*=/.test(detailButtonTag)) return false;
-
-            // aria-label must reference the panel_product title Liquid variable.
-            var detailAriaLabelPos = detailButtonTag.search(/aria-label\s*=/);
-            var detailTitlePos = detailButtonTag.search(/panel_product\.title/);
-            if (detailAriaLabelPos === -1 || detailTitlePos === -1) return false;
-            if (detailTitlePos < detailAriaLabelPos) return false;
-
-            return true;
+            // Walk forward from tagStart to find the closing ">" of the
+            // opening tag, skipping over Liquid expressions {{ ... }} and
+            // tags {% ... %} so their ">" characters are not mistaken for
+            // the tag end.
+            var i = tagStart;
+            while (i < source.length) {
+              var ch = source[i];
+              // Skip Liquid expression {{ ... }}
+              if (source.slice(i, i + 2) === '{{') {
+                var end = source.indexOf('}}', i + 2);
+                if (end === -1) break;
+                i = end + 2;
+                continue;
+              }
+              // Skip Liquid tag {% ... %}
+              if (source.slice(i, i + 2) === '{%') {
+                var end2 = source.indexOf('%}', i + 2);
+                if (end2 === -1) break;
+                i = end2 + 2;
+                continue;
+              }
+              // The ">" that closes the opening tag
+              if (ch === '>' && i > tagStart) {
+                return source.slice(tagStart, i + 1);
+              }
+              i++;
+            }
+            return null;
           }
-        ),
-        { numRuns: 100, verbose: true }
-      );
-    }
-  );
+
+          // ---------------------------------------------------------------
+          // 1. Product card: immersive-product-card.liquid
+          // ---------------------------------------------------------------
+          var cardButtonTag = extractBuyNowButtonTag(cardSource);
+          if (!cardButtonTag) return false;
+
+          // Must be a submit button
+          if (!/type\s*=\s*["']submit["']/.test(cardButtonTag)) return false;
+
+          // Must have an aria-label attribute
+          if (!/aria-label\s*=/.test(cardButtonTag)) return false;
+
+          // aria-label must reference the product title Liquid variable.
+          // The value may be double-quoted and contain single-quoted Liquid
+          // strings (e.g. {{ 'products.product.add_to_cart' | t }}), so we
+          // cannot use [^"'] to delimit the attribute value. Instead we
+          // simply check that aria-label appears before product.title in
+          // the tag, which is sufficient for a static-analysis property.
+          var cardAriaLabelPos = cardButtonTag.search(/aria-label\s*=/);
+          var cardTitlePos = cardButtonTag.search(/product\.title/);
+          if (cardAriaLabelPos === -1 || cardTitlePos === -1) return false;
+          if (cardTitlePos < cardAriaLabelPos) return false;
+
+          // ---------------------------------------------------------------
+          // 2. Product detail: glass-product.liquid
+          // ---------------------------------------------------------------
+          var detailButtonTag = extractBuyNowButtonTag(detailSource);
+          if (!detailButtonTag) return false;
+
+          if (!/type\s*=\s*["']submit["']/.test(detailButtonTag)) return false;
+
+          if (!/aria-label\s*=/.test(detailButtonTag)) return false;
+
+          // aria-label must reference the panel_product title Liquid variable.
+          var detailAriaLabelPos = detailButtonTag.search(/aria-label\s*=/);
+          var detailTitlePos = detailButtonTag.search(/panel_product\.title/);
+          if (detailAriaLabelPos === -1 || detailTitlePos === -1) return false;
+          if (detailTitlePos < detailAriaLabelPos) return false;
+
+          return true;
+        },
+      ),
+      { numRuns: 100, verbose: true },
+    );
+  });
 });

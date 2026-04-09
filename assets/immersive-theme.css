@@ -1,32 +1,32 @@
 /* =============================================================================
    Immersive Theme - Global styles for search, cart, and supporting pages
-   Complements the immersive canvas homepage/collection/product experience
+   Scoped to .template-page-immersive only — homepage is now standard 2D
    ============================================================================= */
 
-/* Base: dark background with subtle texture */
-body {
-  background-color: #0a0f1e !important;
-  background-image: radial-gradient(ellipse at top, rgba(30, 41, 59, 0.8), #0a0f1e) !important;
-  color: #f1f5f9 !important;
+/* Base: dark background */
+.template-page-immersive body {
+  background-color: #0a0f1e;
+  background-image: radial-gradient(ellipse at top, rgba(30, 41, 59, 0.8), #0a0f1e);
+  color: #d4af37;
   min-height: 100vh;
 }
 
 /* Header overrides */
-.header,
-.header-wrapper {
+.template-page-immersive .header,
+.template-page-immersive .header-wrapper {
   background: rgba(10, 15, 30, 0.95) !important;
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(212, 175, 55, 0.15) !important;
 }
 
-.header__heading-link,
-.header__menu-item,
-.header a {
-  color: #f1f5f9 !important;
+.template-page-immersive .header__heading-link,
+.template-page-immersive .header__menu-item,
+.template-page-immersive .header a {
+  color: #d4af37 !important;
 }
 
-.header__menu-item:hover,
-.header a:hover {
+.template-page-immersive .header__menu-item:hover,
+.template-page-immersive .header a:hover {
   color: #d4af37 !important;
 }
 
@@ -34,23 +34,23 @@ body {
 .template-search .search__title,
 .template-search h1,
 .template-search h2 {
-  color: #ffffff;
+  color: #d4af37;
 }
 
 .template-search .search-modal__form,
 .template-search .search-form,
 .template-search .field {
   border: 2px solid rgba(212, 175, 55, 0.8) !important;
-  border-radius: 8px !important;
+  border-radius: 0 !important;
   overflow: hidden;
 }
 
 .template-search input[type="search"],
 .template-search .field__input {
   background: rgba(255, 255, 255, 0.06) !important;
-  color: #f1f5f9 !important;
+  color: #d4af37 !important;
   border: 2px solid rgba(212, 175, 55, 0.8) !important;
-  border-radius: 8px !important;
+  border-radius: 0 !important;
 }
 
 .template-search input[type="search"]:focus,
@@ -58,6 +58,12 @@ body {
   border-color: #d4af37 !important;
   outline: none !important;
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
+}
+
+.template-search input[type="search"]:focus-visible,
+.template-search .field__input:focus-visible {
+  outline: 2px solid #d4af37 !important;
+  outline-offset: 2px !important;
 }
 
 .template-search input[type="search"]::placeholder,
@@ -75,7 +81,7 @@ body {
 .template-search .card {
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 12px !important;
+  border-radius: 0 !important;
   backdrop-filter: blur(8px);
   transition: border-color 0.2s ease, transform 0.2s ease;
 }
@@ -88,7 +94,7 @@ body {
 
 .template-search .card__heading a,
 .template-search .card__information .caption {
-  color: #f1f5f9 !important;
+  color: #d4af37 !important;
 }
 
 .template-search .price {
@@ -98,7 +104,7 @@ body {
 /* Facets / filters */
 .template-search .facets__summary,
 .template-search .facets-vertical .facets__summary {
-  color: #f1f5f9 !important;
+  color: #d4af37 !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
@@ -121,12 +127,12 @@ body {
 /* Cart page */
 .template-cart .cart__title,
 .template-cart h1 {
-  color: #ffffff;
+  color: #d4af37;
 }
 
 .template-cart .cart-item__name,
 .template-cart .cart-item__details {
-  color: #f1f5f9 !important;
+  color: #d4af37 !important;
 }
 
 .template-cart .cart-item__price,
@@ -142,7 +148,7 @@ body {
 .template-cart .cart__checkout-button {
   background: rgba(212, 175, 55, 0.9) !important;
   color: #000 !important;
-  border-radius: 999px !important;
+  border-radius: 0 !important;
 }
 
 .template-cart .cart__checkout-button:hover {
@@ -150,60 +156,145 @@ body {
 }
 
 /* Predictive search dropdown */
-predictive-search .predictive-search,
-.predictive-search {
+.template-page-immersive predictive-search .predictive-search,
+.template-page-immersive .predictive-search,
+.template-search predictive-search .predictive-search,
+.template-search .predictive-search {
   background: rgba(10, 15, 30, 0.97) !important;
   border: 1px solid rgba(212, 175, 55, 0.2) !important;
   backdrop-filter: blur(20px);
 }
 
-.predictive-search__item {
-  color: #f1f5f9 !important;
+.template-page-immersive .predictive-search__item,
+.template-search .predictive-search__item {
+  color: #d4af37 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
-.predictive-search__item:hover,
-.predictive-search__item--link:hover {
+.template-page-immersive .predictive-search__item:hover,
+.template-page-immersive .predictive-search__item--link:hover,
+.template-search .predictive-search__item:hover,
+.template-search .predictive-search__item--link:hover {
   background: rgba(212, 175, 55, 0.08) !important;
 }
 
-.predictive-search__item-heading {
-  color: #ffffff !important;
+.template-page-immersive .predictive-search__item-heading,
+.template-search .predictive-search__item-heading {
+  color: #d4af37 !important;
 }
 
-.predictive-search__item .price {
+.template-page-immersive .predictive-search__item .price,
+.template-search .predictive-search__item .price {
   color: #d4af37 !important;
 }
 
 /* Footer */
-.footer {
+.template-page-immersive .footer {
   background: rgba(5, 8, 18, 0.98) !important;
   border-top: 1px solid rgba(212, 175, 55, 0.1) !important;
   color: rgba(241, 245, 249, 0.6) !important;
 }
 
-.footer a {
+.template-page-immersive .footer a {
   color: rgba(241, 245, 249, 0.6) !important;
 }
 
-.footer a:hover {
+.template-page-immersive .footer a:hover {
   color: #d4af37 !important;
 }
 
 /* Scrollbar */
-::-webkit-scrollbar {
+.template-page-immersive ::-webkit-scrollbar {
   width: 6px;
 }
 
-::-webkit-scrollbar-track {
+.template-page-immersive ::-webkit-scrollbar-track {
   background: #0a0f1e;
 }
 
-::-webkit-scrollbar-thumb {
+.template-page-immersive ::-webkit-scrollbar-thumb {
   background: rgba(212, 175, 55, 0.3);
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.template-page-immersive ::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 175, 55, 0.6);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .template-search .card-wrapper,
+  .template-search .card,
+  .template-cart .cart__checkout-button,
+  .template-page-immersive .predictive-search__item,
+  .template-search .predictive-search__item {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* =============================================================================
+   Header group overrides — hide Dawn header, keep announcement bar
+   ============================================================================= */
+
+.template-page-immersive .shopify-section-group-header-group-section:has(.header-wrapper) {
+  display: none !important;
+}
+
+/* Fallback: target by Dawn's section ID directly */
+.template-page-immersive #shopify-section-header {
+  display: none !important;
+}
+
+/* Fallback: hide the header-wrapper itself */
+.template-page-immersive .header-wrapper {
+  display: none !important;
+}
+
+/* Fallback: hide sticky-header web component Dawn uses */
+.template-page-immersive sticky-header {
+  display: none !important;
+}
+
+.template-page-immersive .shopify-section-group-header-group-section:has(.announcement-bar-section) {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  width: 100%;
+  z-index: 99;
+}
+
+.template-page-immersive .announcement-bar-section .utility-bar {
+  background: rgba(212, 175, 55, 0.12) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2) !important;
+  min-height: 28px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.template-page-immersive .announcement-bar-section .announcement-bar__message {
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: rgba(30, 20, 5, 0.8) !important;
+  margin: 0 !important;
+  padding: 0.35rem 0 !important;
+}
+
+.template-page-immersive .announcement-bar-section .announcement-bar__link {
+  color: rgba(30, 20, 5, 0.8) !important;
+}
+
+.template-page-immersive .announcement-bar-section .announcement-bar__link:hover {
+  color: #d4af37 !important;
+}
+
+@media (max-width: 768px) {
+  .template-page-immersive .shopify-section-group-header-group-section:has(.announcement-bar-section) {
+    top: 54px;
+  }
 }

@@ -1,0 +1,27 @@
+{
+  "enabled": true,
+  "name": "Immersive Theme Doc Sync",
+  "description": "Whenever any immersive feature file changes, update IMMERSIVE-STORE.md to keep the theme doc accurate — file structure, architecture, settings tables, and locale keys.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "layout/theme.liquid",
+      "templates/index.json",
+      "sections/immersive-canvas.liquid",
+      "sections/glass-panel.liquid",
+      "sections/glass-product.liquid",
+      "sections/immersive-product-grid.liquid",
+      "snippets/immersive-product-card.liquid",
+      "snippets/virtual-tryon.liquid",
+      "assets/immersive-store.js",
+      "assets/immersive-theme.css",
+      "locales/en.default.json",
+      "locales/en.default.schema.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "An immersive theme file was just edited. Re-read IMMERSIVE-STORE.md and update it as needed:\n\n1. File Structure section — if files were added, removed, or repurposed\n2. Architecture subsections — if behavior of immersive-store.js, immersive-canvas.liquid, Section Rendering API usage, room configuration, or session state changed\n3. Any tables (room settings, product panel settings, product grid settings, locale keys) — keep them in sync with current schemas and translation keys in the code\n\nKeep the doc accurate to the current implementation, high-level and readable for future devs — not just a dump of schema JSON.\n\nIf a change is too large to summarize confidently, add a short \"TODO: verify docs for X\" note with a link to the changed file and section.\n\nOnly update what actually changed — do not rewrite sections that are still accurate."
+  }
+}

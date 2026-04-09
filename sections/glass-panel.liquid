@@ -6,7 +6,7 @@
   assign panel_collection = collection
 %}
 
-<section class="glass-panel-section" aria-label="Collection panel">
+<section class="glass-panel-section" aria-label="{{ 'sections.immersive_store.collection_panel_aria' | t }}">
   {% if panel_collection %}
     <header class="glass-panel-section__header">
       <h2 class="glass-panel-section__title">{{ panel_collection.title | escape }}</h2>
@@ -22,76 +22,76 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="glass-panel-section__empty">This collection has no products yet.</p>
+      <p class="glass-panel-section__empty">{{ 'sections.immersive_store.collection_empty' | t }}</p>
     {% endif %}
   {% else %}
     <div class="glass-panel-section__empty">
-      <p>Collection not found.</p>
+      <p>{{ 'sections.immersive_store.collection_not_found' | t }}</p>
     </div>
   {% endif %}
 </section>
 
 {% stylesheet %}
-.glass-panel-section {
-  padding: 0;
-  width: 100%;
-}
-
-.glass-panel-section__header {
-  margin-bottom: 2rem;
-  padding: 2rem;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(8px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-}
-
-.glass-panel-section__title {
-  margin: 0 0 0.75rem;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.glass-panel-section__description {
-  margin: 0;
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
-}
-
-.glass-panel-section__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-  width: 100%;
-}
-
-@media (max-width: 768px) {
-  .glass-panel-section__grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
+  .glass-panel-section {
+    padding: 0;
+    width: 100%;
   }
-  
+
+  .glass-panel-section__header {
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
   .glass-panel-section__title {
-    font-size: 1.5rem;
+    margin: 0 0 0.75rem;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
-}
 
-/* Ensure product cards fill grid cells properly */
-.glass-panel-section__grid > * {
-  width: 100%;
-  max-width: 100%;
-}
+  .glass-panel-section__description {
+    margin: 0;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+  }
 
-.glass-panel-section__empty {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
-  text-align: center;
-  padding: 4rem 2rem;
-}
+  .glass-panel-section__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    .glass-panel-section__grid {
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .glass-panel-section__title {
+      font-size: 1.5rem;
+    }
+  }
+
+  /* Ensure product cards fill grid cells properly */
+  .glass-panel-section__grid > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .glass-panel-section__empty {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    padding: 4rem 2rem;
+  }
 {% endstylesheet %}
 
 {% schema %}

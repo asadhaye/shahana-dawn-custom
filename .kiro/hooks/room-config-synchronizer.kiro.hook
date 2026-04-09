@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Room Config Synchronizer",
+  "description": "When immersive-store.js or immersive-canvas.liquid changes, verify that STORE_ROOMS in JS, the theme editor schema, and the room settings tables in IMMERSIVE-STORE.md are all in sync.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "assets/immersive-store.js",
+      "sections/immersive-canvas.liquid"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A room configuration file was just edited. Cross-check the room config contract across assets/immersive-store.js and sections/immersive-canvas.liquid:\n\n1. Parse STORE_ROOMS in immersive-store.js — note the keys (storefront, lounge, designer_houses, occasions, featured_collections) and every property each room object reads, including anything consumed by mergeDynamicRoomConfig().\n\n2. Parse the {% schema %} block and the <script id=\"immersive-rooms-config\"> JSON block in immersive-canvas.liquid — note every setting ID, type, and default.\n\n3. Cross-check for mismatches:\n   - Any setting in the schema that JS never reads → flag as potentially unused or undocumented\n   - Any property JS reads from room config that has no corresponding schema setting → flag as a missing schema field or hardcoded value\n   - Any room key in STORE_ROOMS that has no schema representation (where one would be expected)\n\n4. For each mismatch found:\n   - If it's a documentation gap: update the room settings tables in IMMERSIVE-STORE.md (Storefront / Lounge / Designer Houses / Occasions / Featured Collections sections) to reflect reality\n   - If it's a code gap: suggest a minimal patch to either add the missing schema setting or update the JS to read the correct key — apply it if safe and clear\n\nKeep the doc tables accurate so merchants can configure rooms as described without surprises. If a change is too broad to assess confidently, add a \"TODO: verify room config sync for X\" note in IMMERSIVE-STORE.md."
+  }
+}

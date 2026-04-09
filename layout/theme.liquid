@@ -13,6 +13,14 @@
 
     {%- unless settings.type_header_font.system? and settings.type_body_font.system? -%}
       <link rel="preconnect" href="https://fonts.shopifycdn.com" crossorigin>
+      <link rel="dns-prefetch" href="https://fonts.shopifycdn.com">
+    {%- endunless -%}
+
+    {%- unless settings.type_body_font.system? -%}
+      {{ settings.type_body_font | font_url | preload_tag: as: 'font' }}
+    {%- endunless -%}
+    {%- unless settings.type_header_font.system? -%}
+      {{ settings.type_header_font | font_url | preload_tag: as: 'font' }}
     {%- endunless -%}
 
     <title>
@@ -35,11 +43,14 @@
     <script src="{{ 'details-modal.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'search-form.js' | asset_url }}" defer="defer"></script>
 
-    {%- comment -%}Three.js + immersive scene manager on immersive page and homepage{%- endcomment -%}
-    {%- if template == 'page.immersive' or template == 'index' -%}
+    {%- comment -%}Three.js + immersive scene manager on immersive templates{%- endcomment -%}
+    {%- if template == 'page.immersive' -%}
       <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
       <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
+
+    {%- comment -%}Device/connection-aware bridge behavior on all pages{%- endcomment -%}
+    <script src="{{ 'bridge-behavior.js' | asset_url }}" defer="defer"></script>
 
     {%- if settings.animations_reveal_on_scroll -%}
       <script src="{{ 'animations.js' | asset_url }}" defer="defer"></script>
@@ -263,7 +274,9 @@
     {% endstyle %}
 
     {{ 'base.css' | asset_url | stylesheet_tag }}
-    {{ 'immersive-theme.css' | asset_url | stylesheet_tag }}
+    {%- if template == 'page.immersive' -%}
+      {{ 'immersive-theme.css' | asset_url | stylesheet_tag }}
+    {%- endif -%}
     <link rel="stylesheet" href="{{ 'component-cart-items.css' | asset_url }}" media="print" onload="this.media='all'">
 
     {%- if settings.cart_type == 'drawer' -%}
@@ -273,13 +286,6 @@
       {{ 'component-price.css' | asset_url | stylesheet_tag }}
       {{ 'component-discounts.css' | asset_url | stylesheet_tag }}
     {%- endif -%}
-
-    {%- unless settings.type_body_font.system? -%}
-      <link rel="preload_tag" as="font" href="{{ settings.type_body_font | font_url }}" type="font/woff2" crossorigin>
-    {%- endunless -%}
-    {%- unless settings.type_header_font.system? -%}
-      <link rel="preload_tag" as="font" href="{{ settings.type_header_font | font_url }}" type="font/woff2" crossorigin>
-    {%- endunless -%}
 
     {%- if localization.available_countries.size > 1 or localization.available_languages.size > 1 -%}
       {{ 'component-localization-form.css' | asset_url | stylesheet_tag: preload: true }}
@@ -300,6 +306,48 @@
         document.documentElement.classList.add('shopify-design-mode');
       }
     </script>
+
+    {%- if template.name == 'search' -%}
+      <meta name="robots" content="noindex,nofollow">
+    {%- endif -%}
+
+    {%- for locale in localization.available_languages -%}
+      <link
+        rel="alternate"
+        hreflang="{{ locale.iso_code }}"
+        href="{{ request.origin }}{{ locale.root_url }}{% if request.path != '/' %}{{ request.path }}{% endif %}"
+      >
+    {%- endfor -%}
+    <link rel="alternate" hreflang="x-default" href="{{ request.origin }}{{ request.path }}">
+
+    {%- if request.page_type == 'index' -%}
+      {% assign potential_action_target = request.origin
+        | append: routes.search_url
+        | append: '?q={search_term_string}'
+      %}
+      <script type="application/ld+json">
+        {
+          "@context": "http://schema.org",
+          "@type": "WebSite",
+          "name": {{ shop.name | json }},
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {{ potential_action_target | json }},
+            "query-input": "required name=search_term_string"
+          },
+          "url": {{ request.origin | append: page.url | json }}
+        }
+      </script>
+    {%- endif -%}
+
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "Organization",
+        "name": {{ shop.name | json }},
+        "url": {{ request.origin | json }}
+      }
+    </script>
   </head>
 
   <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
@@ -307,21 +355,169 @@
       {{ 'accessibility.skip_to_text' | t }}
     </a>
 
+    {%- unless template == 'page.immersive' or template == 'index' or template == 'password' -%}
+      <div
+        id="immersive-preference-banner"
+        class="immersive-preference-banner"
+        role="region"
+        aria-label="{{ 'sections.immersive_journey_bridges.preference_banner_aria' | t }}"
+        hidden
+      >
+        <p class="immersive-preference-banner__text">
+          {{ 'sections.immersive_journey_bridges.preference_banner_text' | t }}
+        </p>
+        <div class="immersive-preference-banner__actions">
+          <a href="/pages/immersive-store" class="immersive-preference-banner__cta">
+            {{ 'sections.immersive_journey_bridges.preference_banner_cta' | t }}
+          </a>
+          <button
+            type="button"
+            class="immersive-preference-banner__dismiss"
+            data-preference-banner-dismiss
+            aria-label="{{ 'sections.immersive_journey_bridges.preference_banner_dismiss_aria' | t }}"
+          >
+            {{ 'sections.immersive_journey_bridges.preference_banner_dismiss' | t }}
+          </button>
+        </div>
+      </div>
+      <script>
+        (function () {
+          try {
+            if (localStorage.getItem('immersive_preferred_mode') === '3d') {
+              var banner = document.getElementById('immersive-preference-banner');
+              if (banner) {
+                banner.removeAttribute('hidden');
+                var dismissBtn = banner.querySelector('[data-preference-banner-dismiss]');
+                if (dismissBtn) {
+                  dismissBtn.addEventListener('click', function () {
+                    var next = banner.nextElementSibling;
+                    banner.remove();
+                    if (next && typeof next.focus === 'function') next.focus();
+                  });
+                }
+              }
+            }
+          } catch (e) {}
+        })();
+      </script>
+      <style>
+        .immersive-preference-banner {
+          position: fixed;
+          bottom: 1.5rem;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 9000;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 0.875rem 1.5rem;
+          background: rgba(10, 15, 30, 0.95);
+          border: 1px solid rgba(212, 175, 55, 0.5);
+          border-radius: 6px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.9375rem;
+          white-space: nowrap;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+          max-width: calc(100vw - 2rem);
+        }
+        .immersive-preference-banner__text {
+          margin: 0;
+        }
+        .immersive-preference-banner__actions {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          flex-shrink: 0;
+        }
+        .immersive-preference-banner__cta {
+          display: inline-flex;
+          align-items: center;
+          padding: 0.5rem 1rem;
+          background: rgba(212, 175, 55, 0.15);
+          border: 1px solid rgba(212, 175, 55, 0.7);
+          border-radius: 4px;
+          color: #d4af37;
+          text-decoration: none;
+          font-weight: 600;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          font-size: 0.8125rem;
+          white-space: nowrap;
+        }
+        .immersive-preference-banner__cta:hover {
+          background: rgba(212, 175, 55, 0.25);
+          border-color: #d4af37;
+        }
+        .immersive-preference-banner__cta:focus-visible,
+        .immersive-preference-banner__dismiss:focus-visible {
+          outline: 2px solid #d4af37;
+          outline-offset: 3px;
+        }
+        .immersive-preference-banner__dismiss {
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.5);
+          cursor: pointer;
+          font-size: 1.25rem;
+          line-height: 1;
+          padding: 0.25rem 0.375rem;
+          flex-shrink: 0;
+        }
+        .immersive-preference-banner__dismiss:hover {
+          color: rgba(255, 255, 255, 0.9);
+        }
+        @media (max-width: 600px) {
+          .immersive-preference-banner {
+            flex-direction: column;
+            align-items: stretch;
+            white-space: normal;
+            text-align: center;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            transform: none;
+            gap: 0.875rem;
+            padding: 1rem 1.25rem;
+            font-size: 0.9375rem;
+          }
+          .immersive-preference-banner__text {
+            font-size: 0.9375rem;
+            line-height: 1.5;
+          }
+          .immersive-preference-banner__actions {
+            justify-content: center;
+            gap: 0.75rem;
+          }
+          .immersive-preference-banner__cta {
+            font-size: 0.875rem;
+            padding: 0.625rem 1.25rem;
+            justify-content: center;
+          }
+          .immersive-preference-banner__dismiss {
+            font-size: 1.375rem;
+            padding: 0.25rem 0.5rem;
+          }
+        }
+      </style>
+    {%- endunless -%}
+
     {%- if settings.cart_type == 'drawer' -%}
       {%- render 'cart-drawer' -%}
     {%- endif -%}
 
-    {%- if template != 'page.immersive' and template != 'index' -%}
+    {%- unless template == 'page.immersive' -%}
       {% sections 'header-group' %}
-    {%- endif -%}
+    {%- endunless -%}
 
     <main id="MainContent" class="content-for-layout focus-none" role="main" tabindex="-1">
       {{ content_for_layout }}
     </main>
 
-    {%- if template != 'page.immersive' and template != 'index' -%}
+    {%- unless template == 'page.immersive' -%}
       {% sections 'footer-group' %}
-    {%- endif -%}
+    {%- endunless -%}
 
     <ul hidden>
       <li id="a11y-refresh-page-message">{{ 'accessibility.refresh_page' | t }}</li>

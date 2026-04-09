@@ -143,6 +143,17 @@
         {%- if search.results_count == 0 and search.filters == empty -%}
           <p role="status">{{ 'templates.search.no_results' | t: terms: search.terms }}</p>
         {%- endif -%}
+        {%- if search.results_count > 0 -%}
+          <div class="immersive-bridge-btn__wrapper">
+            {%-
+              render 'immersive-bridge-btn',
+              bridge_url: '/pages/immersive?view=immersive&open_search=' | append: search.terms | url_encode,
+              bridge_label: 'sections.immersive_journey_bridges.search_cta' | t,
+              bridge_aria: 'sections.immersive_journey_bridges.search_cta_aria' | t: terms: search.terms,
+              bridge_class: 'search'
+            -%}
+          </div>
+        {%- endif -%}
       {%- endif -%}
     </div>
     {%- if search.performed -%}
@@ -271,7 +282,6 @@
                   >
                     {%- case item.object_type -%}
                       {%- when 'product' -%}
-                        {%- capture product_settings -%}{%- if section.settings.product_show_vendor -%}vendor,{%- endif -%}title,price{%- endcapture -%}
                         {% render 'card-product',
                           card_product: item,
                           media_aspect_ratio: section.settings.image_ratio,
@@ -363,7 +373,7 @@
           "label": "t:sections.main-search.settings.columns_mobile.options__2.label"
         }
       ]
-    },    
+    },
     {
       "type": "header",
       "content": "t:sections.main-search.settings.header__1.content"
