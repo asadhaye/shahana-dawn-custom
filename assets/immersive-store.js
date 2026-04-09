@@ -152,9 +152,9 @@ function isTabletDevice() {
 function usesMobileImage() {
   return window.innerWidth < 1024;
 }
-var textureWidth = isMobileDevice() ? 1200 : 1920;
+var textureWidth = usesMobileImage() ? 1200 : 1920;
 // Parallax runs even with reduceMotion — CSS animations are suppressed separately
-var parallaxStrength = isMobileDevice() ? 0.03 : 0.08;
+var parallaxStrength = usesMobileImage() ? 0.03 : 0.08;
 
 // ─────────────────────────────────────────────────────────────
 // Analytics helpers (GA4 via dataLayer + Meta Pixel via fbq)
@@ -340,7 +340,7 @@ function getRoomTextureUrls(roomKey) {
     return null;
   }
 
-  return { baseTextureUrl: baseUrl, depthMapUrl: depthUrl, hotspots: room.hotspots };
+  return { roomKey: roomKey, baseTextureUrl: baseUrl, depthMapUrl: depthUrl, hotspots: room.hotspots };
 }
 
 // Preload a room's textures in the background (called on hotspot hover)
@@ -515,7 +515,7 @@ function handleMouseMove(event) {
   mouseTarget.y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
 }
 
-function handleResize() {
+function handleResize(roomKeyOverride) {
   if (!renderer || !camera) return;
   var canvas = renderer.domElement;
   var width = canvas.clientWidth || window.innerWidth;
@@ -523,7 +523,10 @@ function handleResize() {
   if (width === 0 || height === 0) return;
   renderer.setSize(width, height, false);
   if (planeMesh) {
-    var room = currentRoomKey && STORE_ROOMS[currentRoomKey];
+    // Use the override key (passed during initial load before currentRoomKey is set)
+    // to avoid falling through to the desktop branch on tablets.
+    var resolvedRoomKey = roomKeyOverride || currentRoomKey;
+    var room = resolvedRoomKey && STORE_ROOMS[resolvedRoomKey];
     var hasDedicatedMobileImage = usesMobileImage() && room && room.mobileBaseTextureUrl;
     if (hasDedicatedMobileImage && isMobileDevice()) {
       // Phone: image is composed for this exact viewport — fill quad directly, no crop
@@ -989,8 +992,13 @@ function loadRoomTextures(roomData, callback) {
       tex.magFilter = THREE.LinearFilter;
       if (tex.image && tex.image.width && tex.image.height) {
         currentImageAspect = tex.image.width / tex.image.height;
-        // Defer resize to next frame so canvas layout is settled before scaling
-        requestAnimationFrame(handleResize);
+        // Defer resize to next frame so canvas layout is settled before scaling.
+        // Pass the loading room's key so handleResize can pick the correct scale
+        // branch even before currentRoomKey is set (initial load race condition).
+        var loadingRoomKey = roomData.roomKey;
+        requestAnimationFrame(function () {
+          handleResize(loadingRoomKey);
+        });
       }
       loaded.base = tex;
       onBothLoaded();
