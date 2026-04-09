@@ -1034,6 +1034,7 @@ function renderHotspots(roomKey) {
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'immersive-hotspot';
+      button.setAttribute('data-immersive-hotspot', '');
       button.setAttribute('aria-label', hotspot.label);
       var labelSpan = document.createElement('span');
       labelSpan.className = 'immersive-hotspot-label';
@@ -1044,7 +1045,6 @@ function renderHotspots(roomKey) {
       var posY = usesMobileImage() && hotspot.mobileY != null ? hotspot.mobileY : hotspot.y;
       button.style.left = posX + '%';
       button.style.top = posY + '%';
-      button.style.transform = 'translate(-50%, -50%)';
       button.classList.add('immersive-hotspot--pill', 'immersive-hotspot--pulse');
 
       button.addEventListener('click', function () {
@@ -2541,12 +2541,16 @@ function loadProductRecommendations(panel) {
     });
 }
 
+// Auto-enhance existing hotspots (e.g. from Liquid templates)
 function enhanceHotspots() {
   document.querySelectorAll('[data-immersive-hotspot]').forEach(function (el) {
     el.classList.add('immersive-hotspot--pill', 'immersive-hotspot--pulse');
     var label = el.getAttribute('data-immersive-label') || el.getAttribute('aria-label') || el.textContent.trim();
     if (label && !el.querySelector('.immersive-hotspot-label')) {
-      var span = document.createElement('span'); span.className = 'immersive-hotspot-label'; span.textContent = label; el.appendChild(span);
+      var span = document.createElement('span');
+      span.className = 'immersive-hotspot-label';
+      span.textContent = label;
+      el.appendChild(span);
     }
   });
 }
