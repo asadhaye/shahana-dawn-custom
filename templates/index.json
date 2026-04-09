@@ -53,6 +53,12 @@
         "slide_2"
       ]
     },
+    "immersive_bridge": {
+      "type": "custom-liquid",
+      "settings": {
+        "custom_liquid": "<div style=\"text-align:center;padding:1.75rem 1.5rem\">{% assign bridge_label = 'sections.immersive_journey_bridges.switch_to_3d' | t %}{% assign bridge_aria = 'sections.immersive_journey_bridges.switch_to_3d_aria' | t %}{% render 'immersive-bridge-btn', bridge_url: '/pages/immersive?view=immersive', bridge_label: bridge_label, bridge_aria: bridge_aria, bridge_class: 'homepage' %}</div>"
+      }
+    },
     "brand_logos": {
       "type": "multicolumn",
       "settings": {
@@ -130,12 +136,6 @@
         "column_4",
         "column_5"
       ]
-    },
-    "immersive_bridge": {
-      "type": "custom-liquid",
-      "settings": {
-        "custom_liquid": "<div style=\"text-align:center;padding:1.75rem 1.5rem\">{% assign bridge_label = 'sections.immersive_journey_bridges.switch_to_3d' | t %}{% assign bridge_aria = 'sections.immersive_journey_bridges.switch_to_3d_aria' | t %}{% render 'immersive-bridge-btn', bridge_url: '/pages/immersive?view=immersive', bridge_label: bridge_label, bridge_aria: bridge_aria, bridge_class: 'homepage' %}</div>"
-      }
     },
     "featured_collection_1": {
       "type": "featured-collection",
