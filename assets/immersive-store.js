@@ -1034,7 +1034,6 @@ function renderHotspots(roomKey) {
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'immersive-hotspot';
-      button.setAttribute('data-immersive-hotspot', '');
       button.setAttribute('aria-label', hotspot.label);
       var labelSpan = document.createElement('span');
       labelSpan.className = 'immersive-hotspot-label';
@@ -1046,6 +1045,7 @@ function renderHotspots(roomKey) {
       button.style.left = posX + '%';
       button.style.top = posY + '%';
       button.classList.add('immersive-hotspot--pill', 'immersive-hotspot--pulse');
+      button.setAttribute('data-immersive-hotspot', '');
 
       button.addEventListener('click', function () {
         var details = { room_key: roomKey, hotspot_label: hotspot.label };
