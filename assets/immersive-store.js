@@ -1035,16 +1035,17 @@ function renderHotspots(roomKey) {
       button.type = 'button';
       button.className = 'immersive-hotspot';
       button.setAttribute('aria-label', hotspot.label);
-      var srSpan = document.createElement('span');
-      srSpan.className = 'visually-hidden';
-      srSpan.textContent = hotspot.label;
-      button.appendChild(srSpan);
+      var labelSpan = document.createElement('span');
+      labelSpan.className = 'immersive-hotspot-label';
+      labelSpan.textContent = hotspot.label;
+      button.appendChild(labelSpan);
       button.style.position = 'absolute';
       var posX = usesMobileImage() && hotspot.mobileX != null ? hotspot.mobileX : hotspot.x;
       var posY = usesMobileImage() && hotspot.mobileY != null ? hotspot.mobileY : hotspot.y;
       button.style.left = posX + '%';
       button.style.top = posY + '%';
       button.style.transform = 'translate(-50%, -50%)';
+      button.classList.add('immersive-hotspot--pill', 'immersive-hotspot--pulse');
 
       button.addEventListener('click', function () {
         var details = { room_key: roomKey, hotspot_label: hotspot.label };
@@ -2540,6 +2541,16 @@ function loadProductRecommendations(panel) {
     });
 }
 
+function enhanceHotspots() {
+  document.querySelectorAll('[data-immersive-hotspot]').forEach(function (el) {
+    el.classList.add('immersive-hotspot--pill', 'immersive-hotspot--pulse');
+    var label = el.getAttribute('data-immersive-label') || el.getAttribute('aria-label') || el.textContent.trim();
+    if (label && !el.querySelector('.immersive-hotspot-label')) {
+      var span = document.createElement('span'); span.className = 'immersive-hotspot-label'; span.textContent = label; el.appendChild(span);
+    }
+  });
+}
+
 function bindImmersiveNav() {
   // 1. Wire cart toggle to Dawn's cart-drawer web component
   var cartToggle = document.getElementById('cart-toggle');
@@ -2634,6 +2645,7 @@ function bindImmersiveInit() {
   requestAnimationFrame(function () {
     initImmersiveScene();
     bindImmersiveNav();
+    enhanceHotspots();
     setupImageParallax();
     showImmersiveOnboardingIfNeeded();
     initWishlist();
