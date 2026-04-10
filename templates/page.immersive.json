@@ -44,6 +44,8 @@
       ],
       "settings": {
         "enabled": true,
+        "bar_height": 48,
+        "scroll_speed": 40,
         "separator": "✦",
         "aria_label": "Store announcements"
       }
