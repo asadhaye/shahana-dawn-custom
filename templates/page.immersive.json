@@ -97,10 +97,34 @@
             "collection": "suffuse",
             "depth_layer": 50
           }
+        },
+        "banner_jKYUC7": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        },
+        "banner_gcCkEK": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
         }
       },
       "block_order": [
-        "banner_PtkU9T"
+        "banner_PtkU9T",
+        "banner_jKYUC7",
+        "banner_gcCkEK"
       ],
       "settings": {
         "room_key": "designer_houses",
@@ -112,6 +136,46 @@
     },
     "editorial_occasions": {
       "type": "immersive-editorial",
+      "blocks": {
+        "banner_rihxDg": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        },
+        "banner_9YbN3K": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        },
+        "banner_cqAYyJ": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        }
+      },
+      "block_order": [
+        "banner_rihxDg",
+        "banner_9YbN3K",
+        "banner_cqAYyJ"
+      ],
       "settings": {
         "room_key": "occasions",
         "layout": "occasions",
@@ -122,6 +186,34 @@
     },
     "editorial_featured_collections": {
       "type": "immersive-editorial",
+      "blocks": {
+        "banner_k4FgDF": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        },
+        "banner_GiAhDk": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        }
+      },
+      "block_order": [
+        "banner_k4FgDF",
+        "banner_GiAhDk"
+      ],
       "settings": {
         "room_key": "featured_collections",
         "layout": "featured_collections",
