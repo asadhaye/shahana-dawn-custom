@@ -21,36 +21,27 @@
             "menu": "footer"
           }
         },
-        "link_list_k9gRKn": {
-          "type": "link_list",
-          "settings": {
-            "heading": "Legal Pages",
-            "menu": "legal"
-          }
-        },
         "footer-1": {
           "type": "text",
           "settings": {
-            "heading": "<strong>Our Story</strong>",
-            "subtext": "<p><em>Where heritage meets haute couture. Discover exclusive designer pieces, lovingly sourced for the modern South Asian woman.</em></p>"
+            "heading": "Our mission",
+            "subtext": "<p>Share contact information, store details, and brand content with your customers.<\/p>"
           }
         }
       },
       "block_order": [
         "footer-0",
-        "link_list_k9gRKn",
         "footer-1"
       ],
       "settings": {
         "color_scheme": "scheme-1",
         "newsletter_enable": true,
-        "newsletter_heading": "Be the first to discover new designer arrivals and exclusive releases.",
-        "enable_follow_on_shop": true,
+        "newsletter_heading": "Subscribe to our emails",
         "show_social": true,
         "enable_country_selector": false,
         "enable_language_selector": false,
         "payment_enable": true,
-        "show_policy": true,
+        "show_policy": false,
         "margin_top": 48,
         "padding_top": 36,
         "padding_bottom": 36

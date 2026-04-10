@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "settings_schema": {
     "global": {
@@ -670,7 +679,8 @@
         "options__1": { "label": "Designer tiles" },
         "options__2": { "label": "Collection banners" },
         "options__3": { "label": "Story segments" },
-        "options__4": { "label": "Horizontal gallery" }
+        "options__4": { "label": "Horizontal gallery" },
+        "options__5": { "label": "Featured collections" }
       },
 
       "hero_background_image": { "label": "Hero background image" },

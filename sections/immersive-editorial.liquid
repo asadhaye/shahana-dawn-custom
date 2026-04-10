@@ -36,6 +36,186 @@
     </div>
   </div>
 
+  {%- if section.settings.layout == 'occasions' -%}
+    <div class="immersive-occasions" data-room-key="{{ section.settings.room_key | escape }}">
+      <div
+        class="immersive-occasions__list"
+        role="list"
+        aria-label="{{ section.settings.hero_heading | default: 'Occasions' | escape }}"
+      >
+        {%- for block in section.blocks -%}
+          {%- assign collection = block.settings.collection -%}
+          {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+          {%- assign card_label = block.settings.heading | default: collection.title -%}
+          <a
+            class="immersive-occasions__card"
+            href="{{ card_url }}"
+            role="listitem"
+            aria-label="{{ card_label | escape }}"
+            {%- if collection != blank -%}
+              data-collection="{{ collection.handle }}"
+            {%- endif -%}
+            {{ block.shopify_attributes }}
+          >
+            <div class="immersive-occasions__card-media">
+              {%- if block.settings.image != blank -%}
+                <img
+                  src="{{ block.settings.image | image_url: width: 1000 }}"
+                  srcset="
+                    {{ block.settings.image | image_url: width: 600 }} 600w,
+                    {{ block.settings.image | image_url: width: 800 }} 800w,
+                    {{ block.settings.image | image_url: width: 1000 }} 1000w
+                  "
+                  sizes="(max-width: 768px) 100vw, 900px"
+                  width="{{ block.settings.image.width }}"
+                  height="{{ block.settings.image.height }}"
+                  alt="{{ block.settings.image.alt | default: card_label | escape }}"
+                  loading="lazy"
+                >
+              {%- elsif collection.featured_image != blank -%}
+                <img
+                  src="{{ collection.featured_image | image_url: width: 1000 }}"
+                  srcset="
+                    {{ collection.featured_image | image_url: width: 600 }} 600w,
+                    {{ collection.featured_image | image_url: width: 800 }} 800w,
+                    {{ collection.featured_image | image_url: width: 1000 }} 1000w
+                  "
+                  sizes="(max-width: 768px) 100vw, 900px"
+                  width="{{ collection.featured_image.width }}"
+                  height="{{ collection.featured_image.height }}"
+                  alt="{{ collection.featured_image.alt | default: card_label | escape }}"
+                  loading="lazy"
+                >
+              {%- else -%}
+                <div class="immersive-occasions__card-placeholder" aria-hidden="true"></div>
+              {%- endif -%}
+            </div>
+            <div class="immersive-occasions__card-content">
+              <h3 class="immersive-occasions__card-heading">{{ card_label | escape }}</h3>
+              {%- if block.settings.body != blank -%}
+                <div class="immersive-occasions__card-body">{{ block.settings.body }}</div>
+              {%- endif -%}
+              {%- if block.settings.cta_label != blank -%}
+                <span class="immersive-occasions__card-cta" aria-hidden="true">
+                  {{- block.settings.cta_label | escape -}}
+                </span>
+              {%- else -%}
+                <span class="immersive-occasions__card-arrow" aria-hidden="true">→</span>
+              {%- endif -%}
+            </div>
+          </a>
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
+
+  {%- if section.settings.layout == 'featured_collections' -%}
+    <div class="immersive-featured" data-room-key="{{ section.settings.room_key | escape }}">
+      <div
+        class="immersive-featured__list"
+        role="list"
+        aria-label="{{ section.settings.hero_heading | default: 'Featured collections' | escape }}"
+      >
+        {%- for block in section.blocks -%}
+          {%- assign collection = block.settings.collection -%}
+          {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+          {%- assign card_label = block.settings.heading | default: collection.title -%}
+          <a
+            class="immersive-featured__card"
+            href="{{ card_url }}"
+            role="listitem"
+            aria-label="{{ card_label | escape }}"
+            {%- if collection != blank -%}
+              data-collection="{{ collection.handle }}"
+            {%- endif -%}
+            {{ block.shopify_attributes }}
+          >
+            <div class="immersive-featured__card-media">
+              {%- if block.settings.image != blank -%}
+                <img
+                  src="{{ block.settings.image | image_url: width: 900 }}"
+                  srcset="
+                    {{ block.settings.image | image_url: width: 500 }} 500w,
+                    {{ block.settings.image | image_url: width: 700 }} 700w,
+                    {{ block.settings.image | image_url: width: 900 }} 900w
+                  "
+                  sizes="(max-width: 768px) 80vw, 420px"
+                  width="{{ block.settings.image.width }}"
+                  height="{{ block.settings.image.height }}"
+                  alt="{{ block.settings.image.alt | default: card_label | escape }}"
+                  loading="lazy"
+                >
+              {%- elsif collection.featured_image != blank -%}
+                <img
+                  src="{{ collection.featured_image | image_url: width: 900 }}"
+                  srcset="
+                    {{ collection.featured_image | image_url: width: 500 }} 500w,
+                    {{ collection.featured_image | image_url: width: 700 }} 700w,
+                    {{ collection.featured_image | image_url: width: 900 }} 900w
+                  "
+                  sizes="(max-width: 768px) 80vw, 420px"
+                  width="{{ collection.featured_image.width }}"
+                  height="{{ collection.featured_image.height }}"
+                  alt="{{ collection.featured_image.alt | default: card_label | escape }}"
+                  loading="lazy"
+                >
+              {%- else -%}
+                <div class="immersive-featured__card-placeholder" aria-hidden="true"></div>
+              {%- endif -%}
+            </div>
+            <div class="immersive-featured__card-content">
+              <h3 class="immersive-featured__card-heading">{{ card_label | escape }}</h3>
+              {%- if block.settings.body != blank -%}
+                <div class="immersive-featured__card-body">{{ block.settings.body }}</div>
+              {%- endif -%}
+              {%- if block.settings.cta_label != blank -%}
+                <span class="immersive-featured__card-cta" aria-hidden="true">
+                  {{- block.settings.cta_label | escape -}}
+                </span>
+              {%- else -%}
+                <span class="immersive-featured__card-arrow" aria-hidden="true">→</span>
+              {%- endif -%}
+            </div>
+          </a>
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
+
+  {%- if section.settings.layout == 'designers' -%}
+    <div class="immersive-designers" data-room-key="{{ section.settings.room_key | escape }}">
+      <div
+        class="immersive-designers__timeline"
+        role="list"
+        aria-label="{{ section.settings.hero_heading | default: 'Designers' | escape }}"
+      >
+        <div class="immersive-designers__rail">
+          {%- for block in section.blocks -%}
+            {%- assign collection = block.settings.collection -%}
+            <button
+              class="immersive-designers__marker"
+              type="button"
+              role="listitem"
+              data-index="{{ forloop.index0 }}"
+              {%- if collection != blank -%}
+                data-collection-handle="{{ collection.handle }}"
+              {%- endif -%}
+              data-designer-label="{{ block.settings.heading | escape }}"
+              {{ block.shopify_attributes }}
+            >
+              <span class="immersive-designers__marker-label">{{ block.settings.heading | escape }}</span>
+            </button>
+          {%- endfor -%}
+        </div>
+        <div class="immersive-designers__thumb" aria-hidden="true"></div>
+      </div>
+      <div
+        class="immersive-designers__products"
+        id="immersive-designers-products-{{ section.settings.room_key | escape }}"
+      ></div>
+    </div>
+  {%- endif -%}
+
   <div class="immersive-editorial__banners">
     {%- for block in section.blocks -%}
       <article
@@ -494,6 +674,400 @@
       transform: none !important;
     }
   }
+
+  /* ============================================================================
+     Designers timeline + product grid
+  ============================================================================ */
+  .immersive-designers {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 2.5rem 1.5rem 3.5rem;
+  }
+
+  .immersive-designers__timeline {
+    position: relative;
+    padding-inline: 1.75rem;
+  }
+
+  .immersive-designers__rail {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.75rem 1.25rem;
+    background: rgba(10, 15, 30, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .immersive-designers__marker {
+    position: relative;
+    background: transparent;
+    border: 0;
+    padding: 0.25rem 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+    z-index: 1;
+  }
+
+  .immersive-designers__marker:hover {
+    color: #fff;
+  }
+
+  .immersive-designers__marker.is-active {
+    color: #0a0f1e;
+    font-weight: 600;
+  }
+
+  .immersive-designers__marker:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .immersive-designers__thumb {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: calc(100% - 8px);
+    border-radius: 999px;
+    background: #d4af37;
+    pointer-events: none;
+    transition: left 0.25s ease, width 0.25s ease;
+    z-index: 0;
+  }
+
+  .immersive-designers__products {
+    min-height: 12rem;
+  }
+
+  .immersive-designers__products-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 12rem;
+    color: rgba(212, 175, 55, 0.7);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-designers__thumb {
+      transition: none !important;
+    }
+  }
+
+  /* ============================================================================
+     Occasions layout — vertical scroll cards
+  ============================================================================ */
+  .immersive-occasions {
+    position: relative;
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  .immersive-occasions__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .immersive-occasions__card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 1.75rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: 1.25rem;
+    text-decoration: none;
+    color: #fff;
+    background: radial-gradient(circle at top left, rgba(212, 175, 55, 0.12), rgba(10, 15, 30, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    min-height: 260px;
+    transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+    cursor: pointer;
+  }
+
+  .immersive-occasions__card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.85);
+    border-color: rgba(212, 175, 55, 0.45);
+  }
+
+  .immersive-occasions__card:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 4px;
+    border-radius: 1.25rem;
+  }
+
+  .immersive-occasions__card-media {
+    position: relative;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: rgba(10, 15, 30, 0.6);
+  }
+
+  .immersive-occasions__card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    transition: transform 400ms ease;
+  }
+
+  .immersive-occasions__card:hover .immersive-occasions__card-media img {
+    transform: scale(1.04);
+  }
+
+  .immersive-occasions__card-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    background: linear-gradient(160deg, rgba(212, 175, 55, 0.1), rgba(10, 15, 30, 0.7));
+  }
+
+  .immersive-occasions__card-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+  }
+
+  .immersive-occasions__card-heading {
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+    font-weight: 600;
+    color: #d4af37;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .immersive-occasions__card-body {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .immersive-occasions__card-cta {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid #d4af37;
+    color: #d4af37;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 0.25rem;
+    align-self: flex-start;
+    transition: background 200ms ease, color 200ms ease;
+  }
+
+  .immersive-occasions__card:hover .immersive-occasions__card-cta {
+    background: #d4af37;
+    color: #0a0f1e;
+  }
+
+  .immersive-occasions__card-arrow {
+    font-size: 1.25rem;
+    color: rgba(212, 175, 55, 0.6);
+    transition: transform 200ms ease, color 200ms ease;
+    align-self: flex-start;
+  }
+
+  .immersive-occasions__card:hover .immersive-occasions__card-arrow {
+    transform: translateX(5px);
+    color: #d4af37;
+  }
+
+  @media (max-width: 640px) {
+    .immersive-occasions__card {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    .immersive-occasions__card-media {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-occasions__card,
+    .immersive-occasions__card-media img,
+    .immersive-occasions__card-arrow,
+    .immersive-occasions__card-cta {
+      transition: none !important;
+      transform: none !important;
+    }
+  }
+
+  /* ============================================================================
+     Featured collections layout — portrait cube-style banners
+  ============================================================================ */
+  .immersive-featured {
+    position: relative;
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  .immersive-featured__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .immersive-featured__card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 2.25rem;
+    padding: 1.75rem 2rem;
+    border-radius: 1.5rem;
+    text-decoration: none;
+    color: #fff;
+    background: radial-gradient(circle at top left, rgba(212, 175, 55, 0.14), rgba(10, 15, 30, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.85);
+    overflow: hidden;
+    min-height: 260px;
+    transform-style: preserve-3d;
+    transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease, background 260ms ease;
+    cursor: pointer;
+  }
+
+  .immersive-featured__card:hover {
+    transform: perspective(900px) rotateY(-3deg) rotateX(1.5deg) translateY(-4px);
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.9), 8px 0 32px rgba(212, 175, 55, 0.12);
+    border-color: rgba(212, 175, 55, 0.5);
+    background: radial-gradient(circle at top left, rgba(212, 175, 55, 0.2), rgba(10, 15, 30, 0.95));
+  }
+
+  .immersive-featured__card:nth-child(even):hover {
+    transform: perspective(900px) rotateY(3deg) rotateX(1.5deg) translateY(-4px);
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.9), -8px 0 32px rgba(212, 175, 55, 0.12);
+  }
+
+  .immersive-featured__card:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 4px;
+    border-radius: 1.5rem;
+  }
+
+  .immersive-featured__card-media {
+    position: relative;
+    border-radius: 0.875rem;
+    overflow: hidden;
+    background: rgba(10, 15, 30, 0.6);
+    aspect-ratio: 3 / 4;
+  }
+
+  .immersive-featured__card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    transition: transform 400ms ease;
+  }
+
+  .immersive-featured__card:hover .immersive-featured__card-media img {
+    transform: scale(1.05);
+  }
+
+  .immersive-featured__card-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, rgba(212, 175, 55, 0.1), rgba(10, 15, 30, 0.7));
+  }
+
+  .immersive-featured__card-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+  }
+
+  .immersive-featured__card-heading {
+    font-size: clamp(1.375rem, 2.5vw, 2rem);
+    font-weight: 600;
+    color: #d4af37;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .immersive-featured__card-body {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .immersive-featured__card-cta {
+    display: inline-block;
+    padding: 0.55rem 1.4rem;
+    border: 1px solid #d4af37;
+    color: #d4af37;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 0.25rem;
+    align-self: flex-start;
+    transition: background 200ms ease, color 200ms ease;
+  }
+
+  .immersive-featured__card:hover .immersive-featured__card-cta {
+    background: #d4af37;
+    color: #0a0f1e;
+  }
+
+  .immersive-featured__card-arrow {
+    font-size: 1.375rem;
+    color: rgba(212, 175, 55, 0.6);
+    transition: transform 200ms ease, color 200ms ease;
+    align-self: flex-start;
+  }
+
+  .immersive-featured__card:hover .immersive-featured__card-arrow {
+    transform: translateX(6px);
+    color: #d4af37;
+  }
+
+  @media (max-width: 640px) {
+    .immersive-featured__card {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    .immersive-featured__card-media {
+      aspect-ratio: 4 / 3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-featured__card,
+    .immersive-featured__card-media img,
+    .immersive-featured__card-arrow,
+    .immersive-featured__card-cta {
+      transition: none !important;
+      transform: none !important;
+    }
+  }
 {% endstylesheet %}
 
 {% javascript %}
@@ -597,7 +1171,8 @@
         { "value": "designers", "label": "t:sections.immersive_editorial.settings.layout.options__1.label" },
         { "value": "collections", "label": "t:sections.immersive_editorial.settings.layout.options__2.label" },
         { "value": "occasions", "label": "t:sections.immersive_editorial.settings.layout.options__3.label" },
-        { "value": "gallery", "label": "t:sections.immersive_editorial.settings.layout.options__4.label" }
+        { "value": "gallery", "label": "t:sections.immersive_editorial.settings.layout.options__4.label" },
+        { "value": "featured_collections", "label": "t:sections.immersive_editorial.settings.layout.options__5.label" }
       ]
     },
     {

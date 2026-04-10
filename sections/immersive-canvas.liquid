@@ -31,10 +31,17 @@
     class="immersive-store__canvas-wrapper"
     data-base-url="{{ base_url }}"
     data-depth-url="{{ depth_url }}"
+    data-logo-url="{{ 'sc-logo-transpartent-bg.png' | asset_url }}"
   >
     <canvas
       id="immersive-canvas"
       aria-hidden="true"
+    ></canvas>
+    <!-- Logo animation canvas — sits above the main parallax canvas, pointer-events:none -->
+    <canvas
+      id="logo-canvas"
+      aria-hidden="true"
+      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;"
     ></canvas>
     <div id="ui-layer"></div>
     <div class="immersive-store__tagline" id="immersive-tagline" aria-hidden="true">
@@ -42,13 +49,8 @@
     </div>
   </div>
 
-  <!-- Ceiling logo overlay — frosted band covering the ceiling area with large animated logo -->
-  <div class="immersive-ceiling-logo" aria-hidden="true">
-    <div class="immersive-ceiling-logo__inner">
-      <span class="immersive-ceiling-logo__name">Shahana Collection</span>
-      <span class="immersive-ceiling-logo__sub">Luxury Pakistani Fashion</span>
-    </div>
-  </div>
+  <!-- Ceiling logo overlay — logo is now rendered on #logo-canvas by the Three.js animation -->
+  <div class="immersive-ceiling-logo" aria-hidden="true" hidden></div>
 
   <!-- Fixed Header — dark frosted glass top bar -->
   <header class="immersive-header">
@@ -990,26 +992,6 @@
   }
 
   /* ============================================================================
-   3b. DAWN ANNOUNCEMENT BAR — fixed above the immersive header
-   ============================================================================ */
-  .immersive-announcement-bar-wrapper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 102;
-  }
-
-  /* Push immersive header below announcement bar (~36px default Dawn height) */
-  .immersive-header {
-    top: var(--announcement-bar-height, 36px);
-  }
-
-  .immersive-ceiling-logo {
-    top: calc(var(--announcement-bar-height, 36px) + 72px);
-  }
-
-  /* ============================================================================
    3c. CEILING LOGO OVERLAY
    ============================================================================ */
   .immersive-ceiling-logo {
@@ -1051,23 +1033,24 @@
     }
   }
 
-  .immersive-ceiling-logo__name {
-    font-size: clamp(1.6rem, 5vw, 2.8rem);
-    font-weight: 300;
-    letter-spacing: 0.35em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.95);
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(212, 175, 55, 0.2);
-    white-space: nowrap;
+  .immersive-ceiling-logo__img {
+    width: clamp(180px, 28vw, 320px);
+    height: auto;
+    display: block;
+    /* Subtle gold tint + glow to match the immersive palette */
+    filter: drop-shadow(0 2px 18px rgba(212, 175, 55, 0.35)) drop-shadow(0 0 40px rgba(0, 0, 0, 0.5));
+    /* Gentle breathing pulse */
+    animation: immersive-logo-pulse 6s ease-in-out infinite;
   }
 
-  .immersive-ceiling-logo__sub {
-    font-size: clamp(0.55rem, 1.5vw, 0.7rem);
-    font-weight: 400;
-    letter-spacing: 0.45em;
-    text-transform: uppercase;
-    color: rgba(212, 175, 55, 0.8);
-    white-space: nowrap;
+  @keyframes immersive-logo-pulse {
+    0%,
+    100% {
+      filter: drop-shadow(0 2px 18px rgba(212, 175, 55, 0.35)) drop-shadow(0 0 40px rgba(0, 0, 0, 0.5));
+    }
+    50% {
+      filter: drop-shadow(0 2px 28px rgba(212, 175, 55, 0.6)) drop-shadow(0 0 50px rgba(0, 0, 0, 0.5));
+    }
   }
 
   @media (max-width: 768px) {
@@ -1075,54 +1058,21 @@
       top: 60px;
       height: 120px;
     }
-    .immersive-ceiling-logo__name {
-      letter-spacing: 0.2em;
+    .immersive-ceiling-logo__img {
+      width: clamp(130px, 40vw, 200px);
     }
   }
 
-  /* The announcement-bar section renders before immersive-canvas in the template.
-     We pull it into the immersive chrome by fixing it just below the header.
-     Scoped to .immersive-store context so it only applies on immersive templates. */
-  .immersive-store ~ .shopify-section .announcement-bar-section,
-  .template-page-immersive .announcement-bar-section,
-  .template-index .announcement-bar-section {
-    position: fixed;
-    top: 64px;
-    left: 0;
-    width: 100%;
-    z-index: 99;
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-ceiling-logo__img {
+      animation: none;
+    }
   }
 
-  .template-page-immersive .announcement-bar-section .utility-bar,
-  .template-index .announcement-bar-section .utility-bar {
-    background: rgba(212, 175, 55, 0.12) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(212, 175, 55, 0.2) !important;
-    min-height: 28px;
-    padding: 0;
-  }
-
-  .template-page-immersive .announcement-bar-section .announcement-bar__message,
-  .template-index .announcement-bar-section .announcement-bar__message {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(30, 20, 5, 0.8);
-    margin: 0;
-    padding: 0.35rem 0;
-  }
-
-  .template-page-immersive .announcement-bar-section .announcement-bar__link,
-  .template-index .announcement-bar-section .announcement-bar__link {
-    color: rgba(30, 20, 5, 0.8);
-    text-decoration: none;
-  }
-
-  .template-page-immersive .announcement-bar-section .announcement-bar__link:hover,
-  .template-index .announcement-bar-section .announcement-bar__link:hover {
-    color: #d4af37;
+  /* The immersive notification bar (immersive-notification-bar.liquid) sits at top: 0.
+     Push the immersive header below it. */
+  .immersive-header {
+    top: 36px;
   }
 
   /* Offset the canvas so it starts below both header + announcement bar */
@@ -1138,11 +1088,6 @@
 
     .immersive-header__logo-name {
       font-size: 0.9rem;
-    }
-
-    .template-page-immersive .announcement-bar-section,
-    .template-index .announcement-bar-section {
-      top: 60px;
     }
   }
 

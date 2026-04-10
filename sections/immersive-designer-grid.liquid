@@ -1,0 +1,42 @@
+<div class="immersive-designer-grid" data-section-id="{{ section.id }}">
+  {%- for product in collection.products limit: 12 -%}
+    {%- render 'immersive-product-card', product: product -%}
+  {%- else -%}
+    <p class="immersive-designer-grid__empty">{{ 'sections.immersive.product_grid.empty' | t }}</p>
+  {%- endfor -%}
+</div>
+
+{% stylesheet %}
+  .immersive-designer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 1.5rem 0 0;
+  }
+
+  .immersive-designer-grid__empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    padding: 2rem 0;
+  }
+
+  @media screen and (min-width: 640px) {
+    .immersive-designer-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media screen and (min-width: 1024px) {
+    .immersive-designer-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Designer Grid"
+}
+{% endschema %}

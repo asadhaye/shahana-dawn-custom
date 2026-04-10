@@ -108,6 +108,53 @@ const STORE_ROOMS = {
   });
 })();
 
+// ---------------------------------------------------------------------------
+// Hotspot normalization helpers
+// Map raw hotspot config into a normalized shape with an explicit type and
+// target. This lets us handle 'room', 'collection_panel', and 'editorial'
+// hotspots consistently regardless of whether they came from the hardcoded
+// STORE_ROOMS or from the immersive-rooms-config JSON override.
+// Pure helpers — no DOM access, no side effects.
+// ---------------------------------------------------------------------------
+
+function normalizeHotspot(raw, roomKey, index) {
+  if (!raw) return null;
+  var type, target;
+  if (raw.targetRoom) {
+    type = 'room';
+    target = raw.targetRoom;
+  } else if (raw.targetCollection) {
+    type = 'collection_panel';
+    target = raw.targetCollection;
+  } else if (raw.targetEditorialRoom) {
+    type = 'editorial';
+    target = raw.targetEditorialRoom;
+  } else {
+    type = 'unknown';
+    target = null;
+  }
+  return {
+    id: raw.id || roomKey + '-' + (raw.targetRoom || raw.targetCollection || raw.targetEditorialRoom || index),
+    type: type,
+    target: target,
+    label: raw.label || '',
+    position: { x: raw.x, y: raw.y, z: raw.z },
+    mobilePosition:
+      typeof raw.mobileX === 'number' && typeof raw.mobileY === 'number' ? { x: raw.mobileX, y: raw.mobileY } : null,
+    _raw: raw,
+  };
+}
+
+function getNormalizedHotspots(roomKey) {
+  var room = STORE_ROOMS[roomKey];
+  if (!room || !Array.isArray(room.hotspots)) return [];
+  return room.hotspots
+    .map(function (raw, index) {
+      return normalizeHotspot(raw, roomKey, index);
+    })
+    .filter(Boolean);
+}
+
 let renderer;
 let scene;
 let camera;
@@ -2662,18 +2709,555 @@ function bindCookieBanner() {
   if (declineBtn) declineBtn.addEventListener('click', dismiss);
 }
 
-function bindImmersiveInit() {
-  if (!document.getElementById('immersive-canvas')) return;
-  // Defer until after first paint so the canvas has real layout dimensions
-  requestAnimationFrame(function () {
-    initImmersiveScene();
-    bindImmersiveNav();
-    setupImageParallax();
-    showImmersiveOnboardingIfNeeded();
-    initWishlist();
-    bindCookieBanner();
+// ============================================================
+// LOGO ANIMATION — Particle swarm + floating PNG + bloom
+// Self-contained Three.js scene on a separate overlay canvas.
+// ============================================================
+var _logoAnimFrame = null;
+var _logoRenderer = null;
+var _logoScene = null;
+var _logoCamera = null;
+var _logoComposer = null;
+var _logoGroup = null;
+var _logoParticleSystem = null;
+var _logoDustPoints = null;
+var _logoStarsField = null;
+var _logoDynamicLight = null;
+var _logoRimLight = null;
+var _logoBackRim = null;
+var _logoKeyLight = null;
+var _logoTime = 0;
+var _logoMouseX = 0;
+var _logoMouseY = 0;
+var _logoParticleData = [];
+var _logoParticleCount = 2800;
+var _logoMouseHandler = null;
+var _logoResizeHandler = null;
+
+function initLogoAnimation() {
+  if (!window.THREE) return;
+  var canvas = document.getElementById('logo-canvas');
+  if (!canvas) return;
+  var wrapper = canvas.closest('.immersive-store__canvas-wrapper');
+  var logoUrl = wrapper ? wrapper.getAttribute('data-logo-url') : null;
+  if (!logoUrl) return;
+
+  // Dispose any previous instance
+  disposeLogoAnimation();
+
+  var w = canvas.clientWidth || window.innerWidth;
+  var h = canvas.clientHeight || window.innerHeight;
+
+  // --- Renderer ---
+  _logoRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  _logoRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+  _logoRenderer.setSize(w, h, false);
+  _logoRenderer.toneMapping = THREE.ReinhardToneMapping;
+  _logoRenderer.toneMappingExposure = 1.2;
+
+  // --- Scene & Camera ---
+  _logoScene = new THREE.Scene();
+  // No background — alpha:true lets the main canvas show through
+  _logoCamera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+  _logoCamera.position.set(0, 0.15, 4.6);
+  _logoCamera.lookAt(0, 0, 0);
+
+  // --- Bloom post-processing (requires EffectComposer + UnrealBloomPass) ---
+  // These are loaded as ES modules in the reference pen but we need them as globals.
+  // We load them lazily from the same Three.js build path used by the main scene.
+  // If they're not available we fall back to plain rendering (still looks great).
+  var useBloom = !!(window.THREE && window.EffectComposer && window.RenderPass && window.UnrealBloomPass);
+  if (useBloom) {
+    var renderPass = new window.RenderPass(_logoScene, _logoCamera);
+    var bloomPass = new window.UnrealBloomPass(new THREE.Vector2(w, h), 0.7, 0.55, 0.08);
+    _logoComposer = new window.EffectComposer(_logoRenderer);
+    _logoComposer.addPass(renderPass);
+    _logoComposer.addPass(bloomPass);
+  }
+
+  // --- Lighting ---
+  _logoScene.add(new THREE.AmbientLight(0x221a0c));
+  _logoKeyLight = new THREE.DirectionalLight(0xeac46e, 1.25);
+  _logoKeyLight.position.set(2.2, 2.8, 2);
+  _logoScene.add(_logoKeyLight);
+  var fillLight = new THREE.PointLight(0xc48a3a, 0.7);
+  fillLight.position.set(0, -1.2, 1.6);
+  _logoScene.add(fillLight);
+  _logoRimLight = new THREE.PointLight(0xdeae5a, 0.9);
+  _logoRimLight.position.set(0, 0.5, -2.4);
+  _logoScene.add(_logoRimLight);
+  _logoDynamicLight = new THREE.PointLight(0xd4af37, 0.6);
+  _logoDynamicLight.position.set(1.2, 0.8, 1.4);
+  _logoScene.add(_logoDynamicLight);
+  _logoBackRim = new THREE.PointLight(0xe5bc6a, 0.55);
+  _logoBackRim.position.set(-0.8, 0.3, -1.9);
+  _logoScene.add(_logoBackRim);
+
+  // --- Logo group: PNG plane ---
+  _logoGroup = new THREE.Group();
+  _logoScene.add(_logoGroup);
+
+  var texLoader = new THREE.TextureLoader();
+  texLoader.load(logoUrl, function (tex) {
+    tex.anisotropy = _logoRenderer ? _logoRenderer.capabilities.getMaxAnisotropy() : 4;
+    // Preserve aspect ratio of the PNG
+    var imgW = tex.image ? tex.image.naturalWidth || tex.image.width || 512 : 512;
+    var imgH = tex.image ? tex.image.naturalHeight || tex.image.height || 256 : 256;
+    var aspect = imgW / imgH;
+    var planeW = isMobile ? 1.6 : 2.4;
+    var planeH = planeW / aspect;
+    var geo = new THREE.PlaneGeometry(planeW, planeH);
+    var mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      transparent: true,
+      side: THREE.DoubleSide,
+      metalness: 0.5,
+      roughness: 0.35,
+      emissive: new THREE.Color(0x332200),
+      emissiveIntensity: 0.12,
+    });
+    var plane = new THREE.Mesh(geo, mat);
+    plane.position.z = 0.05;
+    if (_logoGroup) _logoGroup.add(plane);
   });
+
+  // --- Particle swarm ---
+  var particleGeo = new THREE.BufferGeometry();
+  var particlePositions = new Float32Array(_logoParticleCount * 3);
+  var particleColors = new Float32Array(_logoParticleCount * 3);
+  _logoParticleData = [];
+
+  for (var i = 0; i < _logoParticleCount; i++) {
+    var radius = 2.2 + Math.random() * 2.4;
+    var theta = Math.random() * Math.PI * 2;
+    var phi = Math.acos(2 * Math.random() - 1);
+    particlePositions[i * 3] = Math.sin(phi) * Math.cos(theta) * radius;
+    particlePositions[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * radius * 0.65;
+    particlePositions[i * 3 + 2] = Math.cos(phi) * radius * 0.9;
+    _logoParticleData.push({
+      angleTheta: theta,
+      anglePhi: phi,
+      radiusBase: radius,
+      speedTheta: 0.0015 + Math.random() * 0.003,
+      speedPhi: 0.001 + Math.random() * 0.002,
+      offsetY: Math.random() * Math.PI * 2,
+    });
+    var color = new THREE.Color().setHSL(
+      0.1 + Math.random() * 0.09,
+      0.55 + Math.random() * 0.4,
+      0.6 + Math.random() * 0.4,
+    );
+    particleColors[i * 3] = color.r;
+    particleColors[i * 3 + 1] = color.g;
+    particleColors[i * 3 + 2] = color.b;
+  }
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+  _logoParticleSystem = new THREE.Points(
+    particleGeo,
+    new THREE.PointsMaterial({
+      size: 0.042,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  _logoScene.add(_logoParticleSystem);
+
+  // --- Fine dust cloud ---
+  var dustCount = 1600;
+  var dustGeo = new THREE.BufferGeometry();
+  var dustPos = new Float32Array(dustCount * 3);
+  var dustCol = new Float32Array(dustCount * 3);
+  var warm = new THREE.Color().setHSL(0.12, 0.65, 0.55);
+  for (var j = 0; j < dustCount; j++) {
+    dustPos[j * 3] = (Math.random() - 0.5) * 6.5;
+    dustPos[j * 3 + 1] = (Math.random() - 0.5) * 4.2;
+    dustPos[j * 3 + 2] = (Math.random() - 0.5) * 5 - 1.2;
+    dustCol[j * 3] = warm.r;
+    dustCol[j * 3 + 1] = warm.g;
+    dustCol[j * 3 + 2] = warm.b;
+  }
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  dustGeo.setAttribute('color', new THREE.BufferAttribute(dustCol, 3));
+  _logoDustPoints = new THREE.Points(
+    dustGeo,
+    new THREE.PointsMaterial({
+      size: 0.018,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.4,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  _logoScene.add(_logoDustPoints);
+
+  // --- Distant starfield ---
+  var starCount = 1500;
+  var starGeo = new THREE.BufferGeometry();
+  var starPos = new Float32Array(starCount * 3);
+  for (var k = 0; k < starCount; k++) {
+    starPos[k * 3] = (Math.random() - 0.5) * 180;
+    starPos[k * 3 + 1] = (Math.random() - 0.5) * 100;
+    starPos[k * 3 + 2] = (Math.random() - 0.5) * 70 - 35;
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  _logoStarsField = new THREE.Points(
+    starGeo,
+    new THREE.PointsMaterial({
+      color: 0xf9e5a5,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  _logoScene.add(_logoStarsField);
+
+  // --- Mouse parallax ---
+  _logoMouseHandler = function (e) {
+    _logoMouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    _logoMouseY = (e.clientY / window.innerHeight) * 2 - 1;
+  };
+  window.addEventListener('mousemove', _logoMouseHandler);
+
+  // --- Resize ---
+  _logoResizeHandler = function () {
+    if (!_logoRenderer || !_logoCamera) return;
+    var c = document.getElementById('logo-canvas');
+    if (!c) return;
+    var nw = c.clientWidth || window.innerWidth;
+    var nh = c.clientHeight || window.innerHeight;
+    _logoRenderer.setSize(nw, nh, false);
+    _logoCamera.aspect = nw / nh;
+    _logoCamera.updateProjectionMatrix();
+    if (_logoComposer) _logoComposer.setSize(nw, nh);
+  };
+  window.addEventListener('resize', _logoResizeHandler);
+
+  // --- Animate ---
+  _logoTime = 0;
+  (function logoLoop() {
+    _logoAnimFrame = requestAnimationFrame(logoLoop);
+    _logoTime += 0.016;
+
+    // Skip animation if reduced motion
+    if (!reduceMotion) {
+      // Update particle swarm
+      if (_logoParticleSystem) {
+        var posAttr = _logoParticleSystem.geometry.attributes.position;
+        var posArr = posAttr.array;
+        for (var pi = 0; pi < _logoParticleCount; pi++) {
+          var d = _logoParticleData[pi];
+          d.angleTheta += d.speedTheta;
+          d.anglePhi += d.speedPhi;
+          if (d.anglePhi > Math.PI) d.anglePhi = Math.PI - 0.02;
+          if (d.anglePhi < 0) d.anglePhi = 0.02;
+          var pulse = 1 + Math.sin(_logoTime * 0.7 + pi) * 0.05;
+          var r = d.radiusBase * pulse;
+          posArr[pi * 3] = Math.sin(d.angleTheta) * Math.cos(d.anglePhi) * r;
+          posArr[pi * 3 + 1] =
+            Math.sin(d.angleTheta) * Math.sin(d.anglePhi) * r * 0.7 + Math.sin(_logoTime * 1.1 + d.offsetY) * 0.025;
+          posArr[pi * 3 + 2] = Math.cos(d.angleTheta) * r * 0.95;
+        }
+        posAttr.needsUpdate = true;
+      }
+      if (_logoDustPoints) {
+        _logoDustPoints.rotation.y += 0.0005;
+        _logoDustPoints.rotation.x += 0.0003;
+      }
+      if (_logoStarsField) {
+        _logoStarsField.rotation.y += 0.0002;
+        _logoStarsField.rotation.x += 0.00015;
+      }
+
+      // Float logo group
+      if (_logoGroup) {
+        _logoGroup.position.y = Math.sin(_logoTime * 0.75) * 0.045;
+        _logoGroup.position.x = Math.sin(_logoTime * 0.55) * 0.018;
+        _logoGroup.position.z = Math.sin(_logoTime * 0.4) * 0.01;
+        _logoGroup.rotation.y = Math.sin(_logoTime * 0.28) * 0.08;
+        _logoGroup.rotation.x = Math.sin(_logoTime * 0.42) * 0.035;
+        _logoGroup.rotation.z = Math.sin(_logoTime * 0.5) * 0.02;
+      }
+
+      // Dynamic lights flicker
+      if (_logoDynamicLight) _logoDynamicLight.intensity = 0.55 + Math.sin(_logoTime * 14) * 0.12;
+      if (_logoRimLight) _logoRimLight.intensity = 0.8 + Math.sin(_logoTime * 1.5) * 0.1;
+      if (_logoBackRim) _logoBackRim.intensity = 0.5 + Math.sin(_logoTime * 2.2) * 0.08;
+      if (_logoKeyLight) _logoKeyLight.intensity = 1.2 + Math.sin(_logoTime * 0.9) * 0.08;
+
+      // Camera mouse parallax
+      if (_logoCamera) {
+        var targetCamX = _logoMouseX * 0.12;
+        var targetCamY = _logoMouseY * 0.07 + 0.1;
+        _logoCamera.position.x += (targetCamX - _logoCamera.position.x) * 0.06;
+        _logoCamera.position.y += (targetCamY - _logoCamera.position.y) * 0.06;
+        _logoCamera.lookAt(0, 0.05, 0);
+      }
+    }
+
+    // Render
+    if (_logoComposer) {
+      _logoComposer.render();
+    } else if (_logoRenderer && _logoScene && _logoCamera) {
+      _logoRenderer.render(_logoScene, _logoCamera);
+    }
+  })();
 }
+
+function disposeLogoAnimation() {
+  if (_logoAnimFrame !== null) {
+    cancelAnimationFrame(_logoAnimFrame);
+    _logoAnimFrame = null;
+  }
+  if (_logoMouseHandler) {
+    window.removeEventListener('mousemove', _logoMouseHandler);
+    _logoMouseHandler = null;
+  }
+  if (_logoResizeHandler) {
+    window.removeEventListener('resize', _logoResizeHandler);
+    _logoResizeHandler = null;
+  }
+  if (_logoRenderer) {
+    try {
+      _logoRenderer.dispose();
+    } catch (e) {}
+    _logoRenderer = null;
+  }
+  _logoScene = null;
+  _logoCamera = null;
+  _logoComposer = null;
+  _logoGroup = null;
+  _logoParticleSystem = null;
+  _logoDustPoints = null;
+  _logoStarsField = null;
+  _logoDynamicLight = null;
+  _logoRimLight = null;
+  _logoBackRim = null;
+  _logoKeyLight = null;
+  _logoParticleData = [];
+  _logoTime = 0;
+}
+
+// ---------------------------------------------------------------------------
+// ImmersiveEditorial — reusable timeline + dynamic product loader
+// Exposed on window.ImmersiveEditorial so enterEditorialMode can call
+// ImmersiveEditorial.init(overlayContent) after injecting section HTML.
+// Supports any editorial room that uses the .immersive-designers pattern.
+// ---------------------------------------------------------------------------
+(function () {
+  // Section ID used with the Section Rendering API to fetch product grids.
+  // Matches sections/immersive-designer-grid.liquid.
+  var PRODUCTS_SECTION_ID = 'immersive-designer-grid';
+
+  // Minimum px movement before a drag is committed (avoids accidental drags on click)
+  var DRAG_THRESHOLD = 4;
+
+  function clamp(val, min, max) {
+    if (val < min) return min;
+    if (val > max) return max;
+    return val;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Product loading via Section Rendering API
+  // ---------------------------------------------------------------------------
+  function loadTimelineCollection(markerEl, productsContainer, options) {
+    if (!markerEl || !productsContainer) return;
+    var handle = markerEl.getAttribute('data-collection-handle');
+    if (!handle) {
+      productsContainer.innerHTML = '';
+      return;
+    }
+    var sectionId = (options && options.productsSectionId) || PRODUCTS_SECTION_ID;
+    var url = '/collections/' + encodeURIComponent(handle) + '?sections=' + encodeURIComponent(sectionId);
+
+    productsContainer.innerHTML =
+      '<div class="immersive-designers__products-loading" aria-live="polite" role="status">' +
+      (options && options.loadingText ? options.loadingText : 'Loading\u2026') +
+      '</div>';
+
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (response) {
+        if (!response.ok) throw new Error('Network error ' + response.status);
+        return response.json();
+      })
+      .then(function (json) {
+        var html = json[sectionId];
+        if (!html) {
+          productsContainer.innerHTML = '';
+          return;
+        }
+        productsContainer.innerHTML = html;
+      })
+      .catch(function (err) {
+        console.warn('[ImmersiveEditorial] Product load failed:', err);
+        productsContainer.innerHTML = '';
+      });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Timeline thumb positioning
+  // ---------------------------------------------------------------------------
+  function positionThumb(thumb, activeMarker, rail) {
+    if (!thumb || !activeMarker || !rail) return;
+    var railRect = rail.getBoundingClientRect();
+    var markerRect = activeMarker.getBoundingClientRect();
+    var left = markerRect.left - railRect.left;
+    var width = markerRect.width;
+    // Offset thumb to sit behind the rail's own padding
+    thumb.style.left = left + 'px';
+    thumb.style.width = width + 'px';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Activate a marker: update ARIA/classes, move thumb, load products
+  // ---------------------------------------------------------------------------
+  function activateMarker(markers, thumb, rail, productsContainer, index, options) {
+    var target = markers[index];
+    if (!target) return;
+
+    for (var i = 0; i < markers.length; i++) {
+      markers[i].classList.remove('is-active');
+      markers[i].setAttribute('aria-pressed', 'false');
+    }
+    target.classList.add('is-active');
+    target.setAttribute('aria-pressed', 'true');
+
+    positionThumb(thumb, target, rail);
+    loadTimelineCollection(target, productsContainer, options);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Snap to nearest marker based on pointer X position over the rail
+  // ---------------------------------------------------------------------------
+  function snapToNearest(markers, pointerX, railRect) {
+    var best = 0;
+    var bestDist = Infinity;
+    for (var i = 0; i < markers.length; i++) {
+      var rect = markers[i].getBoundingClientRect();
+      var center = rect.left + rect.width / 2;
+      var dist = Math.abs(pointerX - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Wire up a single .immersive-designers container
+  // ---------------------------------------------------------------------------
+  function initDesignersTimeline(root, options) {
+    var rail = root.querySelector('.immersive-designers__rail');
+    var thumb = root.querySelector('.immersive-designers__thumb');
+    var roomKey = root.getAttribute('data-room-key') || 'designers';
+    var productsContainer = root.querySelector('.immersive-designers__products');
+
+    if (!rail || !thumb || !productsContainer) return;
+
+    var markers = Array.prototype.slice.call(rail.querySelectorAll('.immersive-designers__marker'));
+    if (!markers.length) return;
+
+    var activeIndex = 0;
+    var dragging = false;
+    var dragStartX = 0;
+    var dragMoved = false;
+
+    // Activate first marker on init (after layout is painted)
+    requestAnimationFrame(function () {
+      activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+    });
+
+    // Click on a marker
+    markers.forEach(function (marker, i) {
+      marker.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+      marker.addEventListener('click', function () {
+        if (dragMoved) return; // swallow click that ended a drag
+        activeIndex = i;
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+      });
+    });
+
+    // Keyboard: arrow keys move between markers
+    rail.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = clamp(activeIndex + 1, 0, markers.length - 1);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+        markers[activeIndex].focus();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = clamp(activeIndex - 1, 0, markers.length - 1);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+        markers[activeIndex].focus();
+      }
+    });
+
+    // Drag: pointer events on the rail for smooth scrubbing
+    rail.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      dragMoved = false;
+      dragStartX = e.clientX;
+      rail.setPointerCapture(e.pointerId);
+    });
+
+    rail.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      if (Math.abs(e.clientX - dragStartX) > DRAG_THRESHOLD) {
+        dragMoved = true;
+      }
+      if (!dragMoved) return;
+      var railRect = rail.getBoundingClientRect();
+      var nearest = snapToNearest(markers, e.clientX, railRect);
+      if (nearest !== activeIndex) {
+        activeIndex = nearest;
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+      }
+    });
+
+    rail.addEventListener('pointerup', function (e) {
+      if (dragging && dragMoved) {
+        var railRect = rail.getBoundingClientRect();
+        activeIndex = snapToNearest(markers, e.clientX, railRect);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+      }
+      dragging = false;
+    });
+
+    rail.addEventListener('pointercancel', function () {
+      dragging = false;
+    });
+
+    // Re-position thumb on resize (font/layout changes can shift markers)
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        var active = markers[activeIndex];
+        if (active) positionThumb(thumb, active, rail);
+      }, 120);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public API — called by enterEditorialMode after injecting HTML
+  // ---------------------------------------------------------------------------
+  function init(container, options) {
+    var roots = (container || document).querySelectorAll('.immersive-designers');
+    for (var i = 0; i < roots.length; i++) {
+      initDesignersTimeline(roots[i], options || {});
+    }
+  }
+
+  window.ImmersiveEditorial = { init: init };
+})();
 
 // Guard against double-init (theme editor fires section events rapidly)
 var _immersiveInitBound = false;
@@ -2712,6 +3296,7 @@ function safeBindImmersiveInit() {
     showImmersiveOnboardingIfNeeded();
     initWishlist();
     bindCookieBanner();
+    initLogoAnimation();
 
     try {
       if (window.URLSearchParams) {
@@ -2770,5 +3355,6 @@ document.addEventListener('shopify:section:select', function (e) {
 document.addEventListener('shopify:section:unload', function (e) {
   if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
     _immersiveInitBound = false;
+    disposeLogoAnimation();
   }
 });

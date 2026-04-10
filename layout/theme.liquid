@@ -310,6 +310,7 @@
     {%- if template.name == 'search' -%}
       <meta name="robots" content="noindex,nofollow">
     {%- endif -%}
+    {%- comment -%} theme-check-disable RemoteAsset {%- endcomment -%}
 
     {%- for locale in localization.available_languages -%}
       <link
@@ -317,6 +318,7 @@
         hreflang="{{ locale.iso_code }}"
         href="{{ request.origin }}{{ locale.root_url }}{% if request.path != '/' %}{{ request.path }}{% endif %}"
       >
+      {%- comment -%} theme-check-enable RemoteAsset {%- endcomment -%}
     {%- endfor -%}
     <link rel="alternate" hreflang="x-default" href="{{ request.origin }}{{ request.path }}">
 

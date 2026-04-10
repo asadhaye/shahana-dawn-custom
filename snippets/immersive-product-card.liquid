@@ -1,9 +1,11 @@
 {% doc %}
   Renders a product card used inside the immersive store experience.
+  Renders the immersive product card payment button.
 
   @param {product} product - The product to be rendered
   @param {boolean} [show_vendor] - Show the product vendor. Default: true
   @param {boolean} [show_secondary_image] - Show second image on hover. Default: true
+  @param {form} [form] - Product form object; snippet must be used inside a product form or passed an explicit form.
 
   @example
   {% render 'immersive-product-card', product: product %}
@@ -189,7 +191,9 @@
             {{ 'products.product.sold_out' | t }}
           {%- endif -%}
         </button>
-        {{ form | payment_button }}
+        {%- if form -%}
+          {{ form | payment_button }}
+        {%- endif -%}
       </form>
     {%- else -%}
       <button
