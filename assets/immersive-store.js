@@ -324,6 +324,7 @@ const fragmentShaderSource = `
   uniform float uScrollOffset;
   uniform float uScrollVignette;
   uniform float uScrollChroma;
+  uniform float uAtmosphericMood;
 
   vec2 parallaxUv(vec2 uv, sampler2D depthTex, vec2 mouse) {
     vec3 depthSample = texture2D(depthTex, uv).rgb;
@@ -377,6 +378,10 @@ const fragmentShaderSource = `
     vignette = clamp(vignette, 0.0, 1.0);
     float vigStrength = 0.18 + uScrollVignette * 0.32;
     color.rgb *= mix(1.0 - vigStrength, 1.0, pow(vignette, 1.4));
+
+    // Atmospheric Mood shift (Warmth/Gold tint)
+    vec3 moodColor = vec3(1.1, 1.05, 0.9); // Gold warmth
+    color.rgb = mix(color.rgb, color.rgb * moodColor, uAtmosphericMood);
 
     gl_FragColor = color;
   }
@@ -459,6 +464,7 @@ function initImmersiveScene() {
     uScrollOffset: { value: 0 },
     uScrollVignette: { value: 0 },
     uScrollChroma: { value: 0 },
+    uAtmosphericMood: { value: 0 },
   };
 
   var material = new THREE.ShaderMaterial({
@@ -633,6 +639,7 @@ function handleResize(roomKeyOverride) {
 var editorialScrollProgress = 0;
 var editorialOverlayEl = null;
 var editorialMaxScroll = 0;
+var atmosphericMoodProgress = 0;
 
 function cacheEditorialOverlay() {
   editorialOverlayEl = document.getElementById('immersive-editorial-overlay') || null;
@@ -657,6 +664,12 @@ function animate() {
       if (!reduceMotion) {
         uniforms.uScrollVignette.value += (editorialScrollProgress - uniforms.uScrollVignette.value) * 0.06;
         uniforms.uScrollChroma.value += (editorialScrollProgress - uniforms.uScrollChroma.value) * 0.06;
+
+        // Sync mood for 'featured_collections'
+        if (immersiveState.editorialRoom === 'featured_collections') {
+          atmosphericMoodProgress += (editorialScrollProgress - atmosphericMoodProgress) * 0.04;
+          uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+        }
       }
     }
   } else if (editorialScrollProgress > 0.001) {
@@ -665,12 +678,16 @@ function animate() {
     if (!reduceMotion) {
       uniforms.uScrollVignette.value *= 0.85;
       uniforms.uScrollChroma.value *= 0.85;
+      atmosphericMoodProgress *= 0.85;
+      uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
     }
   } else {
     editorialScrollProgress = 0;
+    atmosphericMoodProgress = 0;
     uniforms.uScrollOffset.value = 0;
     uniforms.uScrollVignette.value = 0;
     uniforms.uScrollChroma.value = 0;
+    uniforms.uAtmosphericMood.value = 0;
   }
 
   if (renderer && scene && camera) {
@@ -770,6 +787,7 @@ function enterEditorialMode(roomKey, triggerEl) {
     uniforms.uScrollOffset.value = 0;
     uniforms.uScrollVignette.value = 0;
     uniforms.uScrollChroma.value = 0;
+    uniforms.uAtmosphericMood.value = 0;
   }
   // Cache overlay element and max scroll once on entry — avoids per-frame DOM queries
   cacheEditorialOverlay();
@@ -3119,7 +3137,7 @@ function disposeLogoAnimation() {
   // ---------------------------------------------------------------------------
   // Activate a marker: update ARIA/classes, move thumb, load products
   // ---------------------------------------------------------------------------
-  function activateMarker(markers, thumb, rail, productsContainer, index, options) {
+  function activateMarker(markers, thumb, rail, productsContainer, index, options, root) {
     var target = markers[index];
     if (!target) return;
 
@@ -3132,6 +3150,15 @@ function disposeLogoAnimation() {
 
     positionThumb(thumb, target, rail);
     loadTimelineCollection(target, productsContainer, options);
+
+    // Kinetic Hero Transition
+    var heroStates = root.querySelectorAll('.immersive-designers__hero-state');
+    heroStates.forEach(function (state) {
+      state.classList.remove('is-active');
+      if (parseInt(state.getAttribute('data-hero-index'), 10) === index) {
+        state.classList.add('is-active');
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -3173,7 +3200,7 @@ function disposeLogoAnimation() {
 
     // Activate first marker on init (after layout is painted)
     requestAnimationFrame(function () {
-      activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+      activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
     });
 
     // Click on a marker
@@ -3182,7 +3209,7 @@ function disposeLogoAnimation() {
       marker.addEventListener('click', function () {
         if (dragMoved) return; // swallow click that ended a drag
         activeIndex = i;
-        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
       });
     });
 
@@ -3191,12 +3218,12 @@ function disposeLogoAnimation() {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault();
         activeIndex = clamp(activeIndex + 1, 0, markers.length - 1);
-        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
         markers[activeIndex].focus();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault();
         activeIndex = clamp(activeIndex - 1, 0, markers.length - 1);
-        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
         markers[activeIndex].focus();
       }
     });
@@ -3219,7 +3246,7 @@ function disposeLogoAnimation() {
       var nearest = snapToNearest(markers, e.clientX, railRect);
       if (nearest !== activeIndex) {
         activeIndex = nearest;
-        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
       }
     });
 
@@ -3227,7 +3254,7 @@ function disposeLogoAnimation() {
       if (dragging && dragMoved) {
         var railRect = rail.getBoundingClientRect();
         activeIndex = snapToNearest(markers, e.clientX, railRect);
-        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
       }
       dragging = false;
     });
