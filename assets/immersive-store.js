@@ -590,6 +590,7 @@ function handleMouseMove(event) {
 
 function handleResize(roomKeyOverride) {
   if (!renderer || !camera) return;
+  evaluateDeviceFlags();
   var canvas = renderer.domElement;
   var width = canvas.clientWidth || window.innerWidth;
   var height = canvas.clientHeight || window.innerHeight;
