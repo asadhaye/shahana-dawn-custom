@@ -86,7 +86,7 @@
             "heading": "Size Chart",
             "icon": "ruler",
             "content": "",
-            "page": ""
+            "page": "maria-b-mommy-me-size-chart"
           }
         },
         "collapsible-row-3": {
@@ -159,6 +159,7 @@
         "image-with-text-0",
         "image-with-text-1"
       ],
+      "disabled": true,
       "settings": {
         "height": "small",
         "desktop_image_width": "medium",
