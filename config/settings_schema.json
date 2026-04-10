@@ -1465,5 +1465,28 @@
         "info": "Base URL of the deployed scuk-vton Vercel API (no trailing slash)"
       }
     ]
+  },
+  {
+    "name": "3D Store Bridge",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "Messages shown to users when their connection may affect the 3D experience. The 3D store link is never blocked — these are informational only."
+      },
+      {
+        "type": "text",
+        "id": "bridge_slow_note",
+        "label": "Slow connection note",
+        "default": "Your connection appears slow — the 3D experience may take longer to load.",
+        "info": "Shown on 2G or when data saver is enabled"
+      },
+      {
+        "type": "text",
+        "id": "bridge_medium_note",
+        "label": "Medium connection note",
+        "default": "The 3D store works best on a faster connection.",
+        "info": "Shown on 3G connections"
+      }
+    ]
   }
 ]

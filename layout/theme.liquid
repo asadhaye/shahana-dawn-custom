@@ -50,6 +50,12 @@
     {%- endif -%}
 
     {%- comment -%}Device/connection-aware bridge behavior on all pages{%- endcomment -%}
+    <script>
+      window.__bridgeSettings = {
+        slowNote: {{ settings.bridge_slow_note | default: 'Your connection appears slow — the 3D experience may take longer to load.' | json }},
+        mediumNote: {{ settings.bridge_medium_note | default: 'The 3D store works best on a faster connection.' | json }}
+      };
+    </script>
     <script src="{{ 'bridge-behavior.js' | asset_url }}" defer="defer"></script>
 
     {%- if settings.animations_reveal_on_scroll -%}

@@ -1,75 +1,107 @@
 /**
- * Bridge Behavior Script
- * Detects device constraints (slow connections, motion sensitivity) and modifies bridge UI accordingly
- * Runs on all pages (2D and 3D) to provide device-aware warnings
+ * bridge-behavior.js
+ * Connection-aware bridge messaging — informs the user, never redirects.
+ *
+ * Fast (4g / wifi)    → no changes
+ * Medium (3g)         → subtle warning below the button
+ * Slow (2g / saveData)→ button label updated + warning message
+ * Reduced motion      → modifier class added (CSS handles the rest)
  */
 
-/**
- * Detects if the user is on a slow connection
- * Uses navigator.connection API with feature detection
- * @returns {boolean} true if slow connection detected, false otherwise
- */
-function detectSlowConnection() {
-  // Feature detection guard
-  if (!navigator.connection) return false;
+(function () {
+  function classifyConnection() {
+    if (!navigator.connection) return 'fast';
+    var c = navigator.connection;
+    if (c.saveData) return 'slow';
+    var t = c.effectiveType || '';
+    if (t === 'slow-2g' || t === '2g') return 'slow';
+    if (t === '3g') return 'medium';
+    return 'fast';
+  }
 
-  var conn = navigator.connection;
-  var saveData = conn.saveData || false;
-  var effectiveType = conn.effectiveType || '';
+  function is3DLink(href) {
+    return (
+      href.indexOf('/pages/immersive') !== -1 ||
+      href.indexOf('open_product') !== -1 ||
+      href.indexOf('open_collection') !== -1 ||
+      href.indexOf('open_search') !== -1
+    );
+  }
 
-  return saveData || ['slow-2g', '2g', '3g'].indexOf(effectiveType) !== -1;
-}
+  function addWarning(bridge, message) {
+    if (bridge._warningAdded) return;
+    bridge._warningAdded = true;
 
-/**
- * Applies constraint warnings to bridge elements
- * Modifies heading text and adds CSS modifier classes for slow connections and motion sensitivity
- * @param {HTMLElement} bridge - The bridge element with data-immersive-bridge attribute
- * @param {boolean} isSlowConnection - Whether user is on a slow connection
- * @param {boolean} hasReducedMotion - Whether user has prefers-reduced-motion enabled
- */
-function applyConstraintWarning(bridge, isSlowConnection, hasReducedMotion) {
-  // Only apply warning to bridges pointing to 3D store
-  var href = bridge.getAttribute('href') || '';
-  var is3DLink = href.indexOf('/pages/immersive-store') !== -1 || href.indexOf('?open_') !== -1;
-  if (!is3DLink) return;
-
-  // Modify heading text with warning message for slow connections
-  if (isSlowConnection) {
-    bridge.classList.add('immersive-bridge-banner--slow-connection');
-    var label = bridge.querySelector('.immersive-bridge-btn__label');
-    if (label) {
-      var warningMsg = bridge.getAttribute('data-slow-connection-warning') || 'Optimized for faster connections';
-      label.textContent = warningMsg;
+    var el = document.createElement('p');
+    el.className = 'immersive-bridge-btn__connection-note';
+    el.textContent = message;
+    if (bridge.parentNode) {
+      bridge.parentNode.insertBefore(el, bridge.nextSibling);
     }
   }
 
-  // Add reduced motion class if motion sensitivity is high
-  if (hasReducedMotion) {
-    bridge.classList.add('immersive-bridge-banner--reduced-motion');
-  }
-}
+  function wireBridge(bridge, conn, reducedMotion) {
+    var href = bridge.getAttribute('href') || '';
+    if (!is3DLink(href)) return;
 
-/**
- * Initializes bridge behavior detection and applies constraints
- * Runs on DOMContentLoaded
- */
-function initBridgeBehavior() {
-  var bridges = document.querySelectorAll('[data-immersive-bridge]');
-  if (!bridges.length) return;
-
-  var isSlowConnection = detectSlowConnection();
-  var hasReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  bridges.forEach(function (bridge) {
-    if (isSlowConnection || hasReducedMotion) {
-      applyConstraintWarning(bridge, isSlowConnection, hasReducedMotion);
+    if (reducedMotion) {
+      bridge.classList.add('immersive-bridge-btn--reduced-motion');
     }
-  });
-}
 
-// Run on DOMContentLoaded or immediately if DOM is already ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initBridgeBehavior);
-} else {
-  initBridgeBehavior();
-}
+    if (conn === 'slow') {
+      bridge.classList.add('immersive-bridge-btn--slow-connection');
+      var label = bridge.querySelector('.immersive-bridge-btn__label');
+      if (label) {
+        label.textContent = bridge.getAttribute('data-slow-label') || 'Enter 3D Store';
+      }
+      addWarning(
+        bridge,
+        bridge.getAttribute('data-slow-note') ||
+          (window.__bridgeSettings && window.__bridgeSettings.slowNote) ||
+          'Your connection appears slow — the 3D experience may take longer to load.',
+      );
+    } else if (conn === 'medium') {
+      bridge.classList.add('immersive-bridge-btn--medium-connection');
+      addWarning(
+        bridge,
+        bridge.getAttribute('data-medium-note') ||
+          (window.__bridgeSettings && window.__bridgeSettings.mediumNote) ||
+          'The 3D store works best on a faster connection.',
+      );
+    }
+  }
+
+  function init() {
+    var bridges = document.querySelectorAll('[data-immersive-bridge]');
+    if (!bridges.length) return;
+
+    var conn = classifyConnection();
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    bridges.forEach(function (b) {
+      wireBridge(b, conn, reducedMotion);
+    });
+
+    // Re-evaluate if connection changes mid-session
+    if (navigator.connection && navigator.connection.addEventListener) {
+      navigator.connection.addEventListener('change', function () {
+        var updated = classifyConnection();
+        bridges.forEach(function (b) {
+          b.classList.remove('immersive-bridge-btn--slow-connection', 'immersive-bridge-btn--medium-connection');
+          var note = b.nextSibling;
+          if (note && note.classList && note.classList.contains('immersive-bridge-btn__connection-note')) {
+            note.parentNode.removeChild(note);
+          }
+          b._warningAdded = false;
+          wireBridge(b, updated, reducedMotion);
+        });
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();

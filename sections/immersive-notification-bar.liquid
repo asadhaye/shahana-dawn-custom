@@ -1,279 +1,247 @@
 {%- if section.settings.enabled -%}
+  {%- liquid
+    assign bar_height = section.settings.bar_height | default: 96
+    assign half_depth = bar_height | divided_by: 2
+    assign scroll_duration = section.settings.scroll_speed | default: 40
+  -%}
   <div
     class="immersive-notif-bar"
     role="marquee"
     aria-label="{{ section.settings.aria_label | default: 'Store announcements' | escape }}"
     aria-live="off"
     data-immersive-notif-bar
+    style="--notif-height: {{ bar_height }}px; --notif-half: {{ half_depth }}px; --notif-duration: {{ scroll_duration }}s;"
   >
     <div class="immersive-notif-bar__hue" aria-hidden="true"></div>
 
     <div class="immersive-notif-bar__stage" aria-hidden="true">
       <div class="immersive-notif-bar__cube">
-        <div class="immersive-notif-bar__face immersive-notif-bar__face--left">
-          <p class="immersive-notif-bar__text immersive-notif-bar__text--left">
-            {%- for block in section.blocks -%}
-              <span class="immersive-notif-bar__item">
-                {%- if block.settings.icon != blank -%}
-                  <span class="immersive-notif-bar__icon" aria-hidden="true">{{ block.settings.icon }}</span>
-                {%- endif -%}
-                {%- if block.settings.url != blank -%}
-                  <a href="{{ block.settings.url }}" class="immersive-notif-bar__link">
+        {%- comment -%} Three faces — left, back, right — each offset by 1/3 so text wraps continuously {%- endcomment -%}
+        {%- for face in (1..3) -%}
+          {%- assign face_class = 'immersive-notif-bar__face--left' -%}
+          {%- assign text_class = 'immersive-notif-bar__text--left' -%}
+          {%- if face == 2 -%}
+            {%- assign face_class = 'immersive-notif-bar__face--back' -%}
+            {%- assign text_class = 'immersive-notif-bar__text--back' -%}
+          {%- elsif face == 3 -%}
+            {%- assign face_class = 'immersive-notif-bar__face--right' -%}
+            {%- assign text_class = 'immersive-notif-bar__text--right' -%}
+          {%- endif -%}
+          <div class="immersive-notif-bar__face {{ face_class }}">
+            <p class="immersive-notif-bar__text {{ text_class }}">
+              {%- for block in section.blocks -%}
+                <span class="immersive-notif-bar__item" {{ block.shopify_attributes }}>
+                  {%- if block.settings.icon != blank -%}
+                    <span class="immersive-notif-bar__icon" aria-hidden="true">{{ block.settings.icon }}</span>
+                  {%- endif -%}
+                  {%- if block.settings.url != blank -%}
+                    <a href="{{ block.settings.url }}" class="immersive-notif-bar__link">
+                      {{- block.settings.text | escape -}}
+                    </a>
+                  {%- else -%}
                     {{- block.settings.text | escape -}}
-                  </a>
-                {%- else -%}
-                  {{- block.settings.text | escape -}}
-                {%- endif -%}
-              </span>
-              <span class="immersive-notif-bar__sep" aria-hidden="true">{{ section.settings.separator }}</span>
-            {%- endfor -%}
-          </p>
-        </div>
-        <div class="immersive-notif-bar__face immersive-notif-bar__face--back">
-          <p class="immersive-notif-bar__text immersive-notif-bar__text--back">
-            {%- for block in section.blocks -%}
-              <span class="immersive-notif-bar__item">
-                {%- if block.settings.icon != blank -%}
-                  <span class="immersive-notif-bar__icon" aria-hidden="true">{{ block.settings.icon }}</span>
-                {%- endif -%}
-                {%- if block.settings.url != blank -%}
-                  <a href="{{ block.settings.url }}" class="immersive-notif-bar__link">
-                    {{- block.settings.text | escape -}}
-                  </a>
-                {%- else -%}
-                  {{- block.settings.text | escape -}}
-                {%- endif -%}
-              </span>
-              <span class="immersive-notif-bar__sep" aria-hidden="true">{{ section.settings.separator }}</span>
-            {%- endfor -%}
-          </p>
-        </div>
-        <div class="immersive-notif-bar__face immersive-notif-bar__face--right">
-          <p class="immersive-notif-bar__text immersive-notif-bar__text--right">
-            {%- for block in section.blocks -%}
-              <span class="immersive-notif-bar__item">
-                {%- if block.settings.icon != blank -%}
-                  <span class="immersive-notif-bar__icon" aria-hidden="true">{{ block.settings.icon }}</span>
-                {%- endif -%}
-                {%- if block.settings.url != blank -%}
-                  <a href="{{ block.settings.url }}" class="immersive-notif-bar__link">
-                    {{- block.settings.text | escape -}}
-                  </a>
-                {%- else -%}
-                  {{- block.settings.text | escape -}}
-                {%- endif -%}
-              </span>
-              <span class="immersive-notif-bar__sep" aria-hidden="true">{{ section.settings.separator }}</span>
-            {%- endfor -%}
-          </p>
-        </div>
+                  {%- endif -%}
+                </span>
+                <span class="immersive-notif-bar__sep" aria-hidden="true">{{ section.settings.separator }}</span>
+              {%- endfor -%}
+            </p>
+          </div>
+        {%- endfor -%}
       </div>
     </div>
 
-    {%- comment -%} Accessible static text for screen readers {%- endcomment -%}
     <div class="visually-hidden">
       {%- for block in section.blocks -%}
         {{ block.settings.text | escape }}
-        {%- unless forloop.last -%}·{%- endunless -%}
+        {%- unless forloop.last %} · {% endunless -%}
       {%- endfor -%}
     </div>
   </div>
 {%- endif -%}
 
 {% stylesheet %}
-  /* ============================================================================
-     Immersive Notification Bar — 3D cube scrolling ticker
-     Adapted from the "Living Words" CSS cube technique.
-     Scoped entirely to .immersive-notif-bar* — no global side effects.
-  ============================================================================ */
-
   .immersive-notif-bar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 36px;
+    height: var(--notif-height, 96px);
     z-index: 200;
     overflow: hidden;
-    background: #0a0f1e;
+    background: #080610;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
   }
 
-  /* Animated hue overlay — cycles through gold/blue tones */
+  /* Hue colour-shift overlay */
   .immersive-notif-bar__hue {
     position: absolute;
     inset: 0;
-    z-index: 1;
-    mix-blend-mode: overlay;
-    background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.6) 0%, rgba(10, 15, 30, 0.2) 100%);
-    animation: immersive-notif-hue 8s infinite ease-in-out;
+    z-index: 2;
     pointer-events: none;
+    mix-blend-mode: overlay;
+    background: radial-gradient(ellipse at 50% 120%, rgba(212, 175, 55, 0.55) 0%, rgba(10, 15, 30, 0.1) 70%);
+    animation: immersive-notif-hue 8s ease-in-out infinite;
   }
 
   @keyframes immersive-notif-hue {
     0%,
     100% {
       filter: hue-rotate(0deg);
-      opacity: 0.8;
+      opacity: 0.85;
     }
     50% {
-      filter: hue-rotate(60deg);
+      filter: hue-rotate(55deg);
       opacity: 1;
     }
   }
 
-  /* Stage: clips the cube to the bar height */
+  /* Stage clips the cube */
   .immersive-notif-bar__stage {
     position: absolute;
     inset: 0;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
   }
 
-  /* Cube: 3D container — width matches viewport, depth = half bar height */
+  /* 3-D cube — depth = half the bar height */
   .immersive-notif-bar__cube {
     position: relative;
     width: 100vw;
-    height: 36px;
+    height: var(--notif-height, 96px);
     transform-style: preserve-3d;
-    perspective: 240px;
-    perspective-origin: 50% 70%;
+    perspective: calc(var(--notif-height, 96px) * 5);
+    perspective-origin: 50% 65%;
   }
 
-  /* All faces share base styles */
   .immersive-notif-bar__face {
     position: absolute;
     width: 100vw;
-    height: 36px;
+    height: var(--notif-height, 96px);
     display: flex;
     align-items: center;
     overflow: hidden;
-    opacity: 0.92;
   }
 
-  /* Face transforms — half-depth = 18px (half of 36px bar height) */
+  /* Face transforms use --notif-half (= height / 2) */
   .immersive-notif-bar__face--left {
-    transform: translateX(-18px) rotateY(-90deg) scaleX(-1);
+    transform: translateX(calc(-1 * var(--notif-half, 48px))) rotateY(-90deg) scaleX(-1);
+    opacity: 0.7;
   }
 
   .immersive-notif-bar__face--back {
-    transform: translateZ(-18px) rotateY(180deg) scaleX(-1);
+    transform: translateZ(calc(-1 * var(--notif-half, 48px))) rotateY(180deg) scaleX(-1);
+    opacity: 0.55;
   }
 
   .immersive-notif-bar__face--right {
-    transform: translateX(18px) rotateY(90deg) scaleX(-1);
+    transform: translateX(var(--notif-half, 48px)) rotateY(90deg) scaleX(-1);
+    opacity: 0.7;
   }
 
   /* Scrolling text */
   .immersive-notif-bar__text {
     white-space: nowrap;
-    font-family: 'Bebas Neue', 'Paytone One', sans-serif;
-    font-size: 0.9rem;
+    font-family: 'Bebas Neue', 'Impact', sans-serif;
+    font-size: calc(var(--notif-height, 96px) * 0.52);
     font-weight: 400;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #d4af37;
     margin: 0;
     padding: 0;
-    line-height: 36px;
-    /* Each face starts at a different offset so text wraps seamlessly */
-    animation-duration: 60s;
+    line-height: var(--notif-height, 96px);
     animation-timing-function: linear;
     animation-iteration-count: infinite;
+    animation-duration: var(--notif-duration, 40s);
+    will-change: transform;
   }
 
   .immersive-notif-bar__text--left {
-    margin-left: 0;
-    animation-name: immersive-notif-scroll-left;
+    animation-name: immersive-notif-scroll-a;
   }
-
   .immersive-notif-bar__text--back {
-    margin-left: -33.33%;
-    animation-name: immersive-notif-scroll-back;
+    animation-name: immersive-notif-scroll-b;
   }
-
   .immersive-notif-bar__text--right {
-    margin-left: -66.66%;
-    animation-name: immersive-notif-scroll-right;
+    animation-name: immersive-notif-scroll-c;
   }
 
-  /* Each face scrolls the same distance but starts offset — creates wrap-around illusion */
-  @keyframes immersive-notif-scroll-left {
+  @keyframes immersive-notif-scroll-a {
+    from {
+      transform: translateX(0);
+    }
     to {
-      margin-left: -20000px;
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes immersive-notif-scroll-b {
+    from {
+      transform: translateX(-16.66%);
+    }
+    to {
+      transform: translateX(-66.66%);
+    }
+  }
+  @keyframes immersive-notif-scroll-c {
+    from {
+      transform: translateX(-33.33%);
+    }
+    to {
+      transform: translateX(-83.33%);
     }
   }
 
-  @keyframes immersive-notif-scroll-back {
-    to {
-      margin-left: -20033px;
-    }
-  }
-
-  @keyframes immersive-notif-scroll-right {
-    to {
-      margin-left: -20066px;
-    }
-  }
-
-  /* Items and separators */
   .immersive-notif-bar__item {
     display: inline;
-    padding: 0 0.25rem;
+    padding: 0 0.4em;
   }
 
   .immersive-notif-bar__icon {
-    margin-right: 0.3em;
-    font-style: normal;
+    margin-right: 0.25em;
   }
 
   .immersive-notif-bar__sep {
-    color: rgba(212, 175, 55, 0.4);
-    padding: 0 0.5rem;
+    color: rgba(212, 175, 55, 0.35);
+    padding: 0 0.6em;
   }
 
   .immersive-notif-bar__link {
     color: inherit;
     text-decoration: none;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
-    transition: border-color 0.2s ease, color 0.2s ease;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+    transition: color 0.2s, border-color 0.2s;
   }
 
   .immersive-notif-bar__link:hover {
     color: #fff;
     border-color: #fff;
   }
-
   .immersive-notif-bar__link:focus-visible {
     outline: 2px solid #d4af37;
     outline-offset: 2px;
     border-radius: 2px;
   }
 
-  /* Push the immersive header down when the bar is present */
+  /* Push immersive header below the bar */
   body:has([data-immersive-notif-bar]) .immersive-header {
-    top: 36px;
+    top: var(--notif-height, 96px);
   }
 
-  /* Reduced motion: replace scroll with a simple fade-in static bar */
   @media (prefers-reduced-motion: reduce) {
     .immersive-notif-bar__face--back,
     .immersive-notif-bar__face--right {
       display: none;
     }
-
     .immersive-notif-bar__face--left {
       transform: none;
+      opacity: 1;
     }
-
     .immersive-notif-bar__text {
       animation: none !important;
-      margin-left: 1rem !important;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      padding-left: 1.5rem;
     }
-
     .immersive-notif-bar__hue {
       animation: none !important;
     }
@@ -289,6 +257,24 @@
       "id": "enabled",
       "label": "Show notification bar",
       "default": true
+    },
+    {
+      "type": "range",
+      "id": "bar_height",
+      "label": "Bar height (px)",
+      "min": 48,
+      "max": 160,
+      "step": 8,
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "scroll_speed",
+      "label": "Scroll speed (lower = faster)",
+      "min": 15,
+      "max": 80,
+      "step": 5,
+      "default": 40
     },
     {
       "type": "text",
@@ -317,7 +303,7 @@
         {
           "type": "text",
           "id": "icon",
-          "label": "Icon (emoji or text symbol)",
+          "label": "Icon (emoji or symbol)",
           "default": "✦"
         },
         {
@@ -330,33 +316,12 @@
   ],
   "presets": [
     {
-      "name": "Immersive Notification Bar",
-      "settings": {
-        "enabled": true,
-        "separator": "✦"
-      },
+      "name": "Notification Bar",
+      "settings": { "enabled": true, "bar_height": 96, "scroll_speed": 40, "separator": "✦" },
       "blocks": [
-        {
-          "type": "announcement",
-          "settings": {
-            "text": "Free shipping on orders over PKR 5,000",
-            "icon": "✦"
-          }
-        },
-        {
-          "type": "announcement",
-          "settings": {
-            "text": "New arrivals — Eid Collection 2026",
-            "icon": "✦"
-          }
-        },
-        {
-          "type": "announcement",
-          "settings": {
-            "text": "Explore the 3D Immersive Store",
-            "icon": "✦"
-          }
-        }
+        { "type": "announcement", "settings": { "text": "Free shipping on orders over PKR 5,000", "icon": "✦" } },
+        { "type": "announcement", "settings": { "text": "New arrivals — Eid Collection 2026", "icon": "✦" } },
+        { "type": "announcement", "settings": { "text": "Explore the 3D Immersive Store", "icon": "✦" } }
       ]
     }
   ]

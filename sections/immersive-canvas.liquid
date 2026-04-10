@@ -31,7 +31,7 @@
     class="immersive-store__canvas-wrapper"
     data-base-url="{{ base_url }}"
     data-depth-url="{{ depth_url }}"
-    data-logo-url="{{ 'sc-logo-transpartent-bg.png' | asset_url }}"
+    data-logo-url="{%- if section.settings.logo_image != blank -%}{{ section.settings.logo_image | image_url: width: 600 }}{%- else -%}{{ 'sc-logo-transpartent-bg.png' | asset_url }}{%- endif -%}"
   >
     <canvas
       id="immersive-canvas"
@@ -1072,7 +1072,7 @@
   /* The immersive notification bar (immersive-notification-bar.liquid) sits at top: 0.
      Push the immersive header below it. */
   .immersive-header {
-    top: 36px;
+    top: 96px;
   }
 
   /* Offset the canvas so it starts below both header + announcement bar */
@@ -2019,6 +2019,15 @@
       "type": "link_list",
       "id": "menu",
       "label": "t:sections.immersive_store.settings.menu.label"
+    },
+    {
+      "type": "header",
+      "content": "Logo"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_image",
+      "label": "Store logo"
     },
     {
       "type": "header",
