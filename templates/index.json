@@ -1,57 +1,53 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "sections": {
     "slideshow_banner": {
       "type": "slideshow",
-      "settings": {
-        "slide_height": "medium",
-        "slide_height_mobile": "small",
-        "slider_visual": "dots",
-        "color_scheme": "scheme-1",
-        "auto_rotate": true,
-        "change_slides_speed": 5,
-        "image_behavior": "ambient",
-        "mobile_text_box_position": "bottom-left",
-        "padding_top": 0,
-        "padding_bottom": 0
-      },
       "blocks": {
         "slide_1": {
           "type": "slide",
           "settings": {
             "image": "shopify://shop_images/SBS-Summer-Pret-26.webp",
-            "mobile_image": "shopify://shop_images/SBS-Summer-Pret-26.webp",
             "heading": "Summer Collection 2026",
             "heading_size": "h1",
             "subheading": "Discover our latest luxury pret collection",
             "button_label": "Shop Now",
             "link": "shopify://collections/all",
-            "button_style": "button",
-            "text_alignment": "center",
-            "text_color": "#ffffff",
-            "overlay_opacity": 30
+            "text_alignment": "center"
           }
         },
         "slide_2": {
           "type": "slide",
           "settings": {
             "image": "shopify://shop_images/suffuse_casual_pret_2026_1_f07d568f-3373-40bd-b02f-9f38fcc7d515.webp",
-            "mobile_image": "shopify://shop_images/suffuse_casual_pret_2026_1_f07d568f-3373-40bd-b02f-9f38fcc7d515.webp",
             "heading": "Suffuse Casual Pret",
             "heading_size": "h1",
             "subheading": "Effortless elegance for every occasion",
             "button_label": "Explore",
             "link": "shopify://collections/suffuse",
-            "button_style": "button",
-            "text_alignment": "center",
-            "text_color": "#ffffff",
-            "overlay_opacity": 30
+            "text_alignment": "center"
           }
         }
       },
       "block_order": [
         "slide_1",
         "slide_2"
-      ]
+      ],
+      "settings": {
+        "slide_height": "medium",
+        "slider_visual": "dots",
+        "auto_rotate": true,
+        "change_slides_speed": 5,
+        "image_behavior": "ambient"
+      }
     },
     "immersive_bridge": {
       "type": "custom-liquid",
@@ -61,22 +57,6 @@
     },
     "brand_logos": {
       "type": "multicolumn",
-      "settings": {
-        "title": "Our Designers",
-        "heading_size": "h2",
-        "image_width": "full",
-        "image_ratio": "square",
-        "columns_desktop": 5,
-        "column_alignment": "center",
-        "background_style": "none",
-        "button_label": "",
-        "button_link": "",
-        "color_scheme": "scheme-1",
-        "columns_mobile": "2",
-        "swipe_on_mobile": false,
-        "padding_top": 36,
-        "padding_bottom": 36
-      },
       "blocks": {
         "column_1": {
           "type": "column",
@@ -135,7 +115,23 @@
         "column_3",
         "column_4",
         "column_5"
-      ]
+      ],
+      "settings": {
+        "title": "Our Designers",
+        "heading_size": "h2",
+        "image_width": "full",
+        "image_ratio": "square",
+        "button_label": "",
+        "button_link": "",
+        "columns_desktop": 5,
+        "column_alignment": "center",
+        "background_style": "none",
+        "color_scheme": "scheme-1",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
     },
     "featured_collection_1": {
       "type": "featured-collection",
@@ -146,8 +142,6 @@
         "full_width": false,
         "show_view_all": true,
         "image_ratio": "square",
-        "image_height": 300,
-        "mobile_optimized": false,
         "padding_top": 36,
         "padding_bottom": 36
       }
@@ -161,8 +155,6 @@
         "full_width": false,
         "show_view_all": true,
         "image_ratio": "square",
-        "image_height": 300,
-        "mobile_optimized": false,
         "padding_top": 36,
         "padding_bottom": 36
       }
@@ -176,8 +168,6 @@
         "full_width": false,
         "show_view_all": true,
         "image_ratio": "square",
-        "image_height": 300,
-        "mobile_optimized": false,
         "padding_top": 36,
         "padding_bottom": 36
       }

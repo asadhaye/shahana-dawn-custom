@@ -140,21 +140,34 @@ var immersiveState = {
 var shopRoot = (window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || '/';
 if (shopRoot.slice(-1) !== '/') shopRoot += '/';
 
-// Reduced motion and mobile detection
+// Reduced motion detection
 var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function isMobileDevice() {
-  return window.innerWidth < 768;
+
+// Cached device flags — updated on resize to avoid repeated window.innerWidth reads
+// on high-frequency events (mousemove, animate loop, hotspot rendering)
+var isMobile = null;
+var isTablet = null;
+var usesMobileImg = null;
+var canvasRect = null;
+
+function evaluateDeviceFlags() {
+  isMobile = window.innerWidth < 768;
+  isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+  usesMobileImg = window.innerWidth < 1024;
 }
-function isTabletDevice() {
-  return window.innerWidth >= 768 && window.innerWidth < 1024;
+
+function updateCanvasRect() {
+  if (renderer && renderer.domElement) {
+    canvasRect = renderer.domElement.getBoundingClientRect();
+  }
 }
-// Returns true for any device that should use the mobile image (phone or tablet)
-function usesMobileImage() {
-  return window.innerWidth < 1024;
-}
-var textureWidth = usesMobileImage() ? 1200 : 1920;
+
+// Initial evaluation before anything else runs
+evaluateDeviceFlags();
+
+var textureWidth = usesMobileImg ? 1200 : 1920;
 // Parallax runs even with reduceMotion — CSS animations are suppressed separately
-var parallaxStrength = usesMobileImage() ? 0.03 : 0.08;
+var parallaxStrength = usesMobileImg ? 0.03 : 0.08;
 
 // ─────────────────────────────────────────────────────────────
 // Analytics helpers (GA4 via dataLayer + Meta Pixel via fbq)
@@ -329,7 +342,7 @@ function getRoomTextureUrls(roomKey) {
     return null;
   }
 
-  var mobile = usesMobileImage();
+  var mobile = usesMobileImg;
   // Falling back: if mobile-specific URL is explicitly null/empty, we MUST use the desktop base URL
   var baseUrl = mobile && room.mobileBaseTextureUrl ? room.mobileBaseTextureUrl : room.baseTextureUrl;
   var depthUrl = mobile && room.mobileDepthMapUrl ? room.mobileDepthMapUrl : room.depthMapUrl;
@@ -366,7 +379,7 @@ function initImmersiveScene() {
   showLoader();
 
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice() ? 1.5 : 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 
   var initWidth = canvas.clientWidth || canvas.offsetWidth || window.innerWidth;
   var initHeight = canvas.clientHeight || canvas.offsetHeight || window.innerHeight;
@@ -410,17 +423,29 @@ function initImmersiveScene() {
 
   planeMesh = new THREE.Mesh(geometry, material);
   scene.add(planeMesh);
+
+  // Initial layout evaluations
+  updateCanvasRect();
   window.addEventListener('mousemove', handleMouseMove);
-  window.addEventListener('resize', handleResize);
-  // Re-render hotspots on resize so mobile/desktop positions update on orientation change
-  var lastMobile = isMobileDevice();
-  window.addEventListener('resize', function () {
-    var nowMobile = isMobileDevice();
-    if (nowMobile !== lastMobile) {
-      lastMobile = nowMobile;
-      if (currentRoomKey) renderHotspots(currentRoomKey);
-    }
-  });
+
+  // Throttled resize handler — RAF-debounced to reduce layout thrashing
+  var resizeRaf = null;
+  var lastMobile = isMobile;
+  function onWindowResize() {
+    if (resizeRaf !== null) return;
+    resizeRaf = requestAnimationFrame(function () {
+      resizeRaf = null;
+      evaluateDeviceFlags();
+      updateCanvasRect();
+      handleResize();
+      // Re-render hotspots if mobile/desktop breakpoint crossed
+      if (isMobile !== lastMobile) {
+        lastMobile = isMobile;
+        if (currentRoomKey) renderHotspots(currentRoomKey);
+      }
+    });
+  }
+  window.addEventListener('resize', onWindowResize);
   handleResize();
   animate();
 
@@ -508,9 +533,10 @@ var mouseCurrent = { x: 0.5, y: 0.5 };
 var lerpFactor = 0.08;
 
 function handleMouseMove(event) {
-  var canvas = renderer ? renderer.domElement : null;
-  if (!canvas) return;
-  var rect = canvas.getBoundingClientRect();
+  if (!canvasRect) updateCanvasRect();
+  if (!canvasRect) return;
+  // Use cached canvasRect to avoid repeated getBoundingClientRect() on every mouse move
+  var rect = canvasRect;
   mouseTarget.x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
   mouseTarget.y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
 }
@@ -527,11 +553,11 @@ function handleResize(roomKeyOverride) {
     // to avoid falling through to the desktop branch on tablets.
     var resolvedRoomKey = roomKeyOverride || currentRoomKey;
     var room = resolvedRoomKey && STORE_ROOMS[resolvedRoomKey];
-    var hasDedicatedMobileImage = usesMobileImage() && room && room.mobileBaseTextureUrl;
-    if (hasDedicatedMobileImage && isMobileDevice()) {
+    var hasDedicatedMobileImage = usesMobileImg && room && room.mobileBaseTextureUrl;
+    if (hasDedicatedMobileImage && isMobile) {
       // Phone: image is composed for this exact viewport — fill quad directly, no crop
       planeMesh.scale.set(1, 1, 1);
-    } else if (hasDedicatedMobileImage && isTabletDevice()) {
+    } else if (hasDedicatedMobileImage && isTablet) {
       // Tablet: use mobile image but cover-scale it to fill the larger screen responsively
       var canvasAspect = width / height;
       var imageAspect = currentImageAspect;
@@ -921,10 +947,10 @@ function updateCameraForMode() {
         strength = 0.11;
         break;
       default:
-        strength = isMobileDevice() ? 0.03 : 0.08;
+        strength = isMobile ? 0.03 : 0.08;
     }
   } else {
-    strength = isMobileDevice() ? 0.03 : 0.08;
+    strength = isMobile ? 0.03 : 0.08;
   }
 
   if (uniforms && uniforms.uParallaxStrength) {
@@ -1048,8 +1074,8 @@ function renderHotspots(roomKey) {
       srSpan.textContent = hotspot.label;
       button.appendChild(srSpan);
       button.style.position = 'absolute';
-      var posX = usesMobileImage() && hotspot.mobileX != null ? hotspot.mobileX : hotspot.x;
-      var posY = usesMobileImage() && hotspot.mobileY != null ? hotspot.mobileY : hotspot.y;
+      var posX = usesMobileImg && hotspot.mobileX != null ? hotspot.mobileX : hotspot.x;
+      var posY = usesMobileImg && hotspot.mobileY != null ? hotspot.mobileY : hotspot.y;
       button.style.left = posX + '%';
       button.style.top = posY + '%';
       button.style.transform = 'translate(-50%, -50%)';
