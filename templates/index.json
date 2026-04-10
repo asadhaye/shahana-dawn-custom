@@ -16,24 +16,36 @@
           "type": "slide",
           "settings": {
             "image": "shopify://shop_images/SBS-Summer-Pret-26.webp",
+            "image_overlay_opacity": 0,
             "heading": "Summer Collection 2026",
             "heading_size": "h1",
             "subheading": "Discover our latest luxury pret collection",
             "button_label": "Shop Now",
             "link": "shopify://collections/all",
-            "text_alignment": "center"
+            "button_style_secondary": false,
+            "show_text_box": true,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": ""
           }
         },
         "slide_2": {
           "type": "slide",
           "settings": {
             "image": "shopify://shop_images/suffuse_casual_pret_2026_1_f07d568f-3373-40bd-b02f-9f38fcc7d515.webp",
+            "image_overlay_opacity": 0,
             "heading": "Suffuse Casual Pret",
             "heading_size": "h1",
             "subheading": "Effortless elegance for every occasion",
             "button_label": "Explore",
             "link": "shopify://collections/suffuse",
-            "text_alignment": "center"
+            "button_style_secondary": false,
+            "show_text_box": true,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": ""
           }
         }
       },
@@ -42,17 +54,14 @@
         "slide_2"
       ],
       "settings": {
+        "layout": "full_bleed",
         "slide_height": "medium",
         "slider_visual": "dots",
         "auto_rotate": true,
         "change_slides_speed": 5,
-        "image_behavior": "ambient"
-      }
-    },
-    "immersive_bridge": {
-      "type": "custom-liquid",
-      "settings": {
-        "custom_liquid": "<div style=\"text-align:center;padding:1.75rem 1.5rem\">{% assign bridge_label = 'sections.immersive_journey_bridges.switch_to_3d' | t %}{% assign bridge_aria = 'sections.immersive_journey_bridges.switch_to_3d_aria' | t %}{% render 'immersive-bridge-btn', bridge_url: '/pages/immersive?view=immersive', bridge_label: bridge_label, bridge_aria: bridge_aria, bridge_class: 'homepage' %}</div>"
+        "image_behavior": "ambient",
+        "show_text_below": true,
+        "accessibility_info": "Slideshow about our brand"
       }
     },
     "brand_logos": {
@@ -61,47 +70,47 @@
         "column_1": {
           "type": "column",
           "settings": {
-            "image": "shopify://shop_images/suffuse-logo.png",
+            "image": "shopify://shop_images/Suffuse-Logo.png",
             "title": "Suffuse",
             "text": "",
             "link_label": "",
-            "link": ""
+            "link": "shopify://collections/suffuse"
           }
         },
         "column_2": {
           "type": "column",
           "settings": {
-            "image": "shopify://shop_images/soraya-logo.png",
+            "image": "shopify://shop_images/Soraya-logo.png",
             "title": "Soraya",
             "text": "",
             "link_label": "",
-            "link": ""
+            "link": "shopify://collections/soraya"
           }
         },
         "column_3": {
           "type": "column",
           "settings": {
-            "image": "shopify://shop_images/saad-bin-shahzad-logo.png",
+            "image": "shopify://shop_images/3.png",
             "title": "Saad Bin Shahzad",
             "text": "",
             "link_label": "",
-            "link": ""
+            "link": "shopify://collections/saad-bin-shahzad"
           }
         },
         "column_4": {
           "type": "column",
           "settings": {
-            "image": "shopify://shop_images/maria-b-logo.png",
+            "image": "shopify://shop_images/Maria_B.jpg",
             "title": "Maria B",
             "text": "",
             "link_label": "",
-            "link": ""
+            "link": "shopify://collections/maria-b"
           }
         },
         "column_5": {
           "type": "column",
+          "disabled": true,
           "settings": {
-            "image": "shopify://shop_images/faiza-saqlain-logo.png",
             "title": "Faiza Saqlain",
             "text": "",
             "link_label": "",
@@ -133,15 +142,39 @@
         "padding_bottom": 36
       }
     },
+    "immersive_bridge": {
+      "type": "custom-liquid",
+      "settings": {
+        "custom_liquid": "<div style=\"text-align:center;padding:1.75rem 1.5rem\">{% assign bridge_label = 'sections.immersive_journey_bridges.switch_to_3d' | t %}{% assign bridge_aria = 'sections.immersive_journey_bridges.switch_to_3d_aria' | t %}{% render 'immersive-bridge-btn', bridge_url: '/pages/immersive?view=immersive', bridge_label: bridge_label, bridge_aria: bridge_aria, bridge_class: 'homepage' %}</div>",
+        "color_scheme": "",
+        "padding_top": 40,
+        "padding_bottom": 52
+      }
+    },
     "featured_collection_1": {
       "type": "featured-collection",
       "settings": {
         "collection": "suffuse",
         "products_to_show": 8,
+        "title": "Featured collection",
+        "heading_size": "h1",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
         "columns_desktop": 4,
+        "enable_desktop_slider": false,
         "full_width": false,
         "show_view_all": true,
+        "view_all_style": "solid",
+        "color_scheme": "",
         "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": false,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
         "padding_top": 36,
         "padding_bottom": 36
       }
@@ -151,10 +184,25 @@
       "settings": {
         "collection": "soraya",
         "products_to_show": 8,
+        "title": "Featured collection",
+        "heading_size": "h1",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
         "columns_desktop": 4,
+        "enable_desktop_slider": false,
         "full_width": false,
         "show_view_all": true,
+        "view_all_style": "solid",
+        "color_scheme": "",
         "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": false,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
         "padding_top": 36,
         "padding_bottom": 36
       }
@@ -164,10 +212,25 @@
       "settings": {
         "collection": "saad-bin-shahzad",
         "products_to_show": 8,
+        "title": "Featured collection",
+        "heading_size": "h1",
+        "description": "",
+        "show_description": false,
+        "description_style": "body",
         "columns_desktop": 4,
+        "enable_desktop_slider": false,
         "full_width": false,
         "show_view_all": true,
+        "view_all_style": "solid",
+        "color_scheme": "",
         "image_ratio": "square",
+        "image_shape": "default",
+        "show_secondary_image": false,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "none",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
         "padding_top": 36,
         "padding_bottom": 36
       }
