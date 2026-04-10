@@ -37,7 +37,8 @@
         "variant_picker": {
           "type": "variant_picker",
           "settings": {
-            "picker_type": "button"
+            "picker_type": "button",
+            "swatch_shape": "circle"
           }
         },
         "quantity_selector": {
@@ -49,6 +50,12 @@
           "settings": {
             "show_dynamic_checkout": true,
             "show_gift_card_recipient": true
+          }
+        },
+        "custom_liquid_KLF6bC": {
+          "type": "custom_liquid",
+          "settings": {
+            "custom_liquid": "\"custom_liquid_bH7nYc\": {\n              \"type\": \"custom-liquid\",\n              \"name\": \"t:names.custom_liquid\",\n              \"settings\": {\n                \"custom_liquid\": \"<p>\\n  <svg style=\\\"height:25px;float:left;margin-right:10px;padding-bottom:4px;\\\" xmlns=\\\"http://www.w3.org/2000/svg\\\" viewBox=\\\"0 0 24 24\\\" fill=\\\"currentColor\\\">\\n    <path d=\\\"M20 6h-2V4c0-.55-.45-1-1-1s-1 .45-1 1v2H8V4c0-.55-.45-1-1-1s-1 .45-1 1v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 14H4V10h16v10z\\\"/>\\n  </svg>\\n  Get it between <strong><span id=\\\"fromDate\\\">Loading...</span> - <span id=\\\"toDate\\\">Loading...</span></strong>\\n</p>\\n\\n<script>\\n(function() {\\n  // Calculate dates using native JavaScript (no external library needed)\\n  function addDays(date, days) {\\n    var result = new Date(date);\\n    result.setDate(result.getDate() + days);\\n    return result;\\n  }\\n  \\n  function skipWeekend(date) {\\n    var day = date.getDay();\\n    if (day === 0) { // Sunday\\n      date.setDate(date.getDate() + 1);\\n    } else if (day === 6) { // Saturday\\n      date.setDate(date.getDate() + 2);\\n    }\\n    return date;\\n  }\\n  \\n  function formatDate(date) {\\n    var options = { weekday: 'long', month: 'long', day: 'numeric' };\\n    return date.toLocaleDateString('en-GB', options);\\n  }\\n  \\n  try {\\n    var today = new Date();\\n    var fromDate = skipWeekend(addDays(today, 14));\\n    var toDate = skipWeekend(addDays(today, 24));\\n    \\n    var fromEl = document.getElementById('fromDate');\\n    var toEl = document.getElementById('toDate');\\n    \\n    if (fromEl && toEl) {\\n      fromEl.innerHTML = formatDate(fromDate);\\n      toEl.innerHTML = formatDate(toDate);\\n    }\\n  } catch (e) {\\n    console.error('Delivery date calculation failed:', e);\\n    // Fallback to generic message\\n    document.getElementById('fromDate').innerHTML = '2-3 weeks';\\n    document.getElementById('toDate').innerHTML = '4 weeks';\\n  }\\n})();\\n</script>\"\n              },\n              \"blocks\": {}\n            },"
           }
         },
         "description": {
@@ -106,6 +113,7 @@
         "variant_picker",
         "quantity_selector",
         "buy_buttons",
+        "custom_liquid_KLF6bC",
         "description",
         "collapsible-row-0",
         "collapsible-row-1",
@@ -115,10 +123,14 @@
       ],
       "settings": {
         "enable_sticky_info": true,
+        "color_scheme": "",
         "media_size": "large",
         "constrain_to_viewport": true,
+        "media_fit": "contain",
         "gallery_layout": "stacked",
         "mobile_thumbnails": "hide",
+        "media_position": "left",
+        "image_zoom": "lightbox",
         "hide_variants": true,
         "enable_video_looping": false,
         "padding_top": 36,
@@ -151,10 +163,12 @@
         "height": "small",
         "desktop_image_width": "medium",
         "layout": "text_first",
+        "image_behavior": "none",
         "content_layout": "no-overlap",
         "desktop_content_position": "top",
         "desktop_content_alignment": "left",
         "mobile_content_alignment": "left",
+        "section_color_scheme": "",
         "color_scheme": "scheme-2",
         "padding_top": 36,
         "padding_bottom": 36
@@ -208,10 +222,12 @@
       "settings": {
         "heading": "You may also like",
         "heading_size": "h2",
+        "products_to_show": 4,
         "columns_desktop": 4,
         "columns_mobile": "2",
         "color_scheme": "scheme-1",
         "image_ratio": "square",
+        "image_shape": "default",
         "show_secondary_image": true,
         "show_vendor": false,
         "show_rating": false,
