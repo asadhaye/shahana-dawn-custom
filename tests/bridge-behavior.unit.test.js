@@ -19,7 +19,6 @@ describe('bridge-behavior.js', () => {
     test('should return false when navigator.connection is not available', () => {
       global.navigator = { connection: null };
 
-      // Test the logic directly
       const conn = global.navigator.connection;
       const result = !conn;
 
@@ -109,7 +108,6 @@ describe('bridge-behavior.js', () => {
 
   describe('applyConstraintWarning() logic', () => {
     test('should add slow-connection class when link points to 3D store and slow connection detected', () => {
-      // Create mock bridge element
       const mockBridge = {
         getAttribute: (attr) => {
           if (attr === 'href') return '/?open_collection=test';
@@ -124,7 +122,6 @@ describe('bridge-behavior.js', () => {
         },
       };
 
-      // Simulate applyConstraintWarning logic
       const href = mockBridge.getAttribute('href') || '';
       const is3DLink = href.indexOf('/pages/immersive-store') !== -1 || href.indexOf('?open_') !== -1;
 
@@ -153,7 +150,6 @@ describe('bridge-behavior.js', () => {
         },
       };
 
-      // Simulate applyConstraintWarning logic
       const href = mockBridge.getAttribute('href') || '';
       const is3DLink = href.indexOf('/pages/immersive-store') !== -1 || href.indexOf('?open_') !== -1;
 
@@ -176,12 +172,10 @@ describe('bridge-behavior.js', () => {
         },
       };
 
-      // Simulate applyConstraintWarning logic
       const href = mockBridge.getAttribute('href') || '';
       const is3DLink = href.indexOf('/pages/immersive-store') !== -1 || href.indexOf('?open_') !== -1;
 
       if (!is3DLink) {
-        // Should return early, no modifications
         return;
       }
 
@@ -190,30 +184,28 @@ describe('bridge-behavior.js', () => {
   });
 
   describe('bridge-behavior.js file structure', () => {
-    test('should contain detectSlowConnection function', () => {
-      expect(bridgeBehaviorCode).toContain('function detectSlowConnection()');
+    test('should contain classifyConnection function', () => {
+      expect(bridgeBehaviorCode).toContain('function classifyConnection()');
     });
 
-    test('should contain applyConstraintWarning function', () => {
-      expect(bridgeBehaviorCode).toContain(
-        'function applyConstraintWarning(bridge, isSlowConnection, hasReducedMotion)',
-      );
+    test('should contain wireBridge function', () => {
+      expect(bridgeBehaviorCode).toContain('function wireBridge(bridge, conn, reducedMotion)');
     });
 
-    test('should contain initBridgeBehavior function', () => {
-      expect(bridgeBehaviorCode).toContain('function initBridgeBehavior()');
+    test('should contain init function', () => {
+      expect(bridgeBehaviorCode).toContain('function init()');
     });
 
     test('should check for navigator.connection availability', () => {
-      expect(bridgeBehaviorCode).toContain('if (!navigator.connection) return false;');
+      expect(bridgeBehaviorCode).toContain("if (!navigator.connection) return 'fast';");
     });
 
     test('should check for saveData flag', () => {
-      expect(bridgeBehaviorCode).toContain('var saveData = conn.saveData || false;');
+      expect(bridgeBehaviorCode).toContain("if (c.saveData) return 'slow';");
     });
 
     test('should check for slow effectiveType values', () => {
-      expect(bridgeBehaviorCode).toContain("['slow-2g', '2g', '3g']");
+      expect(bridgeBehaviorCode).toContain("if (t === 'slow-2g' || t === '2g') return 'slow';");
     });
 
     test('should check for prefers-reduced-motion', () => {
@@ -221,24 +213,24 @@ describe('bridge-behavior.js', () => {
     });
 
     test('should add slow-connection CSS class', () => {
-      expect(bridgeBehaviorCode).toContain('immersive-bridge-banner--slow-connection');
+      expect(bridgeBehaviorCode).toContain('immersive-bridge-btn--slow-connection');
     });
 
     test('should add reduced-motion CSS class', () => {
-      expect(bridgeBehaviorCode).toContain('immersive-bridge-banner--reduced-motion');
+      expect(bridgeBehaviorCode).toContain('immersive-bridge-btn--reduced-motion');
     });
 
     test('should use data-immersive-bridge selector', () => {
       expect(bridgeBehaviorCode).toContain('[data-immersive-bridge]');
     });
 
-    test('should use data-slow-connection-warning attribute', () => {
-      expect(bridgeBehaviorCode).toContain('data-slow-connection-warning');
+    test('should use data-slow-note attribute', () => {
+      expect(bridgeBehaviorCode).toContain('data-slow-note');
     });
 
     test('should run on DOMContentLoaded', () => {
       expect(bridgeBehaviorCode).toContain("document.readyState === 'loading'");
-      expect(bridgeBehaviorCode).toContain("document.addEventListener('DOMContentLoaded', initBridgeBehavior)");
+      expect(bridgeBehaviorCode).toContain("document.addEventListener('DOMContentLoaded', init)");
     });
   });
 });

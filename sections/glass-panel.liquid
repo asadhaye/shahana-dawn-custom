@@ -9,6 +9,11 @@
 <section class="glass-panel-section" aria-label="{{ 'sections.immersive_store.collection_panel_aria' | t }}">
   {% if panel_collection %}
     <header class="glass-panel-section__header">
+      <nav class="glass-panel-section__breadcrumb" aria-label="Breadcrumb">
+        <span class="glass-panel-section__breadcrumb-root">{{ 'sections.immersive_store.breadcrumb_store' | t }}</span>
+        <span class="glass-panel-section__breadcrumb-separator">/</span>
+        <span class="glass-panel-section__breadcrumb-current">{{ panel_collection.title | escape }}</span>
+      </nav>
       <h2 class="glass-panel-section__title">{{ panel_collection.title | escape }}</h2>
       {% if panel_collection.description != blank %}
         <div class="glass-panel-section__description">{{ panel_collection.description }}</div>
@@ -18,7 +23,12 @@
     {% if panel_collection.products.size > 0 %}
       <div class="glass-panel-section__grid">
         {% for product in panel_collection.products limit: 50 %}
-          {% render 'immersive-product-card', product: product %}
+          <div
+            class="glass-panel-section__item"
+            style="--animation-order: {{ forloop.index0 }};"
+          >
+            {% render 'immersive-product-card', product: product %}
+          </div>
         {% endfor %}
       </div>
     {% else %}
@@ -38,21 +48,45 @@
   }
 
   .glass-panel-section__header {
-    margin-bottom: 2rem;
-    padding: 2rem;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(8px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    margin-bottom: 3.5rem;
+    padding: 3.5rem 2rem;
+    background: rgba(10, 15, 30, 0.45);
+    backdrop-filter: blur(24px);
+    border-radius: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    text-align: center;
+    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+  }
+
+  .glass-panel-section__breadcrumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(212, 175, 55, 0.6);
+  }
+
+  .glass-panel-section__breadcrumb-separator {
+    opacity: 0.4;
+  }
+
+  .glass-panel-section__breadcrumb-current {
+    color: #d4af37;
+    font-weight: 600;
   }
 
   .glass-panel-section__title {
-    margin: 0 0 0.75rem;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #ffffff;
+    margin: 0 0 1.25rem;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 600;
+    color: #d4af37;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.1em;
+    line-height: 1.1;
   }
 
   .glass-panel-section__description {
@@ -69,6 +103,34 @@
     width: 100%;
   }
 
+  .glass-panel-section__item {
+    width: 100%;
+    max-width: 100%;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: immersive-fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: calc(var(--animation-order) * 0.08s);
+  }
+
+  @keyframes immersive-fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media screen and (prefers-reduced-motion: reduce) {
+    .glass-panel-section__item {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+  }
+
   @media (max-width: 768px) {
     .glass-panel-section__grid {
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -78,12 +140,6 @@
     .glass-panel-section__title {
       font-size: 1.5rem;
     }
-  }
-
-  /* Ensure product cards fill grid cells properly */
-  .glass-panel-section__grid > * {
-    width: 100%;
-    max-width: 100%;
   }
 
   .glass-panel-section__empty {
