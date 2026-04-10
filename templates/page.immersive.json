@@ -84,6 +84,24 @@
     },
     "editorial_designer_houses": {
       "type": "immersive-editorial",
+      "blocks": {
+        "banner_PtkU9T": {
+          "type": "banner",
+          "settings": {
+            "image": "shopify://shop_images/SILK_PRET.webp",
+            "logo": "shopify://shop_images/SUFFUSE_LOGO.webp",
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "suffuse",
+            "depth_layer": 50
+          }
+        }
+      },
+      "block_order": [
+        "banner_PtkU9T"
+      ],
       "settings": {
         "room_key": "designer_houses",
         "layout": "designers",
