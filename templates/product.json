@@ -76,8 +76,8 @@
           "settings": {
             "heading": "Shipping & Returns",
             "icon": "truck",
-            "content": "",
-            "page": ""
+            "content": "<p><a href=\"/pages/terms-conditions\" title=\"Terms & Conditions\">Terms & Conditions</a></p>",
+            "page": "contact-us"
           }
         },
         "collapsible-row-2": {
