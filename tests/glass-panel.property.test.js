@@ -685,10 +685,10 @@ describe('Property 18: Text Color Consistency', () => {
           const glassPanelRules = parseCSSTopLevelRules(extractGlassPanelCSS());
           const cardRules = parseCSSTopLevelRules(extractStylesheetCSS());
 
-          // Requirement 7.1: collection title color = #ffffff
+          // Requirement 7.1: collection title color = #d4af37 (Gold accent for Awwwards-tier polish)
           const titleRule = glassPanelRules.get('.glass-panel-section__title');
           if (!titleRule) return false;
-          if (normaliseColor(titleRule.get('color')) !== '#ffffff') return false;
+          if (normaliseColor(titleRule.get('color')) !== '#d4af37') return false;
 
           // Requirement 7.2: collection description color = rgba(255, 255, 255, 0.8)
           const descRule = glassPanelRules.get('.glass-panel-section__description');

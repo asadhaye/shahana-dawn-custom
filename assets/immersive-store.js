@@ -261,6 +261,7 @@ var PREFERRED_MODE_KEY = 'immersive_preferred_mode';
 var _wishlistItems = [];
 var _wishlistProductCache = {};
 var _wishlistPanelTrigger = null;
+var _activeHotspots = []; // To track hotspot proximity scaling
 
 function saveState(patch) {
   try {
@@ -324,6 +325,11 @@ const fragmentShaderSource = `
   uniform float uScrollOffset;
   uniform float uScrollVignette;
   uniform float uScrollChroma;
+  uniform float uTime;
+
+  float noise(vec2 co) {
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+  }
 
   vec2 parallaxUv(vec2 uv, sampler2D depthTex, vec2 mouse) {
     vec3 depthSample = texture2D(depthTex, uv).rgb;
@@ -370,6 +376,14 @@ const fragmentShaderSource = `
 
     float t = clamp(uTransitionProgress, 0.0, 1.0);
     vec4 color = mix(color1, color2, t);
+
+    // Breathing effect: gentle light pulsation
+    float breathing = sin(uTime * 0.8) * 0.015 + 0.985;
+    color.rgb *= breathing;
+
+    // Subtle film grain
+    float n = noise(vUv + fract(uTime));
+    color.rgb += (n - 0.5) * 0.012;
 
     // Edge vignette that deepens on scroll
     vec2 vigUv = vUv * 2.0 - 1.0;
@@ -459,6 +473,7 @@ function initImmersiveScene() {
     uScrollOffset: { value: 0 },
     uScrollVignette: { value: 0 },
     uScrollChroma: { value: 0 },
+    uTime: { value: 0 },
   };
 
   var material = new THREE.ShaderMaterial({
@@ -643,9 +658,30 @@ function animate() {
   requestAnimationFrame(animate);
   if (!uniforms) return;
 
+  uniforms.uTime.value += 0.016;
+
   mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
   mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
   uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
+
+  // Hotspot proximity scaling
+  if (!reduceMotion && _activeHotspots.length > 0) {
+    for (var i = 0; i < _activeHotspots.length; i++) {
+      var h = _activeHotspots[i];
+      var dx = mouseCurrent.x - h.x;
+      var dy = mouseCurrent.y - h.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Scale between 1.0 (far) and 1.3 (close)
+      // distance threshold: 0.15 normalized
+      var scale = 1.0;
+      if (dist < 0.15) {
+        var proximity = 1.0 - dist / 0.15; // 0 to 1
+        scale = 1.0 + 0.3 * proximity;
+      }
+      h.el.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+    }
+  }
 
   // Scroll-linked sinking effect — uses cached overlay ref to avoid per-frame DOM queries
   if (immersiveState.mode === 'editorial') {
@@ -1111,6 +1147,7 @@ function renderHotspots(roomKey) {
 
   function render() {
     uiLayer.innerHTML = '';
+    _activeHotspots = [];
 
     room.hotspots.forEach(function (hotspot) {
       var button = document.createElement('button');
@@ -1127,6 +1164,13 @@ function renderHotspots(roomKey) {
       button.style.left = posX + '%';
       button.style.top = posY + '%';
       button.style.transform = 'translate(-50%, -50%)';
+
+      // Track for proximity scaling (use normalized 0-1 coordinates)
+      _activeHotspots.push({
+        el: button,
+        x: posX / 100,
+        y: posY / 100,
+      });
 
       button.addEventListener('click', function () {
         var details = { room_key: roomKey, hotspot_label: hotspot.label };
@@ -1153,12 +1197,25 @@ function renderHotspots(roomKey) {
         }
       });
 
-      // Preload next room textures on hover
-      if (hotspot.targetRoom) {
+      // Preload next room textures or editorial content on hover
+      if (hotspot.targetRoom || hotspot.targetEditorialRoom) {
         button.addEventListener(
           'mouseenter',
           function () {
-            preloadRoom(hotspot.targetRoom);
+            if (hotspot.targetRoom) {
+              preloadRoom(hotspot.targetRoom);
+            }
+            if (hotspot.targetEditorialRoom) {
+              // Pre-fetch editorial section HTML
+              var sourceSection = document.querySelector(
+                '.immersive-editorial[data-room-key="' + hotspot.targetEditorialRoom + '"]',
+              );
+              var sectionInstanceId = sourceSection && sourceSection.getAttribute('data-section-id');
+              if (sectionInstanceId) {
+                var fetchUrl = window.location.pathname + '?section_id=' + sectionInstanceId;
+                fetchWithCache(fetchUrl).catch(function () {});
+              }
+            }
           },
           { once: true },
         );

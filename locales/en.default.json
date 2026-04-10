@@ -347,6 +347,7 @@
     "error_load_collection": "Unable to load collection. Please check your connection and try again.",
     "error_load_product": "Unable to load product. Please check your connection and try again.",
     "added_to_cart": "Added to cart!",
+    "breadcrumb_store": "Shahana Collection",
     "cookie_banner": {
       "aria_label": "Cookie consent",
       "text": "We use cookies to enhance your experience.",
