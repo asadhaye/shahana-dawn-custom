@@ -21,6 +21,13 @@
             "menu": "footer"
           }
         },
+        "link_list_RBQiP7": {
+          "type": "link_list",
+          "settings": {
+            "heading": "Policies",
+            "menu": "legal"
+          }
+        },
         "footer-1": {
           "type": "text",
           "settings": {
@@ -31,6 +38,7 @@
       },
       "block_order": [
         "footer-0",
+        "link_list_RBQiP7",
         "footer-1"
       ],
       "settings": {
