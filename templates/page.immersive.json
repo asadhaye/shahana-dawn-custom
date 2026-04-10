@@ -11,39 +11,73 @@
   "sections": {
     "immersive_notification_bar": {
       "type": "immersive-notification-bar",
-      "settings": {
-        "enabled": true,
-        "separator": "✦"
-      },
-      "block_order": ["notif_1", "notif_2", "notif_3"],
       "blocks": {
         "notif_1": {
           "type": "announcement",
           "settings": {
-            "text": "Free shipping on orders over PKR 5,000",
-            "icon": "✦"
+            "text": "Free shipping on orders over PKR 150,000",
+            "icon": "✦",
+            "url": ""
           }
         },
         "notif_2": {
           "type": "announcement",
           "settings": {
             "text": "New arrivals — Eid Collection 2026",
-            "icon": "✦"
+            "icon": "✦",
+            "url": ""
           }
         },
         "notif_3": {
           "type": "announcement",
           "settings": {
             "text": "Explore the 3D Immersive Store",
-            "icon": "✦"
+            "icon": "✦",
+            "url": ""
           }
         }
+      },
+      "block_order": [
+        "notif_1",
+        "notif_2",
+        "notif_3"
+      ],
+      "settings": {
+        "enabled": true,
+        "separator": "✦",
+        "aria_label": "Store announcements"
       }
     },
     "immersive_canvas": {
       "type": "immersive-canvas",
       "settings": {
-        "menu": "immersive-menu"
+        "designer_houses_slot_1_collection": "",
+        "designer_houses_slot_1_label": "Suffuse",
+        "designer_houses_slot_2_collection": "",
+        "designer_houses_slot_2_label": "Soraya",
+        "designer_houses_slot_3_collection": "",
+        "designer_houses_slot_3_label": "Saad Bin Shahzad",
+        "occasions_slot_1_collection": "",
+        "occasions_slot_1_label": "Eid Collection",
+        "occasions_slot_2_collection": "",
+        "occasions_slot_2_label": "Bridal & Mehndi",
+        "occasions_slot_3_collection": "",
+        "occasions_slot_3_label": "Luxury Formals",
+        "occasions_slot_4_collection": "",
+        "occasions_slot_4_label": "Casual Pret",
+        "featured_collections_slot_1_collection": "",
+        "featured_collections_slot_1_label": "Collection 1",
+        "featured_collections_slot_2_collection": "",
+        "featured_collections_slot_2_label": "Collection 2",
+        "featured_collections_slot_3_collection": "",
+        "featured_collections_slot_3_label": "Collection 3",
+        "faq_url": "shopify://pages/faqs",
+        "menu": "immersive-menu-1",
+        "onboarding_enabled": false,
+        "onboarding_title": "Welcome to the Immersive Store",
+        "onboarding_description": "Explore our curated collections in a fully immersive 3D environment. Click on hotspots to discover products.",
+        "onboarding_dismiss_label": "Enter the store",
+        "onboarding_show_once": true
       }
     },
     "editorial_designer_houses": {
@@ -51,43 +85,9 @@
       "settings": {
         "room_key": "designer_houses",
         "layout": "designers",
+        "hero_eyebrow": "Shahana Collection",
         "hero_heading": "Our Designers",
-        "hero_eyebrow": "Shahana Collection"
-      },
-      "blocks": {
-        "brand_suffuse": {
-          "type": "banner",
-          "settings": {
-            "heading": "Suffuse",
-            "body": "<p>Luxury pret and formal wear defined by intricate embroidery and timeless silhouettes.</p>",
-            "cta_label": "Explore Suffuse",
-            "cta_url": "/collections/suffuse",
-            "collection": "suffuse",
-            "depth_layer": 30
-          }
-        },
-        "brand_soraya": {
-          "type": "banner",
-          "settings": {
-            "heading": "Soraya",
-            "body": "<p>Contemporary festive wear with a modern edge — crafted for the woman who leads.</p>",
-            "cta_label": "Explore Soraya",
-            "cta_url": "/collections/soraya",
-            "collection": "soraya",
-            "depth_layer": 50
-          }
-        },
-        "brand_saad": {
-          "type": "banner",
-          "settings": {
-            "heading": "Saad Bin Shahzad",
-            "body": "<p>Bold, architectural designs that redefine Pakistani luxury fashion for a global audience.</p>",
-            "cta_label": "Explore Saad Bin Shahzad",
-            "cta_url": "/collections/saad-bin-shahzad",
-            "collection": "saad-bin-shahzad",
-            "depth_layer": 70
-          }
-        }
+        "hero_subheading": ""
       }
     },
     "editorial_occasions": {
@@ -95,50 +95,9 @@
       "settings": {
         "room_key": "occasions",
         "layout": "occasions",
+        "hero_eyebrow": "Curated for every moment",
         "hero_heading": "Dress the Occasion",
-        "hero_eyebrow": "Curated for every moment"
-      },
-      "blocks": {
-        "occasion_eid": {
-          "type": "banner",
-          "settings": {
-            "heading": "Eid Collection",
-            "body": "<p>Celebrate in style. Festive silhouettes in rich fabrics made for the most joyful days of the year.</p>",
-            "cta_label": "Shop Eid",
-            "cta_url": "/collections/eid-collection",
-            "depth_layer": 25
-          }
-        },
-        "occasion_bridal": {
-          "type": "banner",
-          "settings": {
-            "heading": "Bridal & Mehndi",
-            "body": "<p>From the mehndi to the walima — every look crafted to make your most cherished moments unforgettable.</p>",
-            "cta_label": "Shop Bridal",
-            "cta_url": "/collections/bridal-mehndi",
-            "depth_layer": 45
-          }
-        },
-        "occasion_formals": {
-          "type": "banner",
-          "settings": {
-            "heading": "Luxury Formals",
-            "body": "<p>Elevated formal wear for weddings, galas, and every occasion that calls for something extraordinary.</p>",
-            "cta_label": "Shop Formals",
-            "cta_url": "/collections/luxury-formals",
-            "depth_layer": 60
-          }
-        },
-        "occasion_pret": {
-          "type": "banner",
-          "settings": {
-            "heading": "Casual Pret",
-            "body": "<p>Effortless everyday luxury — relaxed silhouettes in premium fabrics for the modern Pakistani woman.</p>",
-            "cta_label": "Shop Casual Pret",
-            "cta_url": "/collections/casual-pret",
-            "depth_layer": 75
-          }
-        }
+        "hero_subheading": ""
       }
     },
     "editorial_featured_collections": {
@@ -146,34 +105,9 @@
       "settings": {
         "room_key": "featured_collections",
         "layout": "featured_collections",
+        "hero_eyebrow": "Featured now",
         "hero_heading": "New Season Arrivals",
-        "hero_eyebrow": "Featured now"
-      },
-      "blocks": {
-        "collection_ss5": {
-          "type": "banner",
-          "settings": {
-            "heading": "SS5 Summer Pret 26",
-            "cta_url": "/collections/summer-pret-26-eid-edit-saad-bin-shahzad",
-            "depth_layer": 30
-          }
-        },
-        "collection_suffuse_pret": {
-          "type": "banner",
-          "settings": {
-            "heading": "Suffuse Luxury Pret",
-            "cta_url": "/collections/luxury-pret-suffuse",
-            "depth_layer": 50
-          }
-        },
-        "collection_soraya_eid": {
-          "type": "banner",
-          "settings": {
-            "heading": "Soraya Eid Pret",
-            "cta_url": "/collections/lumene-festive-25-26-soraya-official",
-            "depth_layer": 70
-          }
-        }
+        "hero_subheading": ""
       }
     }
   },
