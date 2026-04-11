@@ -37,11 +37,11 @@
       id="immersive-canvas"
       aria-hidden="true"
     ></canvas>
-    <!-- Logo animation canvas — sits above the main parallax canvas, pointer-events:none -->
+    <!-- Logo animation canvas — sits above the main parallax canvas, below the header -->
     <canvas
       id="logo-canvas"
       aria-hidden="true"
-      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;"
+      style="position:absolute;top:130px;left:0;width:100%;height:35%;pointer-events:none;z-index:10;"
     ></canvas>
     <div id="ui-layer"></div>
     <div class="immersive-store__tagline" id="immersive-tagline" aria-hidden="true">
@@ -713,6 +713,9 @@
     padding: 0;
     border-radius: 0;
     border: none;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
     background: transparent;
     color: transparent;
     backdrop-filter: none;
@@ -996,7 +999,7 @@
    ============================================================================ */
   .immersive-ceiling-logo {
     position: absolute;
-    top: 60px; /* sits just below the header */
+    top: 80px; /* sits just below the header */
     left: 0;
     width: 100%;
     height: 160px;
@@ -1055,7 +1058,7 @@
 
   @media (max-width: 768px) {
     .immersive-ceiling-logo {
-      top: 60px;
+      top: 100px;
       height: 120px;
     }
     .immersive-ceiling-logo__img {
