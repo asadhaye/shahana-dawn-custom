@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "general": {
     "password_page": {
@@ -377,7 +386,9 @@
       "remove": "Remove from wishlist",
       "item_count": "{{ count }} saved item",
       "item_count_plural": "{{ count }} saved items"
-    }
+    },
+    "tilt_toggle": "Enable tilt control",
+    "tilt_toggle_enabled": "Disable tilt control"
   },
   "immersive_canvas": {
     "close_panel": "Close panel"

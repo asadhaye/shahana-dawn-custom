@@ -3,12 +3,37 @@
    Scoped to .template-page-immersive only — homepage is now standard 2D
    ============================================================================= */
 
-/* Base: dark background */
+/* Base: dark background — lock to viewport, no scroll */
+.template-page-immersive,
 .template-page-immersive body {
   background-color: #0a0f1e;
   background-image: radial-gradient(ellipse at top, rgba(30, 41, 59, 0.8), #0a0f1e);
   color: #d4af37;
-  min-height: 100vh;
+  /* Lock the page to exactly the viewport — no scrolling, no white space below */
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Dawn's body grid pushes <main> down — flatten it on the immersive template */
+.template-page-immersive body {
+  display: block;
+  min-height: unset;
+}
+
+/* <main> must be zero-margin, zero-padding, full height */
+.template-page-immersive #MainContent {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* The immersive section wrapper itself must fill the full viewport */
+.template-page-immersive .shopify-section:has(.immersive-store),
+.template-page-immersive .shopify-section {
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Header overrides */
@@ -259,10 +284,12 @@
 
 .template-page-immersive .shopify-section-group-header-group-section:has(.announcement-bar-section) {
   position: fixed;
-  top: 64px;
+  top: 0;
   left: 0;
   width: 100%;
-  z-index: 99;
+  z-index: 101;
+  /* Hide Dawn's announcement bar on the immersive template — the notification bar replaces it */
+  display: none !important;
 }
 
 .template-page-immersive .announcement-bar-section .utility-bar {

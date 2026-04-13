@@ -1,36 +1,42 @@
 {%- if section.settings.enabled -%}
   {%- liquid
-    assign bar_height = section.settings.bar_height | default: 96
-    assign half_depth = bar_height | divided_by: 2
-    assign scroll_duration = section.settings.scroll_speed | default: 40
+    assign bar_height = section.settings.bar_height | default: 48
+    assign display_duration = section.settings.display_duration | default: 4
   -%}
+  <style>
+    :root { --notif-height: {{ bar_height }}px; }
+  </style>
   <div
     class="immersive-notif-bar"
-    role="marquee"
+    role="region"
     aria-label="{{ section.settings.aria_label | default: 'Store announcements' | escape }}"
-    aria-live="off"
+    aria-live="polite"
+    aria-atomic="true"
     data-immersive-notif-bar
-    style="--notif-height: {{ bar_height }}px; --notif-half: {{ half_depth }}px; --notif-duration: {{ scroll_duration }}s;"
+    style="--notif-height: {{ bar_height }}px; --notif-display: {{ display_duration }}s;"
   >
     <div class="immersive-notif-bar__hue" aria-hidden="true"></div>
 
     <div class="immersive-notif-bar__stage" aria-hidden="true">
-      <div class="immersive-notif-bar__cube">
-        {%- comment -%} Three faces — left, back, right — each offset by 1/3 so text wraps continuously {%- endcomment -%}
+      <div class="immersive-notif-bar__scene">
         {%- for face in (1..3) -%}
           {%- assign face_class = 'immersive-notif-bar__face--left' -%}
-          {%- assign text_class = 'immersive-notif-bar__text--left' -%}
           {%- if face == 2 -%}
-            {%- assign face_class = 'immersive-notif-bar__face--back' -%}
-            {%- assign text_class = 'immersive-notif-bar__text--back' -%}
+            {%- assign face_class = 'immersive-notif-bar__face--front' -%}
           {%- elsif face == 3 -%}
             {%- assign face_class = 'immersive-notif-bar__face--right' -%}
-            {%- assign text_class = 'immersive-notif-bar__text--right' -%}
           {%- endif -%}
+
           <div class="immersive-notif-bar__face {{ face_class }}">
-            <p class="immersive-notif-bar__text {{ text_class }}">
+            <div class="immersive-notif-bar__ticker" data-notif-ticker>
               {%- for block in section.blocks -%}
-                <span class="immersive-notif-bar__item" {{ block.shopify_attributes }}>
+                <span
+                  class="immersive-notif-bar__msg{% if forloop.first %} is-active{% endif %}"
+                  data-notif-msg
+                  {% if face == 1 %}
+                    {{- block.shopify_attributes -}}
+                  {% endif %}
+                >
                   {%- if block.settings.icon != blank -%}
                     <span class="immersive-notif-bar__icon" aria-hidden="true">{{ block.settings.icon }}</span>
                   {%- endif -%}
@@ -42,15 +48,14 @@
                     {{- block.settings.text | escape -}}
                   {%- endif -%}
                 </span>
-                <span class="immersive-notif-bar__sep" aria-hidden="true">{{ section.settings.separator }}</span>
               {%- endfor -%}
-            </p>
+            </div>
           </div>
         {%- endfor -%}
       </div>
     </div>
 
-    <div class="visually-hidden">
+    <div class="visually-hidden" aria-live="polite" data-notif-a11y>
       {%- for block in section.blocks -%}
         {{ block.settings.text | escape }}
         {%- unless forloop.last %} · {% endunless -%}
@@ -65,155 +70,134 @@
     top: 0;
     left: 0;
     right: 0;
-    height: var(--notif-height, 96px);
+    height: var(--notif-height, 48px);
     z-index: 200;
     overflow: hidden;
     background: #080610;
     border-bottom: 1px solid rgba(212, 175, 55, 0.2);
   }
 
-  /* Hue colour-shift overlay */
   .immersive-notif-bar__hue {
     position: absolute;
     inset: 0;
-    z-index: 2;
+    z-index: 3;
     pointer-events: none;
     mix-blend-mode: overlay;
-    background: radial-gradient(ellipse at 50% 120%, rgba(212, 175, 55, 0.55) 0%, rgba(10, 15, 30, 0.1) 70%);
-    animation: immersive-notif-hue 8s ease-in-out infinite;
+    background: radial-gradient(ellipse at 50% 120%, rgba(212, 175, 55, 0.45) 0%, transparent 70%);
+    animation: notif-hue 8s ease-in-out infinite;
   }
-
-  @keyframes immersive-notif-hue {
+  @keyframes notif-hue {
     0%,
     100% {
       filter: hue-rotate(0deg);
-      opacity: 0.85;
+      opacity: 0.8;
     }
     50% {
-      filter: hue-rotate(55deg);
+      filter: hue-rotate(50deg);
       opacity: 1;
     }
   }
 
-  /* Stage clips the cube */
+  /* ── 3-D stage ── */
   .immersive-notif-bar__stage {
     position: absolute;
     inset: 0;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    perspective: 55vw;
+    perspective-origin: 50% 50%;
   }
 
-  /* 3-D cube — depth = half the bar height */
-  .immersive-notif-bar__cube {
+  .immersive-notif-bar__scene {
     position: relative;
-    width: 100vw;
-    height: var(--notif-height, 96px);
+    width: 100%;
+    height: 100%;
     transform-style: preserve-3d;
-    perspective: calc(var(--notif-height, 96px) * 5);
-    perspective-origin: 50% 65%;
   }
 
   .immersive-notif-bar__face {
     position: absolute;
-    width: 100vw;
-    height: var(--notif-height, 96px);
+    inset: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
     overflow: hidden;
   }
 
-  /* Face transforms use --notif-half (= height / 2) */
   .immersive-notif-bar__face--left {
-    transform: translateX(calc(-1 * var(--notif-half, 48px))) rotateY(-90deg) scaleX(-1);
-    opacity: 0.7;
+    transform-origin: left center;
+    transform: rotateY(42deg);
+    opacity: 0.55;
   }
-
-  .immersive-notif-bar__face--back {
-    transform: translateZ(calc(-1 * var(--notif-half, 48px))) rotateY(180deg) scaleX(-1);
+  .immersive-notif-bar__face--front {
+    transform: translateZ(0);
+    opacity: 1;
+  }
+  .immersive-notif-bar__face--right {
+    transform-origin: right center;
+    transform: rotateY(-42deg);
     opacity: 0.55;
   }
 
-  .immersive-notif-bar__face--right {
-    transform: translateX(var(--notif-half, 48px)) rotateY(90deg) scaleX(-1);
-    opacity: 0.7;
+  /* ── Ticker container ── */
+  .immersive-notif-bar__ticker {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
-  /* Scrolling text */
-  .immersive-notif-bar__text {
+  /* ── Individual messages ── */
+  .immersive-notif-bar__msg {
+    position: absolute;
     white-space: nowrap;
     font-family: 'Bebas Neue', 'Impact', sans-serif;
-    font-size: calc(var(--notif-height, 96px) * 0.52);
+    font-size: clamp(0.7rem, calc(var(--notif-height, 48px) * 0.3), 1rem);
     font-weight: 400;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: #d4af37;
-    margin: 0;
-    padding: 0;
-    line-height: var(--notif-height, 96px);
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-duration: var(--notif-duration, 40s);
-    will-change: transform;
+    line-height: 1;
+    /* Start off-screen right, invisible */
+    transform: translateX(110vw);
+    opacity: 0;
+    transition: none;
   }
 
-  .immersive-notif-bar__text--left {
-    animation-name: immersive-notif-scroll-a;
+  /* Slide in from right */
+  .immersive-notif-bar__msg.is-entering {
+    transform: translateX(110vw);
+    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
   }
-  .immersive-notif-bar__text--back {
-    animation-name: immersive-notif-scroll-b;
-  }
-  .immersive-notif-bar__text--right {
-    animation-name: immersive-notif-scroll-c;
-  }
-
-  @keyframes immersive-notif-scroll-a {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
-  }
-  @keyframes immersive-notif-scroll-b {
-    from {
-      transform: translateX(-16.66%);
-    }
-    to {
-      transform: translateX(-66.66%);
-    }
-  }
-  @keyframes immersive-notif-scroll-c {
-    from {
-      transform: translateX(-33.33%);
-    }
-    to {
-      transform: translateX(-83.33%);
-    }
+  .immersive-notif-bar__msg.is-entering.is-active {
+    transform: translateX(0);
+    opacity: 1;
   }
 
-  .immersive-notif-bar__item {
-    display: inline;
-    padding: 0 0.4em;
+  /* Visible and centered */
+  .immersive-notif-bar__msg.is-active {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  /* Slide out to left */
+  .immersive-notif-bar__msg.is-leaving {
+    transform: translateX(-110vw);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.3s ease 0.1s;
   }
 
   .immersive-notif-bar__icon {
-    margin-right: 0.25em;
-  }
-
-  .immersive-notif-bar__sep {
-    color: rgba(212, 175, 55, 0.35);
-    padding: 0 0.6em;
+    margin-right: 0.35em;
   }
 
   .immersive-notif-bar__link {
     color: inherit;
     text-decoration: none;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
-    transition: color 0.2s, border-color 0.2s;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.4);
   }
-
   .immersive-notif-bar__link:hover {
     color: #fff;
     border-color: #fff;
@@ -221,32 +205,155 @@
   .immersive-notif-bar__link:focus-visible {
     outline: 2px solid #d4af37;
     outline-offset: 2px;
-    border-radius: 2px;
   }
 
-  /* Push immersive header below the bar */
+  /* ── Header offset ── */
   body:has([data-immersive-notif-bar]) .immersive-header {
-    top: var(--notif-height, 96px);
+    top: var(--notif-height, 48px);
+  }
+  body:has([data-immersive-notif-bar]) {
+    --announcement-bar-height: var(--notif-height, 48px);
   }
 
+  /* ── Reduced motion — just fade ── */
   @media (prefers-reduced-motion: reduce) {
-    .immersive-notif-bar__face--back,
+    .immersive-notif-bar__face--left,
     .immersive-notif-bar__face--right {
       display: none;
     }
-    .immersive-notif-bar__face--left {
+    .immersive-notif-bar__face--front {
       transform: none;
       opacity: 1;
     }
-    .immersive-notif-bar__text {
-      animation: none !important;
-      padding-left: 1.5rem;
+    .immersive-notif-bar__msg.is-entering,
+    .immersive-notif-bar__msg.is-leaving {
+      transition: opacity 0.4s ease !important;
+      transform: translateX(0) !important;
     }
     .immersive-notif-bar__hue {
-      animation: none !important;
+      animation: none;
     }
   }
 {% endstylesheet %}
+
+{% javascript %}
+  (function () {
+    function initTicker(bar) {
+      var tickers = bar.querySelectorAll('[data-notif-ticker]');
+      if (!tickers.length) return;
+
+      var style = getComputedStyle(bar);
+      var holdMs = (parseFloat(style.getPropertyValue('--notif-display')) || 4) * 1000;
+      var inMs = 650;
+      var outMs = 550;
+
+      // Collect messages from the FIRST ticker (front face) — all tickers are synced
+      var msgs = Array.from(tickers[0].querySelectorAll('[data-notif-msg]'));
+      if (msgs.length <= 1) {
+        // Only one message — just show it
+        msgs.forEach(function (m) {
+          m.classList.add('is-active');
+          m.style.opacity = 1;
+          m.style.transform = 'translateX(0)';
+        });
+        return;
+      }
+
+      var current = 0;
+
+      function getMsgsAt(index) {
+        // Return the message at `index` from every ticker (all faces stay in sync)
+        return Array.from(tickers).map(function (ticker) {
+          return ticker.querySelectorAll('[data-notif-msg]')[index];
+        });
+      }
+
+      function showNext() {
+        var outIndex = current;
+        current = (current + 1) % msgs.length;
+        var inIndex = current;
+
+        var outEls = getMsgsAt(outIndex);
+        var inEls = getMsgsAt(inIndex);
+
+        // Slide out current
+        outEls.forEach(function (el) {
+          if (!el) return;
+          el.classList.remove('is-active');
+          el.classList.add('is-leaving');
+        });
+
+        // Prepare incoming — position off-screen right, no transition
+        inEls.forEach(function (el) {
+          if (!el) return;
+          el.style.transition = 'none';
+          el.style.transform = 'translateX(110vw)';
+          el.style.opacity = '0';
+          el.classList.remove('is-active', 'is-leaving');
+        });
+
+        // After a frame, slide in
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            inEls.forEach(function (el) {
+              if (!el) return;
+              el.style.transition = '';
+              el.classList.add('is-entering');
+              // Trigger transition
+              requestAnimationFrame(function () {
+                el.classList.add('is-active');
+              });
+            });
+
+            // Clean up after slide-in
+            setTimeout(function () {
+              inEls.forEach(function (el) {
+                if (!el) return;
+                el.classList.remove('is-entering');
+                el.style.transition = '';
+                el.style.transform = '';
+                el.style.opacity = '';
+              });
+              outEls.forEach(function (el) {
+                if (!el) return;
+                el.classList.remove('is-leaving');
+                el.style.transition = '';
+                el.style.transform = 'translateX(110vw)';
+                el.style.opacity = '0';
+              });
+            }, Math.max(inMs, outMs) + 50);
+          });
+        });
+      }
+
+      // Show first message immediately
+      getMsgsAt(0).forEach(function (el) {
+        if (!el) return;
+        el.style.transform = 'translateX(0)';
+        el.style.opacity = '1';
+        el.classList.add('is-active');
+      });
+
+      // Cycle
+      setInterval(showNext, holdMs + inMs);
+    }
+
+    function init() {
+      document.querySelectorAll('[data-immersive-notif-bar]').forEach(initTicker);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    document.addEventListener('shopify:section:load', function (e) {
+      var bar = e.target && e.target.querySelector('[data-immersive-notif-bar]');
+      if (bar) initTicker(bar);
+    });
+  })();
+{% endjavascript %}
 
 {% schema %}
 {
@@ -262,24 +369,24 @@
       "type": "range",
       "id": "bar_height",
       "label": "Bar height (px)",
-      "min": 48,
-      "max": 160,
-      "step": 8,
-      "default": 96
+      "min": 36,
+      "max": 120,
+      "step": 4,
+      "default": 48
     },
     {
       "type": "range",
-      "id": "scroll_speed",
-      "label": "Scroll speed (lower = faster)",
-      "min": 15,
-      "max": 80,
-      "step": 5,
-      "default": 40
+      "id": "display_duration",
+      "label": "Seconds each message is shown",
+      "min": 2,
+      "max": 10,
+      "step": 1,
+      "default": 4
     },
     {
       "type": "text",
       "id": "separator",
-      "label": "Separator between items",
+      "label": "Separator (unused in ticker mode)",
       "default": "✦"
     },
     {
@@ -317,9 +424,9 @@
   "presets": [
     {
       "name": "Notification Bar",
-      "settings": { "enabled": true, "bar_height": 96, "scroll_speed": 40, "separator": "✦" },
+      "settings": { "enabled": true, "bar_height": 48, "display_duration": 4, "separator": "✦" },
       "blocks": [
-        { "type": "announcement", "settings": { "text": "Free shipping on orders over PKR 5,000", "icon": "✦" } },
+        { "type": "announcement", "settings": { "text": "Free shipping on orders over PKR 150,000", "icon": "✦" } },
         { "type": "announcement", "settings": { "text": "New arrivals — Eid Collection 2026", "icon": "✦" } },
         { "type": "announcement", "settings": { "text": "Explore the 3D Immersive Store", "icon": "✦" } }
       ]

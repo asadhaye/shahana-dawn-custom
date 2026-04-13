@@ -488,7 +488,7 @@
                 <div class="immersive-bridge-btn__wrapper">
                   {%-
                     render 'immersive-bridge-btn',
-                    bridge_url: '/pages/immersive?view=immersive&open_product=' | append: product.handle,
+                    bridge_url: '/pages/immersive?open_product=' | append: product.handle,
                     bridge_label: 'sections.immersive_journey_bridges.product_cta' | t,
                     bridge_aria: 'sections.immersive_journey_bridges.product_cta_aria' | t: title: product.title,
                     bridge_class: 'product'

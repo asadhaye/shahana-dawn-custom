@@ -328,34 +328,73 @@
     {%- endfor -%}
     <link rel="alternate" hreflang="x-default" href="{{ request.origin }}{{ request.path }}">
 
+    {%- comment -%} Organization and WebSite structured data (emitted once per page) {%- endcomment -%}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": {{ request.origin | append: '/#organization' | json }},
+        "name": {{ shop.name | json }},
+        "url": {{ request.origin | json }}
+        {%- if settings.logo != blank -%}
+          ,"logo": {{ settings.logo | image_url: width: 500 | json }}
+        {%- endif -%}
+        {%- liquid
+          assign social_links = ''
+          if settings.social_twitter_link != blank
+            assign social_links = social_links | append: settings.social_twitter_link | append: '|'
+          endif
+          if settings.social_facebook_link != blank
+            assign social_links = social_links | append: settings.social_facebook_link | append: '|'
+          endif
+          if settings.social_instagram_link != blank
+            assign social_links = social_links | append: settings.social_instagram_link | append: '|'
+          endif
+          if settings.social_tiktok_link != blank
+            assign social_links = social_links | append: settings.social_tiktok_link | append: '|'
+          endif
+          if settings.social_pinterest_link != blank
+            assign social_links = social_links | append: settings.social_pinterest_link | append: '|'
+          endif
+          if settings.social_tumblr_link != blank
+            assign social_links = social_links | append: settings.social_tumblr_link | append: '|'
+          endif
+          if settings.social_snapchat_link != blank
+            assign social_links = social_links | append: settings.social_snapchat_link | append: '|'
+          endif
+          if settings.social_youtube_link != blank
+            assign social_links = social_links | append: settings.social_youtube_link | append: '|'
+          endif
+          if settings.social_vimeo_link != blank
+            assign social_links = social_links | append: settings.social_vimeo_link | append: '|'
+          endif
+        -%}
+        {%- if social_links != '' -%}
+          ,"sameAs": {{ social_links | split: '|' | json }}
+        {%- endif -%}
+      }
+    </script>
+
     {%- if request.page_type == 'index' -%}
-      {% assign potential_action_target = request.origin
+      {%- assign potential_action_target = request.origin
         | append: routes.search_url
         | append: '?q={search_term_string}'
-      %}
+      -%}
       <script type="application/ld+json">
         {
-          "@context": "http://schema.org",
+          "@context": "https://schema.org",
           "@type": "WebSite",
+          "@id": {{ request.origin | append: '/#website' | json }},
           "name": {{ shop.name | json }},
+          "url": {{ request.origin | json }},
           "potentialAction": {
             "@type": "SearchAction",
             "target": {{ potential_action_target | json }},
             "query-input": "required name=search_term_string"
-          },
-          "url": {{ request.origin | append: page.url | json }}
+          }
         }
       </script>
     {%- endif -%}
-
-    <script type="application/ld+json">
-      {
-        "@context": "http://schema.org",
-        "@type": "Organization",
-        "name": {{ shop.name | json }},
-        "url": {{ request.origin | json }}
-      }
-    </script>
   </head>
 
   <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
@@ -375,7 +414,7 @@
           {{ 'sections.immersive_journey_bridges.preference_banner_text' | t }}
         </p>
         <div class="immersive-preference-banner__actions">
-          <a href="/pages/immersive-store" class="immersive-preference-banner__cta">
+          <a href="/pages/immersive" class="immersive-preference-banner__cta">
             {{ 'sections.immersive_journey_bridges.preference_banner_cta' | t }}
           </a>
           <button

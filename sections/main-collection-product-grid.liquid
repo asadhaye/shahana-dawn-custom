@@ -40,7 +40,7 @@
   <div class="page-width immersive-bridge-btn__wrapper">
     {%-
       render 'immersive-bridge-btn',
-      bridge_url: '/pages/immersive?view=immersive&open_collection=' | append: collection.handle,
+      bridge_url: '/pages/immersive?open_collection=' | append: collection.handle,
       bridge_label: 'sections.immersive_journey_bridges.collection_cta' | t,
       bridge_aria: 'sections.immersive_journey_bridges.collection_cta_aria' | t: title: collection.title,
       bridge_class: 'collection'

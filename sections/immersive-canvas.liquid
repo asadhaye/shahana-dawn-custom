@@ -31,27 +31,35 @@
     class="immersive-store__canvas-wrapper"
     data-base-url="{{ base_url }}"
     data-depth-url="{{ depth_url }}"
-    data-logo-url="{%- if section.settings.logo_image != blank -%}{{ section.settings.logo_image | image_url: width: 600 }}{%- else -%}{{ 'sc-logo-transpartent-bg.png' | asset_url }}{%- endif -%}"
+    data-logo-url="{%- if section.settings.logo_image != blank -%}{{ section.settings.logo_image | image_url: width: 600 }}{%- else -%}{{ 'sc-logo-transparent-bg.png' | asset_url }}{%- endif -%}"
   >
     <canvas
       id="immersive-canvas"
       aria-hidden="true"
     ></canvas>
-    <!-- Logo animation canvas — sits above the main parallax canvas, below the header -->
-    <canvas
-      id="logo-canvas"
-      aria-hidden="true"
-      style="position:absolute;top:130px;left:0;width:100%;height:35%;pointer-events:none;z-index:10;"
-    ></canvas>
     <div id="ui-layer"></div>
+    {%- if section.settings.logo_image != blank -%}
+      {%- assign logo_src = section.settings.logo_image | image_url: width: 400 -%}
+    {%- else -%}
+      {%- assign logo_src = 'sc-logo-transparent-bg.png' | asset_url -%}
+    {%- endif -%}
+    <div class="immersive-ceiling-logo-overlay" aria-hidden="true">
+      <img
+        src="{{ logo_src }}"
+        alt=""
+        class="immersive-ceiling-logo-overlay__img"
+        width="200"
+        height="200"
+        loading="eager"
+        decoding="async"
+      >
+    </div>
     <div class="immersive-store__tagline" id="immersive-tagline" aria-hidden="true">
       <p>{{ 'sections.immersive_store.intro' | t }}</p>
     </div>
   </div>
 
-  <!-- Ceiling logo overlay — logo is now rendered on #logo-canvas by the Three.js animation -->
-  <div class="immersive-ceiling-logo" aria-hidden="true" hidden></div>
-
+  <!-- Ceiling logo overlay — CSS animated PNG, sits above the canvas in the ceiling area -->
   <!-- Fixed Header — dark frosted glass top bar -->
   <header class="immersive-header">
     <!-- Left: burger menu + 2D bridge pill -->
@@ -292,6 +300,32 @@
         {%- if cart.item_count > 0 -%}
           <span class="immersive-header__cart-badge" aria-hidden="true">{{ cart.item_count }}</span>
         {%- endif -%}
+      </button>
+
+      {%- comment -%} Tilt-control experiment toggle (mobile-only) {%- endcomment -%}
+      <button
+        type="button"
+        class="immersive-header__icon-btn immersive-tilt-toggle"
+        data-immersive-tilt-toggle
+        aria-pressed="false"
+        aria-label="{{ 'sections.immersive_store.tilt_toggle' | t | default: 'Enable tilt control' }}"
+        title="{{ 'sections.immersive_store.tilt_toggle' | t | default: 'Enable tilt control' }}"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
       </button>
     </div>
   </header>
@@ -644,8 +678,9 @@
    ============================================================================ */
   .immersive-store {
     position: relative;
-    min-height: 100vh;
+    height: 100vh;
     padding: 0;
+    overflow: hidden;
   }
 
   .immersive-store__tagline {
@@ -683,11 +718,12 @@
   }
 
   .immersive-store__canvas-wrapper {
-    position: relative;
+    position: fixed;
+    inset: 0;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
-    background: radial-gradient(circle at top, rgba(15, 23, 42, 0.4), rgba(0, 0, 0, 1));
+    background: #000;
   }
 
   #immersive-canvas {
@@ -696,6 +732,81 @@
     width: 100%;
     height: 100%;
     display: block;
+  }
+
+  /* ── Ceiling logo overlay — glassmorphic white canvas + centered logo ── */
+  .immersive-ceiling-logo-overlay {
+    position: absolute;
+    top: calc(var(--notif-height, 0px) + 71px);
+    left: 0;
+    width: 100%;
+    height: 22vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 19;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 255, 255, 0.06) 55%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    backdrop-filter: blur(8px) saturate(1.4);
+    -webkit-backdrop-filter: blur(8px) saturate(1.4);
+  }
+
+  body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay {
+    top: calc(var(--notif-height, 48px) + 72px);
+  }
+
+  .immersive-ceiling-logo-overlay__img {
+    display: block;
+    height: clamp(110px, 16vh, 200px);
+    width: auto;
+    max-width: 75vw;
+    filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.6)) drop-shadow(0 4px 32px rgba(0, 0, 0, 0.5));
+    animation: logo-float 4s ease-in-out infinite, logo-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes logo-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes logo-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.45)) drop-shadow(0 4px 28px rgba(0, 0, 0, 0.45));
+    }
+    50% {
+      filter: drop-shadow(0 0 28px rgba(212, 175, 55, 0.9)) drop-shadow(0 4px 36px rgba(0, 0, 0, 0.55));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .immersive-ceiling-logo-overlay {
+      top: calc(var(--notif-height, 0px) + 59px);
+      height: 20vh;
+    }
+    body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay {
+      top: calc(var(--notif-height, 48px) + 59px);
+    }
+    .immersive-ceiling-logo-overlay__img {
+      height: clamp(90px, 14vh, 160px);
+      max-width: 85vw;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-ceiling-logo-overlay__img {
+      animation: none;
+    }
   }
 
   /* ============================================================================
@@ -768,7 +879,7 @@
    3. FIXED HEADER — frosted glass top bar (dark, immersive)
    ============================================================================ */
   .immersive-header {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -781,7 +892,7 @@
     background: linear-gradient(to bottom, rgba(8, 6, 2, 0.82) 0%, rgba(8, 6, 2, 0.65) 70%, rgba(8, 6, 2, 0) 100%);
     backdrop-filter: blur(14px) saturate(1.2);
     -webkit-backdrop-filter: blur(14px) saturate(1.2);
-    border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+    border-bottom: none;
     box-shadow: 0 2px 32px rgba(0, 0, 0, 0.35);
     --header-bottom-position: 72px;
   }
@@ -962,6 +1073,28 @@
     line-height: 1;
   }
 
+  /* Tilt toggle button — mobile-only experiment */
+  .immersive-tilt-toggle {
+    position: relative;
+  }
+
+  .immersive-tilt-toggle[aria-pressed='true'] {
+    background: rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+  }
+
+  .immersive-tilt-toggle[aria-pressed='true'] svg {
+    fill: rgba(212, 175, 55, 0.3);
+    stroke: #d4af37;
+  }
+
+  /* Hide tilt toggle on desktop (mobile-only feature) */
+  @media (min-width: 769px) {
+    .immersive-tilt-toggle {
+      display: none;
+    }
+  }
+
   /* Tablet: shrink padding slightly */
   @media (max-width: 768px) {
     .immersive-header__mode-switch {
@@ -1070,12 +1203,6 @@
     .immersive-ceiling-logo__img {
       animation: none;
     }
-  }
-
-  /* The immersive notification bar (immersive-notification-bar.liquid) sits at top: 0.
-     Push the immersive header below it. */
-  .immersive-header {
-    top: 96px;
   }
 
   /* Offset the canvas so it starts below both header + announcement bar */
@@ -1237,7 +1364,20 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-right: 1px solid rgba(212, 175, 55, 0.15);
-    top: 64px !important;
+    top: 72px !important;
+  }
+
+  body:has([data-immersive-notif-bar]) .immersive-store #menu-drawer {
+    top: calc(var(--notif-height, 48px) + 72px) !important;
+  }
+
+  @media (max-width: 768px) {
+    .immersive-store #menu-drawer {
+      top: 60px !important;
+    }
+    body:has([data-immersive-notif-bar]) .immersive-store #menu-drawer {
+      top: calc(var(--notif-height, 48px) + 60px) !important;
+    }
   }
 
   /* Top-level menu items */
@@ -1283,11 +1423,7 @@
     fill: rgba(212, 175, 55, 0.6);
   }
 
-  @media (max-width: 768px) {
-    .immersive-store #menu-drawer {
-      top: 54px !important;
-    }
-  }
+  /* mobile drawer handled by the body:has rules above */
 
   /* ============================================================================
    5. GLASS PANEL - Full Screen Overlay
