@@ -141,6 +141,17 @@
     "editorial_occasions": {
       "type": "immersive-editorial",
       "blocks": {
+        "banner_xjhece": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        },
         "banner_rihxDg": {
           "type": "banner",
           "settings": {
@@ -176,6 +187,7 @@
         }
       },
       "block_order": [
+        "banner_xjhece",
         "banner_rihxDg",
         "banner_9YbN3K",
         "banner_cqAYyJ"
@@ -191,6 +203,17 @@
     "editorial_featured_collections": {
       "type": "immersive-editorial",
       "blocks": {
+        "banner_gqGrLc": {
+          "type": "banner",
+          "settings": {
+            "heading": "",
+            "body": "",
+            "cta_label": "",
+            "cta_url": "",
+            "collection": "",
+            "depth_layer": 50
+          }
+        },
         "banner_k4FgDF": {
           "type": "banner",
           "settings": {
@@ -215,6 +238,7 @@
         }
       },
       "block_order": [
+        "banner_gqGrLc",
         "banner_k4FgDF",
         "banner_GiAhDk"
       ],
