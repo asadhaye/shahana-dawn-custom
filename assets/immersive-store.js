@@ -28,13 +28,10 @@ const STORE_ROOMS = {
   },
 
   designer_houses: {
-    baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737&width=1600&quality=75',
-    mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737&width=900&quality=75',
-    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=1600&quality=60',
-    mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=900&quality=60',
+    baseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-base.jpg?v=1775510548=85',
+    mobileBaseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126=75',
+    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548=70',
+    mobileDepthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.png?v=1775516123=70',
     hotspots: [
       { x: 50, y: 15, label: 'Explore Designers', targetEditorialRoom: 'designer_houses' },
       { x: 13, y: 40, label: 'Suffuse', targetCollection: 'suffuse' },
@@ -321,6 +318,8 @@ const fragmentShaderSource = `
   uniform sampler2D uDepth2;
   uniform float uTransitionProgress;
   uniform vec2 uMouse;
+  uniform float uTiltOffsetX;
+  uniform float uTiltOffsetY;
   uniform float uParallaxStrength;
   uniform float uScrollOffset;
   uniform float uScrollVignette;
@@ -338,7 +337,8 @@ const fragmentShaderSource = `
     float d = depth - 0.5;
     vec2 centeredMouse = mouse - 0.5;
 
-    vec2 offset = centeredMouse * uParallaxStrength * d;
+    vec2 tiltOffset = vec2(uTiltOffsetX, uTiltOffsetY);
+    vec2 offset = (centeredMouse + tiltOffset) * uParallaxStrength * d;
 
     float scrollWeight = d + 0.5;
     float backCounterShift = (1.0 - scrollWeight) * -0.08;
@@ -474,6 +474,8 @@ function initImmersiveScene() {
     uDepth2: { value: placeholder },
     uTransitionProgress: { value: 0 },
     uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+    uTiltOffsetX: { value: 0 },
+    uTiltOffsetY: { value: 0 },
     uParallaxStrength: { value: parallaxStrength },
     uScrollOffset: { value: 0 },
     uScrollVignette: { value: 0 },

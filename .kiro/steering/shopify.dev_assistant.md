@@ -8,6 +8,20 @@ This is a Dawn-based Shopify theme extended with a WebGL immersive store experie
 
 ## Architecture
 
+### Canonical immersive URL
+
+The immersive experience has a single canonical URL: `/pages/immersive`
+
+| Do | Don't |
+|---|---|
+| Use `/pages/immersive` for all immersive links | Use `/pages/immersive-store` (legacy, incorrect) |
+| Use `?open_product=`, `?open_collection=`, `?open_search=` for deep-links | Use `?view=immersive` (unnecessary, not canonical) |
+| Link to `/pages/immersive?open_collection=handle` | Link to `/pages/immersive-store?view=immersive` |
+
+**Known bugs (fixed, do not reintroduce):**
+- Preference banner used `/pages/immersive-store` instead of `/pages/immersive`
+- Bridge CTAs used `?view=immersive` parameter unnecessarily
+
 ### Template Responsibilities
 
 - `templates/index.json` — 2D homepage; standard Dawn layout; Bridge CTA to 3D store; header/footer render normally; no WebGL

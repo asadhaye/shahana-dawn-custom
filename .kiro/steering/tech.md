@@ -9,7 +9,7 @@
 ## Key assets / libraries
 
 - `assets/three.min.js` — Three.js (local copy; CDN blocked by Shopify MIME policy)
-- `assets/immersive-store.js` — WebGL engine, room config, parallax, Section Rendering API calls, analytics, focus management, URL param handler, preference manager, wishlist manager (localStorage-backed), cookie consent banner, onboarding overlay
+- `assets/immersive-store.js` — WebGL engine, room config, parallax, Section Rendering API calls, analytics, focus management, URL param handler, preference manager, wishlist manager (localStorage-backed), cookie consent banner, onboarding overlay, tilt-control experiment (mobile-only, opt-in)
 - `assets/immersive-theme.css` — global immersive styles, loaded on `page.immersive` only
 - `assets/bridge-behavior.js` — device/connection-aware bridge behavior, loaded on all pages
 

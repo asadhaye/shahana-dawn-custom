@@ -100,8 +100,20 @@ Each room: `baseTextureUrl`, `mobileBaseTextureUrl`, `depthMapUrl`, `mobileDepth
 - `writeImmersivePreference()` — called on `initImmersiveScene()` success; writes `immersive_preferred_mode = '3d'` to localStorage
 - `readImmersivePreference()` — read by inline script in `theme.liquid`; shows preference banner on 2D pages when flag is set
 - Preference banner is suppressed on `page.immersive`, `index`, and `password` templates
-- Preference banner CTA links to `/pages/immersive-store` (the actual page handle used in the store)
+- Preference banner CTA links to `/pages/immersive` (canonical immersive URL)
 - Preference banner dismiss removes the banner from DOM and restores focus to the next sibling element
+
+## Canonical immersive URL
+
+| Do | Don't |
+|---|---|
+| Use `/pages/immersive` for all immersive links | Use `/pages/immersive-store` (legacy, incorrect) |
+| Use `?open_product=`, `?open_collection=`, `?open_search=` for deep-links | Use `?view=immersive` (unnecessary, not canonical) |
+| Link to `/pages/immersive?open_collection=handle` | Link to `/pages/immersive-store?view=immersive` |
+
+**Known bugs (fixed, do not reintroduce):**
+- Preference banner used `/pages/immersive-store` instead of `/pages/immersive`
+- Bridge CTAs used `?view=immersive` parameter unnecessarily
 
 ## Locales
 

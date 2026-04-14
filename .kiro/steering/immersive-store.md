@@ -36,6 +36,54 @@ Never introduce:
 
 ## 2. Immersive architecture
 
+### Canonical immersive URL
+
+The immersive experience has a single canonical URL: `/pages/immersive`
+
+| Do | Don't |
+|---|---|
+| Use `/pages/immersive` for all immersive links | Use `/pages/immersive-store` (legacy, incorrect) |
+| Use `?open_product=`, `?open_collection=`, `?open_search=` for deep-links | Use `?view=immersive` (unnecessary, not canonical) |
+| Link to `/pages/immersive?open_collection=handle` | Link to `/pages/immersive-store?view=immersive` |
+
+**Known bugs (fixed, do not reintroduce):**
+- Preference banner used `/pages/immersive-store` instead of `/pages/immersive`
+- Bridge CTAs used `?view=immersive` parameter unnecessarily
+
+### Bridge CTAs & deep-link semantics
+
+Bridge CTAs (`snippets/immersive-bridge-btn.liquid`) connect 2D pages to the 3D store using deep-link parameters:
+
+| Parameter | Effect | Example |
+|---|---|---|
+| `?open_product={handle}` | Opens product glass panel | `/pages/immersive?open_product=silk-saree` |
+| `?open_collection={handle}` | Opens collection grid panel | `/pages/immersive?open_collection=suffuse` |
+| `?open_search={terms}` | Opens search results panel | `/pages/immersive?open_search=bridal` |
+
+**Priority:** `open_product` > `open_collection` > `open_search`
+
+**Do:**
+- Use `/pages/immersive` as the base URL
+- Pass only one deep-link parameter at a time
+- Let JS handle the panel opening on page load
+
+**Don't:**
+- Use `?view=immersive` — it's unnecessary
+- Use `/pages/immersive-store` — it's a legacy URL
+- Combine multiple `open_*` parameters (priority rules apply, but it's confusing)
+
+### Preference banner behavior
+
+The preference banner appears on 2D pages when `immersive_preferred_mode = '3d'` is set in localStorage:
+
+- Written by `writeImmersivePreference()` on successful immersive scene init
+- Read by inline script in `theme.liquid`
+- Suppressed on `page.immersive`, `index`, and `password` templates
+- CTA links to `/pages/immersive` (canonical URL)
+- Dismiss removes banner from DOM and restores focus
+
+**Known bug (fixed):** Preference banner previously linked to `/pages/immersive-store` — do not reintroduce.
+
 ### Core files — do not break without explicit instruction
 
 - `layout/theme.liquid` — conditional asset loading
@@ -57,6 +105,18 @@ When extending `immersive-store.js`:
 - Treat it as the world/motion controller, not a CMS
 - Do not move editorial copy or layout into Three.js
 - You may add state (`mode`, `editorialRoom`), new hotspot behaviors (`targetEditorialRoom`), or subtle camera/parallax tuning per mode
+
+### WebGL vs CSS responsibilities
+
+| Use WebGL/Three.js for | Use CSS/DOM for |
+|---|---|
+| Room rendering with depth maps | UI overlays, panels, dialogs |
+| Pointer-based parallax effect | Logo animations, icon transitions |
+| Camera movement between rooms | Hover states, button effects |
+| Texture-based room transitions | Fade/slide transitions |
+| Per-room mood/atmosphere | Static decorative elements |
+
+**Rule of thumb:** If an effect can be achieved with CSS transforms, transitions, or keyframe animations, do not use WebGL. WebGL is reserved for depth-based parallax and room rendering that cannot be replicated in CSS.
 
 ---
 
@@ -233,7 +293,7 @@ When adding major features or sections, ask:
 
 - Renders `<canvas id="immersive-canvas">`
 - Renders the hotspot UI layer (`#ui-layer`)
-- Renders a fixed `<header class="immersive-header">` containing: Dawn `<menu-drawer>` component (hamburger nav), search, account link, wishlist button (`data-wishlist-open`), cart button (`#cart-toggle`), and 3D→2D mode switch (`data-mode-switch-2d`)
+- Renders a fixed `<header class="immersive-header">` containing: Dawn `<menu-drawer>` component (hamburger nav), search, account link, wishlist button (`data-wishlist-open`), cart button (`#cart-toggle`), tilt-control toggle button (`data-immersive-tilt-toggle`, mobile-only), and 3D→2D mode switch (`data-mode-switch-2d`)
 - Renders shell DOM for: glass panel (`#glass-panel`, `role="dialog"`), wishlist panel (`#immersive-wishlist-panel`, `role="dialog"`), editorial overlay (`#immersive-editorial-overlay`, `role="dialog"`), onboarding overlay (`#immersive-onboarding`, `role="dialog"`), cookie consent banner (`#immersive-cookie-banner`)
 - Renders `<script id="immersive-rooms-config" type="application/json">` — per-room texture URLs built from section settings (per-room image pickers), consumed by `mergeDynamicRoomConfig()` in `immersive-store.js`
 - Keep HTML semantic (`<section>`, `<header>`, `<nav>`)
@@ -316,7 +376,80 @@ The goal is to move room image/depth map URLs into merchant-configurable metaobj
 
 ---
 
-## 11. Code quality checklist
+## 11. Tilt-control experiment (mobile-only, opt-in)
+
+A gyroscope-based tilt control experiment for mobile devices that subtly influences the immersive showroom scene.
+
+### Overview
+
+- **Feature-flagged**: Disabled by default (`tiltControlEnabled = false`)
+- **Mobile-only**: Guards on `isMobile === true`
+- **User gesture required**: Only activates after explicit button tap (iOS permission requirement)
+- **Respects reduced motion**: Disabled when `reduceMotion === true`
+- **Showroom mode only**: Only active when `immersiveState.mode === 'showroom'`
+
+### UI Entry Point
+
+A toggle button in the immersive header:
+
+```liquid
+<button
+  type="button"
+  class="immersive-header__icon-btn immersive-tilt-toggle"
+  data-immersive-tilt-toggle
+  aria-pressed="false"
+  aria-label="{{ 'sections.immersive_store.tilt_toggle' | t }}"
+>
+  <svg><!-- smartphone icon --></svg>
+</button>
+```
+
+- Hidden on desktop (≥769px) via CSS media query
+- Visual feedback when active (`aria-pressed="true"`)
+- Uses existing `.immersive-header__icon-btn` base styles
+
+### JavaScript Implementation
+
+**Globals** (in `assets/immersive-store.js`):
+- `tiltControlEnabled` — boolean flag
+- `tiltBeta`, `tiltGamma` — raw device orientation values
+- `tiltXSmoothed`, `tiltYSmoothed` — lerped normalized values [-1, 1]
+
+**Functions**:
+- `handleDeviceOrientation(event)` — stores raw tilt values
+- `enableTiltControl()` — enables tilt with iOS permission flow
+- `disableTiltControl()` — disables tilt and resets state
+- `initTiltControlToggle()` — wires up the toggle button
+
+**Render loop integration** (in `animate()`):
+- Normalizes tilt to [-1, 1] range
+- Lerps with 0.1 factor for gentle response
+- Applies to `uTiltOffsetX`/`uTiltOffsetY` uniforms if they exist (future-proof check)
+- Decays values smoothly when disabled
+
+### iOS Permission Flow
+
+iOS 13+ requires explicit permission for device orientation:
+
+```javascript
+if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+  DeviceOrientationEvent.requestPermission()
+    .then(function (state) {
+      if (state === 'granted') startListening();
+    });
+}
+```
+
+The permission request must originate from a user gesture (button click).
+
+### Translation Keys
+
+- `sections.immersive_store.tilt_toggle` — "Enable tilt control"
+- `sections.immersive_store.tilt_toggle_enabled` — "Disable tilt control"
+
+---
+
+## 12. Code quality checklist
 
 Before and after changes, verify:
 
