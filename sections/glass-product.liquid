@@ -172,10 +172,10 @@
             {% unless panel_product.available %}
               disabled
             {% endunless %}
-            aria-label="{{ 'products.product.add_to_cart' | t }} - {{ panel_product.title | escape }}"
+            aria-label="{{ 'sections.immersive_store.add_to_edit' | t }} - {{ panel_product.title | escape }}"
           >
             {% if panel_product.available %}
-              {{ 'products.product.add_to_cart' | t }}
+              {{ 'sections.immersive_store.add_to_edit' | t }}
             {% else %}
               {{ 'products.product.sold_out' | t }}
             {% endif %}

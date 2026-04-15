@@ -9,36 +9,38 @@
     {%- if section.settings.layout == 'designers' -%}
       <div class="immersive-designers__hero-transition-wrap">
         {%- for block in section.blocks -%}
-          <div
-            class="immersive-designers__hero-state {% if forloop.first %}is-active{% endif %}"
-            data-hero-index="{{ forloop.index0 }}"
-          >
-            {%- if block.settings.image -%}
-              <img
-                class="immersive-designers__hero-bg"
-                src="{{ block.settings.image | image_url: width: 1600 }}"
-                alt="{{ block.settings.image.alt | escape }}"
-                loading="lazy"
-                width="{{ block.settings.image.width }}"
-                height="{{ block.settings.image.height }}"
-              >
-            {%- endif -%}
-            <div class="immersive-designers__hero-content">
-              {%- if block.settings.logo -%}
+          {%- if block.type == 'designer' -%}
+            <div
+              class="immersive-designers__hero-state {% if forloop.first %}is-active{% endif %}"
+              data-hero-index="{{ forloop.index0 }}"
+            >
+              {%- if block.settings.image -%}
                 <img
-                  class="immersive-designers__hero-logo"
-                  src="{{ block.settings.logo | image_url: width: 400 }}"
-                  alt="{{ block.settings.heading | escape }}"
+                  class="immersive-designers__hero-bg"
+                  src="{{ block.settings.image | image_url: width: 1600 }}"
+                  alt="{{ block.settings.image.alt | escape }}"
                   loading="lazy"
-                  width="{{ block.settings.logo.width }}"
-                  height="{{ block.settings.logo.height }}"
+                  width="{{ block.settings.image.width }}"
+                  height="{{ block.settings.image.height }}"
                 >
               {%- endif -%}
-              {%- if block.settings.body != blank -%}
-                <div class="immersive-designers__manifest">{{ block.settings.body }}</div>
-              {%- endif -%}
+              <div class="immersive-designers__hero-content">
+                {%- if block.settings.logo -%}
+                  <img
+                    class="immersive-designers__hero-logo"
+                    src="{{ block.settings.logo | image_url: width: 400 }}"
+                    alt="{{ block.settings.heading | escape }}"
+                    loading="lazy"
+                    width="{{ block.settings.logo.width }}"
+                    height="{{ block.settings.logo.height }}"
+                  >
+                {%- endif -%}
+                {%- if block.settings.body != blank -%}
+                  <div class="immersive-designers__manifest">{{ block.settings.body }}</div>
+                {%- endif -%}
+              </div>
             </div>
-          </div>
+          {%- endif -%}
         {%- endfor -%}
       </div>
     {%- else -%}
@@ -80,70 +82,72 @@
         aria-label="{{ section.settings.hero_heading | default: 'Occasions' | escape }}"
       >
         {%- for block in section.blocks -%}
-          {%- if forloop.index == 2 or forloop.index == 4 -%}
-            <div class="immersive-occasions__interstitial" {{ block.shopify_attributes }}>
-              <span class="immersive-occasions__interstitial-line"></span>
-              <p class="immersive-occasions__interstitial-text">A Celebration of Heritage</p>
-            </div>
-          {%- endif -%}
-
-          {%- assign collection = block.settings.collection -%}
-          {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
-          {%- assign card_label = block.settings.heading | default: collection.title -%}
-          <a
-            class="immersive-occasions__card immersive-occasions__card--{{ forloop.index | modulo: 3 }}"
-            href="{{ card_url }}"
-            role="listitem"
-            aria-label="{{ card_label | escape }}"
-            {%- if collection != blank -%}
-              data-collection="{{ collection.handle }}"
-            {%- endif -%}
-            {{ block.shopify_attributes }}
-          >
-            <div class="immersive-occasions__card-media">
-              {%- if block.settings.image != blank -%}
-                <img
-                  src="{{ block.settings.image | image_url: width: 1200 }}"
-                  srcset="
-                    {{ block.settings.image | image_url: width: 600 }} 600w,
-                    {{ block.settings.image | image_url: width: 900 }} 900w,
-                    {{ block.settings.image | image_url: width: 1200 }} 1200w
-                  "
-                  sizes="(max-width: 768px) 100vw, 1100px"
-                  width="{{ block.settings.image.width }}"
-                  height="{{ block.settings.image.height }}"
-                  alt="{{ block.settings.image.alt | default: card_label | escape }}"
-                  loading="lazy"
-                >
-              {%- elsif collection.featured_image != blank -%}
-                <img
-                  src="{{ collection.featured_image | image_url: width: 1200 }}"
-                  srcset="
-                    {{ collection.featured_image | image_url: width: 600 }} 600w,
-                    {{ collection.featured_image | image_url: width: 900 }} 900w,
-                    {{ collection.featured_image | image_url: width: 1200 }} 1200w
-                  "
-                  sizes="(max-width: 768px) 100vw, 1100px"
-                  width="{{ collection.featured_image.width }}"
-                  height="{{ collection.featured_image.height }}"
-                  alt="{{ collection.featured_image.alt | default: card_label | escape }}"
-                  loading="lazy"
-                >
-              {%- else -%}
-                <div class="immersive-occasions__card-placeholder" aria-hidden="true"></div>
-              {%- endif -%}
-            </div>
-            <div class="immersive-occasions__card-content">
-              <h3 class="immersive-occasions__card-heading">{{ card_label | escape }}</h3>
-              {%- if block.settings.body != blank -%}
-                <div class="immersive-occasions__card-body">{{ block.settings.body }}</div>
-              {%- endif -%}
-              <div class="immersive-occasions__card-footer">
-                <span class="immersive-occasions__card-discover">Discover the Edit</span>
-                <span class="immersive-occasions__card-arrow" aria-hidden="true">→</span>
+          {%- if block.type == 'occasion_card' -%}
+            {%- if forloop.index == 2 or forloop.index == 4 -%}
+              <div class="immersive-occasions__interstitial" {{ block.shopify_attributes }}>
+                <span class="immersive-occasions__interstitial-line"></span>
+                <p class="immersive-occasions__interstitial-text">A Celebration of Heritage</p>
               </div>
-            </div>
-          </a>
+            {%- endif -%}
+
+            {%- assign collection = block.settings.collection -%}
+            {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+            {%- assign card_label = block.settings.heading | default: collection.title -%}
+            <a
+              class="immersive-occasions__card immersive-occasions__card--{{ forloop.index | modulo: 3 }}"
+              href="{{ card_url }}"
+              role="listitem"
+              aria-label="{{ card_label | escape }}"
+              {%- if collection != blank -%}
+                data-collection="{{ collection.handle }}"
+              {%- endif -%}
+              {{ block.shopify_attributes }}
+            >
+              <div class="immersive-occasions__card-media">
+                {%- if block.settings.image != blank -%}
+                  <img
+                    src="{{ block.settings.image | image_url: width: 1200 }}"
+                    srcset="
+                      {{ block.settings.image | image_url: width: 600 }} 600w,
+                      {{ block.settings.image | image_url: width: 900 }} 900w,
+                      {{ block.settings.image | image_url: width: 1200 }} 1200w
+                    "
+                    sizes="(max-width: 768px) 100vw, 1100px"
+                    width="{{ block.settings.image.width }}"
+                    height="{{ block.settings.image.height }}"
+                    alt="{{ block.settings.image.alt | default: card_label | escape }}"
+                    loading="lazy"
+                  >
+                {%- elsif collection.featured_image != blank -%}
+                  <img
+                    src="{{ collection.featured_image | image_url: width: 1200 }}"
+                    srcset="
+                      {{ collection.featured_image | image_url: width: 600 }} 600w,
+                      {{ collection.featured_image | image_url: width: 900 }} 900w,
+                      {{ collection.featured_image | image_url: width: 1200 }} 1200w
+                    "
+                    sizes="(max-width: 768px) 100vw, 1100px"
+                    width="{{ collection.featured_image.width }}"
+                    height="{{ collection.featured_image.height }}"
+                    alt="{{ collection.featured_image.alt | default: card_label | escape }}"
+                    loading="lazy"
+                  >
+                {%- else -%}
+                  <div class="immersive-occasions__card-placeholder" aria-hidden="true"></div>
+                {%- endif -%}
+              </div>
+              <div class="immersive-occasions__card-content">
+                <h3 class="immersive-occasions__card-heading">{{ card_label | escape }}</h3>
+                {%- if block.settings.body != blank -%}
+                  <div class="immersive-occasions__card-body">{{ block.settings.body }}</div>
+                {%- endif -%}
+                <div class="immersive-occasions__card-footer">
+                  <span class="immersive-occasions__card-discover">Discover the Edit</span>
+                  <span class="immersive-occasions__card-arrow" aria-hidden="true">→</span>
+                </div>
+              </div>
+            </a>
+          {%- endif -%}
         {%- endfor -%}
       </div>
     </div>
@@ -157,63 +161,65 @@
         aria-label="{{ section.settings.hero_heading | default: 'Featured collections' | escape }}"
       >
         {%- for block in section.blocks -%}
-          {%- assign collection = block.settings.collection -%}
-          {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
-          {%- assign card_label = block.settings.heading | default: collection.title -%}
-          <a
-            class="immersive-featured__item immersive-featured__item--{{ forloop.index | modulo: 4 }}"
-            href="{{ card_url }}"
-            role="listitem"
-            aria-label="{{ card_label | escape }}"
-            {%- if collection != blank -%}
-              data-collection="{{ collection.handle }}"
-            {%- endif -%}
-            {{ block.shopify_attributes }}
-          >
-            <div class="immersive-featured__item-media">
-              {%- if block.settings.image != blank -%}
-                <img
-                  src="{{ block.settings.image | image_url: width: 1000 }}"
-                  srcset="
-                    {{ block.settings.image | image_url: width: 600 }} 600w,
-                    {{ block.settings.image | image_url: width: 800 }} 800w,
-                    {{ block.settings.image | image_url: width: 1000 }} 1000w
-                  "
-                  sizes="(max-width: 768px) 100vw, 800px"
-                  width="{{ block.settings.image.width }}"
-                  height="{{ block.settings.image.height }}"
-                  alt="{{ block.settings.image.alt | default: card_label | escape }}"
-                  loading="lazy"
-                >
-              {%- elsif collection.featured_image != blank -%}
-                <img
-                  src="{{ collection.featured_image | image_url: width: 1000 }}"
-                  srcset="
-                    {{ collection.featured_image | image_url: width: 600 }} 600w,
-                    {{ collection.featured_image | image_url: width: 800 }} 800w,
-                    {{ collection.featured_image | image_url: width: 1000 }} 1000w
-                  "
-                  sizes="(max-width: 768px) 100vw, 800px"
-                  width="{{ collection.featured_image.width }}"
-                  height="{{ collection.featured_image.height }}"
-                  alt="{{ collection.featured_image.alt | default: card_label | escape }}"
-                  loading="lazy"
-                >
-              {%- else -%}
-                <div class="immersive-featured__item-placeholder" aria-hidden="true"></div>
+          {%- if block.type == 'featured_item' -%}
+            {%- assign collection = block.settings.collection -%}
+            {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+            {%- assign card_label = block.settings.heading | default: collection.title -%}
+            <a
+              class="immersive-featured__item immersive-featured__item--{{ forloop.index | modulo: 4 }}"
+              href="{{ card_url }}"
+              role="listitem"
+              aria-label="{{ card_label | escape }}"
+              {%- if collection != blank -%}
+                data-collection="{{ collection.handle }}"
               {%- endif -%}
-              <div class="immersive-featured__item-reveal">
-                <span class="immersive-featured__item-tag">New Collection</span>
-                <span class="immersive-featured__item-view">View Editorial →</span>
+              {{ block.shopify_attributes }}
+            >
+              <div class="immersive-featured__item-media">
+                {%- if block.settings.image != blank -%}
+                  <img
+                    src="{{ block.settings.image | image_url: width: 1000 }}"
+                    srcset="
+                      {{ block.settings.image | image_url: width: 600 }} 600w,
+                      {{ block.settings.image | image_url: width: 800 }} 800w,
+                      {{ block.settings.image | image_url: width: 1000 }} 1000w
+                    "
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    width="{{ block.settings.image.width }}"
+                    height="{{ block.settings.image.height }}"
+                    alt="{{ block.settings.image.alt | default: card_label | escape }}"
+                    loading="lazy"
+                  >
+                {%- elsif collection.featured_image != blank -%}
+                  <img
+                    src="{{ collection.featured_image | image_url: width: 1000 }}"
+                    srcset="
+                      {{ collection.featured_image | image_url: width: 600 }} 600w,
+                      {{ collection.featured_image | image_url: width: 800 }} 800w,
+                      {{ collection.featured_image | image_url: width: 1000 }} 1000w
+                    "
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    width="{{ collection.featured_image.width }}"
+                    height="{{ collection.featured_image.height }}"
+                    alt="{{ collection.featured_image.alt | default: card_label | escape }}"
+                    loading="lazy"
+                  >
+                {%- else -%}
+                  <div class="immersive-featured__item-placeholder" aria-hidden="true"></div>
+                {%- endif -%}
+                <div class="immersive-featured__item-reveal">
+                  <span class="immersive-featured__item-tag">New Collection</span>
+                  <span class="immersive-featured__item-view">View Editorial →</span>
+                </div>
               </div>
-            </div>
-            <div class="immersive-featured__item-info">
-              <h3 class="immersive-featured__item-heading">{{ card_label | escape }}</h3>
-              {%- if block.settings.body != blank -%}
-                <div class="immersive-featured__item-body">{{ block.settings.body }}</div>
-              {%- endif -%}
-            </div>
-          </a>
+              <div class="immersive-featured__item-info">
+                <h3 class="immersive-featured__item-heading">{{ card_label | escape }}</h3>
+                {%- if block.settings.body != blank -%}
+                  <div class="immersive-featured__item-body">{{ block.settings.body }}</div>
+                {%- endif -%}
+              </div>
+            </a>
+          {%- endif -%}
         {%- endfor -%}
       </div>
     </div>
@@ -229,20 +235,22 @@
         <div class="immersive-designers__timeline-ghost-label">Select Designer</div>
         <div class="immersive-designers__rail">
           {%- for block in section.blocks -%}
-            {%- assign collection = block.settings.collection -%}
-            <button
-              class="immersive-designers__marker"
-              type="button"
-              role="listitem"
-              data-index="{{ forloop.index0 }}"
-              {%- if collection != blank -%}
-                data-collection-handle="{{ collection.handle }}"
-              {%- endif -%}
-              data-designer-label="{{ block.settings.heading | escape }}"
-              {{ block.shopify_attributes }}
-            >
-              <span class="immersive-designers__marker-label">{{ block.settings.heading | escape }}</span>
-            </button>
+            {%- if block.type == 'designer' -%}
+              {%- assign collection = block.settings.collection -%}
+              <button
+                class="immersive-designers__marker"
+                type="button"
+                role="listitem"
+                data-index="{{ forloop.index0 }}"
+                {%- if collection != blank -%}
+                  data-collection-handle="{{ collection.handle }}"
+                {%- endif -%}
+                data-designer-label="{{ block.settings.heading | escape }}"
+                {{ block.shopify_attributes }}
+              >
+                <span class="immersive-designers__marker-label">{{ block.settings.heading | escape }}</span>
+              </button>
+            {%- endif -%}
           {%- endfor -%}
         </div>
         <div class="immersive-designers__thumb" aria-hidden="true"></div>
@@ -254,59 +262,67 @@
     </div>
   {%- endif -%}
 
-  <div class="immersive-editorial__banners">
-    {%- for block in section.blocks -%}
-      <article
-        class="immersive-editorial__banner immersive-editorial__banner--{{ section.settings.layout | escape }}"
-        data-editorial-layer="{{ block.settings.depth_layer | default: 50 }}"
-        {{ block.shopify_attributes }}
-      >
-        {%- if block.settings.image -%}
-          <div class="immersive-editorial__banner-media">
-            <img
-              src="{{ block.settings.image | image_url: width: 1200 }}"
-              srcset="
-                {{ block.settings.image | image_url: width: 600 }} 600w,
-                {{ block.settings.image | image_url: width: 900 }} 900w,
-                {{ block.settings.image | image_url: width: 1200 }} 1200w
-              "
-              sizes="(max-width: 768px) 100vw, 50vw"
-              width="{{ block.settings.image.width }}"
-              height="{{ block.settings.image.height }}"
-              alt="{{ block.settings.image.alt | escape }}"
-              loading="lazy"
-            >
-            {%- if section.settings.layout == 'designers' and block.settings.logo -%}
-              <img
-                class="immersive-editorial__banner-logo"
-                src="{{ block.settings.logo | image_url: width: 300 }}"
-                width="{{ block.settings.logo.width }}"
-                height="{{ block.settings.logo.height }}"
-                alt="{{ block.settings.logo.alt | escape }}"
-                loading="lazy"
-              >
+  {%- if section.settings.layout == 'custom' -%}
+    <div class="immersive-editorial__banners">
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'banner' -%}
+          <article
+            class="immersive-editorial__banner immersive-editorial__banner--{{ section.settings.layout | escape }}"
+            data-editorial-layer="{{ block.settings.depth_layer | default: 50 }}"
+            {{ block.shopify_attributes }}
+          >
+            {%- if block.settings.image -%}
+              <div class="immersive-editorial__banner-media">
+                <img
+                  src="{{ block.settings.image | image_url: width: 1200 }}"
+                  srcset="
+                    {{ block.settings.image | image_url: width: 600 }} 600w,
+                    {{ block.settings.image | image_url: width: 900 }} 900w,
+                    {{ block.settings.image | image_url: width: 1200 }} 1200w
+                  "
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  width="{{ block.settings.image.width }}"
+                  height="{{ block.settings.image.height }}"
+                  alt="{{ block.settings.image.alt | escape }}"
+                  loading="lazy"
+                >
+                {%- if block.settings.logo -%}
+                  <img
+                    class="immersive-editorial__banner-logo"
+                    src="{{ block.settings.logo | image_url: width: 300 }}"
+                    width="{{ block.settings.logo.width }}"
+                    height="{{ block.settings.logo.height }}"
+                    alt="{{ block.settings.logo.alt | escape }}"
+                    loading="lazy"
+                  >
+                {%- endif -%}
+              </div>
             {%- endif -%}
-          </div>
+            <div class="immersive-editorial__banner-content">
+              <h3 class="immersive-editorial__banner-heading">{{ block.settings.heading | escape }}</h3>
+              {%- if block.settings.body != blank -%}
+                <div class="immersive-editorial__banner-body">{{ block.settings.body }}</div>
+              {%- endif -%}
+              {%- if block.settings.cta_label != blank and block.settings.cta_url != blank -%}
+                <a class="immersive-editorial__cta" href="{{ block.settings.cta_url }}">
+                  {{- block.settings.cta_label | escape -}}
+                </a>
+              {%- endif -%}
+              {%- if block.settings.collection != blank -%}
+                <a
+                  class="immersive-editorial__collection-link"
+                  href="{{ block.settings.collection.url }}"
+                  data-collection="{{ block.settings.collection.handle | escape }}"
+                >
+                  {{- block.settings.collection.title | escape -}}
+                </a>
+              {%- endif -%}
+            </div>
+          </article>
         {%- endif -%}
-        <div class="immersive-editorial__banner-content">
-          <h3 class="immersive-editorial__banner-heading">{{ block.settings.heading | escape }}</h3>
-          {%- if block.settings.body != blank -%}
-            <div class="immersive-editorial__banner-body">{{ block.settings.body }}</div>
-          {%- endif -%}
-          {%- if block.settings.cta_label != blank and block.settings.cta_url != blank -%}
-            <a class="immersive-editorial__cta" href="{{ block.settings.cta_url }}">
-              {{- block.settings.cta_label | escape -}}
-            </a>
-          {%- endif -%}
-          {%- if block.settings.collection != blank -%}
-            <a class="immersive-editorial__collection-link" href="{{ block.settings.collection.url }}">
-              {{- block.settings.collection.title | escape -}}
-            </a>
-          {%- endif -%}
-        </div>
-      </article>
-    {%- endfor -%}
-  </div>
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
 
   {%- if section.settings.layout == 'gallery' -%}
     <div
@@ -315,56 +331,58 @@
       aria-label="{{ section.settings.hero_heading | default: 'Collections' | escape }}"
     >
       {%- for block in section.blocks -%}
-        {%- assign collection = block.settings.collection -%}
-        {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
-        {%- assign card_label = block.settings.heading | default: collection.title -%}
-        <a
-          class="immersive-editorial__gallery-card"
-          href="{{ card_url }}"
-          role="listitem"
-          aria-label="{{ card_label | escape }}"
-          {%- if collection != blank -%}
-            data-collection="{{ collection.handle }}"
-          {%- endif -%}
-          {{ block.shopify_attributes }}
-        >
-          <div class="immersive-editorial__gallery-card-media">
-            {%- if block.settings.image != blank -%}
-              <img
-                src="{{ block.settings.image | image_url: width: 600 }}"
-                srcset="
-                  {{ block.settings.image | image_url: width: 400 }} 400w,
-                  {{ block.settings.image | image_url: width: 600 }} 600w,
-                  {{ block.settings.image | image_url: width: 800 }} 800w
-                "
-                sizes="280px"
-                width="{{ block.settings.image.width }}"
-                height="{{ block.settings.image.height }}"
-                alt="{{ block.settings.image.alt | default: card_label | escape }}"
-                loading="lazy"
-              >
-            {%- elsif collection.featured_image != blank -%}
-              <img
-                src="{{ collection.featured_image | image_url: width: 600 }}"
-                srcset="
-                  {{ collection.featured_image | image_url: width: 400 }} 400w,
-                  {{ collection.featured_image | image_url: width: 600 }} 600w,
-                  {{ collection.featured_image | image_url: width: 800 }} 800w
-                "
-                sizes="280px"
-                width="{{ collection.featured_image.width }}"
-                height="{{ collection.featured_image.height }}"
-                alt="{{ collection.featured_image.alt | default: card_label | escape }}"
-                loading="lazy"
-              >
-            {%- else -%}
-              <div class="immersive-editorial__gallery-card-placeholder" aria-hidden="true"></div>
+        {%- if block.type == 'gallery_card' -%}
+          {%- assign collection = block.settings.collection -%}
+          {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+          {%- assign card_label = block.settings.heading | default: collection.title -%}
+          <a
+            class="immersive-editorial__gallery-card"
+            href="{{ card_url }}"
+            role="listitem"
+            aria-label="{{ card_label | escape }}"
+            {%- if collection != blank -%}
+              data-collection="{{ collection.handle }}"
             {%- endif -%}
-          </div>
-          <div class="immersive-editorial__gallery-card-label">
-            <span>{{ card_label | escape }}</span>
-          </div>
-        </a>
+            {{ block.shopify_attributes }}
+          >
+            <div class="immersive-editorial__gallery-card-media">
+              {%- if block.settings.image != blank -%}
+                <img
+                  src="{{ block.settings.image | image_url: width: 600 }}"
+                  srcset="
+                    {{ block.settings.image | image_url: width: 400 }} 400w,
+                    {{ block.settings.image | image_url: width: 600 }} 600w,
+                    {{ block.settings.image | image_url: width: 800 }} 800w
+                  "
+                  sizes="280px"
+                  width="{{ block.settings.image.width }}"
+                  height="{{ block.settings.image.height }}"
+                  alt="{{ block.settings.image.alt | default: card_label | escape }}"
+                  loading="lazy"
+                >
+              {%- elsif collection.featured_image != blank -%}
+                <img
+                  src="{{ collection.featured_image | image_url: width: 600 }}"
+                  srcset="
+                    {{ collection.featured_image | image_url: width: 400 }} 400w,
+                    {{ collection.featured_image | image_url: width: 600 }} 600w,
+                    {{ collection.featured_image | image_url: width: 800 }} 800w
+                  "
+                  sizes="280px"
+                  width="{{ collection.featured_image.width }}"
+                  height="{{ collection.featured_image.height }}"
+                  alt="{{ collection.featured_image.alt | default: card_label | escape }}"
+                  loading="lazy"
+                >
+              {%- else -%}
+                <div class="immersive-editorial__gallery-card-placeholder" aria-hidden="true"></div>
+              {%- endif -%}
+            </div>
+            <div class="immersive-editorial__gallery-card-label">
+              <span>{{ card_label | escape }}</span>
+            </div>
+          </a>
+        {%- endif -%}
       {%- endfor -%}
     </div>
   {%- endif -%}
@@ -1330,14 +1348,14 @@
     {
       "type": "select",
       "id": "layout",
-      "default": "collections",
+      "default": "custom",
       "label": "t:sections.immersive_editorial.settings.layout.label",
       "options": [
         { "value": "designers", "label": "t:sections.immersive_editorial.settings.layout.options__1.label" },
-        { "value": "collections", "label": "t:sections.immersive_editorial.settings.layout.options__2.label" },
-        { "value": "occasions", "label": "t:sections.immersive_editorial.settings.layout.options__3.label" },
+        { "value": "occasions", "label": "t:sections.immersive_editorial.settings.layout.options__2.label" },
+        { "value": "featured_collections", "label": "t:sections.immersive_editorial.settings.layout.options__3.label" },
         { "value": "gallery", "label": "t:sections.immersive_editorial.settings.layout.options__4.label" },
-        { "value": "featured_collections", "label": "t:sections.immersive_editorial.settings.layout.options__5.label" }
+        { "value": "custom", "label": "t:sections.immersive_editorial.settings.layout.options__5.label" }
       ]
     },
     {
@@ -1411,19 +1429,161 @@
           "label": "t:sections.immersive_editorial.blocks.banner.settings.depth_layer.label"
         }
       ]
+    },
+    {
+      "type": "occasion_card",
+      "name": "t:sections.immersive_editorial.blocks.occasion_card.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_editorial.blocks.occasion_card.settings.image.label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_editorial.blocks.occasion_card.settings.heading.label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_editorial.blocks.occasion_card.settings.body.label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_editorial.blocks.occasion_card.settings.collection.label"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_editorial.blocks.occasion_card.settings.cta_url.label"
+        }
+      ]
+    },
+    {
+      "type": "featured_item",
+      "name": "t:sections.immersive_editorial.blocks.featured_item.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_editorial.blocks.featured_item.settings.image.label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_editorial.blocks.featured_item.settings.heading.label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_editorial.blocks.featured_item.settings.body.label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_editorial.blocks.featured_item.settings.collection.label"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_editorial.blocks.featured_item.settings.cta_url.label"
+        }
+      ]
+    },
+    {
+      "type": "designer",
+      "name": "t:sections.immersive_editorial.blocks.designer.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_editorial.blocks.designer.settings.image.label"
+        },
+        {
+          "type": "image_picker",
+          "id": "logo",
+          "label": "t:sections.immersive_editorial.blocks.designer.settings.logo.label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_editorial.blocks.designer.settings.heading.label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_editorial.blocks.designer.settings.body.label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_editorial.blocks.designer.settings.collection.label"
+        }
+      ]
+    },
+    {
+      "type": "gallery_card",
+      "name": "t:sections.immersive_editorial.blocks.gallery_card.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_editorial.blocks.gallery_card.settings.image.label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_editorial.blocks.gallery_card.settings.heading.label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_editorial.blocks.gallery_card.settings.collection.label"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_editorial.blocks.gallery_card.settings.cta_url.label"
+        }
+      ]
     }
   ],
   "presets": [
     {
-      "name": "t:sections.immersive_editorial.presets.name",
-      "settings": {
-        "room_key": "featured_collections",
-        "layout": "collections"
-      },
+      "name": "t:sections.immersive_editorial.presets.designer_houses.name",
+      "settings": { "room_key": "designer_houses", "layout": "designers" },
       "blocks": [
-        { "type": "banner", "settings": { "heading": "Collection One", "depth_layer": 30 } },
-        { "type": "banner", "settings": { "heading": "Collection Two", "depth_layer": 50 } },
-        { "type": "banner", "settings": { "heading": "Collection Three", "depth_layer": 70 } }
+        { "type": "designer", "settings": { "heading": "Suffuse" } },
+        { "type": "designer", "settings": { "heading": "Soraya" } },
+        { "type": "designer", "settings": { "heading": "Saad Bin Shahzad" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_editorial.presets.occasions.name",
+      "settings": { "room_key": "occasions", "layout": "occasions" },
+      "blocks": [
+        { "type": "occasion_card", "settings": { "heading": "Eid Collection" } },
+        { "type": "occasion_card", "settings": { "heading": "Bridal & Mehndi" } },
+        { "type": "occasion_card", "settings": { "heading": "Luxury Formals" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_editorial.presets.featured_collections.name",
+      "settings": { "room_key": "featured_collections", "layout": "featured_collections" },
+      "blocks": [
+        { "type": "featured_item", "settings": { "heading": "Collection One" } },
+        { "type": "featured_item", "settings": { "heading": "Collection Two" } },
+        { "type": "featured_item", "settings": { "heading": "Collection Three" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_editorial.presets.custom_banners.name",
+      "settings": { "room_key": "featured_collections", "layout": "custom" },
+      "blocks": [
+        { "type": "banner", "settings": { "heading": "Banner One", "depth_layer": 30 } },
+        { "type": "banner", "settings": { "heading": "Banner Two", "depth_layer": 50 } }
       ]
     }
   ]

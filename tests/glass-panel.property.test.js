@@ -1206,14 +1206,14 @@ describe('Property 12: Buy Now Button Replacement', () => {
    * **Validates: Requirements 4.4**
    *
    * The add-to-cart button uses the standard Shopify `name="add"` attribute
-   * and the `products.product.add_to_cart` translation key. This test verifies
-   * the button is present and correctly structured in both templates.
+   * and the immersive `sections.immersive_store.add_to_edit` translation key
+   * (updated from `products.product.add_to_cart` as part of microcopy polish).
    *
    * The template structure is static — it does not change based on product data.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
   test(// Feature: immersive-store-glass-panel-improvements, Property 12: Buy Now Button Replacement
-  'add-to-cart button uses name="add" and add_to_cart translation key in both card and detail view for any product', () => {
+  'add-to-cart button uses name="add" and add_to_edit translation key in both card and detail view for any product', () => {
     const cardSource = fs.readFileSync(LIQUID_PATH, 'utf8');
     const detailSource = fs.readFileSync(GLASS_PRODUCT_PATH, 'utf8');
 
@@ -1233,11 +1233,12 @@ describe('Property 12: Buy Now Button Replacement', () => {
           const detailHasAdd = /name\s*=\s*["']add["']/.test(detailSource);
           if (!detailHasAdd) return false;
 
-          // 2. Both templates must use the add_to_cart translation key
-          const cardHasKey = /products\.product\.add_to_cart/.test(cardSource);
+          // 2. Both templates must use the add_to_edit translation key
+          // (updated from products.product.add_to_cart as part of microcopy polish)
+          const cardHasKey = /sections\.immersive_store\.add_to_edit/.test(cardSource);
           if (!cardHasKey) return false;
 
-          const detailHasKey = /products\.product\.add_to_cart/.test(detailSource);
+          const detailHasKey = /sections\.immersive_store\.add_to_edit/.test(detailSource);
           if (!detailHasKey) return false;
 
           return true;
@@ -1249,33 +1250,19 @@ describe('Property 12: Buy Now Button Replacement', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Property 14: Product Detail Navigation
-//
-// "For any product card click event, the glass panel SHALL trigger a fetch
-//  request and update its content to display product details."
-//
-// Validates: Requirements 6.1
+// Properties 14 & 15 removed — tested stale ?section_id= URL pattern.
+// The actual implementation uses ?sections= (Section Rendering API).
+// Covered by tests/section-rendering.unit.test.js.
 // ---------------------------------------------------------------------------
 
-/**
- * Minimal reproduction of the product card click handler and openProductPanel
- * logic from dawn/assets/immersive-store.js, adapted for isolated testing.
- *
- * The real implementation uses a global panel element and fetchWithCache.
- * Here we wire up the same logic against a DOM panel and a mocked fetch.
- */
+// ---------------------------------------------------------------------------
+// Helpers for Properties 16 & 17 (use correct ?sections= URL pattern)
+// ---------------------------------------------------------------------------
 
-/**
- * Creates a minimal glass panel DOM structure with a content area and a
- * product card child element carrying the given product handle.
- *
- * @param {string} productHandle
- * @param {string} [collectionHandle]
- * @returns {{ panel: HTMLElement, card: HTMLElement }}
- */
 function createPanelWithCard(productHandle, collectionHandle) {
   var panel = document.createElement('div');
   panel.id = 'glass-panel-test';
+  panel.setAttribute('data-msg-load-error', 'Unable to load content.');
 
   var contentArea = document.createElement('div');
   contentArea.className = 'immersive-store__panel-content';
@@ -1293,32 +1280,26 @@ function createPanelWithCard(productHandle, collectionHandle) {
   return { panel: panel, card: card };
 }
 
-/**
- * Minimal reproduction of openProductPanel from immersive-store.js.
- * Accepts an injected fetch function so tests can mock it.
- *
- * @param {string} productHandle
- * @param {string|null} collectionHandle
- * @param {HTMLElement} panel
- * @param {Function} fetchFn  - injected fetch (returns Promise<Response>)
- * @returns {Promise<void>}
- */
+// Uses correct ?sections= URL pattern (Section Rendering API)
 function openProductPanelTestable(productHandle, collectionHandle, panel, fetchFn) {
   panel.classList.remove('hidden');
 
-  var fetchUrl = '/products/' + productHandle + '?section_id=glass-product';
+  var path = '/products/' + productHandle;
+  var url = path + '?sections=' + encodeURIComponent('glass-product');
   if (collectionHandle) {
-    fetchUrl += '&collection_handle=' + collectionHandle;
+    url += '&collection_handle=' + encodeURIComponent(collectionHandle);
   }
 
-  return fetchFn(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  return fetchFn(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
     .then(function (response) {
       if (!response.ok) {
         throw new Error('Network response was not ok: ' + response.status);
       }
-      return response.text();
+      return response.json();
     })
-    .then(function (html) {
+    .then(function (json) {
+      var html = json && json['glass-product'];
+      if (!html) throw new Error('Section not found in response');
       var contentArea = panel.querySelector('.immersive-store__panel-content');
       if (contentArea) {
         contentArea.innerHTML = html;
@@ -1329,15 +1310,6 @@ function openProductPanelTestable(productHandle, collectionHandle, panel, fetchF
     });
 }
 
-/**
- * Simulates a product card click by finding the card inside the panel and
- * dispatching a click event, then calling openProductPanelTestable.
- *
- * @param {HTMLElement} panel
- * @param {HTMLElement} card
- * @param {Function} fetchFn
- * @returns {Promise<void>}
- */
 function simulateCardClick(panel, card, fetchFn) {
   var handle = card.getAttribute('data-product-handle');
   var collectionHandle = card.getAttribute('data-collection-handle') || null;
@@ -1345,265 +1317,7 @@ function simulateCardClick(panel, card, fetchFn) {
   return openProductPanelTestable(handle, collectionHandle, panel, fetchFn);
 }
 
-describe('Property 14: Product Detail Navigation', () => {
-  afterEach(() => {
-    document.body.innerHTML = '';
-    jest.restoreAllMocks();
-  });
-
-  /**
-   * **Validates: Requirements 6.1**
-   *
-   * For any product card click event (arbitrary product handle and optional
-   * collection handle), the glass panel SHALL trigger a fetch request.
-   *
-   * We verify:
-   * 1. fetch is called exactly once per card click.
-   * 2. The fetch URL contains the product handle.
-   * 3. The panel content area is updated with the fetched HTML.
-   *
-   * We use fast-check to confirm this property holds across 100 arbitrary
-   * product handle / collection handle combinations.
-   */
-  test(// Feature: immersive-store-glass-panel-improvements, Property 14: Product Detail Navigation
-  'clicking a product card triggers a fetch request and updates panel content for any product handle', () => {
-    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
-    const htmlContentArb = fc.string({ minLength: 10, maxLength: 200 }).map(function (s) {
-      return '<div class="product-detail">' + s + '</div>';
-    });
-
-    return fc.assert(
-      fc.asyncProperty(
-        productHandleArb,
-        collectionHandleArb,
-        htmlContentArb,
-        function (productHandle, collectionHandle, fakeHtml) {
-          document.body.innerHTML = '';
-
-          var fetchCalls = [];
-
-          // Mock fetch: records the URL called and returns fakeHtml
-          var mockFetch = function (url, options) {
-            fetchCalls.push(url);
-            return Promise.resolve({
-              ok: true,
-              text: function () {
-                return Promise.resolve(fakeHtml);
-              },
-            });
-          };
-
-          var refs = createPanelWithCard(productHandle, collectionHandle);
-
-          return simulateCardClick(refs.panel, refs.card, mockFetch).then(function () {
-            // 1. fetch must have been called exactly once
-            if (fetchCalls.length !== 1) return false;
-
-            // 2. The fetch URL must contain the product handle
-            var calledUrl = fetchCalls[0];
-            if (calledUrl.indexOf(productHandle) === -1) return false;
-
-            // 3. The panel content area must contain the fetched HTML
-            var contentArea = refs.panel.querySelector('.immersive-store__panel-content');
-            if (!contentArea) return false;
-            if (contentArea.innerHTML.indexOf('product-detail') === -1) return false;
-
-            // 4. The panel must have data-open="true" after navigation
-            if (refs.panel.getAttribute('data-open') !== 'true') return false;
-
-            return true;
-          });
-        },
-      ),
-      { numRuns: 100, verbose: true },
-    );
-  });
-
-  /**
-   * **Validates: Requirements 6.1**
-   *
-   * For any product card click, the fetch URL SHALL include the
-   * `section_id=glass-product` query parameter so Shopify renders the
-   * correct section template.
-   */
-  test(// Feature: immersive-store-glass-panel-improvements, Property 14: Product Detail Navigation
-  'fetch URL always includes section_id=glass-product for any product handle', () => {
-    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
-
-    return fc.assert(
-      fc.asyncProperty(productHandleArb, collectionHandleArb, function (productHandle, collectionHandle) {
-        document.body.innerHTML = '';
-
-        var fetchCalls = [];
-
-        var mockFetch = function (url, options) {
-          fetchCalls.push(url);
-          return Promise.resolve({
-            ok: true,
-            text: function () {
-              return Promise.resolve('<div>product</div>');
-            },
-          });
-        };
-
-        var refs = createPanelWithCard(productHandle, collectionHandle);
-
-        return simulateCardClick(refs.panel, refs.card, mockFetch).then(function () {
-          if (fetchCalls.length !== 1) return false;
-          var calledUrl = fetchCalls[0];
-          return calledUrl.indexOf('section_id=glass-product') !== -1;
-        });
-      }),
-      { numRuns: 100, verbose: true },
-    );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Property 15: Product Detail URL Pattern
-//
-// "For any product detail fetch request, the URL SHALL match the pattern
-//  `/products/{handle}?section_id=glass-product` where {handle} is the
-//  product handle."
-//
-// Note: The design doc describes `/?section_id=glass-product&product_handle={handle}`
-// but the actual implementation in immersive-store.js uses
-// `/products/{handle}?section_id=glass-product`. This test validates the
-// actual URL pattern used in the implementation.
-//
-// Validates: Requirements 6.2
-// ---------------------------------------------------------------------------
-
-/**
- * Minimal reproduction of the URL construction logic from openProductPanel
- * in dawn/assets/immersive-store.js.
- *
- * @param {string} productHandle
- * @param {string|null} collectionHandle
- * @returns {string} The fetch URL
- */
-function buildProductDetailUrl(productHandle, collectionHandle) {
-  var fetchUrl = '/products/' + productHandle + '?section_id=glass-product';
-  if (collectionHandle) {
-    fetchUrl += '&collection_handle=' + collectionHandle;
-  }
-  return fetchUrl;
-}
-
-describe('Property 15: Product Detail URL Pattern', () => {
-  afterEach(() => {
-    document.body.innerHTML = '';
-    jest.restoreAllMocks();
-  });
-
-  /**
-   * **Validates: Requirements 6.2**
-   *
-   * For any product handle, the fetch URL constructed by openProductPanel
-   * SHALL match the pattern `/products/{handle}?section_id=glass-product`.
-   *
-   * Specifically:
-   * 1. The URL path starts with `/products/` followed by the product handle.
-   * 2. The URL contains the query parameter `section_id=glass-product`.
-   * 3. The product handle appears in the URL path (not as a query parameter).
-   *
-   * We use fast-check to confirm this property holds across 100 arbitrary
-   * product handles.
-   *
-   * Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
-   */
-  test(// Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
-  'product detail fetch URL matches /products/{handle}?section_id=glass-product for any product handle', () => {
-    const productHandleArb = fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/);
-    const collectionHandleArb = fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null });
-
-    return fc.assert(
-      fc.asyncProperty(productHandleArb, collectionHandleArb, function (productHandle, collectionHandle) {
-        document.body.innerHTML = '';
-
-        var fetchCalls = [];
-
-        var mockFetch = function (url, options) {
-          fetchCalls.push(url);
-          return Promise.resolve({
-            ok: true,
-            text: function () {
-              return Promise.resolve('<div>product</div>');
-            },
-          });
-        };
-
-        var refs = createPanelWithCard(productHandle, collectionHandle);
-
-        return simulateCardClick(refs.panel, refs.card, mockFetch).then(function () {
-          if (fetchCalls.length !== 1) return false;
-          var calledUrl = fetchCalls[0];
-
-          // 1. URL must start with /products/ followed by the handle
-          var expectedPathPrefix = '/products/' + productHandle;
-          if (calledUrl.indexOf(expectedPathPrefix) !== 0) return false;
-
-          // 2. URL must contain section_id=glass-product
-          if (calledUrl.indexOf('section_id=glass-product') === -1) return false;
-
-          // 3. The handle must appear in the path (before the '?')
-          var pathPart = calledUrl.split('?')[0];
-          if (pathPart !== '/products/' + productHandle) return false;
-
-          return true;
-        });
-      }),
-      { numRuns: 100, verbose: true },
-    );
-  });
-
-  /**
-   * **Validates: Requirements 6.2**
-   *
-   * For any product handle, the URL SHALL contain both:
-   * - The product handle in the path segment `/products/{handle}`
-   * - The query parameter `section_id=glass-product`
-   *
-   * This test verifies the URL structure directly using the URL construction
-   * logic extracted from immersive-store.js, confirming the pattern holds
-   * for all valid product handles.
-   *
-   * Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
-   */
-  test(// Feature: immersive-store-glass-panel-improvements, Property 15: Product Detail URL Pattern
-  'URL contains both section_id=glass-product and product handle in path for any handle', () => {
-    fc.assert(
-      fc.property(
-        fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/),
-        fc.option(fc.stringMatching(/^[a-z][a-z0-9-]{0,49}$/), { nil: null }),
-        function (productHandle, collectionHandle) {
-          var url = buildProductDetailUrl(productHandle, collectionHandle);
-
-          // The URL must contain section_id=glass-product
-          if (url.indexOf('section_id=glass-product') === -1) return false;
-
-          // The product handle must appear in the URL path (before '?')
-          var pathPart = url.split('?')[0];
-          if (pathPart.indexOf(productHandle) === -1) return false;
-
-          // The path must follow the /products/{handle} pattern
-          var expectedPath = '/products/' + productHandle;
-          if (pathPart !== expectedPath) return false;
-
-          // The handle must NOT appear as a query parameter named product_handle
-          // (that would be the alternative pattern - we validate the actual implementation)
-          var queryPart = url.split('?')[1] || '';
-          if (queryPart.indexOf('product_handle=') !== -1) return false;
-
-          return true;
-        },
-      ),
-      { numRuns: 100, verbose: true },
-    );
-  });
-});
+// Error-handling variant used by Property 16 — defined below at original location
 
 // ---------------------------------------------------------------------------
 // Property 17: Product Detail Display Performance
@@ -1619,7 +1333,6 @@ describe('Property 17: Product Detail Display Performance', () => {
     document.body.innerHTML = '';
     jest.restoreAllMocks();
   });
-
   /**
    * **Validates: Requirements 6.5**
    *
@@ -1653,8 +1366,8 @@ describe('Property 17: Product Detail Display Performance', () => {
           var mockFetch = function (url, options) {
             return Promise.resolve({
               ok: true,
-              text: function () {
-                return Promise.resolve(fakeHtml);
+              json: function () {
+                return Promise.resolve({ 'glass-product': fakeHtml });
               },
             });
           };
@@ -1720,8 +1433,8 @@ describe('Property 17: Product Detail Display Performance', () => {
               setTimeout(function () {
                 resolve({
                   ok: true,
-                  text: function () {
-                    return Promise.resolve(fakeHtml);
+                  json: function () {
+                    return Promise.resolve({ 'glass-product': fakeHtml });
                   },
                 });
               }, fetchDelay);

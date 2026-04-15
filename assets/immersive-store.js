@@ -431,6 +431,51 @@ function preloadRoom(roomKey) {
   loadRoomTextures(roomData, function () {}); // load silently into cache
 }
 
+function showWelcomeToast() {
+  try {
+    if (localStorage.getItem(ONBOARDING_KEY)) return;
+  } catch (e) {}
+  var section = document.querySelector('[data-msg-welcome-toast]');
+  var msg = section && section.getAttribute('data-msg-welcome-toast');
+  if (!msg) return;
+  var closeLabel = 'Close';
+  var wrapper = document.querySelector('.immersive-store__canvas-wrapper');
+  if (!wrapper) return;
+  var toast = document.createElement('div');
+  toast.className = 'immersive-welcome-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  if (!reduceMotion) toast.classList.add('immersive-welcome-toast--animate-in');
+  toast.innerHTML =
+    '<span class="immersive-welcome-toast__text">' +
+    msg +
+    '</span>' +
+    '<button type="button" class="immersive-welcome-toast__close" aria-label="' +
+    closeLabel +
+    '">×</button>';
+  wrapper.appendChild(toast);
+  var timer = setTimeout(function () {
+    _dismissWelcomeToast(toast);
+  }, 5000);
+  toast.querySelector('.immersive-welcome-toast__close').addEventListener('click', function () {
+    clearTimeout(timer);
+    _dismissWelcomeToast(toast);
+  });
+}
+
+function _dismissWelcomeToast(toast) {
+  if (!toast || !toast.parentNode) return;
+  if (reduceMotion) {
+    toast.remove();
+    return;
+  }
+  toast.classList.remove('immersive-welcome-toast--animate-in');
+  toast.classList.add('immersive-welcome-toast--animate-out');
+  setTimeout(function () {
+    if (toast.parentNode) toast.remove();
+  }, 300);
+}
+
 function initImmersiveScene() {
   var canvas = document.getElementById(immersiveCanvasId);
   var uiLayer = document.getElementById(uiLayerId);
@@ -846,6 +891,20 @@ function animate() {
   }
 }
 
+function updateRoomBadge(roomKey) {
+  var badge = document.getElementById('immersive-room-badge');
+  if (!badge) {
+    console.warn('[Immersive] Room badge element not found for room:', roomKey);
+    return;
+  }
+  var nameEl = badge.querySelector('[data-room-badge-name]');
+  var guidanceEl = badge.querySelector('[data-room-badge-guidance]');
+  var name = badge.getAttribute('data-room-name-' + roomKey) || roomKey;
+  var guidance = badge.getAttribute('data-room-guidance-' + roomKey) || '';
+  if (nameEl) nameEl.textContent = name;
+  if (guidanceEl) guidanceEl.textContent = guidance;
+}
+
 function goToRoom(roomKey, initial) {
   if (transitioning && !initial) return;
   var roomData = getRoomTextureUrls(roomKey);
@@ -866,10 +925,28 @@ function goToRoom(roomKey, initial) {
   if (!uiLayer) return;
 
   if (!initial) {
-    uiLayer.style.transition = 'opacity 0.3s ease';
-    uiLayer.style.opacity = '0';
-  }
+    // Phase 1: Set transitioning = true immediately to suppress hotspot clicks
+    transitioning = true;
 
+    if (reduceMotion) {
+      // Reduced motion: skip CSS fade, apply synchronously
+      uiLayer.style.transition = '';
+      uiLayer.style.opacity = '0';
+      _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+    } else {
+      // Phase 1: CSS fade-out of UI layer (250ms) before WebGL crossfade
+      uiLayer.style.transition = 'opacity 0.25s ease-in-out';
+      uiLayer.style.opacity = '0';
+      setTimeout(function () {
+        _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+      }, 250);
+    }
+  } else {
+    _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+  }
+}
+
+function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
   loadRoomTextures(roomData, function (baseTexture, depthTexture) {
     if (initial || currentRoomKey === null) {
       uniforms.uTexture1.value = baseTexture;
@@ -877,11 +954,14 @@ function goToRoom(roomKey, initial) {
       uniforms.uTexture2.value = baseTexture;
       uniforms.uDepth2.value = depthTexture;
       currentRoomKey = roomKey;
+      uiLayer.style.transition = '';
       uiLayer.style.opacity = '1';
       renderHotspots(roomKey);
+      updateRoomBadge(roomKey);
       var tagline = document.getElementById('immersive-tagline');
       if (tagline) tagline.classList.remove('is-visible');
       hideLoader();
+      showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
       return;
     }
@@ -892,7 +972,7 @@ function goToRoom(roomKey, initial) {
     uniforms.uTexture2.value = baseTexture;
     uniforms.uDepth2.value = depthTexture;
 
-    transitioning = true;
+    // Phase 2: WebGL crossfade
     var duration = reduceMotion ? 0 : 800;
     var start = performance.now();
     var startProgress = uniforms.uTransitionProgress.value;
@@ -913,12 +993,27 @@ function goToRoom(roomKey, initial) {
         uniforms.uDepth1.value = uniforms.uDepth2.value;
         uniforms.uTransitionProgress.value = 0;
         currentRoomKey = roomKey;
-        transitioning = false;
+
+        // Phase 3: Render new hotspots and badge, then fade-in UI layer
         renderHotspots(roomKey);
+        updateRoomBadge(roomKey);
         var tagline = document.getElementById('immersive-tagline');
         if (tagline) tagline.classList.remove('is-visible');
-        uiLayer.style.opacity = '1';
         trackImmersiveEvent('room_viewed', { room_key: roomKey });
+
+        if (reduceMotion) {
+          uiLayer.style.transition = '';
+          uiLayer.style.opacity = '1';
+          transitioning = false;
+        } else {
+          // Phase 3: CSS fade-in of UI layer (250ms) after WebGL crossfade
+          uiLayer.style.transition = 'opacity 0.25s ease-in-out';
+          uiLayer.style.opacity = '1';
+          // Allow hotspot clicks again after fade-in begins
+          setTimeout(function () {
+            transitioning = false;
+          }, 250);
+        }
       }
     }
 
@@ -1057,22 +1152,80 @@ function renderHotspots(roomKey) {
   var uiLayer = document.getElementById(uiLayerId);
   if (!room || !uiLayer) return;
 
+  // Keep top-of-scene editorial hotspots below the fixed header so they remain clickable.
+  function getEditorialSafeMinYPercent() {
+    var header = document.querySelector('.immersive-header');
+    if (!header) return null;
+    var headerRect = header.getBoundingClientRect();
+    var layerRect = uiLayer.getBoundingClientRect();
+    if (!layerRect || !layerRect.height) return null;
+    var safeTopPx = headerRect.bottom + 8; // small breathing room below header edge
+    var safeTopRelativePx = safeTopPx - layerRect.top;
+    var minY = (safeTopRelativePx / layerRect.height) * 100;
+    return Math.max(0, Math.min(95, minY));
+  }
+
   function render() {
     uiLayer.innerHTML = '';
     _activeHotspots = [];
+    var editorialMinYPercent = getEditorialSafeMinYPercent();
 
-    room.hotspots.forEach(function (hotspot) {
+    var relevantRooms = getRelevantRooms();
+    var uiLayerEl = document.getElementById(uiLayerId);
+    var basedOnSavesLabel = (uiLayerEl && uiLayerEl.getAttribute('data-msg-based-on-saves')) || '';
+
+    // Sort hotspots by reading order: y ascending (primary), x ascending (secondary),
+    // using a 10-point row-grouping threshold. Do not mutate the original array.
+    var sortedHotspots = room.hotspots.slice().sort(function (a, b) {
+      var ay = usesMobileImg && a.mobileY != null ? a.mobileY : a.y;
+      var by = usesMobileImg && b.mobileY != null ? b.mobileY : b.y;
+      var ax = usesMobileImg && a.mobileX != null ? a.mobileX : a.x;
+      var bx = usesMobileImg && b.mobileX != null ? b.mobileX : b.x;
+      // Group into rows with a 10-point threshold
+      if (Math.abs(ay - by) >= 10) return ay - by;
+      return ax - bx;
+    });
+
+    sortedHotspots.forEach(function (hotspot) {
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'immersive-hotspot';
+      button.setAttribute('tabindex', '0');
       button.setAttribute('aria-label', hotspot.label);
       var srSpan = document.createElement('span');
       srSpan.className = 'visually-hidden';
       srSpan.textContent = hotspot.label;
       button.appendChild(srSpan);
+
+      // Ring affordance
+      var ringSpan = document.createElement('span');
+      ringSpan.className = 'immersive-hotspot__ring';
+      ringSpan.setAttribute('aria-hidden', 'true');
+      button.appendChild(ringSpan);
+
+      // Label affordance — only when label is non-empty and non-whitespace
+      if (hotspot.label && hotspot.label.trim()) {
+        var labelSpan = document.createElement('span');
+        labelSpan.className = 'immersive-hotspot__label';
+        labelSpan.setAttribute('aria-hidden', 'true');
+        labelSpan.textContent = hotspot.label;
+        button.appendChild(labelSpan);
+      }
+
+      // Personalization indicator — shown when this hotspot targets a relevant room
+      if (hotspot.targetRoom && relevantRooms[hotspot.targetRoom] && basedOnSavesLabel) {
+        var indicator = document.createElement('span');
+        indicator.className = 'immersive-hotspot__personalization';
+        indicator.setAttribute('aria-label', basedOnSavesLabel);
+        indicator.textContent = basedOnSavesLabel;
+        button.appendChild(indicator);
+      }
       button.style.position = 'absolute';
       var posX = usesMobileImg && hotspot.mobileX != null ? hotspot.mobileX : hotspot.x;
       var posY = usesMobileImg && hotspot.mobileY != null ? hotspot.mobileY : hotspot.y;
+      if (hotspot.targetEditorialRoom && editorialMinYPercent !== null && posY < editorialMinYPercent) {
+        posY = editorialMinYPercent;
+      }
       button.style.left = posX + '%';
       button.style.top = posY + '%';
       button.style.transform = 'translate(-50%, -50%)';
@@ -1145,23 +1298,137 @@ function renderHotspots(roomKey) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Open a panel/overlay with consistent behavior
+// Focus management helpers for dialogs/panels
 // ─────────────────────────────────────────────────────────────
-// Opens a panel, sets up focus trap, applies CSS classes, and
-// handles ARIA attributes. Returns the trigger element for focus restoration.
+
+var FOCUSABLE_SELECTORS = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
+/**
+ * Moves focus into the panel — to the close button if present,
+ * otherwise to the first focusable element.
+ * Also sets up Escape key handling and Tab focus trap.
+ */
+function openDialogFocus(panel, triggerEl) {
+  if (!panel) return;
+
+  // Store trigger for restoration on close
+  panel._panelTrigger = triggerEl || null;
+
+  // Focus the close button first, then fall back to first focusable element
+  var closeBtn = panel.querySelector('.immersive-store__panel-close');
+  var firstFocusable = closeBtn || panel.querySelector(FOCUSABLE_SELECTORS);
+
+  if (firstFocusable) {
+    requestAnimationFrame(function () {
+      firstFocusable.focus();
+    });
+  }
+
+  // Escape key closes the panel
+  if (!panel._onEscapeKey) {
+    panel._onEscapeKey = function (e) {
+      if (e.key === 'Escape') closePanel(panel);
+    };
+    panel.addEventListener('keydown', panel._onEscapeKey);
+  }
+
+  // Tab focus trap — keep focus cycling within the panel
+  if (!panel._onTabKey) {
+    panel._onTabKey = function (e) {
+      if (e.key !== 'Tab') return;
+      var focusable = Array.from(panel.querySelectorAll(FOCUSABLE_SELECTORS)).filter(function (el) {
+        return !el.disabled && el.offsetParent !== null;
+      });
+      if (focusable.length === 0) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    panel.addEventListener('keydown', panel._onTabKey);
+  }
+}
+
+/**
+ * Restores focus to the element that triggered the panel open.
+ * Cleans up Escape and Tab key listeners.
+ */
+function closeDialogFocus(panel, triggerEl) {
+  if (!panel) return;
+
+  // Remove key listeners
+  if (panel._onEscapeKey) {
+    panel.removeEventListener('keydown', panel._onEscapeKey);
+    panel._onEscapeKey = null;
+  }
+  if (panel._onTabKey) {
+    panel.removeEventListener('keydown', panel._onTabKey);
+    panel._onTabKey = null;
+  }
+
+  // Restore focus to trigger
+  var target = triggerEl || panel._panelTrigger;
+  panel._panelTrigger = null;
+  if (target && typeof target.focus === 'function') {
+    requestAnimationFrame(function () {
+      target.focus();
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Helper: Set the room label in the panel header
+// ─────────────────────────────────────────────────────────────
+function setPanelRoomLabel(panel) {
+  var labelEl = panel && panel.querySelector('[data-panel-room-label]');
+  if (!labelEl) return;
+  var badge = document.getElementById('immersive-room-badge');
+  var roomName = badge ? badge.getAttribute('data-room-name-' + immersiveState.currentRoom) || '' : '';
+  labelEl.textContent = roomName;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Helper: Open a panel with focus management, ARIA, and slide-up animation
+// ─────────────────────────────────────────────────────────────
 function openPanel(panel, triggerEl) {
   if (!panel) return null;
-
-  // Save trigger for focus restoration
-  if (triggerEl) triggerEl._dialogTrigger = true;
 
   // Remove hidden state for CSS transitions
   panel.classList.remove('hidden');
   panel.removeAttribute('hidden');
 
-  // Apply ARIA and focus
+  // Apply ARIA
   panel.setAttribute('data-open', 'true');
-  openDialogFocus(panel, triggerEl);
+
+  // Determine entering class based on panel id
+  var enteringClass =
+    panel.id === 'glass-panel' ? 'immersive-store__panel--entering' : 'immersive-editorial-overlay--entering';
+
+  if (!reduceMotion) {
+    panel.classList.add(enteringClass);
+    setTimeout(function () {
+      panel.classList.remove(enteringClass);
+      openDialogFocus(panel, triggerEl);
+    }, 350);
+  } else {
+    openDialogFocus(panel, triggerEl);
+  }
 
   return triggerEl;
 }
@@ -1175,8 +1442,8 @@ function closePanel(panel) {
   if (!panel) return;
 
   panel.removeAttribute('data-open');
-  closeDialogFocus(panel, panel._dialogTrigger);
-  panel._dialogTrigger = null;
+  closeDialogFocus(panel, panel._panelTrigger);
+  panel._panelTrigger = null;
 
   // Wait for CSS transition before hiding from DOM
   setTimeout(function () {
@@ -1401,6 +1668,7 @@ function closeOverlay(overlay, triggerEl) {
 // Helper: Open the glass panel for a product
 // ─────────────────────────────────────────────────────────────
 function openProductPanel(productHandle, collectionHandle) {
+  recordBrowsingSignal(immersiveState.currentRoom);
   saveState({ panel: 'product', product: productHandle, collection: collectionHandle || null });
 
   var path = shopRoot + 'products/' + productHandle;
@@ -1410,6 +1678,7 @@ function openProductPanel(productHandle, collectionHandle) {
 
   openGlassPanelWithSection(path, 'glass-product', extraParams, glassPanelId, function (panel) {
     // Panel-specific setup
+    setPanelRoomLabel(panel);
     setupVariantButtons(panel);
     setupBuyNowForm(panel);
     setupMediaThumbs(panel);
@@ -1487,9 +1756,46 @@ function openProductPanel(productHandle, collectionHandle) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Browsing signals — personalized room suggestions (Feature 6)
+// ─────────────────────────────────────────────────────────────
+var BROWSING_SIGNALS_KEY = 'immersive_browsing_signals';
+
+function recordBrowsingSignal(roomKey) {
+  if (!roomKey) return;
+  try {
+    var raw = localStorage.getItem(BROWSING_SIGNALS_KEY);
+    var signals = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(signals)) signals = [];
+    signals.push(roomKey);
+    if (signals.length > 50) signals = signals.slice(signals.length - 50);
+    localStorage.setItem(BROWSING_SIGNALS_KEY, JSON.stringify(signals));
+  } catch (e) {}
+}
+
+function getRelevantRooms() {
+  try {
+    var raw = localStorage.getItem(BROWSING_SIGNALS_KEY);
+    var signals = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(signals)) return {};
+    var counts = {};
+    signals.forEach(function (k) {
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    var relevant = {};
+    Object.keys(counts).forEach(function (k) {
+      if (counts[k] >= 2) relevant[k] = true;
+    });
+    return relevant;
+  } catch (e) {
+    return {};
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // Helper: Open the glass panel for a collection
 // ─────────────────────────────────────────────────────────────
 function openCollectionPanel(collectionHandle) {
+  recordBrowsingSignal(immersiveState.currentRoom);
   saveState({ panel: 'collection', collection: collectionHandle, product: null });
 
   var path = shopRoot + 'collections/' + collectionHandle;
@@ -1498,6 +1804,7 @@ function openCollectionPanel(collectionHandle) {
 
   openGlassPanelWithSection(path, 'glass-panel', null, glassPanelId, function (panel) {
     // Panel-specific setup
+    setPanelRoomLabel(panel);
     setupVariantButtons(panel);
     setupBuyNowForm(panel);
     setupImageParallax(panel);
@@ -1520,12 +1827,19 @@ function openCollectionPanel(collectionHandle) {
         return;
       }
 
-      // Product card click
-      var card = event.target.closest('.immersive-product-card');
-      if (card) {
-        var handle = card.getAttribute('data-product-handle');
+      // Product card click — intercept clicks on the article OR any child
+      // element with data-product-handle (e.g. inner <a> links).
+      // event.preventDefault() is called IMMEDIATELY before any other logic
+      // so browser navigation on <a href> elements is cancelled synchronously.
+      var cardOrLink = event.target.closest('.immersive-product-card, [data-product-handle]');
+      if (cardOrLink) {
+        event.preventDefault();
+        var handle = cardOrLink.getAttribute('data-product-handle');
+        if (!handle) {
+          var parentCard = cardOrLink.closest('.immersive-product-card');
+          handle = parentCard && parentCard.getAttribute('data-product-handle');
+        }
         if (handle) {
-          event.preventDefault();
           openProductPanel(handle, collectionHandle);
         }
         return;
@@ -1653,6 +1967,15 @@ function enterEditorialMode(roomKey, triggerEl) {
       // Setup collection click delegation
       if (!overlay._onClick) {
         overlay._onClick = function (e) {
+          var productLink = e.target.closest('[data-product-handle]');
+          if (productLink) {
+            var productHandle = productLink.getAttribute('data-product-handle');
+            if (productHandle) {
+              e.preventDefault();
+              openProductPanel(productHandle, null);
+              return;
+            }
+          }
           var card = e.target.closest('[data-collection]');
           if (!card) return;
           var handle = card.getAttribute('data-collection');
@@ -1682,9 +2005,17 @@ function performEditorialUIActivation(overlay, canvas) {
 
   var backBtn = document.getElementById('immersive-editorial-back');
   if (backBtn) {
-    requestAnimationFrame(function () {
-      backBtn.focus();
-    });
+    if (!reduceMotion) {
+      overlay.classList.add('immersive-editorial-overlay--entering');
+      setTimeout(function () {
+        overlay.classList.remove('immersive-editorial-overlay--entering');
+        backBtn.focus();
+      }, 350);
+    } else {
+      requestAnimationFrame(function () {
+        backBtn.focus();
+      });
+    }
     if (!backBtn._editorialBound) {
       backBtn._editorialBound = true;
       backBtn.addEventListener('click', exitEditorialMode);
@@ -2586,7 +2917,11 @@ function syncAllWishlistToggles(root) {
   for (var i = 0; i < toggles.length; i++) {
     var toggle = toggles[i];
     var handle = toggle.getAttribute('data-product-handle');
-    var isSaved = handle && _wishlistItems.indexOf(handle) !== -1;
+    var isSaved =
+      handle &&
+      _wishlistItems.some(function (item) {
+        return (typeof item === 'string' ? item : item.handle) === handle;
+      });
     toggle.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
     toggle.classList.toggle('is-saved', !!isSaved);
     var labelSave = toggle.getAttribute('data-label-save');
@@ -2597,19 +2932,63 @@ function syncAllWishlistToggles(root) {
   }
 }
 
-function addToWishlist(handle, source) {
-  if (!handle || _wishlistItems.indexOf(handle) !== -1) return;
-  _wishlistItems.push(handle);
+function _triggerHeartPulse() {
+  if (reduceMotion) return;
+  var btn = document.querySelector('[data-wishlist-open]');
+  if (!btn) return;
+  btn.classList.remove('immersive-wishlist-btn--pulse');
+  void btn.offsetWidth; // force reflow
+  btn.classList.add('immersive-wishlist-btn--pulse');
+  setTimeout(function () {
+    btn.classList.remove('immersive-wishlist-btn--pulse');
+  }, 600);
+}
+
+function _flyToWishlist(sourceEl) {
+  if (reduceMotion || !sourceEl) return;
+  var btn = document.querySelector('[data-wishlist-open]');
+  if (!btn) return;
+  var srcRect = sourceEl.getBoundingClientRect();
+  var btnRect = btn.getBoundingClientRect();
+  var token = document.createElement('div');
+  token.className = 'immersive-fly-token';
+  token.setAttribute('aria-hidden', 'true');
+  token.style.left = srcRect.left + srcRect.width / 2 - 8 + 'px';
+  token.style.top = srcRect.top + srcRect.height / 2 - 8 + 'px';
+  document.body.appendChild(token);
+  requestAnimationFrame(function () {
+    var dx = btnRect.left + btnRect.width / 2 - 8 - (srcRect.left + srcRect.width / 2 - 8);
+    var dy = btnRect.top + btnRect.height / 2 - 8 - (srcRect.top + srcRect.height / 2 - 8);
+    token.style.transition = 'transform 0.55s cubic-bezier(0.4,0,0.2,1), opacity 0.55s ease';
+    token.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(0.3)';
+    token.style.opacity = '0';
+  });
+  setTimeout(function () {
+    if (token.parentNode) token.parentNode.removeChild(token);
+  }, 550);
+}
+
+function addToWishlist(handle, source, sourceEl) {
+  if (!handle) return;
+  // Check for existing entry (handle may be string or object)
+  var alreadySaved = _wishlistItems.some(function (item) {
+    return (typeof item === 'string' ? item : item.handle) === handle;
+  });
+  if (alreadySaved) return;
+  _wishlistItems.push({ handle: handle, discoveryRoom: immersiveState.currentRoom || null });
   _persistWishlist();
   updateWishlistBadge();
   syncAllWishlistToggles(document);
+  _triggerHeartPulse();
+  _flyToWishlist(sourceEl);
+  if (typeof recordBrowsingSignal === 'function') recordBrowsingSignal(immersiveState.currentRoom);
   trackImmersiveEvent('wishlist_add', { product_handle: handle, source: source || 'unknown' });
 }
 
 function removeFromWishlist(handle, source) {
   if (!handle) return;
-  _wishlistItems = _wishlistItems.filter(function (h) {
-    return h !== handle;
+  _wishlistItems = _wishlistItems.filter(function (item) {
+    return (typeof item === 'string' ? item : item.handle) !== handle;
   });
   _persistWishlist();
   updateWishlistBadge();
@@ -2617,11 +2996,14 @@ function removeFromWishlist(handle, source) {
   trackImmersiveEvent('wishlist_remove', { product_handle: handle, source: source || 'unknown' });
 }
 
-function toggleWishlistItem(handle, source) {
-  if (_wishlistItems.indexOf(handle) !== -1) {
+function toggleWishlistItem(handle, source, sourceEl) {
+  var isSaved = _wishlistItems.some(function (item) {
+    return (typeof item === 'string' ? item : item.handle) === handle;
+  });
+  if (isSaved) {
     removeFromWishlist(handle, source);
   } else {
-    addToWishlist(handle, source);
+    addToWishlist(handle, source, sourceEl);
   }
 }
 
@@ -2643,7 +3025,10 @@ function renderWishlistPanel() {
   var panelEl = document.getElementById('immersive-wishlist-panel');
   if (!body || !panelEl) return;
 
-  var emptyMsg = panelEl.getAttribute('data-msg-empty') || "You haven't saved any products yet.";
+  var emptyMsg =
+    panelEl.getAttribute('data-msg-empty-encouragement') ||
+    panelEl.getAttribute('data-msg-empty') ||
+    "You haven't saved any products yet.";
   var viewMsg = panelEl.getAttribute('data-msg-view') || 'View product';
   var removeMsg = panelEl.getAttribute('data-msg-remove') || 'Remove from wishlist';
 
@@ -2652,50 +3037,87 @@ function renderWishlistPanel() {
     return;
   }
 
-  var html = '';
+  // Group items by discoveryRoom
+  var groups = {};
+  var groupOrder = [];
   for (var i = 0; i < _wishlistItems.length; i++) {
-    var handle = _wishlistItems[i];
-    var cached = _wishlistProductCache[handle] || {};
-    var title = cached.title || handle;
-    var price = cached.price || '';
-    var imgSrc = cached.imageSrc || '';
-    var imgHtml = imgSrc
-      ? '<img src="' + imgSrc + '" alt="' + title.replace(/"/g, '&quot;') + '" loading="lazy" width="80" height="107">'
-      : '<div style="width:80px;height:107px;background:rgba(255,255,255,0.05);border-radius:0.25rem;"></div>';
-
-    html +=
-      '<article class="immersive-wishlist-card" data-wishlist-card data-product-handle="' +
-      handle +
-      '">' +
-      imgHtml +
-      '<div class="immersive-wishlist-card__info">' +
-      '<p class="immersive-wishlist-card__title">' +
-      title +
-      '</p>' +
-      '<p class="immersive-wishlist-card__price">' +
-      price +
-      '</p>' +
-      '</div>' +
-      '<div class="immersive-wishlist-card__actions">' +
-      '<button type="button" data-wishlist-view data-product-handle="' +
-      handle +
-      '" aria-label="' +
-      viewMsg +
-      ' ' +
-      title.replace(/"/g, '&quot;') +
-      '">' +
-      viewMsg +
-      '</button>' +
-      '<button type="button" data-wishlist-remove data-product-handle="' +
-      handle +
-      '" aria-label="' +
-      removeMsg +
-      '">' +
-      removeMsg +
-      '</button>' +
-      '</div>' +
-      '</article>';
+    var item = _wishlistItems[i];
+    var handle = typeof item === 'string' ? item : item.handle;
+    var room = (typeof item === 'string' ? null : item.discoveryRoom) || null;
+    var groupKey = room || '__saved__';
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+      groupOrder.push(groupKey);
+    }
+    groups[groupKey].push(handle);
   }
+
+  var roomBadgeEl = document.getElementById('immersive-room-badge');
+  var html = '';
+
+  for (var g = 0; g < groupOrder.length; g++) {
+    var groupKey = groupOrder[g];
+    var handles = groups[groupKey];
+
+    // Resolve room label
+    var roomLabel;
+    if (groupKey === '__saved__') {
+      roomLabel = 'Saved';
+    } else {
+      roomLabel = (roomBadgeEl && roomBadgeEl.getAttribute('data-room-name-' + groupKey)) || groupKey;
+    }
+
+    html += '<h3 class="immersive-wishlist__room-label">Found in: ' + roomLabel + '</h3>';
+
+    for (var j = 0; j < handles.length; j++) {
+      var handle = handles[j];
+      var cached = _wishlistProductCache[handle] || {};
+      var title = cached.title || handle;
+      var price = cached.price || '';
+      var imgSrc = cached.imageSrc || '';
+      var imgHtml = imgSrc
+        ? '<img src="' +
+          imgSrc +
+          '" alt="' +
+          title.replace(/"/g, '&quot;') +
+          '" loading="lazy" width="80" height="107">'
+        : '<div style="width:80px;height:107px;background:rgba(255,255,255,0.05);border-radius:0.25rem;"></div>';
+
+      html +=
+        '<article class="immersive-wishlist-card" data-wishlist-card data-product-handle="' +
+        handle +
+        '">' +
+        imgHtml +
+        '<div class="immersive-wishlist-card__info">' +
+        '<p class="immersive-wishlist-card__title">' +
+        title +
+        '</p>' +
+        '<p class="immersive-wishlist-card__price">' +
+        price +
+        '</p>' +
+        '</div>' +
+        '<div class="immersive-wishlist-card__actions">' +
+        '<button type="button" data-wishlist-view data-product-handle="' +
+        handle +
+        '" aria-label="' +
+        viewMsg +
+        ' ' +
+        title.replace(/"/g, '&quot;') +
+        '">' +
+        viewMsg +
+        '</button>' +
+        '<button type="button" data-wishlist-remove data-product-handle="' +
+        handle +
+        '" aria-label="' +
+        removeMsg +
+        '">' +
+        removeMsg +
+        '</button>' +
+        '</div>' +
+        '</article>';
+    }
+  }
+
   body.innerHTML = html;
 }
 
@@ -2757,7 +3179,12 @@ function closeWishlistPanel() {
 function initWishlist() {
   try {
     var stored = JSON.parse(localStorage.getItem(WISHLIST_KEY) || '[]');
-    _wishlistItems = Array.isArray(stored) ? stored : [];
+    var raw = Array.isArray(stored) ? stored : [];
+    // Migrate old string-format items to object format
+    _wishlistItems = raw.map(function (item) {
+      if (typeof item === 'string') return { handle: item, discoveryRoom: null };
+      return item;
+    });
   } catch (e) {
     _wishlistItems = [];
   }
@@ -2781,7 +3208,7 @@ function initWishlist() {
     if (toggle) {
       var handle = toggle.getAttribute('data-product-handle');
       var source = toggle.closest('#glass-panel') ? 'product_panel' : 'product_card';
-      if (handle) toggleWishlistItem(handle, source);
+      if (handle) toggleWishlistItem(handle, source, toggle);
       return;
     }
     // Remove from wishlist panel
@@ -2950,6 +3377,79 @@ function bindCookieBanner() {
     return val;
   }
 
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatMoneyFromCents(cents) {
+    var amount = Number(cents || 0) / 100;
+    if (window.Shopify && typeof window.Shopify.formatMoney === 'function') {
+      try {
+        return window.Shopify.formatMoney(cents);
+      } catch (e) {}
+    }
+    return '$' + amount.toFixed(2);
+  }
+
+  function renderTimelineProductsFallback(productsContainer, products) {
+    if (!productsContainer) return;
+    if (!Array.isArray(products) || !products.length) {
+      productsContainer.innerHTML = '';
+      return;
+    }
+    var cards = products
+      .map(function (product) {
+        var title = escapeHtml(product.title || '');
+        var handle = escapeHtml(product.handle || '');
+        var productUrl = shopRoot + 'products/' + handle;
+        var imgSrc = '';
+        if (product.image && product.image.src) {
+          imgSrc = product.image.src;
+        } else if (Array.isArray(product.images) && product.images.length) {
+          imgSrc = product.images[0];
+        }
+        var media = imgSrc
+          ? '<a href="' +
+            productUrl +
+            '" class="immersive-product-link" data-product-handle="' +
+            handle +
+            '">' +
+            '<img class="immersive-product-image" src="' +
+            escapeHtml(imgSrc) +
+            '" alt="' +
+            title +
+            '" loading="lazy">' +
+            '</a>'
+          : '<div class="immersive-product-image immersive-product-image-placeholder">No image</div>';
+        return (
+          '<article class="immersive-product-card" data-product-handle="' +
+          handle +
+          '">' +
+          media +
+          '<div class="immersive-product-info">' +
+          '<h3 class="immersive-product-title"><a href="' +
+          productUrl +
+          '" class="immersive-product-title-link" data-product-handle="' +
+          handle +
+          '">' +
+          title +
+          '</a></h3>' +
+          '<div class="immersive-product-price"><span>' +
+          formatMoneyFromCents(product.price_min || product.price || 0) +
+          '</span></div>' +
+          '</div>' +
+          '</article>'
+        );
+      })
+      .join('');
+    productsContainer.innerHTML = '<div class="immersive-designer-grid">' + cards + '</div>';
+  }
+
   // ---------------------------------------------------------------------------
   // Product loading via Section Rendering API
   // ---------------------------------------------------------------------------
@@ -2976,8 +3476,16 @@ function bindCookieBanner() {
       .then(function (json) {
         var html = json[sectionId];
         if (!html) {
-          productsContainer.innerHTML = '';
-          return;
+          return fetch(shopRoot + 'collections/' + encodeURIComponent(handle) + '/products.json?limit=12', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          })
+            .then(function (res) {
+              if (!res.ok) throw new Error('Products API error ' + res.status);
+              return res.json();
+            })
+            .then(function (productsJson) {
+              renderTimelineProductsFallback(productsContainer, productsJson && productsJson.products);
+            });
         }
         productsContainer.innerHTML = html;
       })

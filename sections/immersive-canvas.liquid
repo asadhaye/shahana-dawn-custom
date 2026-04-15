@@ -26,6 +26,7 @@
   class="immersive-store"
   data-section-id="{{ section.id }}"
   data-collections-base-url="{{ routes.collections_url }}"
+  data-msg-welcome-toast="{{ 'sections.immersive_store.welcome_toast' | t | escape }}"
 >
   <div
     class="immersive-store__canvas-wrapper"
@@ -37,29 +38,52 @@
       id="immersive-canvas"
       aria-hidden="true"
     ></canvas>
-    <div id="ui-layer"></div>
+    <div
+      id="ui-layer"
+      data-msg-back-to-room="{{ 'sections.immersive_store.back_to_room' | t: room_name: '' | escape }}"
+      data-msg-based-on-saves="{{ 'sections.immersive_store.based_on_saves' | t | escape }}"
+    ></div>
+    <div
+      id="immersive-room-badge"
+      class="immersive-room-badge"
+      aria-live="polite"
+      aria-atomic="true"
+      data-room-name-storefront="{{ 'sections.immersive_store.room_badge.name_storefront' | t | escape }}"
+      data-room-guidance-storefront="{{ 'sections.immersive_store.room_badge.guidance_storefront' | t | escape }}"
+      data-room-name-lounge="{{ 'sections.immersive_store.room_badge.name_lounge' | t | escape }}"
+      data-room-guidance-lounge="{{ 'sections.immersive_store.room_badge.guidance_lounge' | t | escape }}"
+      data-room-name-designer_houses="{{ 'sections.immersive_store.room_badge.name_designer_houses' | t | escape }}"
+      data-room-guidance-designer_houses="{{ 'sections.immersive_store.room_badge.guidance_designer_houses' | t | escape }}"
+      data-room-name-occasions="{{ 'sections.immersive_store.room_badge.name_occasions' | t | escape }}"
+      data-room-guidance-occasions="{{ 'sections.immersive_store.room_badge.guidance_occasions' | t | escape }}"
+      data-room-name-featured_collections="{{ 'sections.immersive_store.room_badge.name_featured_collections' | t | escape }}"
+      data-room-guidance-featured_collections="{{ 'sections.immersive_store.room_badge.guidance_featured_collections' | t | escape }}"
+    >
+      <span class="immersive-room-badge__name" data-room-badge-name></span>
+      <span class="immersive-room-badge__guidance" data-room-badge-guidance></span>
+    </div>
     {%- if section.settings.logo_image != blank -%}
       {%- assign logo_src = section.settings.logo_image | image_url: width: 400 -%}
     {%- else -%}
       {%- assign logo_src = 'sc-logo-transparent-bg.png' | asset_url -%}
     {%- endif -%}
-    <div class="immersive-ceiling-logo-overlay" aria-hidden="true">
-      <img
-        src="{{ logo_src }}"
-        alt=""
-        class="immersive-ceiling-logo-overlay__img"
-        width="200"
-        height="200"
-        loading="eager"
-        decoding="async"
-      >
-    </div>
+    <img
+      {%- comment -%} theme-check-disable RemoteAsset {%- endcomment -%}
+      src="{{ logo_src }}"
+      {%- comment -%} theme-check-enable RemoteAsset {%- endcomment -%}
+      alt=""
+      class="immersive-ceiling-logo-overlay__img"
+      width="200"
+      height="200"
+      loading="eager"
+      decoding="async"
+      aria-hidden="true"
+    >
     <div class="immersive-store__tagline" id="immersive-tagline" aria-hidden="true">
       <p>{{ 'sections.immersive_store.intro' | t }}</p>
     </div>
   </div>
 
-  <!-- Ceiling logo overlay — CSS animated PNG, sits above the canvas in the ceiling area -->
   <!-- Fixed Header — dark frosted glass top bar -->
   <header class="immersive-header">
     <!-- Left: burger menu + 2D bridge pill -->
@@ -340,17 +364,19 @@
     data-msg-added-to-cart="{{ 'sections.immersive_store.added_to_cart' | t | escape }}"
     data-msg-load-collection-error="{{ 'sections.immersive_store.error_load_collection' | t | escape }}"
     data-msg-load-product-error="{{ 'sections.immersive_store.error_load_product' | t | escape }}"
+    data-msg-load-error="{{ 'sections.immersive_store.error_load_product' | t | escape }}"
   >
     <header class="immersive-store__panel-header">
+      <span class="immersive-store__panel-room-label" data-panel-room-label aria-hidden="true"></span>
       <h2 id="glass-panel-title" class="immersive-store__panel-title">
         {{ 'sections.immersive_store.panel_title' | t }}
       </h2>
       <button
         type="button"
         class="immersive-store__panel-close"
-        aria-label="{{ 'sections.immersive_store.close' | t }}"
+        aria-label="{{ 'sections.immersive_store.action_done' | t }}"
       >
-        {{ 'sections.immersive_store.close' | t }}
+        {{ 'sections.immersive_store.action_done' | t }}
       </button>
     </header>
     <div class="immersive-store__panel-content"></div>
@@ -389,6 +415,7 @@
     hidden
     data-wishlist-panel
     data-msg-empty="{{ 'sections.immersive_store.wishlist.empty' | t | escape }}"
+    data-msg-empty-encouragement="{{ 'sections.immersive_store.wishlist.empty_encouragement' | t | escape }}"
     data-msg-view="{{ 'sections.immersive_store.wishlist.view_product' | t | escape }}"
     data-msg-remove="{{ 'sections.immersive_store.wishlist.remove' | t | escape }}"
     data-msg-save-label="{{ 'sections.immersive_store.wishlist.save_label' | t | escape }}"
@@ -726,6 +753,13 @@
     background: #000;
   }
 
+  /* Keep immersive viewport below the fixed notification bar */
+  body:has([data-immersive-notif-bar]) .immersive-store__canvas-wrapper,
+  body.has-immersive-notif-bar .immersive-store__canvas-wrapper {
+    top: var(--notif-height, 48px);
+    height: calc(100% - var(--notif-height, 48px));
+  }
+
   #immersive-canvas {
     position: absolute;
     inset: 0;
@@ -734,39 +768,25 @@
     display: block;
   }
 
-  /* ── Ceiling logo overlay — glassmorphic white canvas + centered logo ── */
-  .immersive-ceiling-logo-overlay {
+  /* ── Ceiling logo only (no overlay wrapper) ── */
+  .immersive-ceiling-logo-overlay__img {
     position: absolute;
     top: calc(var(--notif-height, 0px) + 71px);
     left: 0;
-    width: 100%;
-    height: 22vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    right: 0;
+    display: block;
+    margin: 0 auto;
     z-index: 19;
     pointer-events: none;
-    background: linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.14) 0%,
-      rgba(255, 255, 255, 0.06) 55%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    backdrop-filter: blur(8px) saturate(1.4);
-    -webkit-backdrop-filter: blur(8px) saturate(1.4);
-  }
-
-  body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay {
-    top: calc(var(--notif-height, 48px) + 72px);
-  }
-
-  .immersive-ceiling-logo-overlay__img {
-    display: block;
     height: clamp(110px, 16vh, 200px);
     width: auto;
     max-width: 75vw;
     filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.6)) drop-shadow(0 4px 32px rgba(0, 0, 0, 0.5));
     animation: logo-float 4s ease-in-out infinite, logo-glow 3s ease-in-out infinite;
+  }
+
+  body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay__img {
+    top: calc(var(--notif-height, 48px) + 72px);
   }
 
   @keyframes logo-float {
@@ -790,16 +810,13 @@
   }
 
   @media (max-width: 768px) {
-    .immersive-ceiling-logo-overlay {
-      top: calc(var(--notif-height, 0px) + 59px);
-      height: 20vh;
-    }
-    body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay {
-      top: calc(var(--notif-height, 48px) + 59px);
-    }
     .immersive-ceiling-logo-overlay__img {
+      top: calc(var(--notif-height, 0px) + 59px);
       height: clamp(90px, 14vh, 160px);
       max-width: 85vw;
+    }
+    body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay__img {
+      top: calc(var(--notif-height, 48px) + 59px);
     }
   }
 
@@ -888,7 +905,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 100;
+    z-index: 310;
     background: linear-gradient(to bottom, rgba(8, 6, 2, 0.82) 0%, rgba(8, 6, 2, 0.65) 70%, rgba(8, 6, 2, 0) 100%);
     backdrop-filter: blur(14px) saturate(1.2);
     -webkit-backdrop-filter: blur(14px) saturate(1.2);
@@ -1437,7 +1454,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s ease;
-    z-index: 110;
+    z-index: 300;
     overflow-y: auto;
   }
 
@@ -1908,6 +1925,155 @@
       transition: none !important;
       animation: none !important;
     }
+  }
+
+  /* ============================================================================
+   Wishlist polish — heart pulse, fly token, room label
+   ============================================================================ */
+
+  @keyframes immersive-heart-pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.4);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .immersive-wishlist-btn--pulse {
+    animation: immersive-heart-pulse 0.6s ease-in-out;
+  }
+
+  .immersive-fly-token {
+    position: fixed;
+    width: 16px;
+    height: 16px;
+    background: #d4af37;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .immersive-wishlist__room-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #d4af37;
+    opacity: 0.8;
+    margin: 1.25rem 0 0.5rem;
+    padding: 0;
+  }
+
+  .immersive-wishlist__room-label:first-child {
+    margin-top: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-wishlist-btn--pulse {
+      animation: none !important;
+    }
+    .immersive-fly-token {
+      display: none !important;
+    }
+  }
+
+  /* Welcome toast */
+  .immersive-welcome-toast {
+    position: absolute;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(10, 15, 30, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 999px;
+    padding: 0.6rem 1rem 0.6rem 1.25rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    z-index: 50;
+    pointer-events: auto;
+  }
+
+  .immersive-welcome-toast--animate-in {
+    animation: immersive-toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .immersive-welcome-toast--animate-out {
+    animation: immersive-toast-out 0.3s ease forwards;
+  }
+
+  @keyframes immersive-toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  @keyframes immersive-toast-out {
+    from {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-50%) translateY(8px);
+    }
+  }
+
+  .immersive-welcome-toast__text {
+    flex: 1;
+  }
+
+  .immersive-welcome-toast__close {
+    background: none;
+    border: none;
+    color: rgba(212, 175, 55, 0.7);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .immersive-welcome-toast__close:hover {
+    color: #d4af37;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-welcome-toast--animate-in,
+    .immersive-welcome-toast--animate-out {
+      animation: none !important;
+    }
+  }
+
+  /* Personalization indicator */
+  .immersive-hotspot__personalization {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(212, 175, 55, 0.65);
+    pointer-events: none;
+    opacity: 0.65;
   }
 {% endstylesheet %}
 

@@ -27,7 +27,11 @@
             class="glass-panel-section__item"
             style="--animation-order: {{ forloop.index0 }};"
           >
-            {% render 'immersive-product-card', product: product %}
+            {% render 'immersive-product-card',
+              product: product,
+              collection: panel_collection,
+              collection_handle: panel_collection.handle
+            %}
           </div>
         {% endfor %}
       </div>

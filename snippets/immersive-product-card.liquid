@@ -6,15 +6,30 @@
   @param {boolean} [show_vendor] - Show the product vendor. Default: true
   @param {boolean} [show_secondary_image] - Show second image on hover. Default: true
   @param {form} [form] - Product form object; snippet must be used inside a product form or passed an explicit form.
+  @param {collection} [collection] - Optional originating collection object for back-navigation context.
+  @param {string} [collection_handle] - Optional originating collection handle (used when collection object is unavailable).
 
   @example
   {% render 'immersive-product-card', product: product %}
+  {% render 'immersive-product-card', product: product, collection: collection %}
 {% enddoc %}
+
+{%- liquid
+  assign collection_handle_resolved = ''
+  if collection_handle != blank
+    assign collection_handle_resolved = collection_handle
+  elsif collection != blank
+    assign collection_handle_resolved = collection.handle
+  endif
+-%}
 
 <article
   class="immersive-product-card"
   data-product-id="{{ product.id }}"
   data-product-handle="{{ product.handle }}"
+  {%- if collection_handle_resolved != blank -%}
+    data-collection-handle="{{ collection_handle_resolved | escape }}"
+  {%- endif -%}
 >
   {%- if product.featured_image -%}
     <a
@@ -183,10 +198,10 @@
           {% unless product.selected_or_first_available_variant.available %}
             disabled
           {% endunless %}
-          aria-label="{{ 'products.product.add_to_cart' | t }} - {{ product.title | escape }}"
+          aria-label="{{ 'sections.immersive_store.add_to_edit' | t }} - {{ product.title | escape }}"
         >
           {%- if product.selected_or_first_available_variant.available -%}
-            {{ 'products.product.add_to_cart' | t }}
+            {{ 'sections.immersive_store.add_to_edit' | t }}
           {%- else -%}
             {{ 'products.product.sold_out' | t }}
           {%- endif -%}

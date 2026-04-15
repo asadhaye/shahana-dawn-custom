@@ -325,3 +325,157 @@
     top: 54px;
   }
 }
+
+/* =============================================================================
+   Room Identity Badge
+   ============================================================================= */
+
+.immersive-room-badge {
+  position: absolute;
+  bottom: 2rem;
+  left: 1.5rem;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: calc(100% - 3rem);
+}
+
+.immersive-room-badge__name {
+  color: #d4af37;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+.immersive-room-badge__guidance {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+/* =============================================================================
+   Hotspot Affordances — ring pulse and label tooltip
+   ============================================================================= */
+
+/* Pulsing ring */
+.immersive-hotspot__ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(212, 175, 55, 0.7);
+  animation: immersive-hotspot-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes immersive-hotspot-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-hotspot__ring {
+    animation: none;
+    opacity: 0.6;
+    transform: scale(1);
+  }
+}
+
+/* Label tooltip */
+.immersive-hotspot__label {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  max-width: min(200px, calc(100vw - 2rem));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(10, 15, 30, 0.88);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.625rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.immersive-hotspot:hover .immersive-hotspot__label,
+.immersive-hotspot:focus-visible .immersive-hotspot__label {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-hotspot__label {
+    transition: none;
+  }
+}
+
+/* =============================================================================
+   Panel & Overlay Entrance Animation
+   ============================================================================= */
+
+@keyframes immersive-slide-up {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.immersive-store__panel--entering,
+.immersive-editorial-overlay--entering {
+  animation: immersive-slide-up 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition: backdrop-filter 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#glass-panel:not(.immersive-store__panel--entering),
+#immersive-editorial-overlay:not(.immersive-editorial-overlay--entering) {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  #glass-panel,
+  #immersive-editorial-overlay {
+    background: rgba(10, 15, 30, 0.92) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-store__panel--entering,
+  .immersive-editorial-overlay--entering {
+    animation: none;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: none;
+  }
+}
+
+/* Panel room label */
+.immersive-store__panel-room-label {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.7);
+  margin-bottom: 0.25rem;
+}

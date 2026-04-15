@@ -71,7 +71,7 @@
     left: 0;
     right: 0;
     height: var(--notif-height, 48px);
-    z-index: 200;
+    z-index: 320;
     overflow: hidden;
     background: #080610;
     border-bottom: 1px solid rgba(212, 175, 55, 0.2);
@@ -238,9 +238,18 @@
 
 {% javascript %}
   (function () {
+    function syncNotificationOffset(bar) {
+      if (!bar) return;
+      var height = bar.offsetHeight || parseFloat(getComputedStyle(bar).getPropertyValue('--notif-height')) || 48;
+      document.documentElement.style.setProperty('--notif-height', height + 'px');
+      if (document.body) document.body.classList.add('has-immersive-notif-bar');
+    }
+
     function initTicker(bar) {
       var tickers = bar.querySelectorAll('[data-notif-ticker]');
       if (!tickers.length) return;
+
+      syncNotificationOffset(bar);
 
       var style = getComputedStyle(bar);
       var holdMs = (parseFloat(style.getPropertyValue('--notif-display')) || 4) * 1000;
@@ -351,6 +360,11 @@
     document.addEventListener('shopify:section:load', function (e) {
       var bar = e.target && e.target.querySelector('[data-immersive-notif-bar]');
       if (bar) initTicker(bar);
+    });
+
+    window.addEventListener('resize', function () {
+      var bar = document.querySelector('[data-immersive-notif-bar]');
+      if (bar) syncNotificationOffset(bar);
     });
   })();
 {% endjavascript %}

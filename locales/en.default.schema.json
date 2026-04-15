@@ -676,13 +676,12 @@
       },
       "layout": {
         "label": "Layout",
-        "options__1": { "label": "Designer tiles" },
-        "options__2": { "label": "Collection banners" },
-        "options__3": { "label": "Story segments" },
+        "options__1": { "label": "Designer timeline" },
+        "options__2": { "label": "Occasions" },
+        "options__3": { "label": "Featured collections" },
         "options__4": { "label": "Horizontal gallery" },
-        "options__5": { "label": "Featured collections" }
+        "options__5": { "label": "Custom banners" }
       },
-
       "hero_background_image": { "label": "Hero background image" },
       "hero_eyebrow": { "label": "Eyebrow text" },
       "hero_heading": { "label": "Hero heading" },
@@ -690,7 +689,7 @@
     },
     "blocks": {
       "banner": {
-        "name": "Banner",
+        "name": "Custom banner",
         "settings": {
           "image": { "label": "Image" },
           "logo": { "label": "Brand logo" },
@@ -701,10 +700,53 @@
           "collection": { "label": "Collection" },
           "depth_layer": { "label": "Parallax depth" }
         }
+      },
+      "occasion_card": {
+        "name": "Occasion",
+        "settings": {
+          "image": { "label": "Image" },
+          "heading": { "label": "Occasion name" },
+          "body": { "label": "Description" },
+          "collection": { "label": "Collection" },
+          "cta_url": { "label": "Override link" }
+        }
+      },
+      "featured_item": {
+        "name": "Featured collection",
+        "settings": {
+          "image": { "label": "Image" },
+          "heading": { "label": "Collection name" },
+          "body": { "label": "Description" },
+          "collection": { "label": "Collection" },
+          "cta_url": { "label": "Override link" }
+        }
+      },
+      "designer": {
+        "name": "Designer",
+        "settings": {
+          "image": { "label": "Brand image" },
+          "logo": { "label": "Brand logo" },
+          "heading": { "label": "Designer name" },
+          "body": { "label": "Brand manifesto" },
+          "collection": { "label": "Collection" }
+        }
+      },
+      "gallery_card": {
+        "name": "Gallery card",
+        "settings": {
+          "image": { "label": "Image" },
+          "heading": { "label": "Label" },
+          "collection": { "label": "Collection" },
+          "cta_url": { "label": "Override link" }
+        }
       }
     },
     "presets": {
-      "name": "Immersive Editorial"
+      "name": "Immersive Editorial",
+      "designer_houses": { "name": "Designer Houses" },
+      "occasions": { "name": "Occasions" },
+      "featured_collections": { "name": "Featured Collections" },
+      "custom_banners": { "name": "Custom Banners" }
     }
   },
 

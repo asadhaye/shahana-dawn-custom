@@ -12,52 +12,65 @@ function renderSection(settings, blocks) {
   settings = settings || {};
   blocks = blocks || [];
   var roomKey = settings.room_key || 'featured_collections';
-  var layout = settings.layout || 'collections';
-  var blockHtml = blocks
-    .map(function (b) {
-      var depth = b.depth_layer !== undefined ? b.depth_layer : 50;
-      var mediaHtml = '';
-      if (b.image) {
-        var logoHtml =
-          layout === 'designers' && b.logo
+  var layout = settings.layout || 'custom';
+
+  // Banners are ONLY rendered for the 'custom' layout.
+  // All other layouts (occasions, featured_collections, designers, gallery)
+  // render their own dedicated UI and must NOT include the banners block.
+  var bannersHtml = '';
+  if (layout === 'custom') {
+    var blockHtml = blocks
+      .filter(function (b) {
+        return b.type === 'banner' || !b.type;
+      })
+      .map(function (b) {
+        var depth = b.depth_layer !== undefined ? b.depth_layer : 50;
+        var mediaHtml = '';
+        if (b.image) {
+          var logoHtml = b.logo
             ? '<img class="immersive-editorial__banner-logo" src="' + b.logo + '" alt="" loading="lazy">'
             : '';
-        mediaHtml =
-          '<div class="immersive-editorial__banner-media">' +
-          '<img src="' +
-          b.image +
-          '" alt="" loading="lazy">' +
-          logoHtml +
-          '</div>';
-      }
-      var bodyHtml = b.body ? '<div class="immersive-editorial__banner-body">' + b.body + '</div>' : '';
-      var ctaHtml =
-        b.cta_label && b.cta_url
-          ? '<a class="immersive-editorial__cta" href="' + b.cta_url + '">' + b.cta_label + '</a>'
+          mediaHtml =
+            '<div class="immersive-editorial__banner-media">' +
+            '<img src="' +
+            b.image +
+            '" alt="" loading="lazy">' +
+            logoHtml +
+            '</div>';
+        }
+        var bodyHtml = b.body ? '<div class="immersive-editorial__banner-body">' + b.body + '</div>' : '';
+        var ctaHtml =
+          b.cta_label && b.cta_url
+            ? '<a class="immersive-editorial__cta" href="' + b.cta_url + '">' + b.cta_label + '</a>'
+            : '';
+        // collection-link now includes data-collection for JS interception
+        var colHtml = b.collection
+          ? '<a class="immersive-editorial__collection-link" href="/collections/' +
+            b.collection +
+            '" data-collection="' +
+            b.collection +
+            '">' +
+            b.collection +
+            '</a>'
           : '';
-      var colHtml = b.collection
-        ? '<a class="immersive-editorial__collection-link" href="/collections/' +
-          b.collection +
+        return (
+          '<article class="immersive-editorial__banner" data-editorial-layer="' +
+          depth +
           '">' +
-          b.collection +
-          '</a>'
-        : '';
-      return (
-        '<article class="immersive-editorial__banner" data-editorial-layer="' +
-        depth +
-        '">' +
-        mediaHtml +
-        '<div class="immersive-editorial__banner-content">' +
-        '<h3 class="immersive-editorial__banner-heading">' +
-        (b.heading || '') +
-        '</h3>' +
-        bodyHtml +
-        ctaHtml +
-        colHtml +
-        '</div></article>'
-      );
-    })
-    .join('');
+          mediaHtml +
+          '<div class="immersive-editorial__banner-content">' +
+          '<h3 class="immersive-editorial__banner-heading">' +
+          (b.heading || '') +
+          '</h3>' +
+          bodyHtml +
+          ctaHtml +
+          colHtml +
+          '</div></article>'
+        );
+      })
+      .join('');
+    bannersHtml = '<div class="immersive-editorial__banners">' + blockHtml + '</div>';
+  }
 
   var h2Html = settings.hero_heading
     ? '<h2 class="immersive-editorial__heading">' + settings.hero_heading + '</h2>'
@@ -91,9 +104,7 @@ function renderSection(settings, blocks) {
     h2Html +
     '</div>' +
     '</div>' +
-    '<div class="immersive-editorial__banners">' +
-    blockHtml +
-    '</div>' +
+    bannersHtml +
     '</section>'
   );
 }
@@ -211,10 +222,10 @@ describe('immersive-editorial section DOM contract', function () {
   });
 
   test('applies BEM classes', function () {
-    var root = parseRoot(renderSection({ room_key: 'featured_collections', layout: 'collections' }));
+    var root = parseRoot(renderSection({ room_key: 'featured_collections', layout: 'custom' }));
     expect(root.classList.contains('immersive-editorial')).toBe(true);
     expect(root.classList.contains('immersive-editorial--featured_collections')).toBe(true);
-    expect(root.classList.contains('immersive-editorial--layout-collections')).toBe(true);
+    expect(root.classList.contains('immersive-editorial--layout-custom')).toBe(true);
   });
 
   test('sets data-room-key and data-layout', function () {
@@ -233,51 +244,92 @@ describe('immersive-editorial section DOM contract', function () {
     expect(h2.textContent).toBe('Our Collections');
   });
 
-  test('0 articles for 0 blocks', function () {
-    expect(queryAll(renderSection({}), '.immersive-editorial__banner').length).toBe(0);
+  test('0 articles for 0 blocks (custom layout)', function () {
+    expect(queryAll(renderSection({ layout: 'custom' }), '.immersive-editorial__banner').length).toBe(0);
   });
 
-  test('3 articles for 3 blocks', function () {
+  test('3 articles for 3 banner blocks (custom layout)', function () {
     expect(
       queryAll(
-        renderSection({}, [{ heading: 'A' }, { heading: 'B' }, { heading: 'C' }]),
+        renderSection({ layout: 'custom' }, [{ heading: 'A' }, { heading: 'B' }, { heading: 'C' }]),
         '.immersive-editorial__banner',
       ).length,
     ).toBe(3);
   });
 
-  test('data-editorial-layer from depth_layer', function () {
-    var a = query(renderSection({}, [{ heading: 'X', depth_layer: 30 }]), '.immersive-editorial__banner');
+  test('no banners rendered for occasions layout', function () {
+    expect(
+      queryAll(
+        renderSection({ layout: 'occasions' }, [{ heading: 'A' }, { heading: 'B' }]),
+        '.immersive-editorial__banner',
+      ).length,
+    ).toBe(0);
+  });
+
+  test('no banners rendered for featured_collections layout', function () {
+    expect(
+      queryAll(renderSection({ layout: 'featured_collections' }, [{ heading: 'A' }]), '.immersive-editorial__banner')
+        .length,
+    ).toBe(0);
+  });
+
+  test('no banners rendered for designers layout', function () {
+    expect(
+      queryAll(renderSection({ layout: 'designers' }, [{ heading: 'A' }]), '.immersive-editorial__banner').length,
+    ).toBe(0);
+  });
+
+  test('data-editorial-layer from depth_layer (custom layout)', function () {
+    var a = query(
+      renderSection({ layout: 'custom' }, [{ heading: 'X', depth_layer: 30 }]),
+      '.immersive-editorial__banner',
+    );
     expect(a.dataset.editorialLayer).toBe('30');
   });
 
   test('omits CTA when cta_url set but cta_label blank', function () {
-    expect(query(renderSection({}, [{ heading: 'X', cta_url: '/test' }]), '.immersive-editorial__cta')).toBeNull();
+    expect(
+      query(renderSection({ layout: 'custom' }, [{ heading: 'X', cta_url: '/test' }]), '.immersive-editorial__cta'),
+    ).toBeNull();
   });
 
   test('omits CTA when cta_label set but cta_url blank', function () {
-    expect(query(renderSection({}, [{ heading: 'X', cta_label: 'Shop' }]), '.immersive-editorial__cta')).toBeNull();
+    expect(
+      query(renderSection({ layout: 'custom' }, [{ heading: 'X', cta_label: 'Shop' }]), '.immersive-editorial__cta'),
+    ).toBeNull();
   });
 
   test('renders CTA when both cta_label and cta_url set', function () {
     var cta = query(
-      renderSection({}, [{ heading: 'X', cta_label: 'Shop', cta_url: '/test' }]),
+      renderSection({ layout: 'custom' }, [{ heading: 'X', cta_label: 'Shop', cta_url: '/test' }]),
       '.immersive-editorial__cta',
     );
     expect(cta).not.toBeNull();
     expect(cta.getAttribute('href')).toBe('/test');
   });
 
-  test('logo only in designers layout', function () {
+  test('logo only in custom layout (banner block)', function () {
     var block = [{ heading: 'X', image: '/img.jpg', logo: '/logo.png' }];
-    expect(query(renderSection({ layout: 'designers' }, block), '.immersive-editorial__banner-logo')).not.toBeNull();
-    expect(query(renderSection({ layout: 'collections' }, block), '.immersive-editorial__banner-logo')).toBeNull();
+    // Custom layout banners DO render logos (brand logo is a valid banner setting)
+    expect(query(renderSection({ layout: 'custom' }, block), '.immersive-editorial__banner-logo')).not.toBeNull();
   });
 
-  test('collection link when collection set', function () {
+  test('collection link when collection set (custom layout)', function () {
     expect(
-      query(renderSection({}, [{ heading: 'X', collection: 'my-col' }]), '.immersive-editorial__collection-link'),
+      query(
+        renderSection({ layout: 'custom' }, [{ heading: 'X', collection: 'my-col' }]),
+        '.immersive-editorial__collection-link',
+      ),
     ).not.toBeNull();
+  });
+
+  test('collection link has data-collection attribute for JS interception', function () {
+    var link = query(
+      renderSection({ layout: 'custom' }, [{ heading: 'X', collection: 'my-col' }]),
+      '.immersive-editorial__collection-link',
+    );
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('data-collection')).toBe('my-col');
   });
 
   test('hero bg image has aria-hidden=true', function () {
@@ -498,7 +550,7 @@ describe('immersive-editorial property tests', function () {
     fc.assert(
       fc.property(
         fc.constantFrom('designer_houses', 'occasions', 'featured_collections'),
-        fc.constantFrom('designers', 'collections', 'occasions'),
+        fc.constantFrom('designers', 'custom', 'occasions', 'gallery', 'featured_collections'),
         function (roomKey, layout) {
           var root = parseRoot(renderSection({ room_key: roomKey, layout: layout }));
           return (
@@ -515,8 +567,8 @@ describe('immersive-editorial property tests', function () {
     );
   });
 
-  // Feature: immersive-editorial, Property 3: Banner count matches block count
-  test('Property 3: banner count equals block count for any N blocks', function () {
+  // Feature: immersive-editorial, Property 3: Banner count matches block count ONLY for custom layout
+  test('Property 3: banner count equals block count for custom layout; zero for all other layouts', function () {
     fc.assert(
       fc.property(
         fc.array(
@@ -526,8 +578,14 @@ describe('immersive-editorial property tests', function () {
           }),
           { maxLength: 10 },
         ),
-        function (blocks) {
-          return queryAll(renderSection({}, blocks), '.immersive-editorial__banner').length === blocks.length;
+        fc.constantFrom('designers', 'occasions', 'featured_collections', 'gallery', 'custom'),
+        function (blocks, layout) {
+          var bannerCount = queryAll(renderSection({ layout: layout }, blocks), '.immersive-editorial__banner').length;
+          if (layout === 'custom') {
+            return bannerCount === blocks.length;
+          } else {
+            return bannerCount === 0;
+          }
         },
       ),
       { numRuns: 200 },

@@ -385,10 +385,28 @@
       "view_product": "View product",
       "remove": "Remove from wishlist",
       "item_count": "{{ count }} saved item",
-      "item_count_plural": "{{ count }} saved items"
+      "item_count_plural": "{{ count }} saved items",
+      "empty_encouragement": "Start exploring the rooms to discover pieces you love."
     },
+    "add_to_edit": "Add to my edit",
+    "action_done": "Done",
+    "back_to_room": "← Back to {{ room_name }}",
+    "welcome_toast": "You're in the 3D store — tap any hotspot to explore. Switch back anytime.",
+    "based_on_saves": "Based on your saves",
     "tilt_toggle": "Enable tilt control",
-    "tilt_toggle_enabled": "Disable tilt control"
+    "tilt_toggle_enabled": "Disable tilt control",
+    "room_badge": {
+      "name_storefront": "Storefront",
+      "guidance_storefront": "Enter the store to begin exploring",
+      "name_lounge": "Lounge",
+      "guidance_lounge": "Explore hotspots to discover curated looks",
+      "name_designer_houses": "Designer Houses",
+      "guidance_designer_houses": "Select a designer to explore their collection",
+      "name_occasions": "Occasions",
+      "guidance_occasions": "Choose an occasion to find the perfect look",
+      "name_featured_collections": "Featured Collections",
+      "guidance_featured_collections": "Discover our latest curated edits"
+    }
   },
   "immersive_canvas": {
     "close_panel": "Close panel"
@@ -604,7 +622,9 @@
       "switch_to_2d": "Switch to 2D",
       "switch_to_2d_aria": "Switch to the standard 2D store",
       "switch_to_3d": "Switch to 3D",
-      "switch_to_3d_aria": "Switch to the immersive 3D store"
+      "switch_to_3d_aria": "Switch to the immersive 3D store",
+      "bridge_label_explore_3d": "Explore in 3D",
+      "bridge_subtext": "See curated rooms and collections in an interactive space."
     }
   },
   "localization": {
