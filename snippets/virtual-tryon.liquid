@@ -160,12 +160,19 @@
 {% stylesheet %}
   .vtryon {
     padding: 1.5rem;
+    background: rgba(var(--color-foreground, 15, 23, 42), 0.04);
+    border-radius: 16px;
+    border: 1px solid rgba(var(--color-foreground, 15, 23, 42), 0.12);
+    margin-top: 1.5rem;
+    color: rgb(var(--color-foreground, 15, 23, 42));
+  }
+
+  /* On the immersive page (dark background), keep the glass look */
+  .template-page-immersive .vtryon {
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 16px;
     border: 1px solid rgba(212, 175, 55, 0.2);
-    margin-top: 1.5rem;
     color: #d4af37;
   }
 

@@ -324,66 +324,248 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'gallery' -%}
+  {%- if section.settings.layout == 'coverflow' -%}
     <div
-      class="immersive-editorial__gallery"
-      role="list"
+      class="immersive-coverflow"
+      data-room-key="{{ section.settings.room_key | escape }}"
       aria-label="{{ section.settings.hero_heading | default: 'Collections' | escape }}"
     >
-      {%- for block in section.blocks -%}
-        {%- if block.type == 'gallery_card' -%}
-          {%- assign collection = block.settings.collection -%}
-          {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
-          {%- assign card_label = block.settings.heading | default: collection.title -%}
-          <a
-            class="immersive-editorial__gallery-card"
-            href="{{ card_url }}"
-            role="listitem"
-            aria-label="{{ card_label | escape }}"
-            {%- if collection != blank -%}
-              data-collection="{{ collection.handle }}"
-            {%- endif -%}
-            {{ block.shopify_attributes }}
-          >
-            <div class="immersive-editorial__gallery-card-media">
+      <div class="immersive-coverflow__track" data-coverflow-track>
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'carousel_slide' -%}
+            {%- assign collection = block.settings.collection -%}
+            {%- assign slide_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+            {%- assign slide_label = block.settings.heading | default: collection.title -%}
+            <a
+              class="immersive-coverflow__slide"
+              href="{{ slide_url }}"
+              aria-label="{{ slide_label | escape }}"
+              {%- if collection != blank -%}
+                data-collection="{{ collection.handle }}"
+              {%- endif -%}
+              {{ block.shopify_attributes }}
+            >
+              <div class="immersive-coverflow__slide-media">
+                {%- if block.settings.image != blank -%}
+                  <img
+                    src="{{ block.settings.image | image_url: width: 600 }}"
+                    srcset="{{ block.settings.image | image_url: width: 400 }} 400w, {{ block.settings.image | image_url: width: 600 }} 600w, {{ block.settings.image | image_url: width: 800 }} 800w"
+                    sizes="300px"
+                    width="{{ block.settings.image.width }}"
+                    height="{{ block.settings.image.height }}"
+                    alt="{{ block.settings.image.alt | default: slide_label | escape }}"
+                    loading="lazy"
+                  >
+                {%- elsif collection.featured_image != blank -%}
+                  <img
+                    src="{{ collection.featured_image | image_url: width: 600 }}"
+                    srcset="{{ collection.featured_image | image_url: width: 400 }} 400w, {{ collection.featured_image | image_url: width: 600 }} 600w, {{ collection.featured_image | image_url: width: 800 }} 800w"
+                    sizes="300px"
+                    width="{{ collection.featured_image.width }}"
+                    height="{{ collection.featured_image.height }}"
+                    alt="{{ collection.featured_image.alt | default: slide_label | escape }}"
+                    loading="lazy"
+                  >
+                {%- else -%}
+                  <div class="immersive-coverflow__slide-placeholder" aria-hidden="true"></div>
+                {%- endif -%}
+              </div>
+              <div class="immersive-coverflow__slide-label">{{ slide_label | escape }}</div>
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+      <button
+        type="button"
+        class="immersive-coverflow__btn immersive-coverflow__btn--prev"
+        aria-label="{{ 'sections.immersive_editorial.carousel_prev' | t | escape }}"
+      >
+        &#8592;
+      </button>
+      <button
+        type="button"
+        class="immersive-coverflow__btn immersive-coverflow__btn--next"
+        aria-label="{{ 'sections.immersive_editorial.carousel_next' | t | escape }}"
+      >
+        &#8594;
+      </button>
+    </div>
+  {%- endif -%}
+
+  {%- if section.settings.layout == 'stacked' -%}
+    <div
+      class="immersive-stacked"
+      data-room-key="{{ section.settings.room_key | escape }}"
+      aria-label="{{ section.settings.hero_heading | default: 'Collections' | escape }}"
+    >
+      <div class="immersive-stacked__deck" data-stacked-deck>
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'carousel_slide' -%}
+            {%- assign collection = block.settings.collection -%}
+            {%- assign slide_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+            {%- assign slide_label = block.settings.heading | default: collection.title -%}
+            <a
+              class="immersive-stacked__card"
+              href="{{ slide_url }}"
+              aria-label="{{ slide_label | escape }}"
+              {%- if collection != blank -%}
+                data-collection="{{ collection.handle }}"
+              {%- endif -%}
+              {{ block.shopify_attributes }}
+            >
+              {%- if block.settings.image != blank -%}
+                <img
+                  src="{{ block.settings.image | image_url: width: 800 }}"
+                  srcset="{{ block.settings.image | image_url: width: 600 }} 600w, {{ block.settings.image | image_url: width: 800 }} 800w"
+                  sizes="(max-width: 768px) 90vw, 480px"
+                  width="{{ block.settings.image.width }}"
+                  height="{{ block.settings.image.height }}"
+                  alt="{{ block.settings.image.alt | default: slide_label | escape }}"
+                  loading="lazy"
+                >
+              {%- elsif collection.featured_image != blank -%}
+                <img
+                  src="{{ collection.featured_image | image_url: width: 800 }}"
+                  srcset="{{ collection.featured_image | image_url: width: 600 }} 600w, {{ collection.featured_image | image_url: width: 800 }} 800w"
+                  sizes="(max-width: 768px) 90vw, 480px"
+                  width="{{ collection.featured_image.width }}"
+                  height="{{ collection.featured_image.height }}"
+                  alt="{{ collection.featured_image.alt | default: slide_label | escape }}"
+                  loading="lazy"
+                >
+              {%- else -%}
+                <div class="immersive-stacked__card-placeholder" aria-hidden="true"></div>
+              {%- endif -%}
+              <div class="immersive-stacked__card-content">
+                <h3 class="immersive-stacked__card-heading">{{ slide_label | escape }}</h3>
+                {%- if block.settings.body != blank -%}
+                  <p class="immersive-stacked__card-body">{{ block.settings.body | strip_html | truncate: 120 }}</p>
+                {%- endif -%}
+              </div>
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+      <button
+        type="button"
+        class="immersive-stacked__btn"
+        data-stacked-next
+        aria-label="{{ 'sections.immersive_editorial.carousel_next' | t | escape }}"
+      >
+        <span>{{ 'sections.immersive_editorial.stacked_next' | t | escape }}</span>
+        <span aria-hidden="true">&#8594;</span>
+      </button>
+    </div>
+  {%- endif -%}
+
+  {%- if section.settings.layout == 'perspective' -%}
+    <div
+      class="immersive-perspective"
+      data-room-key="{{ section.settings.room_key | escape }}"
+      aria-label="{{ section.settings.hero_heading | default: 'Collections' | escape }}"
+    >
+      <div class="immersive-perspective__stage" data-perspective-stage>
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'carousel_slide' -%}
+            {%- assign collection = block.settings.collection -%}
+            {%- assign slide_url = collection.url | default: block.settings.cta_url | default: '#' -%}
+            {%- assign slide_label = block.settings.heading | default: collection.title -%}
+            <a
+              class="immersive-perspective__item"
+              href="{{ slide_url }}"
+              aria-label="{{ slide_label | escape }}"
+              {%- if collection != blank -%}
+                data-collection="{{ collection.handle }}"
+              {%- endif -%}
+              {{ block.shopify_attributes }}
+            >
               {%- if block.settings.image != blank -%}
                 <img
                   src="{{ block.settings.image | image_url: width: 600 }}"
-                  srcset="
-                    {{ block.settings.image | image_url: width: 400 }} 400w,
-                    {{ block.settings.image | image_url: width: 600 }} 600w,
-                    {{ block.settings.image | image_url: width: 800 }} 800w
-                  "
-                  sizes="280px"
+                  srcset="{{ block.settings.image | image_url: width: 400 }} 400w, {{ block.settings.image | image_url: width: 600 }} 600w"
+                  sizes="220px"
                   width="{{ block.settings.image.width }}"
                   height="{{ block.settings.image.height }}"
-                  alt="{{ block.settings.image.alt | default: card_label | escape }}"
+                  alt="{{ block.settings.image.alt | default: slide_label | escape }}"
                   loading="lazy"
                 >
               {%- elsif collection.featured_image != blank -%}
                 <img
                   src="{{ collection.featured_image | image_url: width: 600 }}"
-                  srcset="
-                    {{ collection.featured_image | image_url: width: 400 }} 400w,
-                    {{ collection.featured_image | image_url: width: 600 }} 600w,
-                    {{ collection.featured_image | image_url: width: 800 }} 800w
-                  "
-                  sizes="280px"
+                  srcset="{{ collection.featured_image | image_url: width: 400 }} 400w, {{ collection.featured_image | image_url: width: 600 }} 600w"
+                  sizes="220px"
                   width="{{ collection.featured_image.width }}"
                   height="{{ collection.featured_image.height }}"
-                  alt="{{ collection.featured_image.alt | default: card_label | escape }}"
+                  alt="{{ collection.featured_image.alt | default: slide_label | escape }}"
                   loading="lazy"
                 >
               {%- else -%}
-                <div class="immersive-editorial__gallery-card-placeholder" aria-hidden="true"></div>
+                <div class="immersive-perspective__item-placeholder" aria-hidden="true"></div>
               {%- endif -%}
-            </div>
-            <div class="immersive-editorial__gallery-card-label">
-              <span>{{ card_label | escape }}</span>
-            </div>
-          </a>
-        {%- endif -%}
-      {%- endfor -%}
+              <span class="immersive-perspective__item-label">{{ slide_label | escape }}</span>
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+      <button
+        type="button"
+        class="immersive-perspective__btn immersive-perspective__btn--prev"
+        aria-label="{{ 'sections.immersive_editorial.carousel_prev' | t | escape }}"
+      >
+        &#8592;
+      </button>
+      <button
+        type="button"
+        class="immersive-perspective__btn immersive-perspective__btn--next"
+        aria-label="{{ 'sections.immersive_editorial.carousel_next' | t | escape }}"
+      >
+        &#8594;
+      </button>
+    </div>
+  {%- endif -%}
+
+  {%- if section.settings.layout == 'marquee' -%}
+    <div
+      class="immersive-marquee"
+      data-room-key="{{ section.settings.room_key | escape }}"
+      aria-label="{{ section.settings.hero_heading | default: 'Designers' | escape }}"
+    >
+      <div class="immersive-marquee__track" aria-hidden="true">
+        {%- comment -%} Render twice for seamless loop {%- endcomment -%}
+        {%- for pass in (1..2) -%}
+          <div class="immersive-marquee__row">
+            {%- for block in section.blocks -%}
+              {%- if block.type == 'marquee_item' -%}
+                {%- assign item_url = block.settings.collection.url | default: block.settings.cta_url | default: '#' -%}
+                <a
+                  class="immersive-marquee__item"
+                  href="{{ item_url }}"
+                  tabindex="{%- if pass == 1 -%}0{%- else -%}-1{%- endif -%}"
+                  {%- if block.settings.collection != blank -%}
+                    data-collection="{{ block.settings.collection.handle }}"
+                  {%- endif -%}
+                  {{ block.shopify_attributes }}
+                >
+                  {%- if block.settings.logo != blank -%}
+                    <img
+                      class="immersive-marquee__logo"
+                      src="{{ block.settings.logo | image_url: width: 300 }}"
+                      width="{{ block.settings.logo.width }}"
+                      height="{{ block.settings.logo.height }}"
+                      alt="{{ block.settings.heading | default: block.settings.collection.title | escape }}"
+                      loading="lazy"
+                    >
+                  {%- else -%}
+                    <span class="immersive-marquee__name">
+                      {{- block.settings.heading | default: block.settings.collection.title | escape -}}
+                    </span>
+                  {%- endif -%}
+                </a>
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+        {%- endfor -%}
+      </div>
     </div>
   {%- endif -%}
 </section>
@@ -1251,6 +1433,414 @@
       margin: 0 !important;
     }
   }
+
+  /* ============================================================================
+      CoverFlow carousel layout
+  ============================================================================ */
+  .immersive-coverflow {
+    position: relative;
+    padding: 4rem 0 5rem;
+    overflow: hidden;
+  }
+
+  .immersive-coverflow__track {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
+    min-height: 420px;
+    position: relative;
+  }
+
+  .immersive-coverflow__slide {
+    flex: 0 0 280px;
+    height: 380px;
+    position: absolute;
+    text-decoration: none;
+    color: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease, box-shadow 0.5s ease;
+    cursor: pointer;
+    will-change: transform;
+  }
+
+  .immersive-coverflow__slide-media {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .immersive-coverflow__slide-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+
+  .immersive-coverflow__slide-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, rgba(212, 175, 55, 0.1), rgba(10, 15, 30, 0.8));
+  }
+
+  .immersive-coverflow__slide-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem 1rem 1rem;
+    background: linear-gradient(to top, rgba(10, 15, 30, 0.9), transparent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #d4af37;
+    text-align: center;
+  }
+
+  .immersive-coverflow__btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(10, 15, 30, 0.7);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    color: #d4af37;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .immersive-coverflow__btn:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: #d4af37;
+  }
+
+  .immersive-coverflow__btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+  }
+
+  .immersive-coverflow__btn--prev {
+    left: 1rem;
+  }
+  .immersive-coverflow__btn--next {
+    right: 1rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-coverflow__slide {
+      transition: none !important;
+    }
+  }
+
+  /* ============================================================================
+      Stacked card carousel layout
+  ============================================================================ */
+  .immersive-stacked {
+    position: relative;
+    padding: 4rem 2rem 6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .immersive-stacked__deck {
+    position: relative;
+    width: min(480px, 90vw);
+    height: 520px;
+  }
+
+  .immersive-stacked__card {
+    position: absolute;
+    inset: 0;
+    text-decoration: none;
+    color: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(10, 15, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease, box-shadow 0.5s ease;
+    cursor: pointer;
+    will-change: transform;
+  }
+
+  .immersive-stacked__card img {
+    width: 100%;
+    height: 70%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+
+  .immersive-stacked__card-placeholder {
+    width: 100%;
+    height: 70%;
+    background: linear-gradient(160deg, rgba(212, 175, 55, 0.08), rgba(10, 15, 30, 0.7));
+  }
+
+  .immersive-stacked__card-content {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .immersive-stacked__card-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #d4af37;
+    margin: 0 0 0.5rem;
+  }
+
+  .immersive-stacked__card-body {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+  }
+
+  .immersive-stacked__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    color: #d4af37;
+    padding: 0.6rem 1.5rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .immersive-stacked__btn:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: #d4af37;
+  }
+
+  .immersive-stacked__btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-stacked__card {
+      transition: none !important;
+    }
+  }
+
+  /* ============================================================================
+      3D Perspective carousel layout
+  ============================================================================ */
+  .immersive-perspective {
+    position: relative;
+    padding: 4rem 0 5rem;
+    overflow: hidden;
+  }
+
+  .immersive-perspective__stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 900px;
+    perspective-origin: 50% 50%;
+    min-height: 360px;
+    position: relative;
+  }
+
+  .immersive-perspective__item {
+    flex: 0 0 220px;
+    height: 300px;
+    position: absolute;
+    text-decoration: none;
+    color: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease, box-shadow 0.5s ease;
+    cursor: pointer;
+    will-change: transform;
+  }
+
+  .immersive-perspective__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+
+  .immersive-perspective__item-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, rgba(212, 175, 55, 0.08), rgba(10, 15, 30, 0.8));
+  }
+
+  .immersive-perspective__item-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.25rem 0.75rem 0.75rem;
+    background: linear-gradient(to top, rgba(10, 15, 30, 0.9), transparent);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #d4af37;
+    text-align: center;
+  }
+
+  .immersive-perspective__btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(10, 15, 30, 0.7);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    color: #d4af37;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .immersive-perspective__btn:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: #d4af37;
+  }
+
+  .immersive-perspective__btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+  }
+
+  .immersive-perspective__btn--prev {
+    left: 1rem;
+  }
+  .immersive-perspective__btn--next {
+    right: 1rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-perspective__item {
+      transition: none !important;
+    }
+  }
+
+  /* ============================================================================
+      Marquee layout — infinite scrolling brand logos
+  ============================================================================ */
+  .immersive-marquee {
+    padding: 3rem 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .immersive-marquee::before,
+  .immersive-marquee::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 120px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .immersive-marquee::before {
+    left: 0;
+    background: linear-gradient(to right, #0a0f1e, transparent);
+  }
+
+  .immersive-marquee::after {
+    right: 0;
+    background: linear-gradient(to left, #0a0f1e, transparent);
+  }
+
+  .immersive-marquee__track {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .immersive-marquee__row {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    animation: immersive-marquee-scroll 30s linear infinite;
+    width: max-content;
+  }
+
+  .immersive-marquee__row:nth-child(2) {
+    animation-direction: reverse;
+    animation-duration: 35s;
+  }
+
+  @keyframes immersive-marquee-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .immersive-marquee__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+  }
+
+  .immersive-marquee__item:hover {
+    opacity: 1;
+  }
+
+  .immersive-marquee__logo {
+    height: 40px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    display: block;
+  }
+
+  .immersive-marquee__name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-marquee__row {
+      animation: none !important;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: auto;
+    }
+  }
 {% endstylesheet %}
 
 {% javascript %}
@@ -1324,6 +1914,190 @@
     } else {
       initAll();
     }
+
+    // ── CoverFlow carousel ──────────────────────────────────────────────────
+    function initCoverflow(root) {
+      var track = root.querySelector('[data-coverflow-track]');
+      if (!track) return;
+      var slides = Array.from(track.querySelectorAll('.immersive-coverflow__slide'));
+      if (!slides.length) return;
+      var current = Math.floor(slides.length / 2);
+
+      function render() {
+        slides.forEach(function (slide, i) {
+          var offset = i - current;
+          var absOffset = Math.abs(offset);
+          var x = offset * 220;
+          var rotY = offset < 0 ? 45 : offset > 0 ? -45 : 0;
+          var scale = absOffset === 0 ? 1 : absOffset === 1 ? 0.85 : 0.7;
+          var opacity = absOffset === 0 ? 1 : absOffset === 1 ? 0.7 : 0.4;
+          var zIndex = slides.length - absOffset;
+          var shadow = absOffset === 0 ? '0 30px 80px rgba(0,0,0,0.6)' : 'none';
+          if (reduceMotion) {
+            slide.style.transform = 'translateX(' + x + 'px)';
+          } else {
+            slide.style.transform = 'translateX(' + x + 'px) rotateY(' + rotY + 'deg) scale(' + scale + ')';
+          }
+          slide.style.opacity = opacity;
+          slide.style.zIndex = zIndex;
+          slide.style.boxShadow = shadow;
+        });
+      }
+
+      function prev() {
+        if (current > 0) {
+          current--;
+          render();
+        }
+      }
+      function next() {
+        if (current < slides.length - 1) {
+          current++;
+          render();
+        }
+      }
+
+      var prevBtn = root.querySelector('.immersive-coverflow__btn--prev');
+      var nextBtn = root.querySelector('.immersive-coverflow__btn--next');
+      if (prevBtn) prevBtn.addEventListener('click', prev);
+      if (nextBtn) nextBtn.addEventListener('click', next);
+
+      slides.forEach(function (slide, i) {
+        slide.addEventListener('click', function (e) {
+          if (i !== current) {
+            e.preventDefault();
+            current = i;
+            render();
+          }
+        });
+      });
+
+      render();
+    }
+
+    // ── Stacked card carousel ───────────────────────────────────────────────
+    function initStacked(root) {
+      var deck = root.querySelector('[data-stacked-deck]');
+      if (!deck) return;
+      var cards = Array.from(deck.querySelectorAll('.immersive-stacked__card'));
+      if (!cards.length) return;
+      var current = 0;
+
+      function render() {
+        cards.forEach(function (card, i) {
+          var offset = (i - current + cards.length) % cards.length;
+          var maxVisible = Math.min(4, cards.length);
+          if (offset >= maxVisible) {
+            card.style.opacity = '0';
+            card.style.pointerEvents = 'none';
+            card.style.zIndex = '0';
+            return;
+          }
+          var scale = 1 - offset * 0.05;
+          var translateY = offset * -12;
+          var translateX = offset * 6;
+          card.style.transform =
+            'translateY(' + translateY + 'px) translateX(' + translateX + 'px) scale(' + scale + ')';
+          card.style.opacity = offset === 0 ? '1' : String(1 - offset * 0.2);
+          card.style.zIndex = String(maxVisible - offset);
+          card.style.pointerEvents = offset === 0 ? 'auto' : 'none';
+          card.style.boxShadow = offset === 0 ? '0 40px 80px rgba(0,0,0,0.5)' : 'none';
+        });
+      }
+
+      var nextBtn = root.querySelector('[data-stacked-next]');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+          current = (current + 1) % cards.length;
+          render();
+        });
+      }
+
+      render();
+    }
+
+    // ── 3D Perspective carousel ─────────────────────────────────────────────
+    function initPerspective(root) {
+      var stage = root.querySelector('[data-perspective-stage]');
+      if (!stage) return;
+      var items = Array.from(stage.querySelectorAll('.immersive-perspective__item'));
+      if (!items.length) return;
+      var current = 0;
+      var total = items.length;
+
+      function render() {
+        items.forEach(function (item, i) {
+          var offset = i - current;
+          // Wrap around
+          if (offset > total / 2) offset -= total;
+          if (offset < -total / 2) offset += total;
+          var absOffset = Math.abs(offset);
+          var x = offset * 260;
+          var z = -absOffset * 120;
+          var scale = absOffset === 0 ? 1 : Math.max(0.6, 1 - absOffset * 0.15);
+          var opacity = absOffset === 0 ? 1 : Math.max(0.3, 1 - absOffset * 0.25);
+          var zIndex = total - absOffset;
+          if (reduceMotion) {
+            item.style.transform = 'translateX(' + x + 'px)';
+          } else {
+            item.style.transform = 'translateX(' + x + 'px) translateZ(' + z + 'px) scale(' + scale + ')';
+          }
+          item.style.opacity = opacity;
+          item.style.zIndex = zIndex;
+          item.style.boxShadow = absOffset === 0 ? '0 20px 60px rgba(0,0,0,0.5)' : 'none';
+        });
+      }
+
+      function prev() {
+        current = (current - 1 + total) % total;
+        render();
+      }
+      function next() {
+        current = (current + 1) % total;
+        render();
+      }
+
+      var prevBtn = root.querySelector('.immersive-perspective__btn--prev');
+      var nextBtn = root.querySelector('.immersive-perspective__btn--next');
+      if (prevBtn) prevBtn.addEventListener('click', prev);
+      if (nextBtn) nextBtn.addEventListener('click', next);
+
+      items.forEach(function (item, i) {
+        item.addEventListener('click', function (e) {
+          if (i !== current) {
+            e.preventDefault();
+            current = i;
+            render();
+          }
+        });
+      });
+
+      render();
+    }
+
+    // ── Init all carousel layouts ───────────────────────────────────────────
+    function initCarousels(container) {
+      container = container || document;
+      container.querySelectorAll('.immersive-coverflow').forEach(initCoverflow);
+      container.querySelectorAll('.immersive-stacked').forEach(initStacked);
+      container.querySelectorAll('.immersive-perspective').forEach(initPerspective);
+    }
+
+    document.addEventListener('shopify:section:load', function (e) {
+      initCarousels(e.target);
+    });
+
+    document.addEventListener('shopify:section:select', function (e) {
+      initCarousels(e.target);
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        initCarousels();
+      });
+    } else {
+      initCarousels();
+    }
   })();
 {% endjavascript %}
 
@@ -1355,7 +2129,11 @@
         { "value": "occasions", "label": "t:sections.immersive_editorial.settings.layout.options__2.label" },
         { "value": "featured_collections", "label": "t:sections.immersive_editorial.settings.layout.options__3.label" },
         { "value": "gallery", "label": "t:sections.immersive_editorial.settings.layout.options__4.label" },
-        { "value": "custom", "label": "t:sections.immersive_editorial.settings.layout.options__5.label" }
+        { "value": "custom", "label": "t:sections.immersive_editorial.settings.layout.options__5.label" },
+        { "value": "coverflow", "label": "t:sections.immersive_editorial.settings.layout.options__6.label" },
+        { "value": "stacked", "label": "t:sections.immersive_editorial.settings.layout.options__7.label" },
+        { "value": "perspective", "label": "t:sections.immersive_editorial.settings.layout.options__8.label" },
+        { "value": "marquee", "label": "t:sections.immersive_editorial.settings.layout.options__9.label" }
       ]
     },
     {
@@ -1548,6 +2326,63 @@
           "label": "t:sections.immersive_editorial.blocks.gallery_card.settings.cta_url.label"
         }
       ]
+    },
+    {
+      "type": "carousel_slide",
+      "name": "t:sections.immersive_editorial.blocks.carousel_slide.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_editorial.blocks.carousel_slide.settings.image.label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_editorial.blocks.carousel_slide.settings.heading.label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_editorial.blocks.carousel_slide.settings.body.label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_editorial.blocks.carousel_slide.settings.collection.label"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_editorial.blocks.carousel_slide.settings.cta_url.label"
+        }
+      ]
+    },
+    {
+      "type": "marquee_item",
+      "name": "t:sections.immersive_editorial.blocks.marquee_item.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "logo",
+          "label": "t:sections.immersive_editorial.blocks.marquee_item.settings.logo.label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_editorial.blocks.marquee_item.settings.heading.label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_editorial.blocks.marquee_item.settings.collection.label"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_editorial.blocks.marquee_item.settings.cta_url.label"
+        }
+      ]
     }
   ],
   "presets": [
@@ -1584,6 +2419,45 @@
       "blocks": [
         { "type": "banner", "settings": { "heading": "Banner One", "depth_layer": 30 } },
         { "type": "banner", "settings": { "heading": "Banner Two", "depth_layer": 50 } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_editorial.presets.coverflow.name",
+      "settings": { "room_key": "featured_collections", "layout": "coverflow" },
+      "blocks": [
+        { "type": "carousel_slide", "settings": { "heading": "Collection One" } },
+        { "type": "carousel_slide", "settings": { "heading": "Collection Two" } },
+        { "type": "carousel_slide", "settings": { "heading": "Collection Three" } },
+        { "type": "carousel_slide", "settings": { "heading": "Collection Four" } },
+        { "type": "carousel_slide", "settings": { "heading": "Collection Five" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_editorial.presets.stacked.name",
+      "settings": { "room_key": "occasions", "layout": "stacked" },
+      "blocks": [
+        { "type": "carousel_slide", "settings": { "heading": "Eid Collection" } },
+        { "type": "carousel_slide", "settings": { "heading": "Bridal & Mehndi" } },
+        { "type": "carousel_slide", "settings": { "heading": "Luxury Formals" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_editorial.presets.perspective.name",
+      "settings": { "room_key": "featured_collections", "layout": "perspective" },
+      "blocks": [
+        { "type": "carousel_slide", "settings": { "heading": "Collection One" } },
+        { "type": "carousel_slide", "settings": { "heading": "Collection Two" } },
+        { "type": "carousel_slide", "settings": { "heading": "Collection Three" } },
+        { "type": "carousel_slide", "settings": { "heading": "Collection Four" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_editorial.presets.marquee.name",
+      "settings": { "room_key": "designer_houses", "layout": "marquee" },
+      "blocks": [
+        { "type": "marquee_item", "settings": { "heading": "Suffuse" } },
+        { "type": "marquee_item", "settings": { "heading": "Soraya" } },
+        { "type": "marquee_item", "settings": { "heading": "Saad Bin Shahzad" } }
       ]
     }
   ]

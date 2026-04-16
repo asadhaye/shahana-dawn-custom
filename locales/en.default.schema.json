@@ -680,7 +680,11 @@
         "options__2": { "label": "Occasions" },
         "options__3": { "label": "Featured collections" },
         "options__4": { "label": "Horizontal gallery" },
-        "options__5": { "label": "Custom banners" }
+        "options__5": { "label": "Custom banners" },
+        "options__6": { "label": "CoverFlow carousel" },
+        "options__7": { "label": "Stacked cards" },
+        "options__8": { "label": "3D perspective carousel" },
+        "options__9": { "label": "Marquee" }
       },
       "hero_background_image": { "label": "Hero background image" },
       "hero_eyebrow": { "label": "Eyebrow text" },
@@ -739,6 +743,25 @@
           "collection": { "label": "Collection" },
           "cta_url": { "label": "Override link" }
         }
+      },
+      "carousel_slide": {
+        "name": "Carousel slide",
+        "settings": {
+          "image": { "label": "Image" },
+          "heading": { "label": "Heading" },
+          "body": { "label": "Description" },
+          "collection": { "label": "Collection" },
+          "cta_url": { "label": "Override link" }
+        }
+      },
+      "marquee_item": {
+        "name": "Marquee item",
+        "settings": {
+          "logo": { "label": "Brand logo" },
+          "heading": { "label": "Brand name (if no logo)" },
+          "collection": { "label": "Collection" },
+          "cta_url": { "label": "Override link" }
+        }
       }
     },
     "presets": {
@@ -746,7 +769,11 @@
       "designer_houses": { "name": "Designer Houses" },
       "occasions": { "name": "Occasions" },
       "featured_collections": { "name": "Featured Collections" },
-      "custom_banners": { "name": "Custom Banners" }
+      "custom_banners": { "name": "Custom Banners" },
+      "coverflow": { "name": "CoverFlow Carousel" },
+      "stacked": { "name": "Stacked Cards" },
+      "perspective": { "name": "3D Perspective Carousel" },
+      "marquee": { "name": "Marquee" }
     }
   },
 

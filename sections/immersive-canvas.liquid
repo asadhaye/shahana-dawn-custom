@@ -27,6 +27,7 @@
   data-section-id="{{ section.id }}"
   data-collections-base-url="{{ routes.collections_url }}"
   data-msg-welcome-toast="{{ 'sections.immersive_store.welcome_toast' | t | escape }}"
+  data-low-stock-threshold="{{ section.settings.low_stock_threshold | default: 5 }}"
 >
   <div
     class="immersive-store__canvas-wrapper"
@@ -42,7 +43,208 @@
       id="ui-layer"
       data-msg-back-to-room="{{ 'sections.immersive_store.back_to_room' | t: room_name: '' | escape }}"
       data-msg-based-on-saves="{{ 'sections.immersive_store.based_on_saves' | t | escape }}"
-    ></div>
+    >
+      <!-- Bottom navigation bar -->
+      <nav
+        class="immersive-bottom-nav"
+        data-immersive-bottom-nav
+        aria-label="{{ 'sections.immersive_store.bottom_nav.rooms' | t | escape }}"
+        data-label-rooms="{{ 'sections.immersive_store.bottom_nav.rooms' | t | escape }}"
+        data-label-wishlist="{{ 'sections.immersive_store.bottom_nav.wishlist' | t | escape }}"
+        data-label-cart="{{ 'sections.immersive_store.bottom_nav.cart' | t | escape }}"
+        data-label-2d="{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t | escape }}"
+        data-label-room-picker="{{ 'sections.immersive_store.bottom_nav.room_picker_title' | t | escape }}"
+      >
+        <button
+          type="button"
+          class="immersive-bottom-nav__item"
+          data-bottom-nav-rooms
+          aria-label="{{ 'sections.immersive_store.bottom_nav.rooms' | t | escape }}"
+        >
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+          >
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.rooms' | t }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="immersive-bottom-nav__item"
+          data-bottom-nav-wishlist
+          aria-label="{{ 'sections.immersive_store.bottom_nav.wishlist' | t | escape }}"
+        >
+          <span class="immersive-bottom-nav__icon-wrap">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span
+              class="immersive-bottom-nav__badge immersive-badge"
+              data-bottom-nav-wishlist-badge
+              aria-hidden="true"
+              hidden
+              >0</span
+            >
+          </span>
+          <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.wishlist' | t }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="immersive-bottom-nav__item"
+          data-bottom-nav-cart
+          aria-label="{{ 'sections.immersive_store.bottom_nav.cart' | t | escape }}"
+        >
+          <span class="immersive-bottom-nav__icon-wrap">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+            >
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <span
+              class="immersive-bottom-nav__badge immersive-badge"
+              data-bottom-nav-cart-badge
+              aria-hidden="true"
+              hidden
+              >0</span
+            >
+          </span>
+          <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.cart' | t }}</span>
+        </button>
+
+        <a
+          href="/"
+          class="immersive-bottom-nav__item"
+          data-bottom-nav-2d
+          aria-label="{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t | escape }}"
+        >
+          <svg
+            aria-hidden="true"
+            focusable="false"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+          >
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+          </svg>
+          <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t }}</span>
+        </a>
+      </nav>
+
+      <!-- Room picker sheet (opened by bottom nav Rooms button) -->
+      <div
+        class="immersive-bottom-nav__room-picker"
+        data-bottom-nav-room-picker
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="immersive-room-picker-title"
+        hidden
+      >
+        <div class="immersive-bottom-nav__room-picker-inner">
+          <h2 id="immersive-room-picker-title" class="immersive-bottom-nav__room-picker-title">
+            {{ 'sections.immersive_store.bottom_nav.room_picker_title' | t }}
+          </h2>
+          <button
+            type="button"
+            class="immersive-bottom-nav__room-picker-close"
+            data-bottom-nav-room-picker-close
+            aria-label="{{ 'sections.immersive_store.close' | t | escape }}"
+          >
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <ul class="immersive-bottom-nav__room-list" role="list">
+            <li>
+              <button type="button" class="immersive-bottom-nav__room-option" data-room-key="storefront">
+                {{ 'sections.immersive_store.bottom_nav.room_storefront' | t }}
+              </button>
+            </li>
+            <li>
+              <button type="button" class="immersive-bottom-nav__room-option" data-room-key="lounge">
+                {{ 'sections.immersive_store.bottom_nav.room_lounge' | t }}
+              </button>
+            </li>
+            <li>
+              <button type="button" class="immersive-bottom-nav__room-option" data-room-key="designer_houses">
+                {{ 'sections.immersive_store.bottom_nav.room_designer_houses' | t }}
+              </button>
+            </li>
+            <li>
+              <button type="button" class="immersive-bottom-nav__room-option" data-room-key="occasions">
+                {{ 'sections.immersive_store.bottom_nav.room_occasions' | t }}
+              </button>
+            </li>
+            <li>
+              <button type="button" class="immersive-bottom-nav__room-option" data-room-key="featured_collections">
+                {{ 'sections.immersive_store.bottom_nav.room_featured_collections' | t }}
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'flash_sale' and block.settings.enabled -%}
+          <div
+            class="immersive-flash-sale-banner"
+            data-flash-sale-banner
+            data-sale-end-date="{{ block.settings.sale_end_date | escape }}"
+            data-message="{{ block.settings.message | escape }}"
+            data-dismiss-label="{{ 'sections.immersive_store.limited_time.flash_dismiss' | t | escape }}"
+            {{ block.shopify_attributes }}
+            hidden
+          >
+            <span class="immersive-flash-sale-banner__message">{{ block.settings.message | escape }}</span>
+            <span class="immersive-flash-sale-banner__countdown" data-flash-countdown></span>
+            <button
+              type="button"
+              class="immersive-flash-sale-banner__dismiss"
+              data-flash-dismiss
+              aria-label="{{ 'sections.immersive_store.limited_time.flash_dismiss' | t | escape }}"
+            >
+              ×
+            </button>
+          </div>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
     <div
       id="immersive-room-badge"
       class="immersive-room-badge"
@@ -232,7 +434,59 @@
 
     <!-- Right: search, account, wishlist, cart -->
     <div class="immersive-header__right">
-      {%- render 'header-search', input_id: 'immersive-search-input' -%}
+      <div
+        class="immersive-search"
+        data-immersive-search
+        data-placeholder="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
+        data-msg-no-results="{{ 'sections.immersive_store.search.no_results' | t: term: '' | escape }}"
+        data-msg-no-results-hint="{{ 'sections.immersive_store.search.no_results_hint' | t | escape }}"
+        data-msg-unavailable="{{ 'sections.immersive_store.search.unavailable' | t | escape }}"
+        data-label-products="{{ 'sections.immersive_store.search.group_products' | t | escape }}"
+        data-label-collections="{{ 'sections.immersive_store.search.group_collections' | t | escape }}"
+        data-label-rooms="{{ 'sections.immersive_store.search.group_rooms' | t | escape }}"
+      >
+        <label for="immersive-search-input" class="visually-hidden">
+          {{- 'sections.immersive_store.search.placeholder' | t -}}
+        </label>
+        <div class="immersive-search__field">
+          <svg
+            class="immersive-search__icon"
+            aria-hidden="true"
+            focusable="false"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input
+            type="search"
+            id="immersive-search-input"
+            class="immersive-search__input"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
+            aria-label="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
+            aria-autocomplete="list"
+            aria-controls="immersive-search-results"
+            aria-expanded="false"
+            role="combobox"
+          >
+          <kbd class="immersive-search__shortcut" aria-hidden="true">⌘K</kbd>
+        </div>
+        <div
+          id="immersive-search-results"
+          class="immersive-search__dropdown"
+          role="listbox"
+          aria-label="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
+          hidden
+        ></div>
+      </div>
       {%- if customer -%}
         <a
           href="{{ routes.account_url }}"
@@ -365,6 +619,7 @@
     data-msg-load-collection-error="{{ 'sections.immersive_store.error_load_collection' | t | escape }}"
     data-msg-load-product-error="{{ 'sections.immersive_store.error_load_product' | t | escape }}"
     data-msg-load-error="{{ 'sections.immersive_store.error_load_product' | t | escape }}"
+    data-msg-error-add-to-cart="{{ 'sections.immersive_store.error_add_to_cart' | t | escape }}"
   >
     <header class="immersive-store__panel-header">
       <span class="immersive-store__panel-room-label" data-panel-room-label aria-hidden="true"></span>
@@ -2369,6 +2624,43 @@
       "label": "t:sections.immersive_store.settings.onboarding_show_once.label",
       "info": "t:sections.immersive_store.settings.onboarding_show_once.info",
       "default": true
+    },
+    {
+      "type": "header",
+      "content": "Limited Time"
+    },
+    {
+      "type": "number",
+      "id": "low_stock_threshold",
+      "label": "Low stock threshold",
+      "default": 5,
+      "info": "Show 'Only X left' badge when inventory is at or below this number"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "flash_sale",
+      "name": "Flash Sale Banner",
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "enabled",
+          "label": "Enable flash sale banner",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "message",
+          "label": "Flash sale message",
+          "default": "Flash Sale — Limited time only!"
+        },
+        {
+          "type": "text",
+          "id": "sale_end_date",
+          "label": "Sale end date (ISO 8601)",
+          "info": "Format: 2026-12-31T23:59:59Z"
+        }
+      ]
     }
   ],
   "presets": [

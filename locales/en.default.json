@@ -406,6 +406,76 @@
       "guidance_occasions": "Choose an occasion to find the perfect look",
       "name_featured_collections": "Featured Collections",
       "guidance_featured_collections": "Discover our latest curated edits"
+    },
+    "search": {
+      "placeholder": "Search products, collections, rooms…",
+      "no_results": "No results for \"{{term}}\"",
+      "no_results_hint": "Try browsing our rooms instead",
+      "unavailable": "Search unavailable",
+      "group_products": "Products",
+      "group_collections": "Collections",
+      "group_rooms": "Rooms",
+      "shortcut_label": "Press ⌘K to search"
+    },
+    "filters": {
+      "heading": "Filter",
+      "color": "Colour",
+      "price": "Price",
+      "price_min": "Min",
+      "price_max": "Max",
+      "designer": "Designer",
+      "sort": "Sort by",
+      "sort_manual": "Featured",
+      "sort_price_asc": "Price: Low to High",
+      "sort_price_desc": "Price: High to Low",
+      "sort_title_asc": "A–Z",
+      "clear_all": "Clear all",
+      "currency_label": "PKR"
+    },
+    "next_actions": {
+      "continue_exploring": "Continue exploring {{room}}",
+      "see_more_from": "See more from {{vendor}}",
+      "complete_the_look": "Complete the look",
+      "view_cart": "View cart",
+      "discover_next": "Discover what's next",
+      "dismiss": "Dismiss"
+    },
+    "recommendations": {
+      "heading": "Try next",
+      "reason_saves": "Based on your saves",
+      "reason_browsing": "Based on your browsing",
+      "dismiss": "Dismiss suggestion"
+    },
+    "quick_add": {
+      "button_label": "+ Add",
+      "button_aria": "Quick add {{title}} to cart",
+      "modal_title": "Select size",
+      "add_to_cart": "Add to cart",
+      "sold_out": "Sold out",
+      "added": "Added to cart",
+      "select_size": "Please select a size"
+    },
+    "bottom_nav": {
+      "rooms": "Rooms",
+      "wishlist": "Wishlist",
+      "cart": "Cart",
+      "back_to_2d": "Classic store",
+      "room_picker_title": "Go to room",
+      "room_storefront": "Storefront",
+      "room_lounge": "Lounge",
+      "room_designer_houses": "Designer Houses",
+      "room_occasions": "Occasions",
+      "room_featured_collections": "Featured Collections"
+    },
+    "limited_time": {
+      "sale_ends": "Sale ends in",
+      "days": "d",
+      "hours": "h",
+      "minutes": "m",
+      "seconds": "s",
+      "low_stock": "Only {{count}} left",
+      "flash_sale": "Flash Sale",
+      "flash_dismiss": "Dismiss"
     }
   },
   "immersive_canvas": {
@@ -416,11 +486,15 @@
     "overlay_title": "Editorial Story",
     "loading": "Loading Story...",
     "error_unavailable": "The story is temporarily unavailable.",
-    "try_again": "Try again"
+    "try_again": "Try again",
+    "carousel_prev": "Previous",
+    "carousel_next": "Next",
+    "stacked_next": "Next look"
   },
   "immersive": {
     "product_grid": {
       "empty": "No products found",
+      "no_results_filtered": "No products match your filters. Try adjusting or clearing your filters.",
       "back_to_collection": "Back to collection"
     },
     "product_card": {

@@ -30,6 +30,10 @@
   {%- if collection_handle_resolved != blank -%}
     data-collection-handle="{{ collection_handle_resolved | escape }}"
   {%- endif -%}
+  data-sale-end-date="{{ product.metafields.custom.sale_end_date | escape }}"
+  data-inventory-quantity="{{ product.selected_or_first_available_variant.inventory_quantity }}"
+  data-product-vendor="{{ product.vendor | escape }}"
+  data-product-color="{{ product.options_with_values | where: 'name', 'Color' | first | map: 'values' | first | default: '' | escape }}"
 >
   {%- if product.featured_image -%}
     <a
@@ -108,6 +112,15 @@
       >
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
       </svg>
+    </button>
+    <button
+      type="button"
+      class="immersive-product-card__quick-add"
+      data-quick-add
+      data-product-handle="{{ product.handle }}"
+      aria-label="{{ 'sections.immersive_store.quick_add.button_aria' | t: title: product.title | escape }}"
+    >
+      {{ 'sections.immersive_store.quick_add.button_label' | t }}
     </button>
   {%- else -%}
     <div class="immersive-product-image immersive-product-image-placeholder">
@@ -225,6 +238,8 @@
         {{ 'sections.immersive.product_card.badge_new' | t }}
       </div>
     {%- endif -%}
+
+    <div class="immersive-product-card__urgency" data-urgency-container></div>
   </div>
 </article>
 
@@ -519,5 +534,56 @@
       transition: none !important;
       transform: none !important;
     }
+  }
+
+  /* ── Quick-Add Button ────────────────────────────────── */
+  .immersive-product-card__quick-add {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 10, 0.85);
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    border-radius: 9999px;
+    color: #d4af37;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.375rem 0.875rem;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .immersive-product-card:hover .immersive-product-card__quick-add,
+  .immersive-product-card:focus-within .immersive-product-card__quick-add {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .immersive-product-card__quick-add:hover {
+    background: rgba(212, 175, 55, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    /* Always visible on touch devices */
+    .immersive-product-card__quick-add {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-product-card__quick-add {
+      transition: none;
+    }
+  }
+
+  /* ── Urgency Container ───────────────────────────────── */
+  .immersive-product-card__urgency {
+    min-height: 0;
   }
 {% endstylesheet %}

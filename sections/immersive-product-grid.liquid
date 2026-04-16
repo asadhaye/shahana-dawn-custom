@@ -9,9 +9,29 @@
   assign products_to_show = section.settings.products_per_page | default: 8
   assign columns_desktop = section.settings.columns_desktop | default: 3
   assign columns_mobile = section.settings.columns_mobile | default: '2'
+
+  assign filter_active = false
+  if collection.filters.size > 0
+    for filter in collection.filters
+      if filter.active_values.size > 0
+        assign filter_active = true
+        break
+      endif
+      if filter.min_value.value != blank or filter.max_value.value != blank
+        assign filter_active = true
+        break
+      endif
+    endfor
+  endif
 -%}
 
-<div class="immersive-product-grid-wrapper">
+<div
+  class="immersive-product-grid-wrapper"
+  data-collection-handle="{{ collection.handle }}"
+  {%- if filter_active -%}
+    data-filter-active="true"
+  {%- endif -%}
+>
   {%- if collection and collection.title != blank -%}
     <h2 class="immersive-product-grid__title">
       {{ collection.title }}
@@ -25,7 +45,7 @@
   {%- endif -%}
 
   <div class="immersive-product-grid immersive-product-grid--{{ columns_desktop }}-col-desktop immersive-product-grid--{{ columns_mobile }}-col-mobile">
-    {%- if collection and collection.products_count > 0 -%}
+    {%- if collection and collection.products.size > 0 -%}
       {%- paginate collection.products by products_to_show -%}
         <div class="immersive-product-grid__inner">
           {%- for product in collection.products -%}
@@ -37,6 +57,10 @@
           {%- endfor -%}
         </div>
       {%- endpaginate -%}
+    {%- elsif filter_active -%}
+      <p class="immersive-product-grid__empty immersive-product-grid__empty--filtered">
+        {{ 'sections.immersive.product_grid.no_results_filtered' | t }}
+      </p>
     {%- else -%}
       <p class="immersive-product-grid__empty">
         {{ 'sections.immersive.product_grid.empty' | t }}

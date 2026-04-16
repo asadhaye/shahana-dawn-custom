@@ -37,6 +37,142 @@
         padding-bottom: {{ section.settings.padding_bottom }}px;
       }
     }
+
+    /* ── Product page: clean readable typography ─────────────────────────── */
+    .template-product .product__info-container,
+    .template-product .product__info-wrapper {
+      background: transparent;
+    }
+
+    /* Ensure body text is readable — dark on light background */
+    .template-product .product__description,
+    .template-product .product__description p,
+    .template-product .product__description li,
+    .template-product .product__text,
+    .template-product .product__accordion .accordion__content,
+    .template-product .product__accordion .accordion__content p,
+    .template-product .product__accordion .accordion__content li {
+      color: rgb(var(--color-foreground)) !important;
+    }
+
+    /* Product title */
+    .template-product .product__title h1,
+    .template-product .product__title h2 {
+      color: rgb(var(--color-foreground));
+    }
+
+    /* Price */
+    .template-product .price__regular .price-item,
+    .template-product .price__sale .price-item {
+      color: rgb(var(--color-foreground));
+    }
+
+    /* Variant buttons — clear styling */
+    .template-product .product-form__input .swatch-input__input + label,
+    .template-product .product-form__input .button-input__input + label {
+      border: 1px solid rgba(var(--color-foreground), 0.2);
+      color: rgb(var(--color-foreground));
+    }
+
+    .template-product .product-form__input .swatch-input__input:checked + label,
+    .template-product .product-form__input .button-input__input:checked + label {
+      border-color: rgb(var(--color-foreground));
+      background: rgb(var(--color-foreground));
+      color: rgb(var(--color-background));
+    }
+
+    /* Add to cart button — primary gold style */
+    .template-product .product-form__submit.button--primary {
+      background: #d4af37;
+      color: #0a0f1e;
+      border: none;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .template-product .product-form__submit.button--primary:hover {
+      background: #c9a430;
+    }
+
+    /* Add to cart secondary (when dynamic checkout is shown) */
+    .template-product .product-form__submit.button--secondary {
+      background: transparent;
+      color: #d4af37;
+      border: 2px solid #d4af37;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .template-product .product-form__submit.button--secondary:hover {
+      background: rgba(212, 175, 55, 0.1);
+    }
+
+    /* Dynamic checkout (Buy it now) — ensure visible on all screen sizes */
+    .template-product .shopify-payment-button {
+      display: block !important;
+      margin-top: 0.75rem;
+    }
+
+    .template-product .shopify-payment-button__button {
+      display: block !important;
+      width: 100% !important;
+      min-height: 44px !important;
+    }
+
+    /* Delivery date custom liquid */
+    .template-product #MainProduct-{{ section.id }} p:has(#fromDate),
+    .template-product #MainProduct-{{ section.id }} p {
+      color: rgb(var(--color-foreground));
+    }
+
+    /* Share buttons */
+    .template-product .share-button__link {
+      color: rgb(var(--color-foreground));
+    }
+
+    /* Collapsible tabs */
+    .template-product .accordion__title {
+      color: rgb(var(--color-foreground));
+    }
+
+    /* VTO — match page background instead of dark glass */
+    .template-product .vtryon {
+      background: rgba(var(--color-foreground), 0.04) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border: 1px solid rgba(var(--color-foreground), 0.12) !important;
+      color: rgb(var(--color-foreground)) !important;
+    }
+
+    .template-product .vtryon__title,
+    .template-product .vtryon__gate-title,
+    .template-product .vtryon__gate-subtitle,
+    .template-product .vtryon__subtitle {
+      color: rgb(var(--color-foreground)) !important;
+    }
+
+    .template-product .vtryon__icon svg,
+    .template-product .vtryon__header svg {
+      color: #d4af37;
+    }
+
+    /* Image gallery — ensure thumbnails show on mobile */
+    @media screen and (max-width: 749px) {
+      .template-product .product__media-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .template-product .product__media-item {
+        width: 100% !important;
+      }
+
+      /* Show thumbnail strip on mobile */
+      .template-product .thumbnail-slider__wrapper {
+        display: flex !important;
+      }
+    }
   {%- endstyle -%}
 
   <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
