@@ -10,6 +10,7 @@
 2. [Journey Map](#journey-map)
    - [Phase 1 — Discovery](#phase-1--discovery)
    - [Phase 2 — Entry](#phase-2--entry)
+   - [Phase 2G — Guided Mode (Concierge Sequence)](#phase-2g--guided-mode-concierge-sequence)
    - [Phase 3 — Room Navigation](#phase-3--room-navigation)
    - [Phase 4 — Editorial Exploration](#phase-4--editorial-exploration)
    - [Phase 5 — Product Browsing](#phase-5--product-browsing)
@@ -59,7 +60,7 @@ All fetches go through `fetchWithCache(url)` — URL-keyed, adds `X-Requested-Wi
 
 | Object | Purpose |
 |--------|---------|
-| `immersiveState` | `{ mode, currentRoom, editorialRoom, lastHotspot }` |
+| `immersiveState` | `{ mode, currentRoom, editorialRoom, lastHotspot, guided }` |
 | `_browsingContext` | `{ visitedRooms, savedProducts, viewedCollections, cartCollections }` |
 | `contentCache` | URL-keyed HTML cache for Section Rendering API responses |
 
@@ -95,12 +96,12 @@ Each room has `baseTextureUrl`, `depthMapUrl` (mobile variants too), and `hotspo
 **Trigger:** Shopper navigates to `/pages/immersive`
 **System response:**
 - `safeBindImmersiveInit()` fires on DOMContentLoaded
-- Three.js loads the storefront room texture + depth map
-- Depth-map parallax begins responding to mouse (desktop) or tilt (mobile)
-- Single hotspot: `[Enter Store]` at centre-bottom
+- Three.js loads the storefront room texture + depth map (separate desktop 16:9 and mobile 9:16 assets)
+- Depth-map parallax begins responding to mouse (desktop) or gyroscope tilt (mobile, opt-in)
+- Single hotspot: `[Start Experience]` at centre-bottom
 - Onboarding overlay shown if first visit
 **Key files:** `sections/immersive-canvas.liquid`, `assets/immersive-store.js`
-**State:** `immersiveState.mode = 'showroom'`, `currentRoom = 'storefront'`
+**State:** `immersiveState.mode = 'showroom'`, `currentRoom = 'storefront'`, `guided = false`
 
 #### Touchpoint 2.2 — Onboarding Overlay
 
@@ -108,11 +109,67 @@ Each room has `baseTextureUrl`, `depthMapUrl` (mobile variants too), and `hotspo
 **System response:** `#immersive-onboarding` dialog shown; focus moves to dismiss button; escape or dismiss writes flag and removes overlay
 **Key files:** `sections/immersive-canvas.liquid`, `assets/immersive-store.js`
 
-#### Touchpoint 2.3 — Enter Store Hotspot
+#### Touchpoint 2.3 — Start Experience CTA
 
-**Trigger:** Shopper clicks `[Enter Store]` hotspot
-**System response:** `goToRoom('lounge')` — Three.js fades out storefront texture, loads lounge texture + depth map; hotspots update; room badge updates
-**State:** `currentRoom = 'lounge'`
+**Trigger:** Shopper clicks `[Start Experience]` hotspot (replaces old "Enter Store")
+**System response:**
+- `activateGuidedMode()` fires — sets `immersiveState.guided = true`, step dots appear (top-centre), idle timer starts
+- `goToRoom('lounge')` — Three.js transitions to lounge
+**State:** `currentRoom = 'lounge'`, `guided = true`, `_guidedStep = 0`
+
+---
+
+### Phase 2G — Guided Mode (Concierge Sequence)
+
+> Guided mode is a luxury concierge experience that leads the shopper through a curated narrative: Lounge → Editorial → Collection. It activates on "Start Experience" and exits immediately on any manual intent. The featured wing (which editorial room to enter) is merchant-configurable in the theme editor.
+
+#### Touchpoint 2G.1 — Lounge (Guided Step 0)
+
+**Trigger:** Arrival via "Start Experience"
+**System response:**
+- Step dot 0 activates (gold)
+- After 3.5s idle: soft prompt appears — `[Begin a curated experience]` / `[Explore freely]`
+- After 10s idle (or prompt CTA click): auto-advances to editorial
+- Any user activity (mouse/touch/scroll/keydown) resets the 10s timer
+**State:** `guided = true`, `_guidedStep = 0`
+
+#### Touchpoint 2G.2 — Soft Prompt
+
+**Trigger:** 3.5s of idle in lounge while guided mode is active
+**System response:** Glassmorphism pill appears above bottom nav with two actions:
+- `[Begin a curated experience]` → immediately advances to editorial
+- `[Explore freely]` → calls `exitGuidedMode()`, sets `immersive_guided_dismissed` in sessionStorage
+**Key files:** `assets/immersive-store.js` — `showGuidedPrompt()`, `hideGuidedPrompt()`
+
+#### Touchpoint 2G.3 — Editorial Entry (Guided Step 1)
+
+**Trigger:** 10s idle OR prompt CTA click
+**System response:**
+- Step dot 1 activates
+- `enterEditorialMode(featuredWing, null)` fires (featured wing = merchant setting, default: `designer_houses`)
+- Editorial overlay opens with hero parallax active
+- Idle timer resets — 10s before auto-advancing to collection
+**State:** `mode = 'editorial'`, `editorialRoom = featuredWing`, `_guidedStep = 1`
+
+#### Touchpoint 2G.4 — Collection Entry (Guided Step 2)
+
+**Trigger:** 10s idle in editorial while guided mode is active
+**System response:**
+- Step dot 2 activates
+- `exitEditorialMode()` fires
+- `openCollectionPanel(firstCollection)` opens the first collection from the featured wing's hotspots
+- Guided mode exits after this step (`exitGuidedMode()`)
+**State:** `guided = false`, glass-panel open, `_guidedStep = 2`
+
+#### Touchpoint 2G.5 — Guided Mode Exit (Any Manual Intent)
+
+**Trigger:** Any of: manual hotspot click, panel open, bottom nav (wishlist/cart), search, swipe, `[Explore freely]` click
+**System response:**
+- `exitGuidedMode()` fires immediately
+- Step dots hide
+- Timers cleared
+- `immersive_guided_dismissed = '1'` written to sessionStorage (prevents restart in same session)
+**State:** `guided = false`
 
 ---
 
@@ -307,13 +364,24 @@ Each room has `baseTextureUrl`, `depthMapUrl` (mobile variants too), and `hotspo
 ### Phase 2 — Entry
 
 #### 2.1 Storefront — Base Texture (Desktop 16:9, 1600px)
-> Grand Pakistani boutique exterior at golden hour, ornate carved marble archway with a softly glowing entrance, warm amber light spilling onto a white stone forecourt, silk dupatta draped loosely across the frame, central 70% contains the doorway and forecourt, outer 15% fades into soft architectural bokeh and sky, editorial luxury fashion photography, 16:9, 8K photorealistic, `--ar 16:9 --style raw --v 6`
+> Grand Pakistani boutique exterior at golden hour, ornate carved marble archway with a softly glowing entrance, warm amber light spilling onto a white stone forecourt, silk dupatta draped loosely across the frame, central 70% contains the doorway and forecourt, outer 15% fades into soft architectural bokeh and sky, a single glowing CTA button visible at centre-bottom of the scene, editorial luxury fashion photography, 16:9, 8K photorealistic, `--ar 16:9 --style raw --v 6`
+
+#### 2.1 Storefront — "Start Experience" CTA Hotspot
+> The hotspot should feel like a glowing invitation, not a button. The room image should have a natural focal point at centre-bottom — a lit doorstep, a glowing threshold, or a pool of warm light — so the "Start Experience" label floats naturally over it.
 
 #### 2.1 Storefront — Depth Map (Greyscale 16:9, 1600px)
 > Greyscale luminance depth map of a boutique exterior: foreground arch and draped fabric pure white (near), midground forecourt and columns medium grey, background sky gradient to dark grey, smooth continuous gradient reaching all four edges, no abrupt cuts, no surface texture detail, pure depth information only
 
 #### 2.1 Storefront — Mobile Base Texture (Portrait 9:16, 900px)
 > Pakistani boutique entrance at golden hour, portrait orientation, ornate marble doorway centred vertically in the middle 70% of the frame, top 15% soft amber sky bokeh, bottom 15% fading stone floor texture, editorial luxury fashion, 9:16, 8K photorealistic, `--ar 9:16 --style raw --v 6`
+
+### Phase 2G — Guided Mode UI
+
+#### 2G — Step Dots Progress Indicator
+> No image needed — pure CSS. Four 6px gold dots (`#d4af37`) on a dark glassmorphism pill, top-centre of viewport. Active dot scales to 1.4×. Completed dots fade to 45% opacity gold.
+
+#### 2G — Soft Prompt Pill
+> No image needed — pure CSS glassmorphism. Dark pill with gold CTA text and muted skip text. Appears above the bottom nav after 3.5s idle.
 
 ---
 
@@ -401,12 +469,30 @@ Each room has `baseTextureUrl`, `depthMapUrl` (mobile variants too), and `hotspo
 
 | Enhancement | Touchpoint | Trigger | Key File |
 |-------------|-----------|---------|----------|
+| GuidedMode | 2.3, 2G.1–2G.5 | "Start Experience" CTA click | `immersive-store.js`, `immersive-canvas.liquid`, `immersive-theme.css` |
 | EditorialScrollReveal | 4.1 | Wheel/swipe-down in room (panel closed) | `immersive-store.js` |
 | EditorialBackToLounge | 4.7 | Click `[Back to Lounge]` chip in editorial | `immersive-store.js`, `immersive-canvas.liquid` |
 | VisitedRoomsIndicator | 3.3 | Room picker opens; `trackRoomVisit()` fires | `immersive-store.js`, `immersive-theme.css` |
 | EditorialHeroParallax | 4.4 | Scroll inside editorial overlay | `immersive-store.js`, `immersive-theme.css` |
 | ProductCardTilt | 5.3 | Mousemove on product card (pointer:fine) | `immersive-store.js`, `immersive-product-card.liquid` |
 
+### Guided Mode — State & Timing Reference
+
+| State | Value | Meaning |
+|-------|-------|---------|
+| `immersiveState.guided` | `true` | Guided sequence active |
+| `immersiveState.guided` | `false` | Free browsing |
+| `_guidedStep` | `0` | Lounge |
+| `_guidedStep` | `1` | Editorial |
+| `_guidedStep` | `2` | Collection (guided exits) |
+| `sessionStorage.immersive_guided_dismissed` | `'1'` | Won't restart this session |
+
+| Timer | Duration | Purpose |
+|-------|----------|---------|
+| Soft prompt | 3.5s | Show "Begin a curated experience" pill |
+| Auto-advance | 10s | Move to next step |
+| Timer reset | On any user activity | Prevents rushed feeling |
+
 ---
 
-*Last updated: automatically generated after immersive-editorial-enhancements spec implementation.*
+*Last updated: after guided mode + Start Experience CTA implementation.*
