@@ -28,6 +28,7 @@
   data-collections-base-url="{{ routes.collections_url }}"
   data-msg-welcome-toast="{{ 'sections.immersive_store.welcome_toast' | t | escape }}"
   data-low-stock-threshold="{{ section.settings.low_stock_threshold | default: 5 }}"
+  data-guided-featured-wing="{{ section.settings.guided_featured_wing | default: 'designer_houses' | escape }}"
 >
   <div
     class="immersive-store__canvas-wrapper"
@@ -184,6 +185,7 @@
     <div
       class="immersive-bottom-nav__room-picker"
       data-bottom-nav-room-picker
+      data-room-visited-label="{{ 'sections.immersive_store.room_visited' | t | escape }}"
       role="dialog"
       aria-modal="true"
       aria-labelledby="immersive-room-picker-title"
@@ -241,6 +243,44 @@
         </ul>
       </div>
     </div>
+
+    <!-- Guided mode progress dots — visible only when immersiveState.guided === true -->
+    <div
+      id="immersive-guided-progress"
+      class="immersive-guided-progress"
+      aria-hidden="true"
+      hidden
+    >
+      <span class="immersive-guided-progress__dot" data-guided-step="0" aria-hidden="true"></span>
+      <span class="immersive-guided-progress__dot" data-guided-step="1" aria-hidden="true"></span>
+      <span class="immersive-guided-progress__dot" data-guided-step="2" aria-hidden="true"></span>
+      <span class="immersive-guided-progress__dot" data-guided-step="3" aria-hidden="true"></span>
+    </div>
+
+    <!-- Guided mode soft prompt — "Begin a curated experience" -->
+    <div
+      id="immersive-guided-prompt"
+      class="immersive-guided-prompt"
+      hidden
+    >
+      <button
+        type="button"
+        class="immersive-guided-prompt__cta"
+        data-guided-prompt-cta
+        aria-label="{{ 'sections.immersive_store.guided.prompt_cta' | t | escape }}"
+      >
+        {{ 'sections.immersive_store.guided.prompt_cta' | t }}
+      </button>
+      <button
+        type="button"
+        class="immersive-guided-prompt__skip"
+        data-guided-prompt-skip
+        aria-label="{{ 'sections.immersive_store.guided.prompt_skip' | t | escape }}"
+      >
+        {{ 'sections.immersive_store.guided.prompt_skip' | t }}
+      </button>
+    </div>
+
     <div
       id="immersive-room-badge"
       class="immersive-room-badge"
@@ -920,32 +960,41 @@
     data-msg-loading="{{ 'sections.immersive_editorial.loading' | t | escape }}"
     data-msg-error="{{ 'sections.immersive_editorial.error_unavailable' | t | escape }}"
     data-msg-try-again="{{ 'sections.immersive_editorial.try_again' | t | escape }}"
+    data-back-to-lounge-label="{{ 'sections.immersive_editorial.back_to_lounge' | t | escape }}"
   >
     <h2 id="immersive-editorial-overlay-heading" class="visually-hidden">
       {{- 'sections.immersive_editorial.overlay_title' | t -}}
     </h2>
-    <button
-      type="button"
-      id="immersive-editorial-back"
-      class="immersive-editorial-overlay__back"
-      aria-label="{{ 'sections.immersive_store.close' | t }}"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
+    <div class="immersive-editorial-overlay__header-actions">
+      <button
+        type="button"
+        id="immersive-editorial-back"
+        class="immersive-editorial-overlay__back"
+        aria-label="{{ 'sections.immersive_store.close' | t }}"
       >
-        <polyline points="15 18 9 12 15 6"></polyline>
-      </svg>
-      {{ 'sections.immersive_store.menu.storefront' | t }}
-    </button>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        {{ 'sections.immersive_store.menu.storefront' | t }}
+      </button>
+      <button
+        type="button"
+        class="immersive-editorial__back-to-lounge immersive-chip"
+        data-editorial-back-to-lounge
+        hidden
+      ></button>
+    </div>
     <div id="immersive-editorial-overlay-content" class="immersive-editorial-overlay__content"></div>
   </div>
 </section>
@@ -1912,8 +1961,9 @@
   }
 
   .immersive-editorial-overlay__back {
-    position: fixed;
-    top: 1.5rem;
+    position: relative;
+    top: auto;
+    left: auto;
     left: 1.5rem;
     z-index: 120;
     display: flex;
@@ -2631,6 +2681,22 @@
       "label": "Low stock threshold",
       "default": 5,
       "info": "Show 'Only X left' badge when inventory is at or below this number"
+    },
+    {
+      "type": "header",
+      "content": "Guided Experience"
+    },
+    {
+      "type": "select",
+      "id": "guided_featured_wing",
+      "label": "Featured wing (guided mode entry)",
+      "options": [
+        { "value": "designer_houses", "label": "Designer Houses" },
+        { "value": "occasions", "label": "Occasions" },
+        { "value": "featured_collections", "label": "Featured Collections" }
+      ],
+      "default": "designer_houses",
+      "info": "The editorial room the guided sequence enters after the lounge"
     }
   ],
   "blocks": [

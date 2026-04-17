@@ -8,7 +8,17 @@ const STORE_ROOMS = {
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-d-depth.webp?v=1774971845&width=1600&quality=60',
     mobileDepthMapUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-m-depth.webp?v=1774971846&width=900&quality=60',
-    hotspots: [{ x: 50, y: 68, label: 'Enter store', targetRoom: 'lounge', mobileX: 55, mobileY: 63 }],
+    hotspots: [
+      {
+        x: 50,
+        y: 68,
+        label: 'Start Experience',
+        targetRoom: 'lounge',
+        mobileX: 55,
+        mobileY: 63,
+        startExperience: true,
+      },
+    ],
   },
 
   lounge: {
@@ -178,6 +188,7 @@ var immersiveState = {
   mode: 'showroom',
   editorialRoom: null,
   lastHotspot: null, // To restore focus accurately
+  guided: false, // Guided sequence mode
 };
 
 // Locale-aware root for building URLs (supports /fr/, /en-us/, etc.)
@@ -1244,6 +1255,12 @@ function renderHotspots(roomKey) {
       button.addEventListener('click', function () {
         var details = { room_key: roomKey, hotspot_label: hotspot.label };
         console.log('[Immersive] Hotspot clicked:', JSON.stringify(hotspot));
+
+        // Exit guided mode on any manual hotspot interaction (unless this is the start trigger)
+        if (!hotspot.startExperience) {
+          exitGuidedMode();
+        }
+
         if (hotspot.targetEditorialRoom) {
           details.target_type = 'editorial';
           details.target_editorial_room = hotspot.targetEditorialRoom;
@@ -1255,6 +1272,10 @@ function renderHotspots(roomKey) {
           details.target_type = 'room';
           details.target_room_key = hotspot.targetRoom;
           trackImmersiveEvent('hotspot_clicked', details);
+          // Activate guided mode when "Start Experience" is clicked
+          if (hotspot.startExperience) {
+            activateGuidedMode();
+          }
           goToRoom(hotspot.targetRoom);
         } else if (hotspot.targetCollection) {
           details.target_type = 'collection';
@@ -1672,6 +1693,7 @@ function closeOverlay(overlay, triggerEl) {
 // Helper: Open the glass panel for a product
 // ─────────────────────────────────────────────────────────────
 function openProductPanel(productHandle, collectionHandle) {
+  exitGuidedMode();
   recordBrowsingSignal(immersiveState.currentRoom);
   saveState({ panel: 'product', product: productHandle, collection: collectionHandle || null });
 
@@ -1799,6 +1821,7 @@ function getRelevantRooms() {
 // Helper: Open the glass panel for a collection
 // ─────────────────────────────────────────────────────────────
 function openCollectionPanel(collectionHandle) {
+  exitGuidedMode();
   recordBrowsingSignal(immersiveState.currentRoom);
   saveState({ panel: 'collection', collection: collectionHandle, product: null });
 
@@ -1970,6 +1993,10 @@ function enterEditorialMode(roomKey, triggerEl) {
         window.ImmersiveEditorial.init(overlayContent);
       }
 
+      // Back to Lounge visibility + hero parallax
+      updateBackToLoungeVisibility(roomKey);
+      initEditorialHeroParallax();
+
       // Setup escape handler
       if (!overlay._onEscape) {
         overlay._onEscape = function (e) {
@@ -2041,6 +2068,7 @@ function performEditorialUIActivation(overlay, canvas) {
 // Editorial overlay exit point (paired with enterEditorialMode)
 // ─────────────────────────────────────────────────────────────
 function exitEditorialMode() {
+  destroyEditorialHeroParallax();
   var overlay = document.getElementById('immersive-editorial-overlay');
   var canvas = document.getElementById(immersiveCanvasId);
   var triggerEl = immersiveState.lastHotspot;
@@ -4037,6 +4065,7 @@ function initImmersiveBottomNav() {
   // Wire Wishlist button → existing wishlist open handler
   if (wishlistBtn) {
     wishlistBtn.addEventListener('click', function () {
+      exitGuidedMode();
       var wishlistOpenBtn = document.querySelector('[data-wishlist-open]');
       if (wishlistOpenBtn) wishlistOpenBtn.click();
     });
@@ -4045,6 +4074,7 @@ function initImmersiveBottomNav() {
   // Wire Cart button → existing cart toggle
   if (cartBtn) {
     cartBtn.addEventListener('click', function () {
+      exitGuidedMode();
       var cartToggle = document.getElementById('cart-toggle');
       if (cartToggle) cartToggle.click();
     });
@@ -4053,6 +4083,7 @@ function initImmersiveBottomNav() {
   // Wire Rooms button → room picker sheet
   if (roomsBtn && roomPicker) {
     roomsBtn.addEventListener('click', function () {
+      syncVisitedRooms();
       roomPicker.hidden = false;
       if (roomPickerClose) roomPickerClose.focus();
     });
@@ -4220,6 +4251,9 @@ function initImmersiveGestures() {
         // Swipe down → close panel
         var closeBtn = glassPanel && glassPanel.querySelector('.immersive-store__panel-close');
         if (closeBtn) closeBtn.click();
+      } else if (gesture === 'vertical-down' && !panelOpen) {
+        // Swipe down + panel closed → scroll-to-reveal editorial
+        _esrOnSwipeDown(deltaX, deltaY);
       } else if (gesture === 'vertical-up' && !panelOpen) {
         // Swipe up → open wishlist
         var wishlistOpenBtn = document.querySelector('[data-wishlist-open]');
@@ -5033,6 +5067,7 @@ function trackRoomVisit(roomKey) {
     _browsingContext.visitedRooms.push(roomKey);
   }
   evaluateRoomRecommendation();
+  syncVisitedRooms();
 }
 
 // ============================================================
@@ -5207,6 +5242,10 @@ function safeBindImmersiveInit() {
     initImmersiveSearch();
     initImmersiveBottomNav();
     initImmersiveGestures();
+    initEditorialScrollReveal();
+    initEditorialBackToLounge();
+    initProductCardTilt();
+    initGuidedMode();
     initImmersiveNextActions();
     initImmersiveRoomRecommender();
     initImmersiveQuickAdd();
@@ -5298,3 +5337,481 @@ document.addEventListener('shopify:section:unload', function (e) {
     _immersiveInitBound = false;
   }
 });
+
+// ============================================================
+// IMMERSIVE EDITORIAL ENHANCEMENTS
+// ============================================================
+
+// ── EditorialScrollReveal state ─────────────────────────────
+var _esrCooldown = false;
+var _esrWheelBound = false;
+
+// ── EditorialHeroParallax state ─────────────────────────────
+var _ehpScrollTarget = 0;
+var _ehpScrollCurrent = 0;
+var _ehpRafId = null;
+var _ehpOverlay = null;
+var _ehpHeroImg = null;
+
+// ── ProductCardTilt state ───────────────────────────────────
+var _pctRafPending = false;
+var _pctActiveCard = null;
+var _pctPendingNormX = 0;
+var _pctPendingNormY = 0;
+
+// ── VisitedRoomsIndicator ───────────────────────────────────
+var VISITED_ROOMS_EXCLUDE = ['lounge', 'storefront'];
+
+// ============================================================
+// EditorialScrollReveal
+// ============================================================
+
+function _esrEaseOutParallax(durationMs, callback) {
+  var startValue = typeof parallaxStrength !== 'undefined' ? parallaxStrength : 0;
+  var startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+    var t = Math.min(elapsed / durationMs, 1);
+    if (typeof parallaxStrength !== 'undefined') {
+      parallaxStrength = startValue * (1 - t);
+    }
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      if (typeof parallaxStrength !== 'undefined') parallaxStrength = 0;
+      if (typeof callback === 'function') callback();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function _esrTrigger() {
+  if (!immersiveState || immersiveState.mode !== 'showroom') return;
+  var editorialRooms = ['designer_houses', 'occasions', 'featured_collections'];
+  if (editorialRooms.indexOf(immersiveState.currentRoom) === -1) return;
+
+  var panel = document.getElementById('glass-panel');
+  if (panel && (panel.classList.contains('is-active') || (!panel.hidden && !panel.classList.contains('hidden'))))
+    return;
+
+  if (_esrCooldown) return;
+
+  _esrCooldown = true;
+  setTimeout(function () {
+    _esrCooldown = false;
+  }, 700);
+
+  var roomKey = immersiveState.currentRoom;
+  var reduceMotionESR = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (reduceMotionESR) {
+    enterEditorialMode(roomKey, null);
+  } else {
+    _esrEaseOutParallax(300, function () {
+      enterEditorialMode(roomKey, null);
+    });
+  }
+}
+
+function _esrOnWheel(event) {
+  if (event.deltaY > 0) _esrTrigger();
+}
+
+function initEditorialScrollReveal() {
+  if (_esrWheelBound) return;
+  var canvasWrapper = document.querySelector('.immersive-store__canvas-wrapper');
+  if (!canvasWrapper) return;
+  canvasWrapper.addEventListener('wheel', _esrOnWheel, { passive: true });
+  _esrWheelBound = true;
+}
+
+// Called from ImmersiveGestures swipe-down path (panel not open)
+function _esrOnSwipeDown(deltaX, deltaY) {
+  var absDy = Math.abs(deltaY);
+  var absDx = Math.abs(deltaX);
+  if (absDy < 60) return;
+  if (absDx > 0 && absDy / absDx <= 2.5) return;
+  if (deltaY < 0) return; // must be downward (positive deltaY)
+  _esrTrigger();
+}
+
+// ============================================================
+// EditorialBackToLounge
+// ============================================================
+
+function updateBackToLoungeVisibility(roomKey) {
+  var btn = document.querySelector('[data-editorial-back-to-lounge]');
+  if (!btn) return;
+  btn.hidden = roomKey === 'lounge';
+}
+
+function initEditorialBackToLounge() {
+  var overlay = document.getElementById('immersive-editorial-overlay');
+  if (!overlay) return;
+
+  var btn = overlay.querySelector('[data-editorial-back-to-lounge]');
+  if (!btn) return;
+
+  // Populate label from data attribute
+  var label = overlay.getAttribute('data-back-to-lounge-label') || 'Back to Lounge';
+  btn.textContent = label;
+
+  if (!btn._btlBound) {
+    btn._btlBound = true;
+    btn.addEventListener('click', function () {
+      exitEditorialMode();
+      goToRoom('lounge');
+    });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        exitEditorialMode();
+        goToRoom('lounge');
+      }
+    });
+  }
+}
+
+// ============================================================
+// VisitedRoomsIndicator
+// ============================================================
+
+function syncVisitedRooms() {
+  var picker = document.querySelector('[data-bottom-nav-room-picker]');
+  if (!picker) return;
+
+  var visitedLabel = picker.getAttribute('data-room-visited-label') || 'Visited';
+  var visited = (_browsingContext && _browsingContext.visitedRooms) || [];
+  var buttons = picker.querySelectorAll('[data-room-key]');
+
+  for (var i = 0; i < buttons.length; i++) {
+    var btn = buttons[i];
+    var key = btn.getAttribute('data-room-key');
+    var isVisited = visited.indexOf(key) !== -1 && VISITED_ROOMS_EXCLUDE.indexOf(key) === -1;
+    if (isVisited) {
+      btn.classList.add('is-visited');
+      btn.setAttribute('aria-description', visitedLabel);
+    } else {
+      btn.classList.remove('is-visited');
+      btn.removeAttribute('aria-description');
+    }
+  }
+}
+
+// ============================================================
+// EditorialHeroParallax
+// ============================================================
+
+function _ehpOnScroll() {
+  if (!_ehpOverlay) return;
+  _ehpScrollTarget = Math.min(Math.max(_ehpOverlay.scrollTop * 0.3, 0), 60);
+}
+
+function _ehpLoop() {
+  _ehpScrollCurrent += (_ehpScrollTarget - _ehpScrollCurrent) * 0.08;
+  if (_ehpHeroImg) {
+    _ehpHeroImg.style.transform = 'translateY(' + _ehpScrollCurrent + 'px)';
+  }
+  _ehpRafId = requestAnimationFrame(_ehpLoop);
+}
+
+function initEditorialHeroParallax() {
+  var reduceMotionEHP = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotionEHP) return;
+
+  _ehpOverlay = document.getElementById('immersive-editorial-overlay');
+  if (!_ehpOverlay) return;
+
+  _ehpHeroImg = _ehpOverlay.querySelector('.immersive-editorial__hero-bg');
+  if (!_ehpHeroImg) {
+    destroyEditorialHeroParallax();
+    return;
+  }
+
+  _ehpScrollTarget = 0;
+  _ehpScrollCurrent = 0;
+
+  _ehpOverlay.addEventListener('scroll', _ehpOnScroll, { passive: true });
+  _ehpRafId = requestAnimationFrame(_ehpLoop);
+}
+
+function destroyEditorialHeroParallax() {
+  if (_ehpOverlay) _ehpOverlay.removeEventListener('scroll', _ehpOnScroll);
+  if (_ehpRafId !== null) {
+    cancelAnimationFrame(_ehpRafId);
+    _ehpRafId = null;
+  }
+  if (_ehpHeroImg) {
+    _ehpHeroImg.style.transform = '';
+  }
+  _ehpOverlay = null;
+  _ehpHeroImg = null;
+  _ehpScrollTarget = 0;
+  _ehpScrollCurrent = 0;
+}
+
+// ============================================================
+// ProductCardTilt
+// ============================================================
+
+function _pctClamp(val, min, max) {
+  return Math.min(Math.max(val, min), max);
+}
+
+function _pctApplyTilt() {
+  if (!_pctActiveCard) {
+    _pctRafPending = false;
+    return;
+  }
+  var rotateY = _pctPendingNormX * 8;
+  var rotateX = -_pctPendingNormY * 8;
+  _pctActiveCard.style.transform = 'perspective(600px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
+  _pctRafPending = false;
+}
+
+function _pctOnMouseMove(event) {
+  var card = event.target && event.target.closest && event.target.closest('.immersive-product-card');
+  if (!card) return;
+
+  // Keyboard focus guard
+  if (document.activeElement === card || card.contains(document.activeElement)) return;
+
+  var rect = card.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+
+  var centerX = rect.left + rect.width / 2;
+  var centerY = rect.top + rect.height / 2;
+  _pctPendingNormX = _pctClamp((event.clientX - centerX) / (rect.width / 2), -1, 1);
+  _pctPendingNormY = _pctClamp((event.clientY - centerY) / (rect.height / 2), -1, 1);
+  _pctActiveCard = card;
+
+  card.classList.remove('tilt-reset');
+
+  if (!_pctRafPending) {
+    _pctRafPending = true;
+    requestAnimationFrame(_pctApplyTilt);
+  }
+}
+
+function _pctOnMouseLeave(event) {
+  var card =
+    (event.target && event.target.closest && event.target.closest('.immersive-product-card')) || _pctActiveCard;
+  if (card) {
+    card.classList.add('tilt-reset');
+    card.style.transform = '';
+  }
+  _pctActiveCard = null;
+}
+
+function initProductCardTilt() {
+  var reduceMotionPCT = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotionPCT) return;
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+
+  var panel = document.getElementById('glass-panel');
+  if (!panel) return;
+
+  panel.addEventListener('mousemove', _pctOnMouseMove);
+  panel.addEventListener('mouseleave', _pctOnMouseLeave);
+}
+
+// ============================================================
+// GUIDED MODE — Concierge sequence
+// Storefront → Lounge → Editorial → Collection → Product
+// ============================================================
+
+var _guidedIdleTimer = null;
+var _guidedPromptTimer = null;
+var _guidedStep = 0; // 0=lounge, 1=editorial, 2=collection, 3=product
+var _guidedFeaturedWing = 'designer_houses'; // overridden from section setting on init
+
+var GUIDED_IDLE_MS = 10000; // 10s before auto-advance
+var GUIDED_PROMPT_MS = 3500; // 3.5s before showing soft prompt in lounge
+
+// Steps: 0=lounge, 1=editorial, 2=collection, 3=product
+var GUIDED_STEPS = ['lounge', 'editorial', 'collection', 'product'];
+
+function initGuidedMode() {
+  // Read featured wing from section data attribute
+  var storeEl = document.querySelector('.immersive-store');
+  if (storeEl) {
+    var wing = storeEl.getAttribute('data-guided-featured-wing');
+    if (wing) _guidedFeaturedWing = wing;
+  }
+
+  // Wire prompt CTA and skip buttons
+  var promptCta = document.querySelector('[data-guided-prompt-cta]');
+  var promptSkip = document.querySelector('[data-guided-prompt-skip]');
+
+  if (promptCta) {
+    promptCta.addEventListener('click', function () {
+      hideGuidedPrompt();
+      _guidedAdvance();
+    });
+  }
+  if (promptSkip) {
+    promptSkip.addEventListener('click', function () {
+      exitGuidedMode();
+    });
+  }
+
+  // Exit guided mode on any user intent signals
+  var intentEvents = ['mousedown', 'touchstart', 'keydown', 'wheel'];
+  intentEvents.forEach(function (evt) {
+    document.addEventListener(
+      evt,
+      function () {
+        if (immersiveState.guided) {
+          // Reset idle timer on activity — don't exit, just delay auto-advance
+          _guidedResetIdleTimer();
+        }
+      },
+      { passive: true },
+    );
+  });
+}
+
+function activateGuidedMode() {
+  // Don't restart if dismissed this session
+  try {
+    if (sessionStorage.getItem('immersive_guided_dismissed')) return;
+  } catch (e) {}
+
+  immersiveState.guided = true;
+  _guidedStep = 0;
+  _updateGuidedDots(0);
+  _showGuidedProgress();
+  _guidedStartIdleTimer();
+}
+
+function exitGuidedMode() {
+  if (!immersiveState.guided) return;
+  immersiveState.guided = false;
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+  _guidedIdleTimer = null;
+  _guidedPromptTimer = null;
+  hideGuidedPrompt();
+  _hideGuidedProgress();
+  try {
+    sessionStorage.setItem('immersive_guided_dismissed', '1');
+  } catch (e) {}
+}
+
+function _guidedStartIdleTimer() {
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+
+  if (!immersiveState.guided) return;
+
+  // Show soft prompt after 3.5s
+  _guidedPromptTimer = setTimeout(function () {
+    if (immersiveState.guided) showGuidedPrompt();
+  }, GUIDED_PROMPT_MS);
+
+  // Auto-advance after 10s
+  _guidedIdleTimer = setTimeout(function () {
+    if (immersiveState.guided) {
+      hideGuidedPrompt();
+      _guidedAdvance();
+    }
+  }, GUIDED_IDLE_MS);
+}
+
+function _guidedResetIdleTimer() {
+  if (!immersiveState.guided) return;
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+  hideGuidedPrompt();
+  _guidedStartIdleTimer();
+}
+
+function _guidedAdvance() {
+  if (!immersiveState.guided) return;
+
+  _guidedStep++;
+  _updateGuidedDots(_guidedStep);
+
+  if (_guidedStep === 1) {
+    // Step 1: Enter editorial of featured wing
+    enterEditorialMode(_guidedFeaturedWing, null);
+    // After editorial, guided mode waits for user to scroll/interact
+    // Auto-advance to collection after idle
+    _guidedStartIdleTimer();
+  } else if (_guidedStep === 2) {
+    // Step 2: Open the first collection from the featured wing
+    exitEditorialMode();
+    var firstCollection = _guidedGetFirstCollection(_guidedFeaturedWing);
+    if (firstCollection) {
+      setTimeout(function () {
+        openCollectionPanel(firstCollection);
+      }, 200);
+    } else {
+      // No collection configured — exit guided mode gracefully
+      exitGuidedMode();
+    }
+  } else if (_guidedStep >= 3) {
+    // Step 3+: Guided sequence complete — exit
+    exitGuidedMode();
+  }
+}
+
+function _guidedGetFirstCollection(wingKey) {
+  var room = STORE_ROOMS[wingKey];
+  if (!room || !room.hotspots) return null;
+  for (var i = 0; i < room.hotspots.length; i++) {
+    if (room.hotspots[i].targetCollection) return room.hotspots[i].targetCollection;
+  }
+  return null;
+}
+
+function showGuidedPrompt() {
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (!prompt) return;
+  prompt.hidden = false;
+  requestAnimationFrame(function () {
+    prompt.classList.add('is-visible');
+  });
+}
+
+function hideGuidedPrompt() {
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (!prompt) return;
+  prompt.classList.remove('is-visible');
+  // Hide after transition
+  setTimeout(function () {
+    if (!prompt.classList.contains('is-visible')) prompt.hidden = true;
+  }, 500);
+}
+
+function _showGuidedProgress() {
+  var el = document.getElementById('immersive-guided-progress');
+  if (!el) return;
+  el.hidden = false;
+  requestAnimationFrame(function () {
+    el.classList.add('is-visible');
+  });
+}
+
+function _hideGuidedProgress() {
+  var el = document.getElementById('immersive-guided-progress');
+  if (!el) return;
+  el.classList.remove('is-visible');
+  setTimeout(function () {
+    if (!el.classList.contains('is-visible')) el.hidden = true;
+  }, 400);
+}
+
+function _updateGuidedDots(activeStep) {
+  var dots = document.querySelectorAll('[data-guided-step]');
+  for (var i = 0; i < dots.length; i++) {
+    var step = parseInt(dots[i].getAttribute('data-guided-step'), 10);
+    dots[i].classList.remove('is-active', 'is-done');
+    if (step === activeStep) {
+      dots[i].classList.add('is-active');
+    } else if (step < activeStep) {
+      dots[i].classList.add('is-done');
+    }
+  }
+}

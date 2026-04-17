@@ -70,7 +70,7 @@
   overflow: hidden;
 }
 
-.template-search input[type="search"],
+.template-search input[type='search'],
 .template-search .field__input {
   background: rgba(255, 255, 255, 0.06) !important;
   color: #d4af37 !important;
@@ -78,20 +78,20 @@
   border-radius: 0 !important;
 }
 
-.template-search input[type="search"]:focus,
+.template-search input[type='search']:focus,
 .template-search .field__input:focus {
   border-color: #d4af37 !important;
   outline: none !important;
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
 }
 
-.template-search input[type="search"]:focus-visible,
+.template-search input[type='search']:focus-visible,
 .template-search .field__input:focus-visible {
   outline: 2px solid #d4af37 !important;
   outline-offset: 2px !important;
 }
 
-.template-search input[type="search"]::placeholder,
+.template-search input[type='search']::placeholder,
 .template-search .field__input::placeholder {
   color: rgba(241, 245, 249, 0.4) !important;
 }
@@ -108,7 +108,9 @@
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 0 !important;
   backdrop-filter: blur(8px);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .template-search .card-wrapper:hover,
@@ -139,7 +141,7 @@
 
 /* Buttons */
 .template-search .button,
-.template-search button[type="submit"] {
+.template-search button[type='submit'] {
   background: rgba(212, 175, 55, 0.9) !important;
   color: #000 !important;
   border: none !important;
@@ -348,14 +350,18 @@
   letter-spacing: 0.12em;
   font-size: 0.75rem;
   font-weight: 600;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.7),
+    0 0 12px rgba(0, 0, 0, 0.4);
 }
 
 .immersive-room-badge__guidance {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.6875rem;
   letter-spacing: 0.08em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 8px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.7),
+    0 0 8px rgba(0, 0, 0, 0.4);
 }
 
 /* =============================================================================
@@ -434,8 +440,14 @@
    ============================================================================= */
 
 @keyframes immersive-slide-up {
-  from { opacity: 0; transform: translateY(40px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .immersive-store__panel--entering,
@@ -516,7 +528,9 @@
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .immersive-chip:hover,
@@ -603,7 +617,9 @@
 }
 
 /* Hide browser default clear button */
-.immersive-search__input::-webkit-search-cancel-button { display: none; }
+.immersive-search__input::-webkit-search-cancel-button {
+  display: none;
+}
 
 .immersive-search__shortcut {
   font-size: 0.625rem;
@@ -619,8 +635,12 @@
 
 /* Hide shortcut on mobile */
 @media (max-width: 768px) {
-  .immersive-search__shortcut { display: none; }
-  .immersive-search { max-width: 180px; }
+  .immersive-search__shortcut {
+    display: none;
+  }
+  .immersive-search {
+    max-width: 180px;
+  }
 }
 
 /* Dropdown */
@@ -641,7 +661,9 @@
   z-index: 300;
 }
 
-.immersive-search__dropdown[hidden] { display: none; }
+.immersive-search__dropdown[hidden] {
+  display: none;
+}
 
 .immersive-search__group-label {
   display: block;
@@ -664,7 +686,7 @@
 }
 
 .immersive-search__result:hover,
-.immersive-search__result[aria-selected="true"] {
+.immersive-search__result[aria-selected='true'] {
   background: rgba(212, 175, 55, 0.1);
 }
 
@@ -674,7 +696,7 @@
   object-fit: cover;
   border-radius: 0.25rem;
   flex-shrink: 0;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .immersive-search__result-info {
@@ -715,7 +737,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .immersive-search__field,
-  .immersive-search__result { transition: none; }
+  .immersive-search__result {
+    transition: none;
+  }
 }
 
 /* ============================================================
@@ -741,7 +765,9 @@
   pointer-events: auto;
 }
 
-.immersive-bottom-nav[hidden] { display: none; }
+.immersive-bottom-nav[hidden] {
+  display: none;
+}
 
 .immersive-bottom-nav__item {
   display: flex;
@@ -759,7 +785,9 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
   position: relative;
 }
 
@@ -770,7 +798,7 @@
   outline: none;
 }
 
-.immersive-bottom-nav__item[aria-current="true"] {
+.immersive-bottom-nav__item[aria-current='true'] {
   color: #d4af37;
 }
 
@@ -793,8 +821,12 @@
 
 /* Hide labels on very small screens */
 @media (max-width: 360px) {
-  .immersive-bottom-nav__label { display: none; }
-  .immersive-bottom-nav__item { padding: 0.5rem 0.625rem; }
+  .immersive-bottom-nav__label {
+    display: none;
+  }
+  .immersive-bottom-nav__item {
+    padding: 0.5rem 0.625rem;
+  }
 }
 
 /* Room picker sheet */
@@ -814,7 +846,9 @@
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.immersive-bottom-nav__room-picker[hidden] { display: none; }
+.immersive-bottom-nav__room-picker[hidden] {
+  display: none;
+}
 
 .immersive-bottom-nav__room-picker-inner {
   max-width: 480px;
@@ -844,7 +878,9 @@
   transition: color 0.2s;
 }
 
-.immersive-bottom-nav__room-picker-close:hover { color: #d4af37; }
+.immersive-bottom-nav__room-picker-close:hover {
+  color: #d4af37;
+}
 
 .immersive-bottom-nav__room-list {
   list-style: none;
@@ -865,7 +901,9 @@
   color: #f5f0e8;
   font-size: 0.9375rem;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .immersive-bottom-nav__room-option:hover,
@@ -876,10 +914,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .immersive-bottom-nav__room-picker { transition: none; }
-  .immersive-bottom-nav__item { transition: none; }
-  .immersive-bottom-nav__room-option { transition: none; }
-  .immersive-bottom-nav__room-picker-close { transition: none; }
+  .immersive-bottom-nav__room-picker {
+    transition: none;
+  }
+  .immersive-bottom-nav__item {
+    transition: none;
+  }
+  .immersive-bottom-nav__room-option {
+    transition: none;
+  }
+  .immersive-bottom-nav__room-picker-close {
+    transition: none;
+  }
 }
 
 /* ============================================================
@@ -913,7 +959,9 @@
   cursor: pointer;
 }
 
-.immersive-filters__price-row { gap: 0.5rem; }
+.immersive-filters__price-row {
+  gap: 0.5rem;
+}
 
 .immersive-filters__price-input {
   width: 6rem;
@@ -937,7 +985,9 @@
   transition: background 0.2s;
 }
 
-.immersive-filters__price-apply:hover { background: rgba(212, 175, 55, 0.25); }
+.immersive-filters__price-apply:hover {
+  background: rgba(212, 175, 55, 0.25);
+}
 
 .immersive-filters__color-swatch {
   width: 1.5rem;
@@ -945,11 +995,13 @@
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
 }
 
 .immersive-filters__color-swatch.is-active,
-.immersive-filters__color-swatch[aria-pressed="true"] {
+.immersive-filters__color-swatch[aria-pressed='true'] {
   border-color: #d4af37;
   transform: scale(1.15);
 }
@@ -971,12 +1023,16 @@
   transition: color 0.2s;
 }
 
-.immersive-filters__clear:hover { color: #f5f0e8; }
+.immersive-filters__clear:hover {
+  color: #f5f0e8;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .immersive-filters__color-swatch,
   .immersive-filters__price-apply,
-  .immersive-filters__clear { transition: none; }
+  .immersive-filters__clear {
+    transition: none;
+  }
 }
 
 /* ============================================================
@@ -992,7 +1048,9 @@
   pointer-events: auto;
 }
 
-.immersive-next-actions[hidden] { display: none; }
+.immersive-next-actions[hidden] {
+  display: none;
+}
 
 .immersive-next-actions__inner {
   display: flex;
@@ -1024,11 +1082,17 @@
   margin-left: 0.25rem;
 }
 
-.immersive-next-actions__close:hover { color: #f5f0e8; }
+.immersive-next-actions__close:hover {
+  color: #f5f0e8;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .immersive-next-actions { transition: none; }
-  .immersive-next-actions__close { transition: none; }
+  .immersive-next-actions {
+    transition: none;
+  }
+  .immersive-next-actions__close {
+    transition: none;
+  }
 }
 
 /* ============================================================
@@ -1074,7 +1138,9 @@
   transition: color 0.15s;
 }
 
-.immersive-rec-chip__label:hover { color: #d4af37; }
+.immersive-rec-chip__label:hover {
+  color: #d4af37;
+}
 
 .immersive-rec-chip__dismiss {
   position: absolute;
@@ -1090,11 +1156,15 @@
   transition: color 0.15s;
 }
 
-.immersive-rec-chip__dismiss:hover { color: #f5f0e8; }
+.immersive-rec-chip__dismiss:hover {
+  color: #f5f0e8;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .immersive-rec-chip__label,
-  .immersive-rec-chip__dismiss { transition: none; }
+  .immersive-rec-chip__dismiss {
+    transition: none;
+  }
 }
 
 /* ============================================================
@@ -1151,7 +1221,9 @@
   transition: color 0.15s;
 }
 
-.immersive-quick-add-modal__close:hover { color: #f5f0e8; }
+.immersive-quick-add-modal__close:hover {
+  color: #f5f0e8;
+}
 
 .immersive-quick-add-modal__price {
   font-size: 1.125rem;
@@ -1175,11 +1247,13 @@
   color: #f5f0e8;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .immersive-quick-add-modal__variant.is-selected,
-.immersive-quick-add-modal__variant[aria-checked="true"] {
+.immersive-quick-add-modal__variant[aria-checked='true'] {
   border-color: #d4af37;
   background: rgba(212, 175, 55, 0.15);
   color: #d4af37;
@@ -1204,13 +1278,20 @@
   transition: background 0.2s;
 }
 
-.immersive-quick-add-modal__cta:hover:not(:disabled) { background: #d4af37; }
-.immersive-quick-add-modal__cta:disabled { opacity: 0.6; cursor: not-allowed; }
+.immersive-quick-add-modal__cta:hover:not(:disabled) {
+  background: #d4af37;
+}
+.immersive-quick-add-modal__cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .immersive-quick-add-modal__close,
   .immersive-quick-add-modal__variant,
-  .immersive-quick-add-modal__cta { transition: none; }
+  .immersive-quick-add-modal__cta {
+    transition: none;
+  }
 }
 
 /* ============================================================
@@ -1263,9 +1344,13 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-.immersive-flash-sale-banner[hidden] { display: none; }
+.immersive-flash-sale-banner[hidden] {
+  display: none;
+}
 
-.immersive-flash-sale-banner__message { color: #f5f0e8; }
+.immersive-flash-sale-banner__message {
+  color: #f5f0e8;
+}
 
 .immersive-flash-sale-banner__countdown {
   color: #d4af37;
@@ -1283,8 +1368,222 @@
   transition: color 0.15s;
 }
 
-.immersive-flash-sale-banner__dismiss:hover { color: #f5f0e8; }
+.immersive-flash-sale-banner__dismiss:hover {
+  color: #f5f0e8;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .immersive-flash-sale-banner__dismiss { transition: none; }
+  .immersive-flash-sale-banner__dismiss {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   Immersive Editorial Enhancements — CSS additions
+   ============================================================ */
+
+/* ── VisitedRoomsIndicator ─────────────────────────────────── */
+.immersive-bottom-nav__room-option.is-visited {
+  border-color: rgba(212, 175, 55, 0.5);
+  position: relative;
+}
+
+.immersive-bottom-nav__room-option.is-visited::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  color: #d4af37;
+  font-size: 0.875rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* ── EditorialBackToLounge header-actions wrapper ──────────── */
+.immersive-editorial-overlay__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 210;
+}
+
+/* Back to Lounge chip — secondary action alongside close button */
+.immersive-editorial__back-to-lounge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: rgba(10, 10, 10, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.immersive-editorial__back-to-lounge::before {
+  content: '←';
+  font-size: 0.875rem;
+}
+
+.immersive-editorial__back-to-lounge:hover {
+  border-color: #d4af37;
+  background: rgba(10, 15, 30, 0.9);
+  color: #d4af37;
+}
+
+.immersive-editorial__back-to-lounge:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 3px;
+}
+
+/* ── EditorialHeroParallax ─────────────────────────────────── */
+.immersive-editorial__hero-bg {
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-editorial__hero-bg {
+    will-change: auto;
+    transform: none !important;
+    transition: none !important;
+  }
+  .immersive-editorial__back-to-lounge {
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   Guided Mode — Progress Dots & Soft Prompt
+   ============================================================ */
+
+.immersive-guided-progress {
+  position: fixed;
+  top: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.immersive-guided-progress.is-visible {
+  opacity: 1;
+}
+
+.immersive-guided-progress[hidden] {
+  display: none;
+}
+
+.immersive-guided-progress__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+
+.immersive-guided-progress__dot.is-active {
+  background: #d4af37;
+  transform: scale(1.4);
+}
+
+.immersive-guided-progress__dot.is-done {
+  background: rgba(212, 175, 55, 0.45);
+}
+
+/* Guided soft prompt */
+.immersive-guided-prompt {
+  position: fixed;
+  bottom: 7rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 9999px;
+  background: rgba(10, 10, 10, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+  pointer-events: none;
+}
+
+.immersive-guided-prompt.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.immersive-guided-prompt[hidden] {
+  display: none;
+}
+
+.immersive-guided-prompt__cta {
+  color: #d4af37;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.immersive-guided-prompt__cta:hover {
+  color: #fff;
+}
+
+.immersive-guided-prompt__skip {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.immersive-guided-prompt__skip:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-guided-progress,
+  .immersive-guided-prompt,
+  .immersive-guided-progress__dot {
+    transition: none !important;
+  }
 }
