@@ -353,27 +353,36 @@ Each room has `baseTextureUrl`, `depthMapUrl` (mobile variants too), and `hotspo
 
 ## Image Prompt Guidance
 
-> For each touchpoint that requires a visual asset, the following prompts specify subject, environment, lighting, mood, aspect ratio, and brand style keywords. All prompts are designed for Midjourney v6 (`--style raw`) or DALL-E 3.
+> All prompts are designed for **Midjourney v6** (`--style raw --v 6`) or DALL-E 3.
+
+### Global Brand Prompt Layer
+
+> Append the following suffix to **every prompt** in this section:
 >
-> **Brand style keywords for all prompts:** luxury Pakistani fashion, gold accent `#d4af37`, editorial photography, glassmorphism overlay, soft bokeh, cinematic lighting, 8K photorealistic
->
-> **Tilt bleed rule (room textures only):** Compose key elements in the central 70% of the frame. Leave ≥15% atmospheric bleed on all edges (soft bokeh, receding architecture, open sky) so the depth-map parallax and mobile tilt pan smoothly without revealing hard edges.
+> `global luxury Pakistani fashion, international elite clientele, Dubai London New York aesthetic blend, timeless architecture, gold accent #d4af37, editorial photography, cinematic lighting, soft depth of field, glassmorphism UI context, 8K photorealistic, ultra-detailed fabric texture, no text, no watermark`
+
+### Tilt Bleed Rule (room textures only)
+
+Room base textures are rendered by Three.js with depth-map parallax and mobile gyroscope tilt. Both desktop and mobile variants must follow this rule:
+- Compose all key architectural and atmospheric elements in the **central 70%** of the frame
+- Leave **≥15% bleed on all four edges** — soft bokeh, receding architecture, open sky, or atmospheric haze
+- This prevents hard edges from appearing when the scene pans during tilt or mouse parallax
 
 ---
 
 ### Phase 2 — Entry
 
-#### 2.1 Storefront — Base Texture (Desktop 16:9, 1600px)
-> Grand Pakistani boutique exterior at golden hour, ornate carved marble archway with a softly glowing entrance, warm amber light spilling onto a white stone forecourt, silk dupatta draped loosely across the frame, central 70% contains the doorway and forecourt, outer 15% fades into soft architectural bokeh and sky, a single glowing CTA button visible at centre-bottom of the scene, editorial luxury fashion photography, 16:9, 8K photorealistic, `--ar 16:9 --style raw --v 6`
+#### 2.1 Storefront — Desktop Base Texture (16:9, 1600px)
+> Grand luxury fashion house exterior blending Mughal and modern international architecture, pristine white marble facade with subtle gold inlay, towering arched entrance glowing with warm ambient light, hints of Dubai and London luxury retail districts, silk fabric gently flowing in foreground, central 70% focused on entrance pathway with a natural pool of warm light at centre-bottom (where the "Start Experience" hotspot will float), outer edges fade into soft architectural bokeh and evening sky, cinematic golden hour lighting, ultra-premium editorial style, `--ar 16:9 --style raw --v 6`
 
-#### 2.1 Storefront — "Start Experience" CTA Hotspot
-> The hotspot should feel like a glowing invitation, not a button. The room image should have a natural focal point at centre-bottom — a lit doorstep, a glowing threshold, or a pool of warm light — so the "Start Experience" label floats naturally over it.
+#### 2.1 Storefront — Mobile Base Texture (9:16, 900px)
+> Vertical composition of a luxury fashion house entrance, tall marble archway centred in the middle 70% of the frame, warm golden light spilling outward from the threshold, soft sky gradient above fading to near-black, polished stone below dissolving into blur, elegant and minimal, immersive and inviting, ultra-luxury editorial photography, `--ar 9:16 --style raw --v 6`
 
-#### 2.1 Storefront — Depth Map (Greyscale 16:9, 1600px)
-> Greyscale luminance depth map of a boutique exterior: foreground arch and draped fabric pure white (near), midground forecourt and columns medium grey, background sky gradient to dark grey, smooth continuous gradient reaching all four edges, no abrupt cuts, no surface texture detail, pure depth information only
+#### 2.1 Storefront — Depth Map (Greyscale, same resolution as base)
+> Greyscale luminance depth map: foreground arch and draped fabric pure white, midground forecourt and columns medium grey, background sky gradient to near-black, smooth continuous gradient reaching all four edges with no abrupt cuts, no surface texture detail, pure depth information only
 
-#### 2.1 Storefront — Mobile Base Texture (Portrait 9:16, 900px)
-> Pakistani boutique entrance at golden hour, portrait orientation, ornate marble doorway centred vertically in the middle 70% of the frame, top 15% soft amber sky bokeh, bottom 15% fading stone floor texture, editorial luxury fashion, 9:16, 8K photorealistic, `--ar 9:16 --style raw --v 6`
+#### 2.1 Storefront — "Start Experience" Hotspot Composition Note
+> The room image must have a natural focal point at centre-bottom — a lit doorstep, a glowing threshold, or a pool of warm light — so the "Start Experience" label floats naturally over it as an invitation, not a UI button.
 
 ### Phase 2G — Guided Mode UI
 
@@ -381,87 +390,105 @@ Each room has `baseTextureUrl`, `depthMapUrl` (mobile variants too), and `hotspo
 > No image needed — pure CSS. Four 6px gold dots (`#d4af37`) on a dark glassmorphism pill, top-centre of viewport. Active dot scales to 1.4×. Completed dots fade to 45% opacity gold.
 
 #### 2G — Soft Prompt Pill
-> No image needed — pure CSS glassmorphism. Dark pill with gold CTA text and muted skip text. Appears above the bottom nav after 3.5s idle.
+> No image needed — pure CSS glassmorphism. Dark pill with gold CTA text ("Begin a curated experience") and muted skip text ("Explore freely"). Appears above the bottom nav after 3.5s idle.
 
 ---
 
-### Phase 3 — Room Navigation
+### Phase 3 — Lounge (Global Luxury Hub)
 
-#### 3.1 Lounge — Base Texture (Desktop 16:9, 1600px)
-> Opulent Pakistani fashion lounge interior at dusk, three visual zones: left corridor arch framing a designer display, centre grand archway leading to a bridal courtyard, right gallery niche with embroidered pieces, deep velvet seating, ornate brass lanterns, warm gold and ivory light, key elements composed in central 70% with atmospheric corridor depths fading to near-black at all edges, editorial luxury fashion, 16:9, 8K photorealistic, `--ar 16:9 --style raw --v 6`
+#### 3.1 Lounge — Desktop Base Texture (16:9, 1600px)
+> Ultra-luxury fashion lounge interior blending Pakistani heritage with contemporary global design, marble floors, velvet seating, brass lanterns, three directional pathways clearly visible (left: designer houses, centre: occasions, right: curated collections), subtle Dubai penthouse influence, warm ambient gold lighting, key navigation zones composed in central 70%, edges fade into shadowed corridors with atmospheric depth, cinematic editorial fashion environment, `--ar 16:9 --style raw --v 6`
 
-#### 3.1 Lounge — Depth Map (Greyscale 16:9, 1600px)
-> Greyscale depth map of a lounge interior: foreground seating and rug pure white, midground arches and lanterns medium grey, far corridors and background walls near black, smooth gradient to all edges, no hard cuts, no texture
+#### 3.1 Lounge — Mobile Base Texture (9:16, 900px)
+> Vertical luxury fashion lounge with layered depth, central arch leading forward in the middle 70% of the frame, side corridors softly visible at edges, chandelier glow above fading to near-black, Persian rug fading below, immersive and atmospheric, designed for touch navigation, `--ar 9:16 --style raw --v 6`
 
-#### 3.1 Lounge — Mobile Base Texture (Portrait 9:16, 900px)
-> Pakistani fashion lounge interior, portrait orientation, three horizontal navigation zones visible in the central 60%: left arch, centre grand arch, right gallery, top 15% decorative ceiling and chandelier bokeh, bottom 15% Persian rug fading to black, editorial fashion, 9:16, 8K photorealistic
+#### 3.1 Lounge — Depth Map (Greyscale)
+> Greyscale depth map of a lounge interior: foreground seating and rug pure white, midground arches and lanterns medium grey, far corridors and background walls near black, smooth gradient to all four edges, no hard cuts, no texture detail
+
+#### 3.1 Lounge — Ambient Motion Layer (Optional overlay)
+> Floating silk fabric strands catching warm gold light, soft motion blur, atmospheric luxury environment, abstract but elegant, immersive depth enhancement, no figures, no text, `--ar 16:9 --style raw --v 6`
 
 ---
 
 ### Wing 1 — Designer Houses
 
-#### Designer Houses — 3D Room Base Texture (Desktop 16:9, 1600px)
-> High-fashion Pakistani atelier showroom, three brand display zones across the width, polished white marble floor with gold veining, spotlit mannequins in embroidered couture, minimalist architectural shelving, centre zone slightly brighter, all brand display elements in central 70%, outer 15% fades to architectural shadow and marble depth, editorial fashion photography, 16:9, 8K photorealistic, `--ar 16:9 --style raw --v 6`
+#### Designer Houses — Desktop Base Texture (16:9, 1600px)
+> High-end global fashion atelier, minimalist white marble space with gold accents, couture mannequins wearing Pakistani designer outfits, three display zones evenly spaced across the width, inspired by Paris and Dubai couture studios, centre zone slightly brighter with spotlight focus, all display elements in central 70%, edges fall into soft architectural shadow, ultra-clean luxury environment, `--ar 16:9 --style raw --v 6`
 
-#### Designer Houses — Depth Map (Greyscale 16:9, 1600px)
+#### Designer Houses — Mobile Base Texture (9:16, 900px)
+> Vertical fashion atelier, single central display zone in the middle 70%, polished marble floor and gold-accented shelving, soft spotlight from above, edges dissolve into architectural shadow, couture mannequin as focal point, `--ar 9:16 --style raw --v 6`
+
+#### Designer Houses — Depth Map (Greyscale)
 > Greyscale depth map of a fashion atelier: foreground floor and mannequin bases pure white, midground display fixtures medium grey, background walls near black, smooth edge gradients, no texture
 
 #### Suffuse — Editorial Hero Background (16:9, 1600px)
-> Minimalist luxury fashion atelier, single ivory-on-ivory embroidered lehenga on a mannequin under one directional spotlight, polished white marble floor, off-white walls, extreme negative space, the garment fills the left-centre of the frame, editorial fashion photography, 16:9, 8K photorealistic
+> Ultra-minimal luxury atelier, ivory embroidered couture lehenga on mannequin, soft directional spotlight, white marble floor, strong negative space, serene and refined, global couture aesthetic, `--ar 16:9 --style raw --v 6`
 
 #### Soraya — Editorial Hero Background (16:9, 1600px)
-> Opulent fashion showroom with deep midnight blue velvet walls, brass and gold display fixtures, a heavily embellished navy and gold gharara displayed under warm tungsten light, dark luxury editorial aesthetic, 16:9, 8K photorealistic
+> Deep midnight blue luxury showroom with velvet textures and gold fixtures, heavily embellished Pakistani formal outfit, dramatic moody lighting, high contrast editorial feel, inspired by high-end Middle Eastern boutiques, `--ar 16:9 --style raw --v 6`
 
 #### Saad Bin Shahzad — Editorial Hero Background (16:9, 1600px)
-> Contemporary Pakistani fashion studio, raw polished concrete walls with dramatic raking side light, a structured black sherwani with fine gold thread embroidery on a mannequin, architectural minimalism meets couture, 16:9, 8K photorealistic
+> Modern architectural fashion studio with concrete textures and dramatic side lighting, structured black sherwani with intricate gold embroidery, masculine luxury aesthetic, contemporary global runway feel, `--ar 16:9 --style raw --v 6`
+
+#### Editorial Transition Frame (used between room and editorial overlay)
+> Blurred transition frame between showroom and editorial, soft light bloom, abstract fabric textures, cinematic fade effect, atmospheric and immersive, no figures, no text, `--ar 16:9 --style raw --v 6`
 
 ---
 
 ### Wing 2 — Occasions
 
-#### Occasions — 3D Room Base Texture (Desktop 16:9, 1600px)
-> Ethereal Pakistani bridal haveli courtyard at dusk, string lights and marigold garland arches overhead, rose and jasmine petals on white marble, four softly lit display zones across the width (Eid, Bridal, Formals, Pret), key display elements in central 70%, outer 15% fades to soft garden bokeh and evening sky, editorial fashion photography, 16:9, 8K photorealistic, `--ar 16:9 --style raw --v 6`
+#### Occasions — Desktop Base Texture (16:9, 1600px)
+> Grand haveli courtyard fused with luxury resort aesthetic, marble floors, floral installations, soft evening lighting, four emotional zones representing Eid, Bridal, Festive, Formal, central focus clean with key zones in central 70%, edges dissolve into garden bokeh and sky, dreamy cinematic environment, `--ar 16:9 --style raw --v 6`
 
-#### Occasions — Depth Map (Greyscale 16:9, 1600px)
-> Greyscale depth map of a haveli courtyard: foreground petals and garland arch pure white, midground courtyard floor and pillars medium grey, background archways near black, smooth edge gradients
+#### Occasions — Mobile Base Texture (9:16, 900px)
+> Vertical haveli courtyard, central archway and floral installation in the middle 70%, marigold garlands overhead fading to soft sky, marble floor fading to blur below, warm evening light, immersive and romantic, `--ar 9:16 --style raw --v 6`
+
+#### Occasions — Depth Map (Greyscale)
+> Greyscale depth map of a haveli courtyard: foreground petals and garland arch pure white, midground courtyard floor and pillars medium grey, background archways near black, smooth edge gradients, no texture
 
 #### Bridal — Occasion Card (Portrait 3:4, 1200px)
-> Pakistani bride in a heavily embroidered crimson and gold bridal lehenga with full jewellery set, standing in a haveli archway at golden hour, marigold garlands in the background, soft directional light, editorial fashion photography, portrait 3:4, 8K photorealistic, `--ar 3:4 --style raw --v 6`
+> Pakistani bride in couture red and gold lehenga, standing in grand marble courtyard with floral installations, cinematic lighting, regal posture, ultra-premium editorial style, `--ar 3:4 --style raw --v 6`
 
 #### Mehndi — Occasion Card (Portrait 3:4, 1200px)
-> Pakistani woman in a vibrant yellow and lime green mehndi outfit with intricate henna on hands, surrounded by marigold and rose petals, warm afternoon garden light, joyful editorial fashion photography, portrait 3:4, 8K photorealistic
+> Vibrant mehndi celebration scene, yellow and green outfit with intricate embroidery, joyful yet elegant, marigold textures, sunlight glow, luxury editorial tone, `--ar 3:4 --style raw --v 6`
 
 #### Eid — Occasion Card (Portrait 3:4, 1200px)
-> Pakistani woman in a pastel mint and silver embroidered shalwar kameez, standing in a grand marble mosque courtyard at Eid morning, soft diffused light, serene editorial fashion photography, portrait 3:4, 8K photorealistic
+> Elegant Pakistani woman in pastel embroidered outfit, standing in serene marble courtyard with soft morning light, refined and graceful, minimalist luxury aesthetic, `--ar 3:4 --style raw --v 6`
 
 #### Luxury Formals — Occasion Card (Portrait 3:4, 1200px)
-> Pakistani woman in a deep emerald heavily embroidered formal gown, standing in a candlelit ballroom with ornate crystal chandeliers, elegant evening editorial fashion photography, portrait 3:4, 8K photorealistic
+> Evening luxury setting, deep jewel-toned gown with heavy embroidery, soft candlelight and chandelier glow, sophisticated and timeless, global red-carpet energy, `--ar 3:4 --style raw --v 6`
 
 ---
 
 ### Wing 3 — Featured Collections
 
-#### Featured Collections — 3D Room Base Texture (Desktop 16:9, 1600px)
-> Contemporary Pakistani fashion gallery, stark white walls with dramatic directional spotlights, three oversized editorial lookbook prints mounted on gallery walls, polished concrete floor with a single ornate gold-framed mirror at centre, curated edit display zones in central 70%, outer 15% fades to gallery shadow and architectural depth, editorial fashion photography, 16:9, 8K photorealistic, `--ar 16:9 --style raw --v 6`
+#### Featured Collections — Desktop Base Texture (16:9, 1600px)
+> Contemporary luxury fashion gallery, white walls with dramatic spotlights, large framed editorial fashion visuals, polished concrete floor with gold accent mirror, curated and minimal, inspired by global art galleries, display zones in central 70%, edges fade into shadow depth, `--ar 16:9 --style raw --v 6`
 
-#### Featured Collections — Depth Map (Greyscale 16:9, 1600px)
+#### Featured Collections — Mobile Base Texture (9:16, 900px)
+> Vertical fashion gallery, single large framed editorial print centred in the middle 70%, polished floor reflecting spotlight, edges dissolve into gallery shadow, minimal and refined, `--ar 9:16 --style raw --v 6`
+
+#### Featured Collections — Depth Map (Greyscale)
 > Greyscale depth map of a gallery space: foreground mirror and floor pure white, midground wall prints medium grey, background far walls near black, smooth gradients, no texture
 
-#### Featured Item Card — Generic (Landscape 4:3, 1000px)
-> Pakistani luxury fashion editorial, three models in coordinated embroidered outfits in a minimalist white studio with gold accent props, overhead soft box lighting, 4:3, 8K photorealistic, `--ar 4:3 --style raw --v 6`
+#### Featured Item Card (Landscape 4:3, 1000px)
+> Coordinated Pakistani designer outfits on models in a minimalist studio, clean composition, soft lighting, luxury editorial campaign aesthetic, balanced and modern, `--ar 4:3 --style raw --v 6`
 
 ---
 
-### Phase 5 — Product Browsing
+### Phase 5 — Product Layer
 
-#### 5.1 Collection Panel Header / Banner (Landscape 16:9, 1600px)
-> Pakistani luxury fashion collection banner, editorial flat lay or model shot on neutral marble background, gold jewelry and embroidered fabric details visible, wide cinematic composition, 16:9, 8K photorealistic
+#### Collection Panel Banner (16:9, 1600px)
+> Luxury fashion campaign banner, embroidered fabrics, jewellery accents, neutral marble background, wide cinematic composition, clean and premium, `--ar 16:9 --style raw --v 6`
 
-#### 5.5 Product Gallery — On-Model Shot (Square 1:1, 1200px)
-> Pakistani woman wearing an embroidered luxury outfit, shot in a minimalist white studio with soft wrap lighting, full-length portrait, product details clearly visible, editorial fashion photography, 1:1, 8K photorealistic
+#### Product Gallery — On-Model Shot (1:1, 1200px)
+> Pakistani model wearing luxury embroidered outfit, neutral studio background, full-length composition, soft lighting highlighting fabric details, premium editorial fashion photography, `--ar 1:1 --style raw --v 6`
 
-#### 5.5 Product Gallery — Detail Close-Up (Square 1:1, 1200px)
-> Extreme close-up of Pakistani embroidery work — gold zari threadwork on deep jewel-toned fabric, macro editorial photography, soft directional lighting revealing texture depth, 1:1, 8K photorealistic
+#### Product Gallery — Detail Close-Up (1:1, 1200px)
+> Macro close-up of embroidery, gold threadwork on rich fabric, shallow depth of field, texture-rich, ultra-detailed luxury fashion photography, `--ar 1:1 --style raw --v 6`
+
+#### Wishlist / Saved Items Mood Visual (16:9 or 4:3)
+> Curated selection of luxury Pakistani outfits arranged like a stylist's mood board, marble surface, gold accessories, soft shadows, aspirational styling aesthetic, no figures, editorial flat lay, `--ar 16:9 --style raw --v 6`
 
 ---
 
