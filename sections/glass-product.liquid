@@ -13,9 +13,28 @@
     endif
   endif
 
-  # Fall back to the product's first collection if no originating handle passed
+  # Fall back to the product's first real collection (skip the system 'all' collection)
   if originating_collection_handle == blank and panel_product
-    assign originating_collection_handle = panel_product.collections.first.handle
+    for col in panel_product.collections
+      if col.handle != 'all' and col.handle != blank
+        assign originating_collection_handle = col.handle
+        assign originating_collection_title = col.title
+        break
+      endif
+    endfor
+  else
+    # Resolve the title from the handle if we have one
+    for col in panel_product.collections
+      if col.handle == originating_collection_handle
+        assign originating_collection_title = col.title
+        break
+      endif
+    endfor
+  endif
+
+  # Final fallback title: humanise the handle
+  if originating_collection_title == blank and originating_collection_handle != blank
+    assign originating_collection_title = originating_collection_handle | replace: '-', ' ' | capitalize
   endif
 %}
 
@@ -41,17 +60,28 @@
 
     <header class="glass-product-section__header">
       <nav class="glass-product-section__breadcrumb" aria-label="Breadcrumb">
-        <span class="glass-product-section__breadcrumb-root">
+        <button
+          type="button"
+          class="glass-product-section__breadcrumb-root glass-product-section__breadcrumb-btn"
+          data-breadcrumb-action="close-panel"
+        >
           {{- 'sections.immersive_store.breadcrumb_store' | t -}}
-        </span>
-        <span class="glass-product-section__breadcrumb-separator">/</span>
+        </button>
+        <span class="glass-product-section__breadcrumb-separator" aria-hidden="true">/</span>
         {% if originating_collection_handle != blank %}
-          <span class="glass-product-section__breadcrumb-parent">
-            {{- originating_collection_handle | replace: '-', ' ' | capitalize -}}
-          </span>
-          <span class="glass-product-section__breadcrumb-separator">/</span>
+          <button
+            type="button"
+            class="glass-product-section__breadcrumb-parent glass-product-section__breadcrumb-btn"
+            data-breadcrumb-action="open-collection"
+            data-collection-handle="{{ originating_collection_handle }}"
+          >
+            {{- originating_collection_title | escape -}}
+          </button>
+          <span class="glass-product-section__breadcrumb-separator" aria-hidden="true">/</span>
         {% endif %}
-        <span class="glass-product-section__breadcrumb-current">{{ panel_product.title | escape }}</span>
+        <span class="glass-product-section__breadcrumb-current" aria-current="page">
+          {{- panel_product.title | escape -}}
+        </span>
       </nav>
       <div class="glass-product-section__title-wrap">
         <h2 class="glass-product-section__title">{{ panel_product.title | escape }}</h2>
@@ -481,6 +511,33 @@
   .glass-product-section__breadcrumb-current {
     color: #d4af37;
     font-weight: 600;
+  }
+
+  /* Breadcrumb buttons — look like text links, not buttons */
+  .glass-product-section__breadcrumb-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(212, 175, 55, 0.6);
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .glass-product-section__breadcrumb-btn:hover {
+    color: #d4af37;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .glass-product-section__breadcrumb-btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 
   .glass-product-section__back {

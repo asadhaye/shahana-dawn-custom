@@ -1745,6 +1745,19 @@ function openProductPanel(productHandle, collectionHandle) {
         return;
       }
 
+      // Breadcrumb navigation
+      var breadcrumbBtn = event.target.closest('[data-breadcrumb-action]');
+      if (breadcrumbBtn) {
+        var action = breadcrumbBtn.getAttribute('data-breadcrumb-action');
+        if (action === 'close-panel') {
+          closePanel(panel);
+        } else if (action === 'open-collection') {
+          var colHandle = breadcrumbBtn.getAttribute('data-collection-handle');
+          if (colHandle) openCollectionPanel(colHandle);
+        }
+        return;
+      }
+
       // Related product click
       var relatedItem = event.target.closest('.glass-product-section__related-item');
       if (relatedItem) {
