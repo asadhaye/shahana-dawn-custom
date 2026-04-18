@@ -1,12 +1,3 @@
-/*
- * ------------------------------------------------------------
- * IMPORTANT: The contents of this file are auto-generated.
- *
- * This file may be updated by the Shopify admin theme editor
- * or related systems. Please exercise caution as any changes
- * made to this file may be overwritten.
- * ------------------------------------------------------------
- */
 {
   "sections": {
     "immersive_notification_bar": {
@@ -37,11 +28,7 @@
           }
         }
       },
-      "block_order": [
-        "notif_1",
-        "notif_2",
-        "notif_3"
-      ],
+      "block_order": ["notif_1", "notif_2", "notif_3"],
       "settings": {
         "enabled": true,
         "bar_height": 48,
@@ -50,8 +37,20 @@
         "aria_label": "Store announcements"
       }
     },
+
     "immersive_canvas": {
       "type": "immersive-canvas",
+      "blocks": {
+        "flash_eid": {
+          "type": "flash_sale",
+          "settings": {
+            "enabled": false,
+            "message": "Eid Sale — Up to 30% off selected styles",
+            "sale_end_date": ""
+          }
+        }
+      },
+      "block_order": ["flash_eid"],
       "settings": {
         "designer_houses_base_image": "shopify://shop_images/designer-d-base.jpg",
         "designer_houses_base_image_mobile": "shopify://shop_images/designer-m-base.jpg",
@@ -63,194 +62,179 @@
         "designer_houses_slot_2_label": "Soraya",
         "designer_houses_slot_3_collection": "saad-bin-shahzad",
         "designer_houses_slot_3_label": "Saad Bin Shahzad",
-        "occasions_slot_1_collection": "",
+        "occasions_base_image": "",
+        "occasions_base_image_mobile": "",
+        "occasions_depth_map": "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933",
+        "occasions_depth_map_mobile": "https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933",
+        "occasions_slot_1_collection": "eid-collection",
         "occasions_slot_1_label": "Eid Collection",
-        "occasions_slot_2_collection": "",
+        "occasions_slot_2_collection": "bridal-mehndi",
         "occasions_slot_2_label": "Bridal & Mehndi",
-        "occasions_slot_3_collection": "",
+        "occasions_slot_3_collection": "luxury-formals",
         "occasions_slot_3_label": "Luxury Formals",
-        "occasions_slot_4_collection": "",
+        "occasions_slot_4_collection": "casual-pret",
         "occasions_slot_4_label": "Casual Pret",
-        "featured_collections_slot_1_collection": "",
-        "featured_collections_slot_1_label": "Collection 1",
-        "featured_collections_slot_2_collection": "",
-        "featured_collections_slot_2_label": "Collection 2",
-        "featured_collections_slot_3_collection": "",
-        "featured_collections_slot_3_label": "Collection 3",
+        "featured_collections_slot_1_collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
+        "featured_collections_slot_1_label": "SS5 Summer Pret '26",
+        "featured_collections_slot_2_collection": "luxury-pret-suffuse",
+        "featured_collections_slot_2_label": "Suffuse Luxury Pret",
+        "featured_collections_slot_3_collection": "lumene-festive-25-26-soraya-official",
+        "featured_collections_slot_3_label": "Soraya Eid Pret",
         "faq_url": "shopify://pages/faqs",
         "menu": "immersive-menu-1",
-        "onboarding_enabled": false,
-        "onboarding_title": "Welcome to the Immersive Store",
-        "onboarding_description": "Explore our curated collections in a fully immersive 3D environment. Click on hotspots to discover products.",
-        "onboarding_dismiss_label": "Enter the store",
-        "onboarding_show_once": true
+        "onboarding_enabled": true,
+        "onboarding_title": "Welcome to Shahana Collection",
+        "onboarding_description": "Step inside our immersive 3D store. Move your mouse to explore the space, then click any glowing hotspot to discover our curated collections.",
+        "onboarding_dismiss_label": "Start exploring",
+        "onboarding_show_once": true,
+        "low_stock_threshold": 5,
+        "guided_featured_wing": "designer_houses"
       }
     },
+
     "editorial_designer_houses": {
       "type": "immersive-editorial",
       "blocks": {
-        "banner_PtkU9T": {
-          "type": "banner",
+        "designer_suffuse": {
+          "type": "designer",
           "settings": {
             "image": "shopify://shop_images/SILK_PRET.webp",
             "logo": "shopify://shop_images/SUFFUSE_LOGO.webp",
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "suffuse",
-            "depth_layer": 50
+            "heading": "Suffuse",
+            "body": "<p>Redefining Pakistani luxury with fluid silhouettes, hand-embroidered textiles, and a palette drawn from the subcontinent's most storied landscapes.</p>",
+            "collection": "suffuse"
           }
         },
-        "banner_jKYUC7": {
-          "type": "banner",
+        "designer_soraya": {
+          "type": "designer",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "logo": "",
+            "heading": "Soraya",
+            "body": "<p>Where heritage craft meets contemporary form. Soraya's collections speak to the modern South Asian woman — bold, refined, and unapologetically elegant.</p>",
+            "collection": "soraya"
           }
         },
-        "banner_gcCkEK": {
-          "type": "banner",
+        "designer_sbs": {
+          "type": "designer",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "logo": "",
+            "heading": "Saad Bin Shahzad",
+            "body": "<p>Architectural precision and artisanal embroidery define Saad Bin Shahzad's vision — a house built on the belief that menswear and womenswear can share the same quiet power.</p>",
+            "collection": "saad-bin-shahzad"
           }
         }
       },
-      "block_order": [
-        "banner_PtkU9T",
-        "banner_jKYUC7",
-        "banner_gcCkEK"
-      ],
+      "block_order": ["designer_suffuse", "designer_soraya", "designer_sbs"],
       "settings": {
         "room_key": "designer_houses",
         "layout": "designers",
-        "hero_eyebrow": "Shahana Collection",
-        "hero_heading": "Our Designers",
-        "hero_subheading": ""
+        "hero_eyebrow": "Shahana Collection presents",
+        "hero_heading": "The Designer Houses",
+        "hero_subheading": "<p>Three distinct creative visions. One immersive destination.</p>"
       }
     },
+
     "editorial_occasions": {
       "type": "immersive-editorial",
       "blocks": {
-        "banner_xjhece": {
-          "type": "banner",
+        "occasion_eid": {
+          "type": "occasion_card",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "heading": "Eid Collection",
+            "body": "<p>Celebrate in colour. Our Eid edit brings together the finest embroidered lawns, silk kurtas, and festive separates for every gathering.</p>",
+            "collection": "eid-collection",
+            "cta_url": ""
           }
         },
-        "banner_rihxDg": {
-          "type": "banner",
+        "occasion_bridal": {
+          "type": "occasion_card",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "heading": "Bridal & Mehndi",
+            "body": "<p>From the mehndi morning to the walima evening — a complete bridal wardrobe curated for every ritual of the celebration.</p>",
+            "collection": "bridal-mehndi",
+            "cta_url": ""
           }
         },
-        "banner_9YbN3K": {
-          "type": "banner",
+        "occasion_formals": {
+          "type": "occasion_card",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "heading": "Luxury Formals",
+            "body": "<p>Dawat, nikah, and formal evenings call for something extraordinary. Discover heavily embellished pieces crafted for the moments that matter.</p>",
+            "collection": "luxury-formals",
+            "cta_url": ""
           }
         },
-        "banner_cqAYyJ": {
-          "type": "banner",
+        "occasion_pret": {
+          "type": "occasion_card",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "heading": "Casual Pret",
+            "body": "<p>Effortless elegance for everyday. Our pret line brings the same quality and craft to your daily wardrobe.</p>",
+            "collection": "casual-pret",
+            "cta_url": ""
           }
         }
       },
-      "block_order": [
-        "banner_xjhece",
-        "banner_rihxDg",
-        "banner_9YbN3K",
-        "banner_cqAYyJ"
-      ],
+      "block_order": ["occasion_eid", "occasion_bridal", "occasion_formals", "occasion_pret"],
       "settings": {
         "room_key": "occasions",
         "layout": "occasions",
         "hero_eyebrow": "Curated for every moment",
         "hero_heading": "Dress the Occasion",
-        "hero_subheading": ""
+        "hero_subheading": "<p>From intimate gatherings to grand celebrations — find the perfect expression for every chapter of your story.</p>"
       }
     },
+
     "editorial_featured_collections": {
       "type": "immersive-editorial",
       "blocks": {
-        "banner_gqGrLc": {
-          "type": "banner",
+        "featured_ss5": {
+          "type": "featured_item",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "heading": "SS5 Summer Pret '26",
+            "body": "<p>Saad Bin Shahzad's summer pret edit — lightweight fabrics, architectural cuts, and the quiet confidence of a house at its peak.</p>",
+            "collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
+            "cta_url": ""
           }
         },
-        "banner_k4FgDF": {
-          "type": "banner",
+        "featured_suffuse_pret": {
+          "type": "featured_item",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "heading": "Suffuse Luxury Pret",
+            "body": "<p>The everyday elevated. Suffuse's luxury pret line brings signature embroidery and refined silhouettes to your daily wardrobe.</p>",
+            "collection": "luxury-pret-suffuse",
+            "cta_url": ""
           }
         },
-        "banner_GiAhDk": {
-          "type": "banner",
+        "featured_soraya_eid": {
+          "type": "featured_item",
           "settings": {
-            "heading": "",
-            "body": "",
-            "cta_label": "",
-            "cta_url": "",
-            "collection": "",
-            "depth_layer": 50
+            "image": "",
+            "heading": "Soraya Eid Pret",
+            "body": "<p>Lumene Festive '25–'26 — Soraya's most celebrated seasonal collection, now available in the immersive store.</p>",
+            "collection": "lumene-festive-25-26-soraya-official",
+            "cta_url": ""
           }
         }
       },
-      "block_order": [
-        "banner_gqGrLc",
-        "banner_k4FgDF",
-        "banner_GiAhDk"
-      ],
+      "block_order": ["featured_ss5", "featured_suffuse_pret", "featured_soraya_eid"],
       "settings": {
         "room_key": "featured_collections",
         "layout": "featured_collections",
-        "hero_eyebrow": "Featured now",
-        "hero_heading": "New Season Arrivals",
-        "hero_subheading": ""
+        "hero_eyebrow": "This season",
+        "hero_heading": "The Edit",
+        "hero_subheading": "<p>Three collections. Three stories. One curated moment in Pakistani fashion.</p>"
       }
     }
   },
+
   "order": [
     "immersive_notification_bar",
     "immersive_canvas",

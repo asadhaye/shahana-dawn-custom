@@ -53,12 +53,13 @@ const STORE_ROOMS = {
 
   occasions: {
     baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737&width=1600&quality=75',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah.png?v=1775312813&width=1600&quality=75',
     mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737&width=900&quality=75',
-    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=1600&quality=60',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah.png?v=1775312813&width=900&quality=75',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933',
     mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=900&quality=60',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933',
     hotspots: [
       { x: 25, y: 40, label: 'Eid Collection', targetCollection: 'eid-collection' },
       { x: 42, y: 50, label: 'Bridal & Mehndi', targetCollection: 'bridal-mehndi' },
@@ -71,10 +72,10 @@ const STORE_ROOMS = {
 
   featured_collections: {
     baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737&width=1600&quality=75',
-    mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.jpg?v=1772196737&width=900&quality=75',
-    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=1600&quality=60',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=1600&quality=75',
+    mobileBaseTextureUrl: 'https://picsum.photos/id/1080/900/1600',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
     mobileDepthMapUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=900&quality=60',
     hotspots: [
