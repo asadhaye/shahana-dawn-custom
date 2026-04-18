@@ -36,6 +36,27 @@
   if originating_collection_title == blank and originating_collection_handle != blank
     assign originating_collection_title = originating_collection_handle | replace: '-', ' ' | capitalize
   endif
+
+  # Prev/next navigation within the originating collection
+  assign prev_product = null
+  assign next_product = null
+  if originating_collection_handle != blank and panel_product
+    assign nav_collection = collections[originating_collection_handle]
+    if nav_collection
+      assign found_current = false
+      for nav_product in nav_collection.products limit: 50
+        if found_current
+          assign next_product = nav_product
+          break
+        endif
+        if nav_product.handle == panel_product.handle
+          assign found_current = true
+        else
+          assign prev_product = nav_product
+        endif
+      endfor
+    endif
+  endif
 %}
 
 <section
@@ -88,10 +109,90 @@
       <div class="glass-product-section__title-wrap">
         <h2 class="glass-product-section__title">{{ panel_product.title | escape }}</h2>
         {% if panel_product.vendor != blank and section.settings.show_vendor %}
-          <p class="glass-product-section__vendor">{{ panel_product.vendor | escape }}</p>
+          {%- assign vendor_collection_handle = panel_product.vendor | handleize -%}
+          <button
+            type="button"
+            class="glass-product-section__vendor glass-product-section__vendor--link"
+            data-vendor-collection="{{ vendor_collection_handle }}"
+            aria-label="{{ panel_product.vendor | escape }}"
+          >
+            {{ panel_product.vendor | escape }}
+          </button>
         {% endif %}
       </div>
     </header>
+
+    {%- if prev_product or next_product -%}
+      <nav class="glass-product-section__product-nav" aria-label="Product navigation">
+        {%- if prev_product -%}
+          <button
+            type="button"
+            class="glass-product-section__product-nav-btn glass-product-section__product-nav-btn--prev"
+            data-product-handle="{{ prev_product.handle }}"
+            data-collection-handle="{{ originating_collection_handle }}"
+            aria-label="Previous product: {{ prev_product.title | escape }}"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <span class="glass-product-section__product-nav-label">
+              <span class="glass-product-section__product-nav-hint">Previous</span>
+              <span class="glass-product-section__product-nav-title">
+                {{- prev_product.title | escape | truncate: 30 -}}
+              </span>
+            </span>
+          </button>
+        {%- else -%}
+          <span
+            class="glass-product-section__product-nav-btn glass-product-section__product-nav-btn--placeholder"
+          ></span>
+        {%- endif -%}
+
+        {%- if next_product -%}
+          <button
+            type="button"
+            class="glass-product-section__product-nav-btn glass-product-section__product-nav-btn--next"
+            data-product-handle="{{ next_product.handle }}"
+            data-collection-handle="{{ originating_collection_handle }}"
+            aria-label="Next product: {{ next_product.title | escape }}"
+          >
+            <span class="glass-product-section__product-nav-label">
+              <span class="glass-product-section__product-nav-hint">Next</span>
+              <span class="glass-product-section__product-nav-title">
+                {{- next_product.title | escape | truncate: 30 -}}
+              </span>
+            </span>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        {%- else -%}
+          <span
+            class="glass-product-section__product-nav-btn glass-product-section__product-nav-btn--placeholder"
+          ></span>
+        {%- endif -%}
+      </nav>
+    {%- endif -%}
 
     <div class="glass-product-section__layout">
       <div class="glass-product-section__media glass-product-section__media--{{ section.settings.media_size | default: 'medium' }}">
@@ -497,11 +598,12 @@
     text-align: center;
     margin-bottom: 3rem;
     padding: 3rem 1.5rem;
-    background: rgba(10, 15, 30, 0.45);
+    background: rgba(8, 12, 24, 0.96);
     backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border-radius: 1px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
   }
 
   .glass-product-section__breadcrumb {
@@ -513,7 +615,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: rgba(212, 175, 55, 0.6);
+    color: rgba(255, 255, 255, 0.55);
   }
 
   .glass-product-section__breadcrumb-separator {
@@ -535,13 +637,13 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: rgba(212, 175, 55, 0.6);
+    color: rgba(255, 255, 255, 0.55);
     cursor: pointer;
     transition: color 0.2s ease;
   }
 
   .glass-product-section__breadcrumb-btn:hover {
-    color: #d4af37;
+    color: #fff;
     text-decoration: underline;
     text-underline-offset: 3px;
   }
@@ -589,6 +691,31 @@
     font-size: 1.125rem;
     color: rgba(212, 175, 55, 0.9);
     text-align: center;
+  }
+
+  .glass-product-section__vendor--link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.125rem;
+    color: rgba(212, 175, 55, 0.9);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(212, 175, 55, 0.4);
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  }
+
+  .glass-product-section__vendor--link:hover {
+    color: #d4af37;
+    text-decoration-color: #d4af37;
+  }
+
+  .glass-product-section__vendor--link:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 
   .glass-product-section__layout {
@@ -665,7 +792,7 @@
 
   .glass-product-section__description {
     margin-bottom: 1.5rem;
-    color: rgba(212, 175, 55, 0.9);
+    color: rgba(255, 255, 255, 0.85);
     line-height: 1.6;
     text-align: left;
   }
@@ -827,7 +954,7 @@
 
   .glass-product-section__collapsible-content {
     padding-bottom: 1rem;
-    color: rgba(212, 175, 55, 0.8);
+    color: rgba(255, 255, 255, 0.8);
     line-height: 1.6;
     text-align: left;
   }
@@ -862,11 +989,11 @@
   .glass-product-section__size-table th {
     background: rgba(255, 255, 255, 0.05);
     font-weight: 600;
-    color: rgba(212, 175, 55, 0.9);
+    color: #fff;
   }
 
   .glass-product-section__size-table td {
-    color: rgba(212, 175, 55, 0.9);
+    color: rgba(255, 255, 255, 0.85);
   }
 
   /* Related Products */
@@ -1016,7 +1143,7 @@
     border: 1px solid rgba(212, 175, 55, 0.2);
     border-radius: 10px;
     font-size: 0.85rem;
-    color: rgba(212, 175, 55, 0.85);
+    color: rgba(255, 255, 255, 0.85);
     max-width: 360px;
     text-align: left;
     line-height: 1.5;
@@ -1236,6 +1363,99 @@
     .glass-product-section__share-buttons {
       flex-wrap: wrap;
       gap: 0.5rem;
+    }
+  }
+
+  /* ── Prev / Next product navigation ─────────────────── */
+  .glass-product-section__product-nav {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .glass-product-section__product-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: rgba(8, 12, 24, 0.85);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 0.5rem;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    min-width: 0;
+  }
+
+  .glass-product-section__product-nav-btn--next {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .glass-product-section__product-nav-btn--placeholder {
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: default;
+  }
+
+  .glass-product-section__product-nav-btn:not(.glass-product-section__product-nav-btn--placeholder):hover {
+    border-color: rgba(212, 175, 55, 0.5);
+    background: rgba(212, 175, 55, 0.08);
+    color: #fff;
+  }
+
+  .glass-product-section__product-nav-btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  .glass-product-section__product-nav-btn svg {
+    flex-shrink: 0;
+    color: #d4af37;
+  }
+
+  .glass-product-section__product-nav-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .glass-product-section__product-nav-hint {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(212, 175, 55, 0.7);
+  }
+
+  .glass-product-section__product-nav-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 480px) {
+    .glass-product-section__product-nav-title {
+      display: none;
+    }
+    .glass-product-section__product-nav-btn {
+      flex: 0 0 auto;
+      padding: 0.75rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glass-product-section__product-nav-btn {
+      transition: none !important;
     }
   }
 {% endstylesheet %}

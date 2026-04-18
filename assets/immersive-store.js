@@ -1758,6 +1758,14 @@ function openProductPanel(productHandle, collectionHandle) {
         return;
       }
 
+      // Vendor name → open vendor collection panel
+      var vendorBtn = event.target.closest('[data-vendor-collection]');
+      if (vendorBtn) {
+        var vendorHandle = vendorBtn.getAttribute('data-vendor-collection');
+        if (vendorHandle) openCollectionPanel(vendorHandle);
+        return;
+      }
+
       // Related product click
       var relatedItem = event.target.closest('.glass-product-section__related-item');
       if (relatedItem) {
