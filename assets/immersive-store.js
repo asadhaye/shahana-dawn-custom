@@ -1758,6 +1758,23 @@ function openProductPanel(productHandle, collectionHandle) {
         return;
       }
 
+      // Vendor name → open vendor collection panel
+      var vendorBtn = event.target.closest('[data-vendor-collection]');
+      if (vendorBtn) {
+        var vendorHandle = vendorBtn.getAttribute('data-vendor-collection');
+        if (vendorHandle) openCollectionPanel(vendorHandle);
+        return;
+      }
+
+      // Prev/next product navigation
+      var navBtn = event.target.closest('.glass-product-section__product-nav-btn[data-product-handle]');
+      if (navBtn) {
+        var navHandle = navBtn.getAttribute('data-product-handle');
+        var navColHandle = navBtn.getAttribute('data-collection-handle');
+        if (navHandle) openProductPanel(navHandle, navColHandle || collectionHandle);
+        return;
+      }
+
       // Related product click
       var relatedItem = event.target.closest('.glass-product-section__related-item');
       if (relatedItem) {
