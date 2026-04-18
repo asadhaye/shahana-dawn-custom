@@ -59,7 +59,7 @@
           data-parallax-image
         >
 
-        {%- if product.images[1] and show_secondary_image != false -%}
+        {%- if product.images[1] and show_secondary_image -%}
           <img
             class="immersive-product-image-hover"
             src="{{ product.images[1] | image_url: width: 600 }}"
@@ -129,9 +129,9 @@
   {%- endif -%}
 
   <div class="immersive-product-info">
-    {%- if product.vendor != blank and show_vendor != false -%}
+    {%- if product.vendor != blank and show_vendor -%}
       <div class="immersive-product-vendor">
-        {{ product.vendor }}
+        {{ product.vendor | escape }}
       </div>
     {%- endif -%}
 
@@ -141,7 +141,7 @@
         class="immersive-product-title-link"
         data-product-handle="{{ product.handle }}"
       >
-        {{ product.title }}
+        {{ product.title | escape }}
       </a>
     </h3>
 

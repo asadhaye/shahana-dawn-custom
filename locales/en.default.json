@@ -440,7 +440,7 @@
       "discover_next": "Discover what's next",
       "dismiss": "Dismiss"
     },
-    "recommendations": {
+    "room_recommendations": {
       "heading": "Try next",
       "reason_saves": "Based on your saves",
       "reason_browsing": "Based on your browsing",

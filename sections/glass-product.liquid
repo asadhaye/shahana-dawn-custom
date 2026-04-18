@@ -44,8 +44,10 @@
   data-error-select-variant="{{ 'sections.immersive_store.error_select_variant' | t | escape }}"
   data-error-add-to-cart="{{ 'sections.immersive_store.error_add_to_cart' | t | escape }}"
   data-success-added="{{ 'sections.immersive_store.added_to_cart' | t | escape }}"
-  data-product-id="{{ panel_product.id }}"
-  data-product-handle="{{ panel_product.handle }}"
+  {%- if panel_product -%}
+    data-product-id="{{ panel_product.id }}"
+    data-product-handle="{{ panel_product.handle }}"
+  {%- endif -%}
 >
   {% if panel_product %}
     {% if originating_collection_handle != blank %}
@@ -85,7 +87,7 @@
       </nav>
       <div class="glass-product-section__title-wrap">
         <h2 class="glass-product-section__title">{{ panel_product.title | escape }}</h2>
-        {% if panel_product.vendor != blank and section.settings.show_vendor != false %}
+        {% if panel_product.vendor != blank and section.settings.show_vendor %}
           <p class="glass-product-section__vendor">{{ panel_product.vendor | escape }}</p>
         {% endif %}
       </div>
@@ -117,7 +119,12 @@
                 data-parallax-image
               >
             {% else %}
-              {{ panel_product.media | first | media_tag }}
+              {%- assign hero_alt = panel_product.featured_media.alt | escape -%}
+              {{
+                panel_product.featured_media.preview_image
+                | image_url: width: 800
+                | image_tag: alt: hero_alt, loading: 'eager', width: 800, height: 1067, data-parallax-image: ''
+              }}
             {% endif %}
           </div>
           {% if panel_product.media.size > 1 %}
@@ -130,7 +137,12 @@
                   data-media-index="{{ forloop.index0 }}"
                   aria-label="{%- if media.media_type == 'image' -%}{{ 'products.product.media.load_image' | t: index: thumb_index }}{%- elsif media.media_type == 'model' -%}{{ 'products.product.media.load_model' | t: index: thumb_index }}{%- elsif media.media_type == 'video' or media.media_type == 'external_video' -%}{{ 'products.product.media.load_video' | t: index: thumb_index }}{%- endif -%}"
                 >
-                  {{ media | media_tag }}
+                  {%- assign thumb_alt = media.alt | escape -%}
+                  {{
+                    media.preview_image
+                    | image_url: width: 120
+                    | image_tag: alt: thumb_alt, loading: 'lazy', width: 60, height: 80
+                  }}
                 </button>
                 {%- assign thumb_index = thumb_index | plus: 1 -%}
               {% endfor %}
@@ -258,7 +270,7 @@
           </span>
         </button>
 
-        {%- if section.settings.show_delivery_estimate != false -%}
+        {%- if section.settings.show_delivery_estimate -%}
           <div class="glass-product-section__delivery">
             <svg
               style="height:18px;float:left;margin-right:8px;margin-top:1px;flex-shrink:0;"
@@ -277,7 +289,7 @@
         {%- endif -%}
 
         <div class="glass-product-section__share">
-          {% if section.settings.show_share_buttons != false %}
+          {% if section.settings.show_share_buttons %}
             <span class="glass-product-section__share-label">
               {{- 'sections.immersive.product_panel.share_label' | t -}}
             </span>
@@ -290,7 +302,7 @@
                 class="glass-product-section__share-btn glass-product-section__share-btn--whatsapp"
                 href="#"
                 data-platform="whatsapp"
-                data-product-url="{{ shop.url }}{{ panel_product.url }}"
+                data-product-url="{{ panel_product.url | prepend: request.origin }}"
                 data-product-title="{{ panel_product.title | escape }}"
                 target="_blank"
                 rel="noopener"
@@ -305,7 +317,7 @@
                 class="glass-product-section__share-btn glass-product-section__share-btn--facebook"
                 href="#"
                 data-platform="facebook"
-                data-product-url="{{ shop.url }}{{ panel_product.url }}"
+                data-product-url="{{ panel_product.url | prepend: request.origin }}"
                 data-product-title="{{ panel_product.title | escape }}"
                 target="_blank"
                 rel="noopener"
@@ -320,7 +332,7 @@
                 class="glass-product-section__share-btn glass-product-section__share-btn--instagram"
                 href="#"
                 data-platform="instagram"
-                data-product-url="{{ shop.url }}{{ panel_product.url }}"
+                data-product-url="{{ panel_product.url | prepend: request.origin }}"
                 data-product-title="{{ panel_product.title | escape }}"
                 target="_blank"
                 rel="noopener"
@@ -335,7 +347,7 @@
                 class="glass-product-section__share-btn glass-product-section__share-btn--tiktok"
                 href="#"
                 data-platform="tiktok"
-                data-product-url="{{ shop.url }}{{ panel_product.url }}"
+                data-product-url="{{ panel_product.url | prepend: request.origin }}"
                 data-product-title="{{ panel_product.title | escape }}"
                 target="_blank"
                 rel="noopener"
@@ -350,7 +362,7 @@
           {% endif %}
         </div>
 
-        {%- if section.settings.enable_virtual_tryon != false -%}
+        {%- if section.settings.enable_virtual_tryon -%}
           {%- render 'virtual-tryon', product: panel_product -%}
         {%- endif -%}
 
@@ -360,7 +372,7 @@
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 2L12.5 7.5L18.5 8.5L14.25 12.5L15.5 18.5L10 15.5L4.5 18.5L5.75 12.5L1.5 8.5L7.5 7.5L10 2Z" fill="currentColor"/>
             </svg>
-            <span>{{ panel_product.metafields.custom.eid_delivery }}</span>
+            <span>{{ panel_product.metafields.custom.eid_delivery | escape }}</span>
           </div>
         {% endif %}
 

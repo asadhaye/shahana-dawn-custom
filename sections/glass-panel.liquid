@@ -10,9 +10,17 @@
   {% if panel_collection %}
     <header class="glass-panel-section__header">
       <nav class="glass-panel-section__breadcrumb" aria-label="Breadcrumb">
-        <span class="glass-panel-section__breadcrumb-root">{{ 'sections.immersive_store.breadcrumb_store' | t }}</span>
-        <span class="glass-panel-section__breadcrumb-separator">/</span>
-        <span class="glass-panel-section__breadcrumb-current">{{ panel_collection.title | escape }}</span>
+        <button
+          type="button"
+          class="glass-panel-section__breadcrumb-root glass-panel-section__breadcrumb-btn"
+          data-breadcrumb-action="close-panel"
+        >
+          {{- 'sections.immersive_store.breadcrumb_store' | t -}}
+        </button>
+        <span class="glass-panel-section__breadcrumb-separator" aria-hidden="true">/</span>
+        <span class="glass-panel-section__breadcrumb-current" aria-current="page">
+          {{- panel_collection.title | escape -}}
+        </span>
       </nav>
       <h2 class="glass-panel-section__title">{{ panel_collection.title | escape }}</h2>
       {% if panel_collection.description != blank %}
@@ -81,6 +89,32 @@
   .glass-panel-section__breadcrumb-current {
     color: #d4af37;
     font-weight: 600;
+  }
+
+  .glass-panel-section__breadcrumb-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(212, 175, 55, 0.6);
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .glass-panel-section__breadcrumb-btn:hover {
+    color: #d4af37;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .glass-panel-section__breadcrumb-btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 
   .glass-panel-section__title {
