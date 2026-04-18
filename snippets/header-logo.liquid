@@ -1,0 +1,38 @@
+{% doc %}
+  Renders the header logo image or shop name fallback.
+
+  @param {string} sizes - The responsive sizes attribute value for the image
+  @param {string} [extra_class] - Optional extra CSS class appended to the image element
+
+  @example
+  {% render 'header-logo', sizes: '(max-width: 300px) 50vw, 150px' %}
+{% enddoc %}
+
+{%- liquid
+  assign logo_alt = settings.logo.alt | default: shop.name | escape
+  assign logo_height = settings.logo_width | divided_by: settings.logo.aspect_ratio
+  assign logo_widths = settings.logo_width | append: ', ' | append: settings.logo_width | times: 1.5 | round | append: ', ' | append: settings.logo_width | times: 2
+  assign logo_class = 'header__heading-logo'
+  if extra_class != blank
+    assign logo_class = logo_class | append: ' ' | append: extra_class
+  endif
+-%}
+
+{%- if settings.logo != blank -%}
+  <div class="header__heading-logo-wrapper">
+    {{
+      settings.logo
+      | image_url: width: 600
+      | image_tag:
+        class: logo_class,
+        widths: logo_widths,
+        height: logo_height,
+        width: settings.logo_width,
+        alt: logo_alt,
+        sizes: sizes,
+        preload: true
+    }}
+  </div>
+{%- else -%}
+  <span class="h2">{{ shop.name }}</span>
+{%- endif -%}
