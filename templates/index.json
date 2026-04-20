@@ -206,19 +206,18 @@
         "padding_bottom": 36
       }
     },
-    "featured_collection_HjPMEf": {
+    "featured_collection_3": {
       "type": "featured-collection",
-      "disabled": true,
       "settings": {
-        "collection": "laavni-25-saad-bin-shahzad",
-        "products_to_show": 25,
-        "title": "Laavni '25 - Saad Bin Shahzad",
+        "collection": "casual-pret-eid-edit-2026",
+        "products_to_show": 24,
+        "title": "Casual Pret Eid Edit 2026 | Suffuse",
         "heading_size": "h1",
         "description": "",
         "show_description": false,
         "description_style": "body",
-        "columns_desktop": 2,
-        "enable_desktop_slider": true,
+        "columns_desktop": 4,
+        "enable_desktop_slider": false,
         "full_width": false,
         "show_view_all": true,
         "view_all_style": "solid",
@@ -291,18 +290,19 @@
         "padding_bottom": 36
       }
     },
-    "featured_collection_3": {
+    "featured_collection_HjPMEf": {
       "type": "featured-collection",
+      "disabled": true,
       "settings": {
-        "collection": "casual-pret-eid-edit-2026",
-        "products_to_show": 24,
-        "title": "Casual Pret Eid Edit 2026 | Suffuse",
+        "collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
+        "products_to_show": 25,
+        "title": "Summer Prêt '26 Eid Edit - Saad Bin Shahzad",
         "heading_size": "h1",
         "description": "",
         "show_description": false,
         "description_style": "body",
-        "columns_desktop": 4,
-        "enable_desktop_slider": false,
+        "columns_desktop": 2,
+        "enable_desktop_slider": true,
         "full_width": false,
         "show_view_all": true,
         "view_all_style": "solid",
