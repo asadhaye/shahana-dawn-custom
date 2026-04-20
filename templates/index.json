@@ -80,7 +80,7 @@
           "type": "column",
           "settings": {
             "image": "shopify://shop_images/SUFFUSE_LOGO.webp",
-            "title": "Suffuse",
+            "title": "",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/suffuse"
@@ -90,7 +90,7 @@
           "type": "column",
           "settings": {
             "image": "shopify://shop_images/Soraya-logo.png",
-            "title": "Soraya",
+            "title": "",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/soraya"
@@ -100,7 +100,7 @@
           "type": "column",
           "settings": {
             "image": "shopify://shop_images/saad_bin_shahzad_logo.png",
-            "title": "Saad Bin Shahzad",
+            "title": "",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/saad-bin-shahzad"
@@ -110,7 +110,7 @@
           "type": "column",
           "settings": {
             "image": "shopify://shop_images/Maria_B.jpg",
-            "title": "Maria B",
+            "title": "",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/maria-b"
