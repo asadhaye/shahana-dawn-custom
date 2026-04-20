@@ -11,7 +11,9 @@
 {%- liquid
   assign logo_alt = settings.logo.alt | default: shop.name | escape
   assign logo_height = settings.logo_width | divided_by: settings.logo.aspect_ratio
-  assign logo_widths = settings.logo_width | append: ', ' | append: settings.logo_width | times: 1.5 | round | append: ', ' | append: settings.logo_width | times: 2
+  assign logo_width_1_5x = settings.logo_width | times: 1.5 | round
+  assign logo_width_2x = settings.logo_width | times: 2
+  assign logo_widths = settings.logo_width | append: ', ' | append: logo_width_1_5x | append: ', ' | append: logo_width_2x
   assign logo_class = 'header__heading-logo'
   if extra_class != blank
     assign logo_class = logo_class | append: ' ' | append: extra_class
