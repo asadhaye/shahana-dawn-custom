@@ -439,6 +439,34 @@
         "padding_top": 36,
         "padding_bottom": 36
       }
+    },
+    "featured_collection_BjbRgd": {
+      "type": "featured-collection",
+      "settings": {
+        "collection": "luxury-pret-2024",
+        "products_to_show": 25,
+        "title": "Luxury Pret",
+        "heading_size": "h1",
+        "description": "<p>Suffuse By Sana Yasir</p>",
+        "show_description": false,
+        "description_style": "body",
+        "columns_desktop": 2,
+        "enable_desktop_slider": true,
+        "full_width": true,
+        "show_view_all": true,
+        "view_all_style": "solid",
+        "color_scheme": "",
+        "image_ratio": "portrait",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "standard",
+        "columns_mobile": "2",
+        "swipe_on_mobile": true,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
     }
   },
   "order": [
@@ -453,6 +481,7 @@
     "featured_collection_9CkKrE",
     "featured_collection_HjPMEf",
     "featured_collection_wYNyfe",
-    "featured_collection_3azgmP"
+    "featured_collection_3azgmP",
+    "featured_collection_BjbRgd"
   ]
 }
