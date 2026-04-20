@@ -266,7 +266,7 @@
       "type": "featured-collection",
       "settings": {
         "collection": "soraya",
-        "products_to_show": 8,
+        "products_to_show": 25,
         "title": "Featured collection",
         "heading_size": "h1",
         "description": "",
