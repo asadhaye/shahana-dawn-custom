@@ -272,6 +272,34 @@
         "padding_bottom": 36
       }
     },
+    "featured_collection_2": {
+      "type": "featured-collection",
+      "settings": {
+        "collection": "lumene-festive-25-26-soraya-official",
+        "products_to_show": 23,
+        "title": "Lumene Festive 25/26",
+        "heading_size": "h1",
+        "description": "<p>Soraya Official</p>",
+        "show_description": false,
+        "description_style": "body",
+        "columns_desktop": 2,
+        "enable_desktop_slider": true,
+        "full_width": true,
+        "show_view_all": true,
+        "view_all_style": "solid",
+        "color_scheme": "",
+        "image_ratio": "portrait",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "show_rating": false,
+        "quick_add": "standard",
+        "columns_mobile": "2",
+        "swipe_on_mobile": true,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
     "featured_collection_HjPMEf": {
       "type": "featured-collection",
       "settings": {
@@ -328,34 +356,6 @@
         "padding_bottom": 36
       }
     },
-    "featured_collection_2": {
-      "type": "featured-collection",
-      "settings": {
-        "collection": "soraya",
-        "products_to_show": 23,
-        "title": "Featured collection",
-        "heading_size": "h1",
-        "description": "",
-        "show_description": false,
-        "description_style": "body",
-        "columns_desktop": 2,
-        "enable_desktop_slider": true,
-        "full_width": false,
-        "show_view_all": true,
-        "view_all_style": "solid",
-        "color_scheme": "",
-        "image_ratio": "portrait",
-        "image_shape": "default",
-        "show_secondary_image": true,
-        "show_vendor": false,
-        "show_rating": false,
-        "quick_add": "standard",
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
     "featured_collection_3": {
       "type": "featured-collection",
       "settings": {
@@ -392,9 +392,9 @@
     "immersive_editorial_aYDjHT",
     "featured_collection_1",
     "featured_collection_Y8UFfe",
+    "featured_collection_2",
     "featured_collection_HjPMEf",
     "featured_collection_wYNyfe",
-    "featured_collection_2",
     "featured_collection_3"
   ]
 }
