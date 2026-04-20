@@ -161,7 +161,7 @@
         "description": "<p>Saad Bin Shahzad</p>",
         "show_description": false,
         "description_style": "subtitle",
-        "columns_desktop": 3,
+        "columns_desktop": 4,
         "enable_desktop_slider": true,
         "full_width": true,
         "show_view_all": true,
