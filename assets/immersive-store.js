@@ -4282,10 +4282,8 @@ function initImmersiveBottomNav() {
     fabStartX = rect.left;
     fabStartY = rect.top;
 
-    fab.style.transition = 'none';
-    fab.style.cursor = 'grabbing';
-
-    e.preventDefault();
+    // Don't prevent default here - let click events through
+    // Only prevent default in onDragMove if actually dragging
   }
 
   function onDragMove(e) {
@@ -4298,18 +4296,23 @@ function initImmersiveBottomNav() {
     // Mark as moved if dragged more than 5px
     if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
       hasMoved = true;
+
+      // Only apply drag styling and prevent default when actually dragging
+      fab.style.transition = 'none';
+      fab.style.cursor = 'grabbing';
+      e.preventDefault();
     }
 
-    var newX = fabStartX + deltaX;
-    var newY = fabStartY + deltaY;
+    if (hasMoved) {
+      var newX = fabStartX + deltaX;
+      var newY = fabStartY + deltaY;
 
-    fab.style.left = newX + 'px';
-    fab.style.top = newY + 'px';
-    fab.style.right = 'auto';
-    fab.style.bottom = 'auto';
-    fab.style.transform = 'none';
-
-    e.preventDefault();
+      fab.style.left = newX + 'px';
+      fab.style.top = newY + 'px';
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      fab.style.transform = 'none';
+    }
   }
 
   function onDragEnd(e) {
@@ -4323,9 +4326,8 @@ function initImmersiveBottomNav() {
       var rect = fab.getBoundingClientRect();
       snapToEdge(rect.left, rect.top);
       saveFabPosition();
+      e.preventDefault(); // Only prevent default if we actually dragged
     }
-
-    e.preventDefault();
   }
 
   // Attach drag listeners to trigger button
