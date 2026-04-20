@@ -182,7 +182,7 @@
       "type": "featured-collection",
       "settings": {
         "collection": "silk-pret-summer-26-suffuse-by-sana-yasir",
-        "products_to_show": 8,
+        "products_to_show": 25,
         "title": "Silk Pret Summer 26",
         "heading_size": "h2",
         "description": "<p>Suffuse By Sana Yasir</p>",
@@ -210,7 +210,7 @@
       "type": "featured-collection",
       "settings": {
         "collection": "laavni-25-saad-bin-shahzad",
-        "products_to_show": 8,
+        "products_to_show": 25,
         "title": "Laavni '25 - Saad Bin Shahzad",
         "heading_size": "h1",
         "description": "",
