@@ -99,7 +99,6 @@
         "column_3": {
           "type": "column",
           "settings": {
-            "image": "shopify://shop_images/3.png",
             "title": "Saad Bin Shahzad",
             "text": "",
             "link_label": "",
@@ -154,15 +153,15 @@
     "featured_collection_1": {
       "type": "featured-collection",
       "settings": {
-        "collection": "suffuse",
+        "collection": "el-veneto-luxury-formals-saad-bin-shahzad",
         "products_to_show": 8,
-        "title": "Featured collection",
+        "title": "El Veneto Luxury Formals - Saad Bin Shahzad",
         "heading_size": "h1",
         "description": "",
         "show_description": false,
         "description_style": "body",
         "columns_desktop": 4,
-        "enable_desktop_slider": false,
+        "enable_desktop_slider": true,
         "full_width": false,
         "show_view_all": true,
         "view_all_style": "solid",
