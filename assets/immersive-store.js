@@ -173,7 +173,14 @@ let transitioning = false;
 var currentImageAspect = 16 / 9; // updated when a texture loads
 
 // Texture cache to avoid re-loading and enable VRAM disposal
-var textureCache = {};
+// LRU cache: array of { key, base, depth } ordered by recency (most recent first)
+var textureCache = [];
+var MAX_CACHED_TEXTURES = 5; // Only keep most recently used 5 textures
+
+// Performance monitoring (dev only)
+var lastFrameTime = typeof performance !== 'undefined' ? performance.now() : 0;
+var fpsCounter = 0;
+var fpsTimer = typeof performance !== 'undefined' ? performance.now() : 0;
 
 // Session state persistence — survives refresh, cleared on tab close
 
@@ -209,7 +216,35 @@ var canvasRect = null;
 function evaluateDeviceFlags() {
   isMobile = window.innerWidth < 768;
   isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
-  usesMobileImg = window.innerWidth < 1024;
+
+  // Connection-aware texture quality
+  var connectionQuality = 1.0; // Default to high quality
+  if ('connection' in navigator && navigator.connection) {
+    var effType = navigator.connection.effectiveType;
+    // Map connection quality to texture scale factor
+    var qualityMap = {
+      'slow-2g': 0.5,
+      '2g': 0.5,
+      '3g': 0.75,
+      '4g': 1.0,
+    };
+    connectionQuality = qualityMap[effType] || 1.0;
+
+    // Also check saveData preference
+    if (navigator.connection.saveData) {
+      connectionQuality = Math.min(connectionQuality, 0.5);
+    }
+
+    if (window.__IMMERSIVE_DEV__) {
+      console.log('[Immersive] Connection quality:', effType, '→ scale:', connectionQuality);
+    }
+  }
+
+  // Use mobile textures on small screens OR poor connections
+  usesMobileImg = window.innerWidth < 1024 || connectionQuality < 0.75;
+
+  // Update texture size calculation to use connection quality
+  textureWidth = usesMobileImg ? Math.floor(1200 * connectionQuality) : Math.floor(1920 * connectionQuality);
 }
 
 function updateCanvasRect() {
@@ -439,7 +474,13 @@ function preloadRoom(roomKey) {
   var roomData = getRoomTextureUrls(roomKey);
   if (!roomData) return;
   var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
-  if (textureCache[cacheKey]) return; // already cached
+
+  // Check if already cached (LRU array)
+  var isCached = textureCache.some(function (entry) {
+    return entry.key === cacheKey;
+  });
+
+  if (isCached) return; // already cached
   loadRoomTextures(roomData, function () {}); // load silently into cache
 }
 
@@ -901,6 +942,35 @@ function animate() {
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
+
+  // Performance monitoring (dev only)
+  // Enable by setting window.__IMMERSIVE_DEV__ = true in console
+  if (typeof performance !== 'undefined' && window.__IMMERSIVE_DEV__) {
+    var now = performance.now();
+    var frameTime = now - lastFrameTime;
+    lastFrameTime = now;
+
+    // Simple FPS counter (show in console every second)
+    fpsCounter++;
+    if (now - fpsTimer > 1000) {
+      var fps = Math.round((fpsCounter * 1000) / (now - fpsTimer));
+      console.log(
+        '[Immersive] FPS: ' +
+          fps +
+          ' | Frame time: ' +
+          frameTime.toFixed(2) +
+          'ms' +
+          (frameTime > 16.67 ? ' ⚠️ SLOW' : ''),
+      );
+      fpsCounter = 0;
+      fpsTimer = now;
+    }
+
+    // Frame budget warning (16.67ms = 60fps)
+    if (frameTime > 16.67) {
+      console.warn('[Immersive] Frame budget exceeded: ' + frameTime.toFixed(2) + 'ms (>' + 16.67 + 'ms for 60fps)');
+    }
+  }
 }
 
 function updateRoomBadge(roomKey) {
@@ -1069,8 +1139,16 @@ function updateCameraForMode() {
 function loadRoomTextures(roomData, callback) {
   var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
 
-  if (textureCache[cacheKey]) {
-    callback(textureCache[cacheKey].base, textureCache[cacheKey].depth);
+  // Check cache first (LRU: most recent first)
+  var cachedIndex = textureCache.findIndex(function (entry) {
+    return entry.key === cacheKey;
+  });
+
+  if (cachedIndex !== -1) {
+    // Move to front (most recently used)
+    var cached = textureCache.splice(cachedIndex, 1)[0];
+    textureCache.unshift(cached);
+    callback(cached.base, cached.depth);
     return;
   }
 
@@ -1091,10 +1169,25 @@ function loadRoomTextures(roomData, callback) {
   function onBothLoaded() {
     if (!loaded.base || !loaded.depth) return;
     clearTimeout(timeoutId);
+
     // Only cache if both textures loaded successfully (have real image data)
     if (loaded.base.image && loaded.depth.image) {
-      textureCache[cacheKey] = { base: loaded.base, depth: loaded.depth };
+      // Add to front of cache (most recently used)
+      textureCache.unshift({ key: cacheKey, base: loaded.base, depth: loaded.depth });
+
+      // Remove oldest if over limit
+      if (textureCache.length > MAX_CACHED_TEXTURES) {
+        var oldest = textureCache.pop();
+        console.log('[Immersive] Evicting oldest texture from cache:', oldest.key);
+        try {
+          if (oldest.base) oldest.base.dispose();
+          if (oldest.depth) oldest.depth.dispose();
+        } catch (e) {
+          console.warn('[Immersive] Error disposing texture:', e);
+        }
+      }
     }
+
     callback(loaded.base, loaded.depth);
   }
 
@@ -1158,7 +1251,7 @@ function loadRoomTextures(roomData, callback) {
 }
 
 function isCachedTexture(texture) {
-  return Object.values(textureCache).some(function (entry) {
+  return textureCache.some(function (entry) {
     return entry.base === texture || entry.depth === texture;
   });
 }
@@ -4091,10 +4184,172 @@ function initImmersiveBottomNav() {
   var cartBadge = fab.querySelector('[data-bottom-nav-cart-badge]');
 
   var isOpen = false;
+  var isDragging = false;
+  var dragStartX = 0;
+  var dragStartY = 0;
+  var fabStartX = 0;
+  var fabStartY = 0;
+  var hasMoved = false;
 
-  // Toggle FAB menu
+  // Load saved position from localStorage
+  function loadFabPosition() {
+    try {
+      var saved = localStorage.getItem('immersive_fab_position');
+      if (saved) {
+        var pos = JSON.parse(saved);
+        fab.style.top = pos.top;
+        fab.style.right = pos.right;
+        fab.style.bottom = pos.bottom;
+        fab.style.left = pos.left;
+        fab.style.transform = pos.transform || 'none';
+      }
+    } catch (e) {
+      console.warn('Could not load FAB position:', e);
+    }
+  }
+
+  // Save position to localStorage
+  function saveFabPosition() {
+    try {
+      var pos = {
+        top: fab.style.top,
+        right: fab.style.right,
+        bottom: fab.style.bottom,
+        left: fab.style.left,
+        transform: fab.style.transform,
+      };
+      localStorage.setItem('immersive_fab_position', JSON.stringify(pos));
+    } catch (e) {
+      console.warn('Could not save FAB position:', e);
+    }
+  }
+
+  // Snap to edge helper
+  function snapToEdge(x, y) {
+    var rect = fab.getBoundingClientRect();
+    var viewportWidth = window.innerWidth;
+    var viewportHeight = window.innerHeight;
+    var fabWidth = rect.width;
+    var fabHeight = rect.height;
+    var snapThreshold = 40; // pixels from edge to snap
+
+    var centerX = x + fabWidth / 2;
+    var centerY = y + fabHeight / 2;
+
+    // Determine which edge is closest
+    var distToLeft = centerX;
+    var distToRight = viewportWidth - centerX;
+    var distToTop = centerY;
+    var distToBottom = viewportHeight - centerY;
+
+    var minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+
+    // Snap to closest edge if within threshold
+    if (minDist < snapThreshold || minDist === distToLeft || minDist === distToRight) {
+      if (distToLeft < distToRight) {
+        // Snap to left
+        fab.style.left = '1.25rem';
+        fab.style.right = 'auto';
+      } else {
+        // Snap to right
+        fab.style.right = '1.25rem';
+        fab.style.left = 'auto';
+      }
+      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
+      fab.style.bottom = 'auto';
+      fab.style.transform = 'none';
+    } else {
+      // Free position
+      fab.style.left = Math.max(20, Math.min(x, viewportWidth - fabWidth - 20)) + 'px';
+      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      fab.style.transform = 'none';
+    }
+  }
+
+  // Mouse/Touch drag handlers
+  function onDragStart(e) {
+    if (isOpen) return; // Don't drag when menu is open
+
+    var touch = e.type === 'touchstart' ? e.touches[0] : e;
+    isDragging = true;
+    hasMoved = false;
+    dragStartX = touch.clientX;
+    dragStartY = touch.clientY;
+
+    var rect = fab.getBoundingClientRect();
+    fabStartX = rect.left;
+    fabStartY = rect.top;
+
+    fab.style.transition = 'none';
+    fab.style.cursor = 'grabbing';
+
+    e.preventDefault();
+  }
+
+  function onDragMove(e) {
+    if (!isDragging) return;
+
+    var touch = e.type === 'touchmove' ? e.touches[0] : e;
+    var deltaX = touch.clientX - dragStartX;
+    var deltaY = touch.clientY - dragStartY;
+
+    // Mark as moved if dragged more than 5px
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      hasMoved = true;
+    }
+
+    var newX = fabStartX + deltaX;
+    var newY = fabStartY + deltaY;
+
+    fab.style.left = newX + 'px';
+    fab.style.top = newY + 'px';
+    fab.style.right = 'auto';
+    fab.style.bottom = 'auto';
+    fab.style.transform = 'none';
+
+    e.preventDefault();
+  }
+
+  function onDragEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+
+    fab.style.transition = '';
+    fab.style.cursor = '';
+
+    if (hasMoved) {
+      var rect = fab.getBoundingClientRect();
+      snapToEdge(rect.left, rect.top);
+      saveFabPosition();
+    }
+
+    e.preventDefault();
+  }
+
+  // Attach drag listeners to trigger button
+  if (fabTrigger) {
+    fabTrigger.addEventListener('mousedown', onDragStart);
+    fabTrigger.addEventListener('touchstart', onDragStart, { passive: false });
+  }
+
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('touchmove', onDragMove, { passive: false });
+  document.addEventListener('mouseup', onDragEnd);
+  document.addEventListener('touchend', onDragEnd);
+
+  // Load saved position on init
+  loadFabPosition();
+
+  // Toggle FAB menu (only if not dragged)
   if (fabTrigger && fabActions) {
-    fabTrigger.addEventListener('click', function () {
+    fabTrigger.addEventListener('click', function (e) {
+      if (hasMoved) {
+        hasMoved = false;
+        return; // Don't toggle if we just finished dragging
+      }
+
       isOpen = !isOpen;
       fabTrigger.setAttribute('aria-expanded', isOpen);
       fabActions.hidden = !isOpen;
@@ -4129,12 +4384,15 @@ function initImmersiveBottomNav() {
     }
   });
 
-  // Wire Wishlist button → existing wishlist open handler
+  // Wire Wishlist button → directly open wishlist panel
   if (wishlistBtn) {
     wishlistBtn.addEventListener('click', function () {
       exitGuidedMode();
-      var wishlistOpenBtn = document.querySelector('[data-wishlist-open]');
-      if (wishlistOpenBtn) wishlistOpenBtn.click();
+      // Directly open the wishlist panel
+      var wishlistPanel = document.querySelector('[data-wishlist-panel]');
+      if (wishlistPanel) {
+        openWishlistPanel();
+      }
       // Close FAB
       isOpen = false;
       fabTrigger.setAttribute('aria-expanded', 'false');
@@ -4142,12 +4400,15 @@ function initImmersiveBottomNav() {
     });
   }
 
-  // Wire Cart button → existing cart toggle
+  // Wire Cart button → directly open cart drawer
   if (cartBtn) {
     cartBtn.addEventListener('click', function () {
       exitGuidedMode();
-      var cartToggle = document.getElementById('cart-toggle');
-      if (cartToggle) cartToggle.click();
+      // Directly open the cart drawer
+      var cartDrawer = document.querySelector('cart-drawer');
+      if (cartDrawer) {
+        cartDrawer.open();
+      }
       // Close FAB
       isOpen = false;
       fabTrigger.setAttribute('aria-expanded', 'false');
@@ -5258,13 +5519,16 @@ function safeBindImmersiveInit() {
     uniforms = null;
     currentRoomKey = null;
     transitioning = false;
-    Object.keys(textureCache).forEach(function (k) {
+
+    // Dispose all cached textures (LRU array)
+    textureCache.forEach(function (entry) {
       try {
-        if (textureCache[k].base) textureCache[k].base.dispose();
-        if (textureCache[k].depth) textureCache[k].depth.dispose();
+        if (entry.base) entry.base.dispose();
+        if (entry.depth) entry.depth.dispose();
       } catch (e) {}
     });
-    textureCache = {};
+    textureCache = [];
+
     contentCache = {};
   }
 
