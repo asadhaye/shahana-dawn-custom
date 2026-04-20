@@ -4408,8 +4408,8 @@ function initImmersiveBottomNav() {
       exitGuidedMode();
       // Directly open the cart drawer
       var cartDrawer = document.querySelector('cart-drawer');
-      if (cartDrawer) {
-        cartDrawer.open();
+      if (cartDrawer && typeof cartDrawer.open === 'function') {
+        cartDrawer.open(cartBtn);
       }
       // Close FAB
       isOpen = false;
