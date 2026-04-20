@@ -71,176 +71,103 @@
       {%- endfor -%}
     </div>
 
-    <!-- Bottom navigation bar — outside #ui-layer so position:fixed works correctly -->
-    <nav
-      class="immersive-bottom-nav"
-      data-immersive-bottom-nav
-      aria-label="{{ 'sections.immersive_store.bottom_nav.rooms' | t | escape }}"
-      data-label-rooms="{{ 'sections.immersive_store.bottom_nav.rooms' | t | escape }}"
-      data-label-wishlist="{{ 'sections.immersive_store.bottom_nav.wishlist' | t | escape }}"
-      data-label-cart="{{ 'sections.immersive_store.bottom_nav.cart' | t | escape }}"
-      data-label-2d="{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t | escape }}"
-      data-label-room-picker="{{ 'sections.immersive_store.bottom_nav.room_picker_title' | t | escape }}"
-    >
-      <button
-        type="button"
-        class="immersive-bottom-nav__item"
-        data-bottom-nav-rooms
-        aria-label="{{ 'sections.immersive_store.bottom_nav.rooms' | t | escape }}"
-      >
-        <svg
-          aria-hidden="true"
-          focusable="false"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-        >
-          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-        </svg>
-        <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.rooms' | t }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="immersive-bottom-nav__item"
-        data-bottom-nav-wishlist
-        aria-label="{{ 'sections.immersive_store.bottom_nav.wishlist' | t | escape }}"
-      >
-        <span class="immersive-bottom-nav__icon-wrap">
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-          >
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <span
-            class="immersive-bottom-nav__badge immersive-badge"
-            data-bottom-nav-wishlist-badge
-            aria-hidden="true"
-            hidden
-            >0</span
-          >
-        </span>
-        <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.wishlist' | t }}</span>
-      </button>
-
-      <button
-        type="button"
-        class="immersive-bottom-nav__item"
-        data-bottom-nav-cart
-        aria-label="{{ 'sections.immersive_store.bottom_nav.cart' | t | escape }}"
-      >
-        <span class="immersive-bottom-nav__icon-wrap">
-          <svg
-            aria-hidden="true"
-            focusable="false"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.75"
-          >
-            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-          </svg>
-          <span class="immersive-bottom-nav__badge immersive-badge" data-bottom-nav-cart-badge aria-hidden="true" hidden
-            >0</span
-          >
-        </span>
-        <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.cart' | t }}</span>
-      </button>
-
-      <a
-        href="{{ routes.root_url }}"
-        class="immersive-bottom-nav__item"
-        data-bottom-nav-2d
-        aria-label="{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t | escape }}"
-      >
-        <svg
-          aria-hidden="true"
-          focusable="false"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-        >
-          <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-        </svg>
-        <span class="immersive-bottom-nav__label">{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t }}</span>
-      </a>
-    </nav>
-
-    <!-- Room picker sheet -->
+    <!-- Floating Assistive Ball (FAB) — replaces bottom nav pill -->
     <div
-      class="immersive-bottom-nav__room-picker"
-      data-bottom-nav-room-picker
-      data-room-visited-label="{{ 'sections.immersive_store.room_visited' | t | escape }}"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="immersive-room-picker-title"
-      hidden
+      class="immersive-fab"
+      data-immersive-fab
+      aria-label="{{ 'sections.immersive_store.fab.label' | t | escape }}"
     >
-      <div class="immersive-bottom-nav__room-picker-inner">
-        <h2 id="immersive-room-picker-title" class="immersive-bottom-nav__room-picker-title">
-          {{ 'sections.immersive_store.bottom_nav.room_picker_title' | t }}
-        </h2>
+      <!-- FAB trigger button -->
+      <button
+        type="button"
+        class="immersive-fab__trigger"
+        data-fab-trigger
+        aria-expanded="false"
+        aria-haspopup="true"
+        aria-label="{{ 'sections.immersive_store.fab.open' | t | escape }}"
+      >
+        {%- if section.settings.fab_icon_svg != blank -%}
+          {{ section.settings.fab_icon_svg }}
+        {%- else -%}
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="serif" font-size="22" font-weight="700" fill="#d4af37">S</text>
+          </svg>
+        {%- endif -%}
+      </button>
+
+      <!-- FAB action items — revealed on open -->
+      <div class="immersive-fab__actions" data-fab-actions hidden>
+        <!-- Wishlist -->
         <button
           type="button"
-          class="immersive-bottom-nav__room-picker-close"
-          data-bottom-nav-room-picker-close
-          aria-label="{{ 'sections.immersive_store.close' | t | escape }}"
+          class="immersive-fab__action"
+          data-bottom-nav-wishlist
+          aria-label="{{ 'sections.immersive_store.bottom_nav.wishlist' | t | escape }}"
+        >
+          <span class="immersive-fab__icon-wrap">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span class="immersive-fab__badge" data-bottom-nav-wishlist-badge aria-hidden="true" hidden>0</span>
+          </span>
+          <span class="immersive-fab__action-label">{{ 'sections.immersive_store.bottom_nav.wishlist' | t }}</span>
+        </button>
+
+        <!-- Cart -->
+        <button
+          type="button"
+          class="immersive-fab__action"
+          data-bottom-nav-cart
+          aria-label="{{ 'sections.immersive_store.bottom_nav.cart' | t | escape }}"
+        >
+          <span class="immersive-fab__icon-wrap">
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+            >
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <span class="immersive-fab__badge" data-bottom-nav-cart-badge aria-hidden="true" hidden>0</span>
+          </span>
+          <span class="immersive-fab__action-label">{{ 'sections.immersive_store.bottom_nav.cart' | t }}</span>
+        </button>
+
+        <!-- Classic Store -->
+        <a
+          href="{{ routes.root_url }}"
+          class="immersive-fab__action"
+          data-bottom-nav-2d
+          aria-label="{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t | escape }}"
         >
           <svg
             aria-hidden="true"
             focusable="false"
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="2"
+            stroke-width="1.75"
           >
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
           </svg>
-        </button>
-        <ul class="immersive-bottom-nav__room-list" role="list">
-          <li>
-            <button type="button" class="immersive-bottom-nav__room-option" data-room-key="storefront">
-              {{ 'sections.immersive_store.bottom_nav.room_storefront' | t }}
-            </button>
-          </li>
-          <li>
-            <button type="button" class="immersive-bottom-nav__room-option" data-room-key="lounge">
-              {{ 'sections.immersive_store.bottom_nav.room_lounge' | t }}
-            </button>
-          </li>
-          <li>
-            <button type="button" class="immersive-bottom-nav__room-option" data-room-key="designer_houses">
-              {{ 'sections.immersive_store.bottom_nav.room_designer_houses' | t }}
-            </button>
-          </li>
-          <li>
-            <button type="button" class="immersive-bottom-nav__room-option" data-room-key="occasions">
-              {{ 'sections.immersive_store.bottom_nav.room_occasions' | t }}
-            </button>
-          </li>
-          <li>
-            <button type="button" class="immersive-bottom-nav__room-option" data-room-key="featured_collections">
-              {{ 'sections.immersive_store.bottom_nav.room_featured_collections' | t }}
-            </button>
-          </li>
-        </ul>
+          <span class="immersive-fab__action-label">{{ 'sections.immersive_store.bottom_nav.back_to_2d' | t }}</span>
+        </a>
       </div>
     </div>
 
@@ -324,7 +251,7 @@
 
   <!-- Fixed Header — dark frosted glass top bar -->
   <header class="immersive-header">
-    <!-- Left: burger menu + 2D bridge pill -->
+    <!-- Left: burger menu only -->
     <div class="immersive-header__left">
       {%- if section.settings.menu != blank -%}
         <menu-drawer data-breakpoint="desktop">
@@ -440,35 +367,9 @@
           </details>
         </menu-drawer>
       {%- endif -%}
-
-      <a
-        href="{{ routes.root_url }}"
-        class="immersive-header__mode-switch"
-        aria-label="{{ 'sections.immersive_journey_bridges.switch_to_2d_aria' | t }}"
-        data-mode-switch-2d
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-          <line x1="8" y1="21" x2="16" y2="21"></line>
-          <line x1="12" y1="17" x2="12" y2="21"></line>
-        </svg>
-        <span class="immersive-header__mode-switch-label">
-          {{- 'sections.immersive_journey_bridges.switch_to_2d' | t -}}
-        </span>
-      </a>
     </div>
 
-    <!-- Right: search, account, wishlist, cart -->
+    <!-- Right: expanded search + account -->
     <div class="immersive-header__right">
       <div
         class="immersive-search"
@@ -489,8 +390,8 @@
             class="immersive-search__icon"
             aria-hidden="true"
             focusable="false"
-            width="16"
-            height="16"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -531,8 +432,8 @@
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -553,8 +454,8 @@
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -568,79 +469,6 @@
           </svg>
         </a>
       {%- endif -%}
-      <button
-        type="button"
-        class="immersive-header__icon-btn immersive-header__wishlist-btn"
-        data-wishlist-open
-        aria-label="{{ 'sections.immersive_store.wishlist.button_aria' | t }}"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-        </svg>
-        <span class="immersive-header__wishlist-badge" data-wishlist-badge hidden aria-hidden="true">0</span>
-      </button>
-      <button
-        id="cart-toggle"
-        class="immersive-header__icon-btn"
-        aria-label="{{ 'sections.immersive_store.cart_label' | t: count: cart.item_count }}"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <path d="M16 10a4 4 0 0 1-8 0"></path>
-        </svg>
-        {%- if cart.item_count > 0 -%}
-          <span class="immersive-header__cart-badge" aria-hidden="true">{{ cart.item_count }}</span>
-        {%- endif -%}
-      </button>
-
-      {%- comment -%} Tilt-control experiment toggle (mobile-only) {%- endcomment -%}
-      <button
-        type="button"
-        class="immersive-header__icon-btn immersive-tilt-toggle"
-        data-immersive-tilt-toggle
-        aria-pressed="false"
-        aria-label="{{ 'sections.immersive_store.tilt_toggle' | t | default: 'Enable tilt control' }}"
-        title="{{ 'sections.immersive_store.tilt_toggle' | t | default: 'Enable tilt control' }}"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-          <line x1="12" y1="18" x2="12.01" y2="18"></line>
-        </svg>
-      </button>
     </div>
   </header>
 
@@ -1028,11 +856,12 @@
   }
 
   .immersive-store__tagline p {
-    font-size: 1.125rem;
-    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.9);
     margin: 0;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
-    letter-spacing: 0.04em;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+    letter-spacing: 0.05em;
+    font-weight: 500;
   }
 
   @media (max-width: 768px) {
@@ -1040,7 +869,7 @@
       bottom: 5rem;
     }
     .immersive-store__tagline p {
-      font-size: 0.95rem;
+      font-size: 1.25rem;
     }
   }
 
@@ -2697,6 +2526,17 @@
       ],
       "default": "designer_houses",
       "info": "The editorial room the guided sequence enters after the lounge"
+    },
+    {
+      "type": "header",
+      "content": "Assistive Navigation Ball"
+    },
+    {
+      "type": "html",
+      "id": "fab_icon_svg",
+      "label": "FAB icon SVG",
+      "default": "<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-size='22' font-weight='700' fill='#d4af37'>S</text></svg>",
+      "info": "Paste custom SVG markup for the floating action button icon. The FAB provides quick access to wishlist, cart, and classic store. Default is the Shahana 'S' monogram."
     }
   ],
   "blocks": [

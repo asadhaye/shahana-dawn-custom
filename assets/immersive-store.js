@@ -4079,19 +4079,55 @@ function initImmersiveSearch() {
 // ============================================================
 
 function initImmersiveBottomNav() {
-  var nav = document.querySelector('[data-immersive-bottom-nav]');
-  if (!nav) return;
+  var fab = document.querySelector('[data-immersive-fab]');
+  if (!fab) return;
 
-  var wishlistBtn = nav.querySelector('[data-bottom-nav-wishlist]');
-  var cartBtn = nav.querySelector('[data-bottom-nav-cart]');
-  var roomsBtn = nav.querySelector('[data-bottom-nav-rooms]');
-  var twoDBtn = nav.querySelector('[data-bottom-nav-2d]');
-  var wishlistBadge = nav.querySelector('[data-bottom-nav-wishlist-badge]');
-  var cartBadge = nav.querySelector('[data-bottom-nav-cart-badge]');
+  var fabTrigger = fab.querySelector('[data-fab-trigger]');
+  var fabActions = fab.querySelector('[data-fab-actions]');
+  var wishlistBtn = fab.querySelector('[data-bottom-nav-wishlist]');
+  var cartBtn = fab.querySelector('[data-bottom-nav-cart]');
+  var twoDBtn = fab.querySelector('[data-bottom-nav-2d]');
+  var wishlistBadge = fab.querySelector('[data-bottom-nav-wishlist-badge]');
+  var cartBadge = fab.querySelector('[data-bottom-nav-cart-badge]');
 
-  var roomPicker = document.querySelector('[data-bottom-nav-room-picker]');
-  var roomPickerClose = roomPicker && roomPicker.querySelector('[data-bottom-nav-room-picker-close]');
-  var roomOptions = roomPicker ? roomPicker.querySelectorAll('[data-room-key]') : [];
+  var isOpen = false;
+
+  // Toggle FAB menu
+  if (fabTrigger && fabActions) {
+    fabTrigger.addEventListener('click', function () {
+      isOpen = !isOpen;
+      fabTrigger.setAttribute('aria-expanded', isOpen);
+      fabActions.hidden = !isOpen;
+
+      // Animate actions in/out
+      if (isOpen) {
+        var actions = fabActions.querySelectorAll('.immersive-fab__action');
+        actions.forEach(function (action, index) {
+          action.style.animation =
+            'fab-action-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ' + index * 0.05 + 's forwards';
+        });
+      }
+    });
+  }
+
+  // Close FAB when clicking outside
+  document.addEventListener('click', function (e) {
+    if (isOpen && !fab.contains(e.target)) {
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
+    }
+  });
+
+  // Close FAB on Escape
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen) {
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
+      fabTrigger.focus();
+    }
+  });
 
   // Wire Wishlist button → existing wishlist open handler
   if (wishlistBtn) {
@@ -4099,6 +4135,10 @@ function initImmersiveBottomNav() {
       exitGuidedMode();
       var wishlistOpenBtn = document.querySelector('[data-wishlist-open]');
       if (wishlistOpenBtn) wishlistOpenBtn.click();
+      // Close FAB
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
     });
   }
 
@@ -4108,42 +4148,10 @@ function initImmersiveBottomNav() {
       exitGuidedMode();
       var cartToggle = document.getElementById('cart-toggle');
       if (cartToggle) cartToggle.click();
-    });
-  }
-
-  // Wire Rooms button → room picker sheet
-  if (roomsBtn && roomPicker) {
-    roomsBtn.addEventListener('click', function () {
-      syncVisitedRooms();
-      roomPicker.hidden = false;
-      if (roomPickerClose) roomPickerClose.focus();
-    });
-  }
-
-  // Close room picker
-  if (roomPickerClose) {
-    roomPickerClose.addEventListener('click', function () {
-      roomPicker.hidden = true;
-      if (roomsBtn) roomsBtn.focus();
-    });
-  }
-
-  // Room options → goToRoom
-  roomOptions.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var key = btn.getAttribute('data-room-key');
-      if (key && typeof goToRoom === 'function') goToRoom(key);
-      if (roomPicker) roomPicker.hidden = true;
-    });
-  });
-
-  // Close room picker on Escape
-  if (roomPicker) {
-    roomPicker.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        roomPicker.hidden = true;
-        if (roomsBtn) roomsBtn.focus();
-      }
+      // Close FAB
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
     });
   }
 
@@ -4171,12 +4179,12 @@ function initImmersiveBottomNav() {
     }
   };
 
-  // Hide nav when glass-panel opens; show when it closes
+  // Hide FAB when glass-panel opens; show when it closes
   var glassPanel = document.getElementById('glass-panel');
   if (glassPanel) {
     var panelObserver = new MutationObserver(function () {
       var isOpen = !glassPanel.hidden && !glassPanel.classList.contains('hidden');
-      nav.hidden = isOpen;
+      fab.style.display = isOpen ? 'none' : 'flex';
     });
     panelObserver.observe(glassPanel, { attributes: true, attributeFilter: ['hidden', 'class'] });
   }

@@ -455,6 +455,11 @@
       "added": "Added to cart",
       "select_size": "Please select a size"
     },
+    "fab": {
+      "label": "Navigation menu",
+      "open": "Open navigation menu",
+      "close": "Close navigation menu"
+    },
     "bottom_nav": {
       "rooms": "Rooms",
       "wishlist": "Wishlist",
