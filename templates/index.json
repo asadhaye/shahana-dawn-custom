@@ -178,6 +178,71 @@
         "padding_bottom": 36
       }
     },
+    "immersive_editorial_aYDjHT": {
+      "type": "immersive-editorial",
+      "blocks": {
+        "featured_item_QjUnMV": {
+          "type": "featured_item",
+          "settings": {
+            "heading": "Silk Pret Summer 26 | Suffuse By Sana Yasir",
+            "body": "",
+            "collection": "silk-pret-summer-26-suffuse-by-sana-yasir",
+            "cta_url": ""
+          }
+        },
+        "carousel_slide_VMkw3y": {
+          "type": "carousel_slide",
+          "settings": {
+            "heading": "Collection One",
+            "body": "",
+            "collection": "",
+            "cta_url": ""
+          }
+        },
+        "carousel_slide_8De8cp": {
+          "type": "carousel_slide",
+          "settings": {
+            "heading": "Collection Two",
+            "body": "",
+            "collection": "",
+            "cta_url": ""
+          }
+        },
+        "carousel_slide_bJRWV7": {
+          "type": "carousel_slide",
+          "settings": {
+            "heading": "Collection Three",
+            "body": "",
+            "collection": "",
+            "cta_url": ""
+          }
+        },
+        "carousel_slide_QbWdkH": {
+          "type": "carousel_slide",
+          "settings": {
+            "heading": "Collection Four",
+            "body": "",
+            "collection": "",
+            "cta_url": ""
+          }
+        }
+      },
+      "block_order": [
+        "featured_item_QjUnMV",
+        "carousel_slide_VMkw3y",
+        "carousel_slide_8De8cp",
+        "carousel_slide_bJRWV7",
+        "carousel_slide_QbWdkH"
+      ],
+      "name": "t:sections.immersive_editorial.presets.perspective.name",
+      "settings": {
+        "room_key": "featured_collections",
+        "layout": "perspective",
+        "hero_eyebrow": "",
+        "hero_heading": "",
+        "hero_subheading": ""
+      }
+    },
     "featured_collection_HjPMEf": {
       "type": "featured-collection",
       "settings": {
@@ -238,7 +303,7 @@
       "type": "featured-collection",
       "settings": {
         "collection": "soraya",
-        "products_to_show": 8,
+        "products_to_show": 23,
         "title": "Featured collection",
         "heading_size": "h1",
         "description": "",
@@ -296,6 +361,7 @@
     "slideshow_banner",
     "brand_logos",
     "featured_collection_1",
+    "immersive_editorial_aYDjHT",
     "featured_collection_HjPMEf",
     "featured_collection_wYNyfe",
     "featured_collection_2",
