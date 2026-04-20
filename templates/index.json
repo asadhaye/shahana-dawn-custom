@@ -208,6 +208,7 @@
     },
     "featured_collection_HjPMEf": {
       "type": "featured-collection",
+      "disabled": true,
       "settings": {
         "collection": "laavni-25-saad-bin-shahzad",
         "products_to_show": 25,
@@ -325,9 +326,9 @@
     "brand_logos",
     "featured_collection_1",
     "featured_collection_ycBUXh",
-    "featured_collection_HjPMEf",
+    "featured_collection_3",
     "featured_collection_wYNyfe",
     "featured_collection_2",
-    "featured_collection_3"
+    "featured_collection_HjPMEf"
   ]
 }
