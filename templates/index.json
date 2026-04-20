@@ -155,9 +155,9 @@
       "settings": {
         "collection": "el-veneto-luxury-formals-saad-bin-shahzad",
         "products_to_show": 8,
-        "title": "El Veneto Luxury Formals - Saad Bin Shahzad",
-        "heading_size": "h1",
-        "description": "",
+        "title": "El Veneto Luxury Formals",
+        "heading_size": "h2",
+        "description": "<p>Saad Bin Shahzad</p>",
         "show_description": false,
         "description_style": "body",
         "columns_desktop": 4,
