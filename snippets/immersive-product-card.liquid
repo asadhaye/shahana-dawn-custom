@@ -35,6 +35,24 @@
   data-product-vendor="{{ product.vendor | escape }}"
   data-product-color="{{ product.options_with_values | where: 'name', 'Color' | first | map: 'values' | first | default: '' | escape }}"
 >
+  <div class="immersive-product-card__availability">
+    {%- if product.available -%}
+      <span
+        class="immersive-product-card__availability-badge immersive-product-card__availability-badge--in-stock"
+        aria-hidden="true"
+      >
+        {{ 'products.product.in_stock' | t }}
+      </span>
+    {%- else -%}
+      <span
+        class="immersive-product-card__availability-badge immersive-product-card__availability-badge--sold-out"
+        aria-hidden="true"
+      >
+        {{ 'products.product.sold_out' | t }}
+      </span>
+    {%- endif -%}
+  </div>
+
   {%- if product.featured_image -%}
     <a
       href="{{ product.url }}"
@@ -597,5 +615,33 @@
   /* ── Urgency Container ───────────────────────────────── */
   .immersive-product-card__urgency {
     min-height: 0;
+  }
+
+  /* ── Availability Badge ──────────────────────────────── */
+  .immersive-product-card__availability {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 3;
+  }
+
+  .immersive-product-card__availability-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 4px;
+  }
+
+  .immersive-product-card__availability-badge--in-stock {
+    background: #51cf66;
+    color: #000;
+  }
+
+  .immersive-product-card__availability-badge--sold-out {
+    background: #ff6b6b;
+    color: #fff;
   }
 {% endstylesheet %}

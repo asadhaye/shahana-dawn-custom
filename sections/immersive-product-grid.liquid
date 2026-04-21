@@ -44,6 +44,9 @@
     </div>
   {%- endif -%}
 
+  <!-- Filter chips container -->
+  <div data-filter-chips-container hidden></div>
+
   <div class="immersive-product-grid immersive-product-grid--{{ columns_desktop }}-col-desktop immersive-product-grid--{{ columns_mobile }}-col-mobile">
     {%- if collection and collection.products.size > 0 -%}
       {%- paginate collection.products by products_to_show -%}
@@ -62,9 +65,36 @@
         {{ 'sections.immersive.product_grid.no_results_filtered' | t }}
       </p>
     {%- else -%}
-      <p class="immersive-product-grid__empty">
-        {{ 'sections.immersive.product_grid.empty' | t }}
-      </p>
+      <div class="immersive-empty-state" data-empty-state="collection">
+        <svg
+          class="immersive-empty-state__icon"
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM10 5h4v2h-4V5z"/>
+        </svg>
+        <h3 class="immersive-empty-state__heading">
+          {{ 'sections.immersive_store.empty_states.collection_heading' | t }}
+        </h3>
+        <p class="immersive-empty-state__body">
+          {{ 'sections.immersive_store.empty_states.collection_body' | t }}
+        </p>
+        <div class="immersive-empty-state__actions">
+          <button type="button" class="immersive-empty-state__action" data-empty-action="search">
+            {{ 'sections.immersive_store.empty_states.collection_search' | t }}
+          </button>
+          <button
+            type="button"
+            class="immersive-empty-state__action immersive-empty-state__action--secondary"
+            data-empty-action="browse"
+          >
+            {{ 'sections.immersive_store.empty_states.collection_browse' | t }}
+          </button>
+        </div>
+      </div>
     {%- endif -%}
   </div>
 </div>

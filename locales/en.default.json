@@ -178,6 +178,7 @@
       },
       "share": "Share this product",
       "sold_out": "Sold out",
+      "in_stock": "In stock",
       "unavailable": "Unavailable",
       "no_image": "No image available",
       "from_text": "From",
@@ -490,6 +491,30 @@
       "step_editorial": "Editorial",
       "step_collection": "Collection",
       "step_product": "Product"
+    },
+    "empty_states": {
+      "collection_heading": "This collection is empty",
+      "collection_body": "We're working on adding new pieces. Check back soon or explore other collections.",
+      "collection_search": "Search products",
+      "collection_browse": "Browse rooms",
+      "search_heading": "No results found",
+      "search_body": "Try different keywords or browse our curated rooms.",
+      "wishlist_heading": "Your wishlist is empty",
+      "wishlist_body": "Start exploring the rooms to discover pieces you love.",
+      "wishlist_action": "Explore collections"
+    },
+    "skeleton": {
+      "loading_collection": "Loading collection...",
+      "loading_product": "Loading product...",
+      "loading_room": "Loading room..."
+    },
+    "filters": {
+      "active_filters": {
+        "label": "Active filters",
+        "clear_all": "Clear all",
+        "clear_all_aria": "Clear all filters",
+        "remove_filter_aria": "Remove {{filter}} filter"
+      }
     }
   },
   "immersive_canvas": {

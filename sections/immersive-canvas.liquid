@@ -45,6 +45,8 @@
       data-msg-back-to-room="{{ 'sections.immersive_store.back_to_room' | t: room_name: '' | escape }}"
       data-msg-based-on-saves="{{ 'sections.immersive_store.based_on_saves' | t | escape }}"
     >
+      <!-- ARIA live region for hotspot announcements -->
+      <div id="immersive-hotspot-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
       {%- for block in section.blocks -%}
         {%- if block.type == 'flash_sale' and block.settings.enabled -%}
           <div
@@ -1668,9 +1670,15 @@
 
   .immersive-store__panel-content {
     flex: 1;
+    min-height: 400px;
+    transition: opacity 150ms ease-in-out;
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .immersive-store__panel-content {
+      transition: none !important;
+    }
+
     .immersive-store__menu,
     .immersive-glass-panel,
     .immersive-hotspot,

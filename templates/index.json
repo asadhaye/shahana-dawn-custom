@@ -79,8 +79,8 @@
         "column_1": {
           "type": "column",
           "settings": {
-            "image": "shopify://shop_images/SUFFUSE_LOGO.webp",
-            "title": "",
+            "image": "shopify://shop_images/Suffuse-Logo.png",
+            "title": "Suffuse",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/suffuse"
@@ -90,7 +90,7 @@
           "type": "column",
           "settings": {
             "image": "shopify://shop_images/Soraya-logo.png",
-            "title": "",
+            "title": "Soraya",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/soraya"
@@ -99,8 +99,8 @@
         "column_3": {
           "type": "column",
           "settings": {
-            "image": "shopify://shop_images/saad_bin_shahzad_logo.png",
-            "title": "",
+            "image": "shopify://shop_images/3.png",
+            "title": "Saad Bin Shahzad",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/saad-bin-shahzad"
@@ -110,7 +110,7 @@
           "type": "column",
           "settings": {
             "image": "shopify://shop_images/Maria_B.jpg",
-            "title": "",
+            "title": "Maria B",
             "text": "",
             "link_label": "",
             "link": "shopify://collections/maria-b"
@@ -138,124 +138,31 @@
         "title": "",
         "heading_size": "h2",
         "image_width": "full",
-        "image_ratio": "circle",
+        "image_ratio": "square",
         "button_label": "",
         "button_link": "",
         "columns_desktop": 4,
         "column_alignment": "center",
         "background_style": "none",
         "color_scheme": "scheme-1",
-        "columns_mobile": "1",
+        "columns_mobile": "2",
         "swipe_on_mobile": true,
         "padding_top": 0,
         "padding_bottom": 0
       }
     },
-    "immersive_editorial_aYDjHT": {
-      "type": "immersive-editorial",
-      "blocks": {
-        "featured_item_QjUnMV": {
-          "type": "featured_item",
-          "settings": {
-            "heading": "Silk Pret Summer 26 | Suffuse By Sana Yasir",
-            "body": "",
-            "collection": "silk-pret-summer-26-suffuse-by-sana-yasir",
-            "cta_url": ""
-          }
-        },
-        "carousel_slide_VMkw3y": {
-          "type": "carousel_slide",
-          "settings": {
-            "heading": "Collection One",
-            "body": "",
-            "collection": "casual-pret-eid-edit-2026",
-            "cta_url": ""
-          }
-        },
-        "carousel_slide_8De8cp": {
-          "type": "carousel_slide",
-          "settings": {
-            "heading": "Collection Two",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        },
-        "carousel_slide_bJRWV7": {
-          "type": "carousel_slide",
-          "settings": {
-            "heading": "Collection Three",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        },
-        "carousel_slide_QbWdkH": {
-          "type": "carousel_slide",
-          "settings": {
-            "heading": "Collection Four",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        }
-      },
-      "block_order": [
-        "featured_item_QjUnMV",
-        "carousel_slide_VMkw3y",
-        "carousel_slide_8De8cp",
-        "carousel_slide_bJRWV7",
-        "carousel_slide_QbWdkH"
-      ],
-      "name": "t:sections.immersive_editorial.presets.perspective.name",
-      "settings": {
-        "room_key": "featured_collections",
-        "layout": "perspective",
-        "hero_eyebrow": "",
-        "hero_heading": "",
-        "hero_subheading": ""
-      }
-    },
     "featured_collection_1": {
       "type": "featured-collection",
       "settings": {
-        "collection": "el-veneto-luxury-formals-saad-bin-shahzad",
-        "products_to_show": 25,
-        "title": "El Veneto Luxury Formals",
+        "collection": "suffuse",
+        "products_to_show": 8,
+        "title": "Featured collection",
         "heading_size": "h1",
-        "description": "<p>Saad Bin Shahzad</p>",
-        "show_description": false,
-        "description_style": "subtitle",
-        "columns_desktop": 2,
-        "enable_desktop_slider": true,
-        "full_width": true,
-        "show_view_all": true,
-        "view_all_style": "solid",
-        "color_scheme": "",
-        "image_ratio": "adapt",
-        "image_shape": "default",
-        "show_secondary_image": true,
-        "show_vendor": false,
-        "show_rating": false,
-        "quick_add": "standard",
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
-    "featured_collection_Y8UFfe": {
-      "type": "featured-collection",
-      "settings": {
-        "collection": "silk-pret-summer-26-suffuse-by-sana-yasir",
-        "products_to_show": 25,
-        "title": "Silk Pret Summer 26",
-        "heading_size": "h1",
-        "description": "<p>Suffuse By Sana Yasir</p>",
+        "description": "",
         "show_description": false,
         "description_style": "body",
-        "columns_desktop": 2,
-        "enable_desktop_slider": true,
+        "columns_desktop": 4,
+        "enable_desktop_slider": false,
         "full_width": false,
         "show_view_all": true,
         "view_all_style": "solid",
@@ -265,93 +172,9 @@
         "show_secondary_image": true,
         "show_vendor": false,
         "show_rating": false,
-        "quick_add": "standard",
+        "quick_add": "none",
         "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
-    "featured_collection_2": {
-      "type": "featured-collection",
-      "settings": {
-        "collection": "lumene-festive-25-26-soraya-official",
-        "products_to_show": 23,
-        "title": "Lumene Festive 25/26",
-        "heading_size": "h1",
-        "description": "<p>Soraya Official</p>",
-        "show_description": false,
-        "description_style": "body",
-        "columns_desktop": 2,
-        "enable_desktop_slider": true,
-        "full_width": true,
-        "show_view_all": true,
-        "view_all_style": "solid",
-        "color_scheme": "",
-        "image_ratio": "portrait",
-        "image_shape": "default",
-        "show_secondary_image": true,
-        "show_vendor": false,
-        "show_rating": false,
-        "quick_add": "standard",
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
-    "featured_collection_3": {
-      "type": "featured-collection",
-      "settings": {
-        "collection": "casual-pret-eid-edit-2026",
-        "products_to_show": 25,
-        "title": "Casual Pret Eid Edit 2026",
-        "heading_size": "h1",
-        "description": "<p>Suffuse By Sana Yasir</p>",
-        "show_description": false,
-        "description_style": "body",
-        "columns_desktop": 4,
-        "enable_desktop_slider": true,
-        "full_width": true,
-        "show_view_all": true,
-        "view_all_style": "solid",
-        "color_scheme": "",
-        "image_ratio": "portrait",
-        "image_shape": "default",
-        "show_secondary_image": true,
-        "show_vendor": false,
-        "show_rating": false,
-        "quick_add": "standard",
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
-    "featured_collection_9CkKrE": {
-      "type": "featured-collection",
-      "settings": {
-        "collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
-        "products_to_show": 25,
-        "title": "Summer Prêt '26 Eid Edit",
-        "heading_size": "h1",
-        "description": "<p>Saad Bin Shahzad</p>",
-        "show_description": false,
-        "description_style": "body",
-        "columns_desktop": 4,
-        "enable_desktop_slider": true,
-        "full_width": true,
-        "show_view_all": true,
-        "view_all_style": "solid",
-        "color_scheme": "",
-        "image_ratio": "portrait",
-        "image_shape": "default",
-        "show_secondary_image": true,
-        "show_vendor": false,
-        "show_rating": false,
-        "quick_add": "standard",
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
+        "swipe_on_mobile": false,
         "padding_top": 36,
         "padding_bottom": 36
       }
@@ -412,19 +235,19 @@
         "padding_bottom": 36
       }
     },
-    "featured_collection_3azgmP": {
+    "featured_collection_2": {
       "type": "featured-collection",
       "settings": {
-        "collection": "oriana-luxury-formals-26-soraya-official",
-        "products_to_show": 25,
-        "title": "Oriana Luxury Formals '26",
+        "collection": "soraya",
+        "products_to_show": 8,
+        "title": "Featured collection",
         "heading_size": "h1",
-        "description": "<p>Soraya Official</p>",
+        "description": "",
         "show_description": false,
         "description_style": "body",
-        "columns_desktop": 2,
-        "enable_desktop_slider": true,
-        "full_width": true,
+        "columns_desktop": 4,
+        "enable_desktop_slider": false,
+        "full_width": false,
         "show_view_all": true,
         "view_all_style": "solid",
         "color_scheme": "",
@@ -433,26 +256,26 @@
         "show_secondary_image": true,
         "show_vendor": false,
         "show_rating": false,
-        "quick_add": "standard",
+        "quick_add": "none",
         "columns_mobile": "2",
-        "swipe_on_mobile": true,
+        "swipe_on_mobile": false,
         "padding_top": 36,
         "padding_bottom": 36
       }
     },
-    "featured_collection_BjbRgd": {
+    "featured_collection_3": {
       "type": "featured-collection",
       "settings": {
-        "collection": "luxury-pret-2024",
-        "products_to_show": 25,
-        "title": "Luxury Pret",
+        "collection": "saad-bin-shahzad",
+        "products_to_show": 8,
+        "title": "Summer Pret  '26 | Saad Bin Shahzad",
         "heading_size": "h1",
-        "description": "<p>Suffuse By Sana Yasir</p>",
+        "description": "",
         "show_description": false,
         "description_style": "body",
-        "columns_desktop": 2,
-        "enable_desktop_slider": true,
-        "full_width": true,
+        "columns_desktop": 4,
+        "enable_desktop_slider": false,
+        "full_width": false,
         "show_view_all": true,
         "view_all_style": "solid",
         "color_scheme": "",
@@ -461,8 +284,8 @@
         "show_secondary_image": true,
         "show_vendor": false,
         "show_rating": false,
-        "quick_add": "standard",
-        "columns_mobile": "2",
+        "quick_add": "none",
+        "columns_mobile": "1",
         "swipe_on_mobile": true,
         "padding_top": 36,
         "padding_bottom": 36
@@ -473,15 +296,10 @@
     "immersive_bridge",
     "slideshow_banner",
     "brand_logos",
-    "immersive_editorial_aYDjHT",
     "featured_collection_1",
-    "featured_collection_Y8UFfe",
-    "featured_collection_2",
-    "featured_collection_3",
-    "featured_collection_9CkKrE",
     "featured_collection_HjPMEf",
     "featured_collection_wYNyfe",
-    "featured_collection_3azgmP",
-    "featured_collection_BjbRgd"
+    "featured_collection_2",
+    "featured_collection_3"
   ]
 }
