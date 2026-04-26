@@ -236,6 +236,10 @@
                   type="button"
                   class="glass-product-section__thumb"
                   data-media-index="{{ forloop.index0 }}"
+                  data-media-type="{{ media.media_type }}"
+                  data-full-src="{{ media.preview_image | image_url: width: 800 }}"
+                  data-full-srcset="{{ media.preview_image | image_url: width: 400 }} 400w, {{ media.preview_image | image_url: width: 600 }} 600w, {{ media.preview_image | image_url: width: 800 }} 800w, {{ media.preview_image | image_url: width: 1000 }} 1000w"
+                  data-full-alt="{{ media.alt | escape }}"
                   aria-label="{%- if media.media_type == 'image' -%}{{ 'products.product.media.load_image' | t: index: thumb_index }}{%- elsif media.media_type == 'model' -%}{{ 'products.product.media.load_model' | t: index: thumb_index }}{%- elsif media.media_type == 'video' or media.media_type == 'external_video' -%}{{ 'products.product.media.load_video' | t: index: thumb_index }}{%- endif -%}"
                 >
                   {%- assign thumb_alt = media.alt | escape -%}
