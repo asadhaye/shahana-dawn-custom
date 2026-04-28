@@ -53,16 +53,25 @@
     "immersive_canvas": {
       "type": "immersive-canvas",
       "blocks": {
-        "flash_eid": {
+        "flash_sale_cnEcdy": {
           "type": "flash_sale",
           "settings": {
             "enabled": false,
+            "message": "Flash Sale — Limited time only!",
+            "sale_end_date": ""
+          }
+        },
+        "flash_eid": {
+          "type": "flash_sale",
+          "settings": {
+            "enabled": true,
             "message": "Eid Sale — Up to 30% off selected styles",
             "sale_end_date": ""
           }
         }
       },
       "block_order": [
+        "flash_sale_cnEcdy",
         "flash_eid"
       ],
       "settings": {
@@ -125,6 +134,15 @@
             "collection": "suffuse"
           }
         },
+        "designer_FiGk6q": {
+          "type": "designer",
+          "settings": {
+            "image": "shopify://shop_images/Maria_B.jpg",
+            "heading": "Maria B",
+            "body": "",
+            "collection": "maria-b"
+          }
+        },
         "designer_soraya": {
           "type": "designer",
           "settings": {
@@ -144,6 +162,7 @@
       },
       "block_order": [
         "designer_suffuse",
+        "designer_FiGk6q",
         "designer_soraya",
         "designer_sbs"
       ],
