@@ -46,7 +46,32 @@
     {%- comment -%}Three.js + immersive scene manager on immersive templates{%- endcomment -%}
     {%- if template == 'page.immersive' -%}
       <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
+      <script src="{{ 'immersive/core/state-manager.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/core/room-manager.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/core/atmosphere.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/core/webgl-engine.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/features/search.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/features/filters.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/features/gestures.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/features/quick-add.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/features/fab.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/features/room-recommender.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/features/limited-time.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/panels/glass-panel.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/panels/collection-panel.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/panels/product-panel.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/panels/wishlist-panel.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/editorial/editorial-mode.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/editorial/scroll-reveal.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/editorial/hero-parallax.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/editorial/timeline.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/guided/guided-mode.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/utils/fetch.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/utils/analytics.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/utils/dom.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive/utils/skeleton.js' | asset_url }}" defer></script>
       <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
+      <script src="{{ 'immersive/fluid-reveal.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
 
     {%- comment -%}Device/connection-aware bridge behavior on all pages{%- endcomment -%}
@@ -389,6 +414,7 @@
         class="immersive-preference-banner"
         role="region"
         aria-label="{{ 'sections.immersive_journey_bridges.preference_banner_aria' | t }}"
+        data-dismiss-timeout="{{ settings.bridge_dismiss_timeout | default: 0 }}"
         hidden
       >
         <p class="immersive-preference-banner__text">
@@ -416,22 +442,49 @@
               if (banner) {
                 banner.removeAttribute('hidden');
                 var dismissBtn = banner.querySelector('[data-preference-banner-dismiss]');
+
+                function dismissBanner() {
+                  var next = banner.nextElementSibling;
+                  var prefersReduced = false;
+                  try {
+                    prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                  } catch (e) {
+                    // matchMedia not supported, assume no reduced motion preference
+                  }
+                  if (prefersReduced) {
+                    banner.remove();
+                    if (next && typeof next.focus === 'function') next.focus();
+                    return;
+                  }
+                  banner.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                  banner.style.opacity = '0';
+                  banner.style.transform = (banner.style.transform || '') + ' translateY(8px)';
+                  setTimeout(function () {
+                    banner.remove();
+                    if (next && typeof next.focus === 'function') next.focus();
+                  }, 260);
+                }
+
                 if (dismissBtn) {
                   dismissBtn.addEventListener('click', function () {
-                    var next = banner.nextElementSibling;
-                    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                    if (prefersReduced) {
-                      banner.remove();
-                      if (next && typeof next.focus === 'function') next.focus();
-                      return;
-                    }
-                    banner.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-                    banner.style.opacity = '0';
-                    banner.style.transform = (banner.style.transform || '') + ' translateY(8px)';
-                    setTimeout(function () {
-                      banner.remove();
-                      if (next && typeof next.focus === 'function') next.focus();
-                    }, 260);
+                    if (autoDismissTimer) clearTimeout(autoDismissTimer);
+                    dismissBanner();
+                  });
+                }
+
+                // Auto-dismiss: read timeout from theme settings injected via data attribute
+                var autoDismissTimer = null;
+                var timeout = parseInt(banner.getAttribute('data-dismiss-timeout') || '0', 10);
+                if (timeout > 0) {
+                  autoDismissTimer = setTimeout(function () {
+                    dismissBanner();
+                  }, timeout * 1000);
+                  // Cancel auto-dismiss if user interacts with the banner
+                  banner.addEventListener('mouseenter', function () {
+                    clearTimeout(autoDismissTimer);
+                  });
+                  banner.addEventListener('focusin', function () {
+                    clearTimeout(autoDismissTimer);
                   });
                 }
               }

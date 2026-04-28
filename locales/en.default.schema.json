@@ -567,6 +567,12 @@
       "onboarding_show_once": {
         "label": "Show once per visitor",
         "info": "When enabled, the welcome screen only appears on the first visit. Disable to show it every time."
+      },
+      "transition_style": {
+        "label": "Room transition style",
+        "option_crossfade": "Smooth Crossfade",
+        "option_pixel_dissolve": "Pixel Dissolve",
+        "info": "Pixel Dissolve is automatically replaced with Smooth Crossfade for visitors with reduced motion enabled."
       }
     },
     "presets": {
@@ -2656,6 +2662,10 @@
             "heading_3": {
               "label": "Heading",
               "default": "Heading"
+            },
+            "content": {
+              "label": "Icon with text",
+              "info": "Add up to 3 icon and text pairings"
             }
           }
         }
@@ -3734,6 +3744,25 @@
       "presets": {
         "name": "Collapsible content"
       }
+    },
+    "immersive_journey_bridges": {
+      "bridge_settings_header": {
+        "content": "3D Store Bridge"
+      },
+      "bridge_image_label": "Bridge preview image",
+      "bridge_image_info": "Optional image shown in the bridge button. Defaults to the collection's featured image.",
+      "bridge_dismiss_timeout_label": "Auto-dismiss delay (seconds)",
+      "bridge_dismiss_timeout_info": "Set to 0 to disable auto-dismiss. Preference banner will dismiss automatically after this many seconds.",
+      "bridge_slow_note_label": "Slow connection warning",
+      "bridge_slow_note_info": "Message shown when visitor has a slow connection. Leave blank to use the default message.",
+      "bridge_medium_note_label": "Medium connection note",
+      "bridge_medium_note_info": "Message shown when visitor has a medium-speed connection. Leave blank to use the default message."
+    },
+    "immersive_cart": {
+      "name": "Immersive cart"
+    },
+    "immersive_checkout": {
+      "name": "Immersive checkout"
     }
   }
 }

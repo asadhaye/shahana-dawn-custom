@@ -1,0 +1,66 @@
+/* Polished immersive cart visuals */
+.immersive-cart-shell {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 14, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  z-index: 9999;
+}
+
+.immersive-cart-shell__logo {
+  height: 40px;
+  width: auto;
+  display: block;
+  margin: 6px auto 6px;
+}
+.immersive-cart-shell__panel {
+  width: min(1100px, 92%);
+  max-height: 88vh;
+  overflow: auto;
+  background: rgba(16, 22, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  padding: 0;
+  backdrop-filter: blur(6px);
+}
+.immersive-cart-shell__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  background: rgba(8,12,28,0.6);
+}
+.immersive-cart-shell__title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #d4af37;
+  text-transform: none;
+}
+.immersive-cart-shell__close {
+  background: none;
+  border: 1px solid rgba(212,175,55,0.8);
+  color: #d4af37;
+  border-radius: 6px;
+  width: 38px;
+  height: 34px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.immersive-cart-shell__content {
+  padding: 16px;
+}
+/* Subtle entrance animation */
+.immersive-cart-shell { animation: immersiveCartFadeIn 0.25s ease-out; }
+@keyframes immersiveCartFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 720px) {
+  .immersive-cart-shell__panel { width: 96%; max-height: 90vh; }
+}

@@ -1,0 +1,53 @@
+<script>
+  // Immersive Cart: single-file JS + inline CSS injection driven by theme settings
+  // Try to read config from a global, otherwise fetch from DOM data attributes for compatibility
+  function readConfig(){
+    var cfg = window.__IMMERSIVE_CART_CONFIG || null;
+    if (cfg && typeof cfg === 'object') return cfg;
+    var shell = document.querySelector('.immersive-cart-shell');
+    if (shell) {
+      return {
+        overlayOpacity: parseFloat(shell.dataset.overlayOpacity) || 0.65,
+        panelBackground: shell.dataset.panelBackground || '#0a0f1e',
+        title: shell.dataset.title || 'Your Immersive Cart',
+        closeLabel: shell.dataset.closeLabel || 'Close'
+      };
+    }
+    return { overlayOpacity: 0.65, panelBackground: '#0a0f1e', title: 'Your Immersive Cart', closeLabel: 'Close' };
+  }
+  var cfg = readConfig();
+    // Inject CSS using template literals and CSS variables driven by config
+    var css = `
+      .immersive-cart-shell { background: rgba(6,8,14, ${cfg.overlayOpacity}); }
+      .immersive-cart-shell__panel { background: ${cfg.panelBackground}; }
+      .immersive-cart-shell__title { color: #d4af37; }
+      .immersive-cart-shell__close { border-color: rgba(212,175,55,0.8); color: #d4af37; }
+    `;
+    var style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode(css));
+    document.head.appendChild(style);
+
+    // Simple focus trap for accessibility within the immersive cart shell when present
+    function trapFocus(container){
+      var focusables = container.querySelectorAll('a[href], button, input, textarea, select');
+      if (!focusables.length) return;
+      var first = focusables[0], last = focusables[focusables.length - 1];
+      first.focus();
+      document.addEventListener('keydown', function(e){
+        if (e.key !== 'Tab') return;
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }, true);
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      var shell = document.querySelector('.immersive-cart-shell');
+      if (shell) trapFocus(shell);
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') { window.location.href = '/pages/immersive'; } });
+    });
+  })();
+</script>

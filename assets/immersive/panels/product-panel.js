@@ -340,31 +340,8 @@ function setupBuyNowForm(panel) {
             }
           } catch (e) {}
 
-          // Open Dawn's cart drawer if available, otherwise navigate to cart
-          var cartDrawer = document.querySelector('cart-drawer');
-          if (cartDrawer && typeof cartDrawer.open === 'function') {
-            // Refresh cart drawer contents then open it
-            fetch(shopRoot + '?section_id=cart-drawer', {
-              headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            })
-              .then(function (r) {
-                return r.text();
-              })
-              .then(function (html) {
-                var temp = document.createElement('div');
-                temp.innerHTML = html;
-                var newDrawer = temp.querySelector('cart-drawer');
-                if (newDrawer) {
-                  cartDrawer.innerHTML = newDrawer.innerHTML;
-                }
-                cartDrawer.open();
-              })
-              .catch(function () {
-                cartDrawer.open();
-              });
-          } else {
-            window.location.href = shopRoot + 'cart';
-          }
+          // Navigate to immersive cart page instead of opening drawer
+          window.location.href = shopRoot + 'pages/immersive-cart';
         })
         .catch(function (error) {
           console.error('Error adding to cart:', error);

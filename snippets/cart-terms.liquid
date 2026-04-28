@@ -1,0 +1,270 @@
+{% doc %}
+  Renders a terms and conditions checkbox for the cart page and cart drawer.
+  The checkout button in the same form is disabled until the checkbox is checked.
+
+  @param {string} [context] - "cart" or "drawer" — scopes IDs and data attributes.
+
+  @example
+  {% render 'cart-terms', context: 'cart' %}
+  {% render 'cart-terms', context: 'drawer' %}
+{% enddoc %}
+
+{%- liquid
+  assign context_value = context | default: 'cart'
+  assign text_id = 'cart-terms-text-' | append: context_value
+  assign error_id = 'cart-terms-error-' | append: context_value
+  assign checkbox_id = 'cart-terms-cb-' | append: context_value
+-%}
+
+<div
+  class="cart-terms"
+  data-cart-terms
+  data-cart-terms-context="{{ context_value }}"
+>
+  <div class="cart-terms__field">
+    <input
+      type="checkbox"
+      id="{{ checkbox_id }}"
+      class="cart-terms__checkbox"
+      data-cart-terms-checkbox
+      name="attributes[accept_terms]"
+      value="yes"
+      aria-describedby="{{ text_id }} {{ error_id }}"
+    >
+    <label class="cart-terms__label" for="{{ checkbox_id }}">
+      <span class="cart-terms__text" id="{{ text_id }}">
+        {{- 'sections.cart.terms.message' | t -}}
+        <a
+          href="{{ shop.refund_policy.url | default: '/policies/refund-policy' }}"
+          class="cart-terms__link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{- 'sections.cart.terms.refund_policy_link' | t -}}</a
+        >.
+      </span>
+    </label>
+  </div>
+
+  <p
+    class="cart-terms__error"
+    id="{{ error_id }}"
+    role="alert"
+    aria-live="assertive"
+    hidden
+  >
+    {{- 'sections.cart.terms.error' | t -}}
+  </p>
+</div>
+
+{% stylesheet %}
+  .cart-terms {
+    margin-bottom: 1rem;
+  }
+
+  .cart-terms__field {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .cart-terms__checkbox {
+    flex-shrink: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 0.15rem;
+    cursor: pointer;
+    accent-color: rgb(var(--color-foreground));
+  }
+
+  .cart-terms__label {
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: rgba(var(--color-foreground), 0.75);
+  }
+
+  .cart-terms__link {
+    color: rgb(var(--color-foreground));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .cart-terms__link:hover {
+    opacity: 0.75;
+  }
+
+  .cart-terms__error {
+    margin: 0.5rem 0 0;
+    font-size: 0.8125rem;
+    color: rgb(var(--color-error, var(--color-foreground)));
+  }
+
+  /* Shake animation when user tries to proceed without accepting */
+  @keyframes cart-terms-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-6px);
+    }
+    40% {
+      transform: translateX(6px);
+    }
+    60% {
+      transform: translateX(-4px);
+    }
+    80% {
+      transform: translateX(4px);
+    }
+  }
+
+  .cart-terms--shake {
+    animation: cart-terms-shake 0.4s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cart-terms--shake {
+      animation: none;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  (function () {
+    'use strict';
+
+    /**
+     * For a given cart-terms container, find the checkout button
+     * in the same <form> (or the form referenced by the button's `form` attr).
+     */
+    function findCheckoutButton(container) {
+      var form = container.closest('form');
+      if (!form) return null;
+      return form.querySelector('button[name="checkout"]');
+    }
+
+    /**
+     * Enable or disable the checkout button and sync aria-disabled.
+     */
+    function setButtonState(button, disabled) {
+      if (!button) return;
+      button.disabled = disabled;
+      button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    }
+
+    /**
+     * Show or hide the error message.
+     */
+    function setError(container, show) {
+      var error = container.querySelector('[data-cart-terms] .cart-terms__error, .cart-terms__error');
+      // Scope to this container
+      error = container.querySelector('.cart-terms__error');
+      if (!error) return;
+      if (show) {
+        error.removeAttribute('hidden');
+      } else {
+        error.setAttribute('hidden', '');
+      }
+    }
+
+    /**
+     * Validate a single cart-terms container.
+     * Returns true if the checkbox is checked.
+     * If fromSubmit=true and invalid, shows error and focuses checkbox.
+     */
+    function validateContainer(container, options) {
+      var opts = options || {};
+      var checkbox = container.querySelector('[data-cart-terms-checkbox]');
+      if (!checkbox) return true;
+
+      var valid = checkbox.checked;
+      setError(container, !valid);
+
+      if (!valid && opts.fromSubmit) {
+        checkbox.focus();
+
+        // Shake animation (respects prefers-reduced-motion via CSS)
+        container.classList.remove('cart-terms--shake');
+        // Force reflow so the animation restarts
+        void container.offsetWidth;
+        container.classList.add('cart-terms--shake');
+        container.addEventListener('animationend', function onEnd() {
+          container.classList.remove('cart-terms--shake');
+          container.removeEventListener('animationend', onEnd);
+        });
+      }
+
+      return valid;
+    }
+
+    /**
+     * Wire up a single cart-terms container.
+     */
+    function initContainer(container) {
+      if (container._cartTermsInit) return;
+      container._cartTermsInit = true;
+
+      var checkbox = container.querySelector('[data-cart-terms-checkbox]');
+      var button = findCheckoutButton(container);
+
+      if (!checkbox || !button) return;
+
+      // Set initial state
+      setButtonState(button, !checkbox.checked);
+
+      // Update on change
+      checkbox.addEventListener('change', function () {
+        validateContainer(container);
+        setButtonState(button, !checkbox.checked);
+      });
+
+      // Guard against form submission without acceptance
+      var form = container.closest('form');
+      if (form) {
+        form.addEventListener(
+          'submit',
+          function (e) {
+            if (!validateContainer(container, { fromSubmit: true })) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+            }
+          },
+          true
+        ); // capture phase so it runs before Dawn's own submit handlers
+      }
+    }
+
+    /**
+     * Initialize all cart-terms containers currently in the DOM.
+     */
+    function initAllContainers() {
+      document.querySelectorAll('[data-cart-terms]').forEach(initContainer);
+    }
+
+    // Initial run
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAllContainers);
+    } else {
+      initAllContainers();
+    }
+
+    // Re-initialize when Dawn re-renders the cart drawer via Ajax / Section Rendering
+    if (typeof MutationObserver !== 'undefined') {
+      var observer = new MutationObserver(function (mutations) {
+        var needsInit = false;
+        mutations.forEach(function (m) {
+          m.addedNodes.forEach(function (node) {
+            if (node.nodeType !== 1) return;
+            if (node.matches('[data-cart-terms]') || node.querySelector('[data-cart-terms]')) {
+              needsInit = true;
+            }
+          });
+        });
+        if (needsInit) initAllContainers();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  })();
+{% endjavascript %}

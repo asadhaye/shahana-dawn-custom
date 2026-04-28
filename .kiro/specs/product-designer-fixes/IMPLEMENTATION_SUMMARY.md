@@ -1,14 +1,14 @@
 # Product Designer UX Fixes - Implementation Summary
 
-**Status**: ✅ COMPLETE (7/7 improvements implemented)  
-**Date**: 2026-04-21  
+**Status**: ✅ COMPLETE (8/8 improvements implemented)  
+**Date**: 2026-04-22  
 **Timeline**: 1-2 days (as required)
 
 ---
 
 ## Overview
 
-Successfully implemented all 7 critical UX improvements to the immersive 3D store based on product designer feedback. All features maintain WCAG 2.2 Level AA compliance, respect `prefers-reduced-motion`, and use proper ARIA attributes.
+Successfully implemented all 7 critical UX improvements PLUS friction point analytics to the immersive 3D store based on product designer feedback. All features maintain WCAG 2.2 Level AA compliance, respect `prefers-reduced-motion`, and use proper ARIA attributes.
 
 ---
 
@@ -136,6 +136,76 @@ Successfully implemented all 7 critical UX improvements to the immersive 3D stor
 
 ---
 
+### 8. Friction Point Analytics (Gap 3)
+**Status**: ✅ Complete
+
+**Files Modified**:
+- `assets/immersive-store.js` - Comprehensive friction tracking system
+
+**Features**:
+- **10 friction point types tracked**:
+  1. `panel_closed_no_action` - Panel closed without add-to-cart or wishlist
+  2. `panel_closed_after_view` - Panel closed after viewing product
+  3. `back_to_2d_from_room` - User clicked back to 2D store from a room
+  4. `back_to_2d_from_panel` - User clicked back to 2D from panel
+  5. `exit_via_close_button` - User clicked X to close panel
+  6. `exit_via_escape_key` - User pressed Escape to close panel
+  7. `exit_via_backdrop_click` - User clicked outside panel to close
+  8. `room_navigation_abandoned` - User navigated back before exploring room
+  9. `search_no_results_exit` - User exited after seeing no search results
+  10. `empty_collection_exit` - User exited after seeing empty collection
+
+- **User interaction tracking**:
+  - `data-user-interacted="true"` attribute set when user:
+    - Clicks add-to-cart button (successful)
+    - Toggles wishlist
+    - Changes variant selection
+    - Scrolls product panel content (>100px threshold)
+
+- **Close method tracking**:
+  - All `closePanel()` calls now pass `closeMethod` parameter:
+    - `'button'` - Close button clicked
+    - `'escape'` - Escape key pressed
+    - `'backdrop'` - Backdrop clicked
+    - `'back_to_2d'` - Mode switch button clicked
+
+- **Analytics integration**:
+  - `trackFrictionPoint(type, context)` - Logs to GA4/Meta Pixel
+  - `getFrictionSummary()` - Returns friction summary object
+  - `window.__immersiveFrictionSummary()` - Console debugging helper
+  - Console warnings every 10 occurrences per friction type
+
+- **Context tracking**:
+  - Current room
+  - Current mode (showroom/editorial)
+  - Close method
+  - Panel ID
+  - Search query (for search exits)
+  - Action taken (for empty state exits)
+
+**Implementation Details**:
+- Updated `setupBuyNowForm()` - Mark panel on successful add-to-cart
+- Updated `toggleWishlistItem()` - Mark panel on wishlist toggle
+- Updated `setupVariantButtons()` - Mark panel on variant selection
+- Updated `openProductPanel()` - Track scroll interaction (>100px threshold)
+- Updated `closePanel()` - Check `data-user-interacted` attribute and track friction
+- Updated all `closePanel()` calls (20+ locations) - Pass `closeMethod` parameter
+- Updated `handleEmptyStateAction()` - Track empty collection exits
+- Updated `openSearchPanel()` - Track no-results exits
+- Updated mode switch button - Track back_to_2d_from_room
+- Updated wishlist panel - Track close method
+
+**Functions Added**:
+- `trackFrictionPoint(type, context)` - Track friction event
+- `getFrictionSummary()` - Get friction summary
+- `window.__immersiveFrictionSummary` - Exposed for debugging
+
+**Global Variables**:
+- `frictionPoints` - Object tracking all 10 friction types
+- `frictionThreshold` - Warning threshold (10 occurrences)
+
+---
+
 ## Technical Details
 
 ### Code Quality
@@ -155,7 +225,7 @@ Successfully implemented all 7 critical UX improvements to the immersive 3D stor
 - Loading states: CSS transitions (GPU-accelerated)
 - Search icons: Inline SVG (no additional requests)
 
-**Estimated bundle size increase**: +2.5KB minified
+**Estimated bundle size increase**: +3KB minified (includes friction tracking)
 
 ### Accessibility (WCAG 2.2 Level AA)
 - ✅ All skeleton loaders have `aria-hidden="true"` (decorative)
@@ -178,13 +248,14 @@ Successfully implemented all 7 critical UX improvements to the immersive 3D stor
 4. `locales/en.default.json` - 25+ new locale keys
 
 ### JavaScript (1 file)
-- `assets/immersive-store.js` - ~400 lines added
+- `assets/immersive-store.js` - ~600 lines added
   - Skeleton loaders: 3 functions
   - Empty states: 2 functions
   - Keyboard navigation: 4 functions
   - Filter chips: 2 functions
   - Loading states: 2 functions
   - Search icons: 1 function + 2 function updates
+  - **Friction tracking: 2 functions + 20+ closePanel() updates + 5 interaction tracking updates**
 
 ### CSS (2 files)
 1. `assets/immersive-theme.css` - ~150 lines added
@@ -206,9 +277,24 @@ Successfully implemented all 7 critical UX improvements to the immersive 3D stor
 - [ ] Availability badges are visible
 - [ ] Panel transitions are smooth
 - [ ] Search results have icons
+- [ ] **Friction tracking logs to console**
+- [ ] **User interactions mark panels correctly**
+- [ ] **Close methods are tracked accurately**
 - [ ] All animations respect `prefers-reduced-motion`
 - [ ] All interactive elements have ARIA labels
 - [ ] All strings use `| t` filter
+
+### Friction Tracking Testing
+- [ ] Open product panel → close without action → check `panel_closed_no_action`
+- [ ] Open product panel → scroll → close → check `panel_closed_after_view`
+- [ ] Open product panel → add to cart → close → check `panel_closed_after_view`
+- [ ] Click back to 2D button → check `back_to_2d_from_room`
+- [ ] Close panel with X button → check `exit_via_close_button`
+- [ ] Close panel with Escape → check `exit_via_escape_key`
+- [ ] Close panel by clicking backdrop → check `exit_via_backdrop_click`
+- [ ] Search with no results → check `search_no_results_exit`
+- [ ] View empty collection → click CTA → check `empty_collection_exit`
+- [ ] Run `window.__immersiveFrictionSummary()` in console → verify summary
 
 ### Cross-Browser Testing (Ready for Testing)
 - [ ] Chrome 90+ (desktop)

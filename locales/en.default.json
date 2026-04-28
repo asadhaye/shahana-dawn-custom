@@ -322,6 +322,8 @@
     "hotspot_1_label": "Explore collection area 1",
     "hotspot_2_label": "Explore collection area 2",
     "close": "Close",
+    "back_to_previous_room": "Back to previous room",
+    "navigation_back_aria": "Navigate back to {{ room_name }}",
     "heading": "Shahana Collection",
     "intro": "Step inside our immersive store and explore our latest collections.",
     "launch_button": "Enter the store",
@@ -357,6 +359,9 @@
     "error_load_collection": "Unable to load collection. Please check your connection and try again.",
     "error_load_product": "Unable to load product. Please check your connection and try again.",
     "added_to_cart": "Added to cart!",
+    "add_to_cart": "Add to cart",
+    "sold_out": "Sold out",
+    "adding": "Adding\u2026",
     "breadcrumb_store": "Shahana Collection",
     "cookie_banner": {
       "aria_label": "Cookie consent",
@@ -431,7 +436,13 @@
       "sort_price_desc": "Price: High to Low",
       "sort_title_asc": "A–Z",
       "clear_all": "Clear all",
-      "currency_label": "PKR"
+      "currency_label": "PKR",
+      "active_filters": {
+        "label": "Active filters",
+        "clear_all": "Clear all",
+        "clear_all_aria": "Clear all filters",
+        "remove_filter_aria": "Remove {{filter}} filter"
+      }
     },
     "next_actions": {
       "continue_exploring": "Continue exploring {{room}}",
@@ -508,12 +519,12 @@
       "loading_product": "Loading product...",
       "loading_room": "Loading room..."
     },
-    "filters": {
-      "active_filters": {
-        "label": "Active filters",
-        "clear_all": "Clear all",
-        "clear_all_aria": "Clear all filters",
-        "remove_filter_aria": "Remove {{filter}} filter"
+    "settings": {
+      "transition_style": {
+        "label": "Room transition style",
+        "option_crossfade": "Smooth Crossfade",
+        "option_pixel_dissolve": "Pixel Dissolve",
+        "info": "Pixel Dissolve is automatically replaced with Smooth Crossfade for visitors who have enabled reduced motion in their OS settings."
       }
     }
   },
@@ -626,6 +637,11 @@
       "note": "Order special instructions",
       "checkout": "Check out",
       "empty": "Your cart is empty",
+      "terms": {
+        "message": "As our pieces are exclusive luxury designer dresses specially sourced for you, we're unable to offer refunds or exchanges based on preference. We'll always make it right if you receive the wrong item. For quality concerns, please contact the brand or designer directly. ",
+        "refund_policy_link": "View our refund policy",
+        "error": "Please confirm that you understand and accept these terms before continuing to checkout."
+      },
       "cart_error": "There was an error while updating your cart. Please try again.",
       "cart_quantity_error_html": "You can only add {{ quantity }} of this item to your cart.",
       "duties_and_taxes_included_shipping_at_checkout_with_policy_html": "Duties and taxes included. Discounts and <a href=\"{{ link }}\">shipping</a> calculated at checkout.",

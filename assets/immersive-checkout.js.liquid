@@ -1,0 +1,63 @@
+<script>
+  // Immersive Checkout: single-file asset with runtime config
+  function readCheckoutConfig(){
+    var cfg = window.__IMMERSIVE_CHECKOUT_CONFIG || null;
+    if (cfg && typeof cfg === 'object') return cfg;
+    var shell = document.querySelector('.immersive-checkout-shell');
+    if (shell){
+      return {
+        overlayOpacity: parseFloat(shell.dataset.overlayOpacity) || 0.65,
+        panelBackground: shell.dataset.panelBackground || '#0a0f1e',
+        title: shell.dataset.title || 'Immersive Checkout',
+        logoSrc: shell.dataset.logoSrc || ''
+      };
+    }
+    return { overlayOpacity: 0.65, panelBackground: '#0a0f1e', title: 'Immersive Checkout', logoSrc: '' };
+  }
+  var cfg = readCheckoutConfig();
+
+  // Inject CSS dynamically based on config
+  var css = `
+    .immersive-checkout-shell { background: rgba(6,8,14, ${cfg.overlayOpacity}); }
+    .immersive-checkout-shell__panel { background: ${cfg.panelBackground}; }
+    .immersive-checkout-shell__title { color: #d4af37; margin:0; }
+    .immersive-checkout-shell__logo { height: 40px; display:block; margin:6px auto 6px; }
+  `;
+  var style = document.createElement('style');
+  style.type = 'text/css';
+  style.appendChild(document.createTextNode(css));
+  document.head.appendChild(style);
+
+  // Optional logo injection into header
+  function injectLogo(){
+    if (!cfg.logoSrc) return;
+    var header = document.querySelector('.immersive-checkout-shell__header');
+    if (!header) return;
+    var img = document.createElement('img');
+    img.src = cfg.logoSrc;
+    img.className = 'immersive-checkout-shell__logo';
+    img.alt = 'Logo';
+    header.insertBefore(img, header.firstChild);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    injectLogo();
+    // Focus trap for accessibility inside checkout gate
+    var shell = document.querySelector('.immersive-checkout-shell');
+    if (shell) {
+      var focusables = shell.querySelectorAll('a[href], button, input, textarea, select');
+      if (focusables.length){
+        focusables[0].focus();
+        document.addEventListener('keydown', function(e){
+          if (e.key !== 'Tab') return;
+          var first = focusables[0], last = focusables[focusables.length - 1];
+          if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        });
+      }
+    }
+  });
+
+  // Escape to immersive hub
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') { window.location.href = '/pages/immersive'; } });
+</script>

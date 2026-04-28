@@ -8,16 +8,23 @@
   @param {string} bridge_label - Already-translated CTA label text
   @param {string} bridge_aria - Already-translated aria-label text
   @param {string} [bridge_class] - Optional CSS modifier suffix (without leading space or dashes, e.g. "collection")
+  @param {string} [bridge_heading] - Optional override heading (defaults to shop.name)
   @param {string} [bridge_subtext] - Optional trust subtext rendered below the label
+  @param {object} [bridge_image] - Optional Shopify image object for preview thumbnail
 
   @example
   {% render 'immersive-bridge-btn',
     bridge_url: '/pages/immersive?open_collection=' | append: collection.handle,
     bridge_label: 'sections.immersive_journey_bridges.collection_cta' | t,
     bridge_aria: 'sections.immersive_journey_bridges.collection_cta_aria' | t: title: collection.title,
-    bridge_class: 'collection'
+    bridge_class: 'collection',
+    bridge_heading: collection.title,
+    bridge_subtext: 'Immersive 3D Experience',
+    bridge_image: collection.featured_image
   %}
 {% enddoc %}
+
+{%- # theme-check-disable OrphanedSnippet, RemoteAsset -%}
 
 <a
   href="{{ bridge_url }}"
@@ -25,17 +32,38 @@
   aria-label="{{ bridge_aria | escape }}"
   data-immersive-bridge
 >
-  <span class="immersive-bridge-btn__eyebrow" aria-hidden="true">
-    <span class="immersive-bridge-btn__dot"></span>
-    {{- 'sections.immersive_journey_bridges.bridge_eyebrow' | t -}}
-  </span>
-  <span class="immersive-bridge-btn__text">
-    <span class="immersive-bridge-btn__label" aria-hidden="true">
-      {{- bridge_label | escape -}}
+  {%- if bridge_image != blank -%}
+    <span class="immersive-bridge-btn__media">
+      {%- # Using image_tag for Shopify image objects (not theme assets) -%}
+      {{-
+        bridge_image
+        | image_tag:
+          loading: 'lazy',
+          sizes: '(max-width: 768px) 100vw, 50vw',
+          widths: '160,240,320',
+          alt: bridge_heading
+        | default: shop.name
+      -}}
     </span>
-    {%- if bridge_subtext != blank -%}
-      <span class="immersive-bridge-btn__subtext">{{- bridge_subtext | escape -}}</span>
+  {%- endif -%}
+  <span class="immersive-bridge-btn__content">
+    <span class="immersive-bridge-btn__eyebrow" aria-hidden="true">
+      <span class="immersive-bridge-btn__dot"></span>
+      {{- 'sections.immersive_journey_bridges.bridge_eyebrow' | t -}}
+    </span>
+    {%- if bridge_heading != blank -%}
+      <h3 class="immersive-bridge-btn__heading" aria-hidden="true">
+        {{- bridge_heading | escape -}}
+      </h3>
     {%- endif -%}
+    <span class="immersive-bridge-btn__text">
+      <span class="immersive-bridge-btn__label" aria-hidden="true">
+        {{- bridge_label | escape -}}
+      </span>
+      {%- if bridge_subtext != blank -%}
+        <span class="immersive-bridge-btn__subtext">{{- bridge_subtext | escape -}}</span>
+      {%- endif -%}
+    </span>
   </span>
   <svg
     class="immersive-bridge-btn__arrow"
@@ -82,6 +110,34 @@
     outline-offset: 3px;
   }
 
+  /* Media (optional image) */
+  .immersive-bridge-btn__media {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .immersive-bridge-btn__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Content wrapper */
+  .immersive-bridge-btn__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
   /* Eyebrow */
   .immersive-bridge-btn__eyebrow {
     display: inline-flex;
@@ -115,6 +171,18 @@
       opacity: 0.4;
       transform: scale(0.7);
     }
+  }
+
+  /* Heading (optional) */
+  .immersive-bridge-btn__heading {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* Label */
@@ -156,11 +224,6 @@
     transform: translateX(3px);
   }
 
-  /* Wrapper spacing */
-  .immersive-bridge-btn__wrapper {
-    padding: 1rem 0;
-  }
-
   /* ── Responsive ────────────────────────────────────────────── */
   @media screen and (max-width: 749px) {
     .immersive-bridge-btn {
@@ -169,10 +232,18 @@
       padding: 0.75rem 1.25rem;
       min-height: 44px;
     }
+
+    .immersive-bridge-btn__media {
+      display: none;
+    }
   }
 
   @media screen and (max-width: 400px) {
     .immersive-bridge-btn__eyebrow {
+      display: none;
+    }
+
+    .immersive-bridge-btn__heading {
       display: none;
     }
   }
