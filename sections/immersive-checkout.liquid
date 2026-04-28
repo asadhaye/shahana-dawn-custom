@@ -1,0 +1,70 @@
+<!-- Immersive Checkout shell (single-file asset ready) -->
+<section
+  class="immersive-checkout-shell"
+  aria-label="Immersive Checkout"
+  data-overlay-opacity="{{ section.settings.overlay_opacity | default: 0.65 }}"
+  data-panel-background="{{ section.settings.panel_background | default: '#0a0f1e' }}"
+  data-title="{{ section.settings.title | default: 'Immersive Checkout' }}"
+  data-logo-src="{{ section.settings.logo | default: '' }}"
+>
+  <div class="immersive-checkout-shell__panel" role="region" aria-label="Checkout">
+    <header class="immersive-checkout-shell__header">
+      {%- if section.settings.logo != blank -%}
+        <img
+          class="immersive-checkout-shell__logo"
+          src="{{ section.settings.logo | image_url: width: 120 }}"
+          alt="{{ shop.name | escape }}"
+          width="120"
+          height="40"
+          style="display:block; margin:0 auto 6px;"
+        >
+      {%- endif -%}
+      <h2 class="immersive-checkout-shell__title">{{ section.settings.title | default: 'Immersive Checkout' }}</h2>
+      <a href="/pages/immersive-cart" class="immersive-checkout-shell__back button">
+        {{- 'general.continue_shopping' | t -}}
+      </a>
+    </header>
+    <div class="immersive-checkout-shell__content">
+      {%- if cart != empty -%}
+        <h3 class="visually-hidden">{{ 'sections.cart.title' | t }}</h3>
+        <ul class="immersive-checkout-shell__items">
+          {%- for item in cart.items -%}
+            <li class="immersive-checkout-shell__item">
+              {{ item.quantity }}× {{ item.title | escape }} - {{ item.line_price | money }}
+            </li>
+          {%- endfor -%}
+        </ul>
+        <p class="immersive-checkout-shell__total">
+          {{ 'sections.cart.estimated_total' | t }}: {{ cart.total_price | money_with_currency }}
+        </p>
+        <a href="/checkout" class="immersive-checkout-shell__cta button button--primary">
+          {{- 'sections.cart.checkout' | t -}}
+        </a>
+      {%- else -%}
+        <p>{{ 'sections.cart.empty' | t }}</p>
+        <a href="{{ routes.all_products_collection_url }}" class="button">{{ 'general.continue_shopping' | t }}</a>
+      {%- endif -%}
+    </div>
+  </div>
+</section>
+<script src="{{ 'immersive-checkout.js' | asset_url }}" defer="defer"></script>
+
+{% schema %}
+{
+  "name": "t:sections.immersive_checkout.name",
+  "settings": [
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "min": 0,
+      "max": 1,
+      "step": 0.1,
+      "default": 0.6,
+      "label": "Overlay opacity"
+    },
+    { "type": "image_picker", "id": "logo", "label": "Logo" },
+    { "type": "color", "id": "panel_background", "label": "Panel background color", "default": "#0a0f1e" },
+    { "type": "text", "id": "title", "label": "Checkout title", "default": "Immersive Checkout" }
+  ]
+}
+{% endschema %}

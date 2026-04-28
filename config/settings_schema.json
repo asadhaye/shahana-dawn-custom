@@ -1486,6 +1486,16 @@
         "label": "Medium connection note",
         "default": "The 3D store works best on a faster connection.",
         "info": "Shown on 3G connections"
+      },
+      {
+        "type": "range",
+        "id": "bridge_dismiss_timeout",
+        "label": "Preference banner auto-dismiss (seconds)",
+        "min": 0,
+        "max": 30,
+        "step": 1,
+        "default": 0,
+        "info": "Automatically dismiss the 3D preference banner after this many seconds. Set to 0 to disable auto-dismiss."
       }
     ]
   }

@@ -3595,3 +3595,8 @@ details-disclosure > details {
     transform: translateX(100%) scaleX(0);
   }
 }
+
+/* Bridge button wrapper — used by all 2D sections that render immersive-bridge-btn */
+.immersive-bridge-btn__wrapper {
+  padding: 1rem 0;
+}

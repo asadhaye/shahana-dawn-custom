@@ -1,0 +1,16 @@
+/* Immersive checkout shell styling */
+.immersive-checkout-shell {
+  position: fixed; inset: 0; background: rgba(6,8,14,0.7); display: flex; align-items: center; justify-content: center; padding: 2rem; z-index: 9999;
+}
+.immersive-checkout-shell__panel {
+  width: min(1000px, 92%); max-height: 86vh; overflow: auto; background: rgba(15,20,40,0.97); border:1px solid rgba(255,255,255,0.15); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); backdrop-filter: blur(6px);
+}
+.immersive-checkout-shell__header { display:flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+.immersive-checkout-shell__title { color: #d4af37; margin:0; font-size: 1.1rem; text-transform: none; }
+.immersive-checkout-shell__back { text-decoration: none; color: #d4af37; border: 1px solid rgba(212,175,55,0.8); padding: 6px 12px; border-radius: 6px; }
+.immersive-checkout-shell__content { padding: 16px; }
+.immersive-checkout-shell__items { list-style: none; padding:0; margin:0 0 12px; }
+.immersive-checkout-shell__items .immersive-checkout-shell__item { margin: 6px 0; }
+.immersive-checkout-shell__total { font-weight: 600; color: #fff; }
+.immersive-checkout-shell__cta { display: inline-block; margin-top: 8px; }
+@media (max-width: 720px) { .immersive-checkout-shell__panel { width: 96%; } }

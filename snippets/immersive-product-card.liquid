@@ -25,6 +25,8 @@
 
 <article
   class="immersive-product-card"
+  role="article"
+  aria-label="{{ 'sections.immersive.product_card.view_product' | t: title: product.title | escape }}"
   data-product-id="{{ product.id }}"
   data-product-handle="{{ product.handle }}"
   {%- if collection_handle_resolved != blank -%}
@@ -71,6 +73,8 @@
           "
           sizes="(max-width: 768px) 100vw, 300px"
           alt="{{ product.featured_image.alt | default: product.title | escape }}"
+          width="{{ product.featured_image.width }}"
+          height="{{ product.featured_image.height }}"
           loading="lazy"
           data-parallax-image
         >
@@ -80,6 +84,8 @@
             class="immersive-product-image-hover"
             src="{{ product.images[1] | image_url: width: 600 }}"
             alt="{{ product.images[1].alt | default: product.title | escape }}"
+            width="{{ product.images[1].width }}"
+            height="{{ product.images[1].height }}"
             loading="lazy"
             data-parallax-image
           >
@@ -255,6 +261,19 @@
 
     <div class="immersive-product-card__urgency" data-urgency-container></div>
   </div>
+  <script>
+    // Sync variant selection to the hidden input so add-to-cart uses the correct variant
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.immersive-variant-button');
+      if (!btn) return;
+      var card = btn.closest('.immersive-product-card');
+      if (!card) return;
+      var input = card.querySelector('.immersive-variant-input');
+      if (input && btn.dataset.variantId) {
+        input.value = btn.dataset.variantId;
+      }
+    });
+  </script>
 </article>
 
 {% stylesheet %}

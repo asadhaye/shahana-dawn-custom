@@ -74,6 +74,11 @@ function closePanel(panel, closeMethod) {
   closeDialogFocus(panel._panelTrigger);
   panel._panelTrigger = null;
 
+  // Destroy fluid reveal effect before hiding the panel
+  if (typeof ImmersiveFluidReveal !== 'undefined') {
+    ImmersiveFluidReveal.destroy();
+  }
+
   // Wait for CSS transition before hiding from DOM
   setTimeout(function () {
     panel.classList.add('hidden');

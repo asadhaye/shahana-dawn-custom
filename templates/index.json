@@ -10,9 +10,8 @@
 {
   "sections": {
     "immersive_bridge": {
-      "type": "custom-liquid",
+      "type": "immersive-homepage-bridge",
       "settings": {
-        "custom_liquid": "<div style=\"text-align:center;padding:1.75rem 1.5rem\">{% assign bridge_label = 'sections.immersive_journey_bridges.switch_to_3d' | t %}{% assign bridge_aria = 'sections.immersive_journey_bridges.switch_to_3d_aria' | t %}{% render 'immersive-bridge-btn', bridge_url: '/pages/immersive', bridge_label: bridge_label, bridge_aria: bridge_aria, bridge_class: 'homepage' %}</div>",
         "color_scheme": "",
         "padding_top": 8,
         "padding_bottom": 8
@@ -156,7 +155,7 @@
       "settings": {
         "collection": "suffuse",
         "products_to_show": 8,
-        "title": "Featured collection",
+        "title": "Suffuse",
         "heading_size": "h1",
         "description": "",
         "show_description": false,
@@ -240,7 +239,7 @@
       "settings": {
         "collection": "soraya",
         "products_to_show": 8,
-        "title": "Featured collection",
+        "title": "Soraya",
         "heading_size": "h1",
         "description": "",
         "show_description": false,

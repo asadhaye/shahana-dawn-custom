@@ -579,7 +579,7 @@
 
     <div class="glass-product-section__related" data-related-root></div>
   {% else %}
-    <p class="glass-panel-section__empty">{{ 'sections.immersive.product_grid.empty' | t }}</p>
+    <p class="glass-product-section__empty">{{ 'sections.immersive.product_grid.empty' | t }}</p>
   {% endif %}
 
   {% if panel_product %}
@@ -887,7 +887,9 @@
     margin: 0 auto;
     border-radius: 999px;
     border: none;
-    background: #d4af37;
+    background: rgba(212, 175, 55, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: #0a0f1e;
     font-weight: 700;
     font-size: 1rem;
@@ -911,6 +913,44 @@
     background: rgba(212, 175, 55, 0.35);
     color: rgba(255, 255, 255, 0.5);
     cursor: not-allowed;
+  }
+
+  /* Accelerated checkout buttons (PayPal, Apple Pay, etc.)
+     Visually separated from the primary "Add to my edit" action.
+     Reduced opacity and scale so they read as secondary options. */
+  .glass-product-section .shopify-payment-button {
+    margin-top: 0.5rem;
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .glass-product-section .shopify-payment-button__button {
+    border-radius: 999px !important;
+    min-height: 44px !important;
+    font-size: 0.875rem !important;
+    opacity: 0.85;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .glass-product-section .shopify-payment-button__button:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
+  /* "More payment options" link */
+  .glass-product-section .shopify-payment-button__more-options {
+    color: rgba(212, 175, 55, 0.6) !important;
+    font-size: 0.8rem !important;
+    text-decoration: underline;
+    margin-top: 0.5rem;
+    display: block;
+    text-align: center;
+  }
+
+  .glass-product-section .shopify-payment-button__more-options:hover {
+    color: #d4af37 !important;
   }
 
   /* Eid Delivery Badge */
@@ -1018,6 +1058,13 @@
     margin-top: 3rem;
     padding-top: 2rem;
     border-top: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .glass-product-section__empty {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1rem;
+    padding: 3rem 1rem;
   }
 
   .glass-product-section__related-title {
@@ -1338,6 +1385,15 @@
     /* Eid badge */
     .glass-product-section__eid-badge {
       font-size: clamp(0.875rem, 3.2vw, 1rem);
+    }
+
+    /* Payment buttons — full width on mobile */
+    .glass-product-section .shopify-payment-button {
+      max-width: 100%;
+    }
+
+    .glass-product-section .shopify-payment-button__button {
+      font-size: 0.9rem !important;
     }
 
     /* Related products heading */

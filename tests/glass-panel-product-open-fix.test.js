@@ -230,7 +230,10 @@ describe('Bug 1a — Click delegation: preventDefault not called early enough fo
    * confirming the handler structure matches the fixed pattern.
    */
   test('clicking <a class="immersive-product-link"> SHOULD call preventDefault() before closest() check', () => {
-    const jsSource = fs.readFileSync(path.resolve(__dirname, '../assets/immersive-store.js'), 'utf8');
+    const collectionPanelSource = fs.readFileSync(
+      path.resolve(__dirname, '../assets/immersive/panels/collection-panel.js'),
+      'utf8',
+    );
 
     fc.assert(
       fc.property(fc.constant(null), function () {
@@ -238,12 +241,14 @@ describe('Bug 1a — Click delegation: preventDefault not called early enough fo
         // The fix uses: closest('.immersive-product-card, [data-product-handle]')
         // and calls event.preventDefault() BEFORE extracting the handle
         var hasFixedSelector = /closest\s*\(\s*['"]\.immersive-product-card,\s*\[data-product-handle\]['"]\s*\)/.test(
-          jsSource,
+          collectionPanelSource,
         );
 
         // The fix must also call preventDefault() before the handle extraction
         // We verify the pattern: cardOrLink found → event.preventDefault() → handle extraction
-        var hasImmediatePrevent = /if\s*\(\s*cardOrLink\s*\)\s*\{[\s\S]{0,50}event\.preventDefault\(\)/.test(jsSource);
+        var hasImmediatePrevent = /if\s*\(\s*cardOrLink\s*\)\s*\{[\s\S]{0,50}event\.preventDefault\(\)/.test(
+          collectionPanelSource,
+        );
 
         return hasFixedSelector && hasImmediatePrevent;
       }),

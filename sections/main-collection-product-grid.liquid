@@ -43,7 +43,8 @@
       bridge_url: '/pages/immersive?open_collection=' | append: collection.handle,
       bridge_label: 'sections.immersive_journey_bridges.collection_cta' | t,
       bridge_aria: 'sections.immersive_journey_bridges.collection_cta_aria' | t: title: collection.title,
-      bridge_class: 'collection'
+      bridge_class: 'collection',
+      bridge_image: section.settings.bridge_image | default: collection.featured_image
     -%}
   </div>
 {%- endif -%}
@@ -392,6 +393,16 @@
       "id": "enable_sorting",
       "default": true,
       "label": "t:sections.main-collection-product-grid.settings.enable_sorting.label"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.immersive_journey_bridges.bridge_settings_header"
+    },
+    {
+      "type": "image_picker",
+      "id": "bridge_image",
+      "label": "t:sections.immersive_journey_bridges.bridge_image_label",
+      "info": "t:sections.immersive_journey_bridges.bridge_image_info"
     },
     {
       "type": "header",

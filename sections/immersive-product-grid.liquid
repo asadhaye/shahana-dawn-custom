@@ -28,6 +28,8 @@
 <div
   class="immersive-product-grid-wrapper"
   data-collection-handle="{{ collection.handle }}"
+  data-enable-fluid-reveal="{{ section.settings.enable_fluid_reveal }}"
+  data-fluid-reveal-intensity="{{ section.settings.fluid_reveal_intensity }}"
   {%- if filter_active -%}
     data-filter-active="true"
   {%- endif -%}
@@ -94,6 +96,9 @@
             {{ 'sections.immersive_store.empty_states.collection_browse' | t }}
           </button>
         </div>
+        <p class="immersive-empty-state__hint" aria-live="polite">
+          Tip: if you can’t find items, try a keyword search or explore the lounge rooms.
+        </p>
       </div>
     {%- endif -%}
   </div>
@@ -225,6 +230,26 @@
       "id": "show_description",
       "label": "t:sections.immersive_product_grid.settings.show_description.label",
       "default": false
+    },
+    {
+      "type": "header",
+      "content": "Fluid Reveal Effect"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_fluid_reveal",
+      "label": "Enable fluid reveal hover effect",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "fluid_reveal_intensity",
+      "label": "Effect intensity",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 5,
+      "info": "Higher values create more dramatic distortion"
     }
   ],
   "presets": [

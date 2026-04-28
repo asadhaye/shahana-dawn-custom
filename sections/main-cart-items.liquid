@@ -26,10 +26,14 @@
 <script src="{{ 'quantity-popover.js' | asset_url }}" defer="defer"></script>
 
 <cart-items class="gradient color-{{ section.settings.color_scheme }} isolate{% if cart == empty %} is-empty{% else %} section-{{ section.id }}-padding{% endif %}">
+  {%- assign continue_shopping_url = routes.all_products_collection_url -%}
+  {%- if template == 'page.immersive-cart' -%}
+    {%- assign continue_shopping_url = '/pages/immersive' -%}
+  {%- endif -%}
   <div class="page-width">
     <div class="title-wrapper-with-link">
       <h1 class="title title--primary">{{ 'sections.cart.title' | t }}</h1>
-      <a href="{{ routes.all_products_collection_url }}" class="underlined-link">
+      <a href="{{ continue_shopping_url }}" class="underlined-link">
         {{- 'general.continue_shopping' | t -}}
       </a>
     </div>
@@ -38,7 +42,7 @@
       <div class="immersive-bridge-btn__wrapper">
         {%-
           render 'immersive-bridge-btn',
-          bridge_url: '/pages/immersive',
+          bridge_url: '/pages/immersive-cart',
           bridge_label: 'sections.immersive_journey_bridges.cart_cta' | t,
           bridge_aria: 'sections.immersive_journey_bridges.cart_cta_aria' | t,
           bridge_class: 'cart'
@@ -48,7 +52,7 @@
 
     <div class="cart__warnings">
       <h1 class="cart__empty-text">{{ 'sections.cart.empty' | t }}</h1>
-      <a href="{{ routes.all_products_collection_url }}" class="button">
+      <a href="{{ continue_shopping_url }}" class="button">
         {{ 'general.continue_shopping' | t }}
       </a>
 
