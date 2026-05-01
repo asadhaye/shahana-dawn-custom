@@ -11,3 +11,9 @@ Thumbs.db
 
 # Dependencies
 node_modules/
+
+# Local refactoring/utility scripts (not part of the theme)
+scripts/
+
+# Kiro/AI skill files at repo root
+skills/
