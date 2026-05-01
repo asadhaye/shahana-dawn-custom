@@ -103,8 +103,7 @@
         "onboarding_show_once": true,
         "low_stock_threshold": 5,
         "guided_featured_wing": "designer_houses",
-        "fab_icon_svg": "<svg viewbox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><text x=\"50%\" y=\"54%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"serif\" font-size=\"22\" font-weight=\"700\" fill=\"#d4af37\">S</text></svg>",
-        "transition_style": "crossfade"
+        "fab_icon_svg": "<svg viewbox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><text x=\"50%\" y=\"54%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"serif\" font-size=\"22\" font-weight=\"700\" fill=\"#d4af37\">S</text></svg>"
       }
     },
     "editorial_designer_houses": {
@@ -250,6 +249,110 @@
         "hero_subheading": "<p>Three collections. Three stories. One curated moment in Pakistani fashion.</p>",
         "max_offset_px": 120
       }
+    },
+    "webgl_gallery_exclusives": {
+      "type": "immersive-webgl-gallery-config",
+      "blocks": {
+        "gallery_item_1": {
+          "type": "gallery_item",
+          "settings": {
+            "title": "Eid Gold Mirage",
+            "subtitle": "Hand-embellished chiffon and organza",
+            "collection": "eid-collection"
+          }
+        },
+        "gallery_item_2": {
+          "type": "gallery_item",
+          "settings": {
+            "title": "Bridal Noir",
+            "subtitle": "Midnight velvet with gold zardozi",
+            "collection": "bridal-mehndi"
+          }
+        },
+        "gallery_item_3": {
+          "type": "gallery_item",
+          "settings": {
+            "title": "Suffuse Signature",
+            "subtitle": "Fluid silk with hand-painted motifs",
+            "collection": "suffuse"
+          }
+        },
+        "gallery_item_4": {
+          "type": "gallery_item",
+          "settings": {
+            "title": "Soraya Lumene",
+            "subtitle": "Festive pret in heritage weaves",
+            "collection": "lumene-festive-25-26-soraya-official"
+          }
+        },
+        "gallery_item_5": {
+          "type": "gallery_item",
+          "settings": {
+            "title": "SS5 Summer Edit",
+            "subtitle": "Architectural cuts in lightweight lawn",
+            "collection": "summer-pret-26-eid-edit-saad-bin-shahzad"
+          }
+        }
+      },
+      "block_order": [
+        "gallery_item_1",
+        "gallery_item_2",
+        "gallery_item_3",
+        "gallery_item_4",
+        "gallery_item_5"
+      ],
+      "settings": {
+        "room_key": "exclusives_story"
+      }
+    },
+    "immersive_story": {
+      "type": "immersive-story-rail",
+      "blocks": {
+        "story_intro": {
+          "type": "intro",
+          "settings": {
+            "eyebrow": "Origins",
+            "heading": "From Lahore ateliers to London evenings",
+            "body": "<p>Shahana Collection was born from a simple belief: that Pakistani luxury fashion deserves a stage as extraordinary as the craft itself. Each piece in our world carries the weight of generations — the embroiderer's patience, the weaver's precision, the designer's vision.</p>"
+          }
+        },
+        "story_marquee": {
+          "type": "marquee",
+          "settings": {
+            "marquee_text": "Craft · Heritage · Exclusives · Shahana Collection"
+          }
+        },
+        "story_journey": {
+          "type": "journey",
+          "settings": {
+            "eyebrow": "The journey",
+            "heading": "Craft, ritual, and the garments that carry them",
+            "body": "<p>From the first sketch in a Lahore atelier to the final stitch of zardozi, every Shahana piece passes through hands that have spent lifetimes perfecting their art. These are not garments — they are preserved rituals, worn at the moments that define us.</p>"
+          }
+        },
+        "story_closing": {
+          "type": "closing",
+          "settings": {
+            "eyebrow": "Enter the store",
+            "heading": "Explore the collection",
+            "body": "<p>Step into the immersive 3D store and discover the pieces that carry these stories.</p>",
+            "cta_label": "Open the 3D Store",
+            "cta_url": "/pages/immersive"
+          }
+        }
+      },
+      "block_order": [
+        "story_intro",
+        "story_marquee",
+        "story_journey",
+        "story_closing"
+      ],
+      "settings": {
+        "show_hero": true,
+        "hero_eyebrow": "Shahana story",
+        "hero_heading": "The world behind the collection",
+        "hero_subheading": "An editorial journey through our designers, rituals, and exclusive pieces — before you enter the immersive store."
+      }
     }
   },
   "order": [
@@ -257,6 +360,8 @@
     "immersive_canvas",
     "editorial_designer_houses",
     "editorial_occasions",
-    "editorial_featured_collections"
+    "editorial_featured_collections",
+    "immersive_story",
+    "webgl_gallery_exclusives"
   ]
 }

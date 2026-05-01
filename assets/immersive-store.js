@@ -34,14 +34,19 @@ const STORE_ROOMS = {
       { x: 20, y: 35, label: 'Designer Houses', targetRoom: 'designer_houses', mobileX: 15, mobileY: 80 },
       { x: 50, y: 35, label: 'Occasions', targetRoom: 'occasions', mobileX: 50, mobileY: 80 },
       { x: 80, y: 35, label: 'Featured Collections', targetRoom: 'featured_collections', mobileX: 85, mobileY: 80 },
+      { x: 50, y: 65, label: 'The Shahana Story', targetStory: true, mobileX: 50, mobileY: 55 },
     ],
   },
 
   designer_houses: {
-    baseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-base.jpg?v=1775510548=85',
-    mobileBaseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126=75',
-    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548=70',
-    mobileDepthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.png?v=1775516123=70',
+    baseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-base.jpg?v=1775510548&width=1600&quality=85',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126&width=900&quality=75',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548&width=1600&quality=70',
+    mobileDepthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.png?v=1775516123&width=900&quality=70',
     hotspots: [
       { x: 50, y: 15, label: 'Explore Designers', targetEditorialRoom: 'designer_houses' },
       { x: 13, y: 40, label: 'Suffuse', targetCollection: 'suffuse' },
@@ -73,7 +78,8 @@ const STORE_ROOMS = {
   featured_collections: {
     baseTextureUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=1600&quality=75',
-    mobileBaseTextureUrl: 'https://picsum.photos/id/1080/900/1600',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=900&quality=75',
     depthMapUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
     mobileDepthMapUrl:
@@ -84,7 +90,23 @@ const STORE_ROOMS = {
       { x: 75, y: 40, label: 'Soraya Eid Pret', targetCollection: 'lumene-festive-25-26-soraya-official' },
       { x: 50, y: 85, label: 'Back to lounge', targetRoom: 'lounge' },
       { x: 50, y: 15, label: 'Featured Stories', targetEditorialRoom: 'featured_collections' },
+      { x: 85, y: 60, label: 'Exclusives Gallery', targetRoom: 'exclusives_story' },
     ],
+  },
+
+  exclusives_story: {
+    // Gallery-stage room — curved wall of curated product images.
+    // Textures: upload a dark editorial interior to Shopify Files and replace these URLs.
+    // Until real assets are uploaded, falls back to featured_collections base as a placeholder.
+    baseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=1600&quality=75',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=900&quality=75',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
+    mobileDepthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=900&quality=60',
+    hotspots: [{ x: 50, y: 90, label: 'Back to The Edit', targetRoom: 'featured_collections' }],
   },
 };
 
@@ -116,53 +138,6 @@ const STORE_ROOMS = {
   });
 })();
 
-// ---------------------------------------------------------------------------
-// Hotspot normalization helpers
-// Map raw hotspot config into a normalized shape with an explicit type and
-// target. This lets us handle 'room', 'collection_panel', and 'editorial'
-// hotspots consistently regardless of whether they came from the hardcoded
-// STORE_ROOMS or from the immersive-rooms-config JSON override.
-// Pure helpers — no DOM access, no side effects.
-// ---------------------------------------------------------------------------
-
-function normalizeHotspot(raw, roomKey, index) {
-  if (!raw) return null;
-  var type, target;
-  if (raw.targetRoom) {
-    type = 'room';
-    target = raw.targetRoom;
-  } else if (raw.targetCollection) {
-    type = 'collection_panel';
-    target = raw.targetCollection;
-  } else if (raw.targetEditorialRoom) {
-    type = 'editorial';
-    target = raw.targetEditorialRoom;
-  } else {
-    type = 'unknown';
-    target = null;
-  }
-  return {
-    id: raw.id || roomKey + '-' + (raw.targetRoom || raw.targetCollection || raw.targetEditorialRoom || index),
-    type: type,
-    target: target,
-    label: raw.label || '',
-    position: { x: raw.x, y: raw.y, z: raw.z },
-    mobilePosition:
-      typeof raw.mobileX === 'number' && typeof raw.mobileY === 'number' ? { x: raw.mobileX, y: raw.mobileY } : null,
-    _raw: raw,
-  };
-}
-
-function getNormalizedHotspots(roomKey) {
-  var room = STORE_ROOMS[roomKey];
-  if (!room || !Array.isArray(room.hotspots)) return [];
-  return room.hotspots
-    .map(function (raw, index) {
-      return normalizeHotspot(raw, roomKey, index);
-    })
-    .filter(Boolean);
-}
-
 let renderer;
 let scene;
 let camera;
@@ -171,6 +146,7 @@ let uniforms;
 let currentRoomKey = null;
 let transitioning = false;
 var currentImageAspect = 16 / 9; // updated when a texture loads
+var _animate_lastTime = null; // used by gallery-stage delta-time calculation
 
 // Texture cache to avoid re-loading and enable VRAM disposal
 // LRU cache: array of { key, base, depth } ordered by recency (most recent first)
@@ -256,7 +232,6 @@ function updateCanvasRect() {
 // Initial evaluation before anything else runs
 evaluateDeviceFlags();
 
-var textureWidth = usesMobileImg ? 1200 : 1920;
 // Parallax runs even with reduceMotion — CSS animations are suppressed separately
 var parallaxStrength = usesMobileImg ? 0.03 : 0.08;
 
@@ -579,6 +554,7 @@ function initImmersiveScene() {
     uScrollVignette: { value: 0 },
     uScrollChroma: { value: 0 },
     uAtmosphericMood: { value: 0 },
+    uTime: { value: 0 },
   };
 
   var material = new THREE.ShaderMaterial({
@@ -694,7 +670,6 @@ function hideLoader() {
   }, 400);
 }
 
-var mouseMoveRafPending = false;
 var mouseTarget = { x: 0.5, y: 0.5 };
 var mouseCurrent = { x: 0.5, y: 0.5 };
 var lerpFactor = 0.08;
@@ -940,6 +915,25 @@ function animate() {
   }
 
   if (renderer && scene && camera) {
+    // Advance uTime for breathing/grain effects
+    if (uniforms && uniforms.uTime) {
+      uniforms.uTime.value += 0.016; // approximate 60fps delta; real delta used below
+    }
+
+    // Apply room visual profile (lerps atmospheric mood, vignette, chroma)
+    // Only when NOT in editorial mode (editorial manages its own uniforms)
+    if (currentRoomKey && immersiveState.mode !== 'editorial') {
+      var _now = performance.now();
+      var _dt = Math.min((_now - (_animate_lastTime || _now)) / 1000, 0.1);
+      _animate_lastTime = _now;
+      _applyRoomVisualProfile(currentRoomKey, currentRoomSubMode, _dt);
+
+      // Update gallery-stage camera orbit if active
+      if (isGalleryStageActive(currentRoomKey)) {
+        _updateGalleryStageCamera(currentRoomKey, camera, _dt);
+      }
+    }
+
     renderer.render(scene, camera);
   }
 
@@ -950,9 +944,9 @@ function animate() {
     var frameTime = now - lastFrameTime;
     lastFrameTime = now;
 
-    // Simple FPS counter (show in console every second)
+    // Simple FPS counter (dev only)
     fpsCounter++;
-    if (now - fpsTimer > 1000) {
+    if (window.__IMMERSIVE_DEV__ && now - fpsTimer > 1000) {
       var fps = Math.round((fpsCounter * 1000) / (now - fpsTimer));
       console.log(
         '[Immersive] FPS: ' +
@@ -962,6 +956,9 @@ function animate() {
           'ms' +
           (frameTime > 16.67 ? ' ⚠️ SLOW' : ''),
       );
+      fpsCounter = 0;
+      fpsTimer = now;
+    } else if (now - fpsTimer > 1000) {
       fpsCounter = 0;
       fpsTimer = now;
     }
@@ -985,6 +982,315 @@ function updateRoomBadge(roomKey) {
   var guidance = badge.getAttribute('data-room-guidance-' + roomKey) || '';
   if (nameEl) nameEl.textContent = name;
   if (guidanceEl) guidanceEl.textContent = guidance;
+}
+
+// ── WebGL Gallery Config + Gallery-Stage ─────────────────────────────────────
+// Reads from window.immersiveWebglGalleryConfigs populated by
+// sections/immersive-webgl-gallery-config.liquid (the "gallery-stage" headless section).
+
+function getGalleryForRoom(roomKey) {
+  if (!window.immersiveWebglGalleryConfigs) return [];
+  return window.immersiveWebglGalleryConfigs[roomKey] || [];
+}
+
+// Called on every room entry. Builds gallery-stage if config exists,
+// and dispatches a custom event for any external listeners.
+function _notifyGalleryConfigForRoom(roomKey) {
+  var items = getGalleryForRoom(roomKey);
+
+  // Enter or exit gallery-stage sub-mode based on whether config exists
+  if (items.length) {
+    _enterGalleryStageRoom(roomKey);
+  } else {
+    _exitGalleryStageRoom();
+  }
+
+  if (!items.length) return;
+
+  try {
+    document.dispatchEvent(
+      new CustomEvent('immersive:gallery-config-ready', {
+        detail: { roomKey: roomKey, items: items },
+        bubbles: false,
+      }),
+    );
+  } catch (e) {
+    /* CustomEvent not supported — silent fallback */
+  }
+}
+
+// ── Gallery-Stage: curved wall of image planes ────────────────────────────────
+// Implements the "orbit past a curved museum wall" pattern for rooms that have
+// a gallery config (e.g. exclusives_story). All state is stored in
+// galleryStageRegistry keyed by roomKey.
+
+var galleryStageRegistry = {};
+var currentRoomSubMode = null; // null | 'gallery_stage'
+var _galleryDragState = { active: false, lastX: 0, boundElement: null };
+
+// ── Visual profiles ───────────────────────────────────────────────────────────
+// Declarative per-room shader uniform targets. Values are lerped each frame.
+var ROOM_VISUAL_PROFILES = {
+  default: { uAtmosphericMood: 0.0, uScrollVignette: 0.0, uScrollChroma: 0.0 },
+  storefront: { uAtmosphericMood: 0.25, uScrollVignette: 0.1, uScrollChroma: 0.05 },
+  lounge: { uAtmosphericMood: 0.3, uScrollVignette: 0.09, uScrollChroma: 0.04 },
+  designer_houses: { uAtmosphericMood: 0.35, uScrollVignette: 0.12, uScrollChroma: 0.06 },
+  occasions: { uAtmosphericMood: 0.3, uScrollVignette: 0.1, uScrollChroma: 0.05 },
+  featured_collections: { uAtmosphericMood: 0.35, uScrollVignette: 0.12, uScrollChroma: 0.06 },
+  // Story sub-mode: deeper gold warmth and vignette while the story rail is in view
+  'featured_collections:story': { uAtmosphericMood: 0.8, uScrollVignette: 0.32, uScrollChroma: 0.16 },
+  exclusives_story: { uAtmosphericMood: 0.55, uScrollVignette: 0.2, uScrollChroma: 0.1 },
+  // Gallery-stage sub-mode: cinematic museum wall with Shahana gold warmth
+  'exclusives_story:gallery_stage': { uAtmosphericMood: 0.8, uScrollVignette: 0.35, uScrollChroma: 0.18 },
+};
+
+function _getRoomVisualProfile(roomKey, mode) {
+  var key = mode ? roomKey + ':' + mode : roomKey;
+  return ROOM_VISUAL_PROFILES[key] || ROOM_VISUAL_PROFILES[roomKey] || ROOM_VISUAL_PROFILES.default;
+}
+
+// Lerp uniform values towards the target profile each frame.
+// Skips when in editorial mode (editorial manages its own uniforms).
+function _applyRoomVisualProfile(roomKey, mode, deltaSec) {
+  if (!uniforms || immersiveState.mode === 'editorial' || reduceMotion) return;
+  var profile = _getRoomVisualProfile(roomKey, mode);
+  var speed = 2.0;
+  var dt = typeof deltaSec === 'number' ? deltaSec : 0.016;
+  function lerp(cur, tgt) {
+    return cur + (tgt - cur) * Math.min(1, dt * speed);
+  }
+  if (uniforms.uAtmosphericMood)
+    uniforms.uAtmosphericMood.value = lerp(uniforms.uAtmosphericMood.value, profile.uAtmosphericMood);
+  if (uniforms.uScrollVignette)
+    uniforms.uScrollVignette.value = lerp(uniforms.uScrollVignette.value, profile.uScrollVignette);
+  if (uniforms.uScrollChroma) uniforms.uScrollChroma.value = lerp(uniforms.uScrollChroma.value, profile.uScrollChroma);
+}
+
+function isGalleryStageActive(roomKey) {
+  var s = galleryStageRegistry[roomKey];
+  return !!(s && s.group && s.planes && s.planes.length > 0);
+}
+
+// Build a curved arc of image planes and add them to the Three.js scene.
+function buildGalleryStageForRoom(roomKey, sceneObj, options) {
+  var items = getGalleryForRoom(roomKey);
+  if (!items.length || !window.THREE || !sceneObj) return null;
+  var T = window.THREE;
+
+  options = options || {};
+  var radius = options.radius !== undefined ? options.radius : 6;
+  var arcDeg = options.arcDegrees !== undefined ? options.arcDegrees : 120;
+  var vertOffset = options.verticalOffset !== undefined ? options.verticalOffset : 0.2;
+  var tiltDeg = options.tiltDegrees !== undefined ? options.tiltDegrees : -5;
+
+  var group = new T.Group();
+  var loader = new T.TextureLoader();
+  var planes = [];
+  var textures = [];
+  var count = items.length;
+  var step = count > 1 ? arcDeg / (count - 1) : 0;
+  var startAngle = -arcDeg / 2;
+
+  items.forEach(function (item, index) {
+    if (!item.imageSrc) return;
+
+    var tex = loader.load(item.imageSrc);
+    // Three.js r152+ uses colorSpace; earlier versions use encoding
+    if (T.SRGBColorSpace !== undefined) {
+      tex.colorSpace = T.SRGBColorSpace;
+    } else if (T.sRGBEncoding !== undefined) {
+      tex.encoding = T.sRGBEncoding;
+    }
+    tex.anisotropy = 8;
+    textures.push(tex);
+
+    var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
+    var planeH = 1.4;
+    var planeW = planeH * aspect;
+
+    var mesh = new T.Mesh(
+      new T.PlaneGeometry(planeW, planeH),
+      new T.MeshStandardMaterial({ map: tex, side: T.FrontSide, roughness: 0.6, metalness: 0.1 }),
+    );
+
+    mesh.userData = {
+      galleryIndex: item.index,
+      title: item.title,
+      subtitle: item.subtitle,
+      productHandle: item.productHandle || null,
+      collectionHandle: item.collectionHandle || null,
+    };
+
+    var angleDeg = startAngle + step * index;
+    var angleRad = (angleDeg * Math.PI) / 180;
+    mesh.position.set(Math.sin(angleRad) * radius, vertOffset, -Math.cos(angleRad) * radius);
+    mesh.rotation.y = -angleRad;
+    mesh.rotation.x = (tiltDeg * Math.PI) / 180;
+
+    group.add(mesh);
+    planes.push(mesh);
+  });
+
+  // Warm gallery lighting — Shahana gold fill
+  group.add(new T.AmbientLight(0xfff8e7, 0.6));
+  var key = new T.DirectionalLight(0xfff0cc, 1.2);
+  key.position.set(0, 4, 3);
+  group.add(key);
+  var fill = new T.DirectionalLight(0xd4af37, 0.4);
+  fill.position.set(-3, 1, -2);
+  group.add(fill);
+
+  sceneObj.add(group);
+
+  var state = {
+    group: group,
+    planes: planes,
+    textures: textures,
+    radius: radius,
+    arcDegrees: arcDeg,
+    currentAngle: 0,
+    targetAngle: 0,
+  };
+  galleryStageRegistry[roomKey] = state;
+  return state;
+}
+
+function destroyGalleryStageForRoom(roomKey, sceneObj) {
+  var state = galleryStageRegistry[roomKey];
+  if (!state) return;
+  if (sceneObj && state.group) sceneObj.remove(state.group);
+  (state.planes || []).forEach(function (m) {
+    if (m.geometry) m.geometry.dispose();
+    if (m.material) {
+      if (m.material.map) m.material.map.dispose();
+      m.material.dispose();
+    }
+  });
+  (state.textures || []).forEach(function (t) {
+    t.dispose();
+  });
+  delete galleryStageRegistry[roomKey];
+}
+
+function _setGalleryStageTargetAngle(roomKey, deltaDeg) {
+  var state = galleryStageRegistry[roomKey];
+  if (!state) return;
+  var half = state.arcDegrees / 2;
+  state.targetAngle = Math.max(-half, Math.min(half, state.targetAngle + deltaDeg));
+}
+
+function _updateGalleryStageCamera(roomKey, cam, deltaSec) {
+  if (!cam) return;
+  var state = galleryStageRegistry[roomKey];
+  if (!state) return;
+  state.currentAngle += (state.targetAngle - state.currentAngle) * Math.min(1, deltaSec * 3.0);
+  var rad = (state.currentAngle * Math.PI) / 180;
+  cam.position.set(Math.sin(rad) * state.radius, 1.2, Math.cos(rad) * state.radius);
+  if (window.THREE) cam.lookAt(new window.THREE.Vector3(0, 0.2, 0));
+}
+
+// ── Drag-to-orbit ─────────────────────────────────────────────────────────────
+
+function _bindGalleryStageDrag(roomKey, el) {
+  _unbindGalleryStageDrag();
+
+  function onDown(e) {
+    _galleryDragState.active = true;
+    _galleryDragState.lastX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    el.style.cursor = 'grabbing';
+  }
+  function onUp() {
+    _galleryDragState.active = false;
+    el.style.cursor = 'grab';
+  }
+  function onMove(e) {
+    if (!_galleryDragState.active) return;
+    var cx = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    _setGalleryStageTargetAngle(roomKey, -(cx - _galleryDragState.lastX) * 0.35);
+    _galleryDragState.lastX = cx;
+  }
+
+  el.addEventListener('pointerdown', onDown);
+  el.addEventListener('touchstart', onDown, { passive: true });
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('touchend', onUp);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('touchmove', onMove, { passive: true });
+
+  _galleryDragState.boundElement = el;
+  _galleryDragState._onDown = onDown;
+  _galleryDragState._onUp = onUp;
+  _galleryDragState._onMove = onMove;
+}
+
+function _unbindGalleryStageDrag() {
+  var el = _galleryDragState.boundElement;
+  if (!el) return;
+  el.removeEventListener('pointerdown', _galleryDragState._onDown);
+  el.removeEventListener('touchstart', _galleryDragState._onDown);
+  window.removeEventListener('pointerup', _galleryDragState._onUp);
+  window.removeEventListener('touchend', _galleryDragState._onUp);
+  window.removeEventListener('pointermove', _galleryDragState._onMove);
+  window.removeEventListener('touchmove', _galleryDragState._onMove);
+  if (el.style.cursor === 'grab' || el.style.cursor === 'grabbing') el.style.cursor = '';
+  _galleryDragState.boundElement = null;
+  _galleryDragState.active = false;
+}
+
+// ── Click-to-open panel ───────────────────────────────────────────────────────
+
+var _galleryRaycaster = null;
+var _galleryMouseVec = null;
+
+function _handleGalleryStageClick(evt) {
+  if (!currentRoomKey || !isGalleryStageActive(currentRoomKey) || !renderer || !camera) return;
+  if (!window.THREE) return;
+  if (!_galleryRaycaster) _galleryRaycaster = new window.THREE.Raycaster();
+  if (!_galleryMouseVec) _galleryMouseVec = new window.THREE.Vector2();
+
+  var state = galleryStageRegistry[currentRoomKey];
+  if (!state || !state.planes || !state.planes.length) return;
+
+  var rect = renderer.domElement.getBoundingClientRect();
+  _galleryMouseVec.x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+  _galleryMouseVec.y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+
+  _galleryRaycaster.setFromCamera(_galleryMouseVec, camera);
+  var hits = _galleryRaycaster.intersectObjects(state.planes, false);
+  if (!hits.length) return;
+
+  var ud = hits[0].object.userData || {};
+  if (ud.productHandle && typeof openProductPanel === 'function') openProductPanel(ud.productHandle);
+  else if (ud.collectionHandle && typeof openCollectionPanel === 'function') openCollectionPanel(ud.collectionHandle);
+}
+
+function _enableGalleryStageClickHandling() {
+  if (!renderer || !renderer.domElement) return;
+  renderer.domElement.addEventListener('click', function (evt) {
+    if (_galleryDragState.active) return; // ignore drag-end clicks
+    _handleGalleryStageClick(evt);
+  });
+}
+
+// ── Room entry / exit ─────────────────────────────────────────────────────────
+
+function _enterGalleryStageRoom(roomKey) {
+  if (!scene) return;
+  if (!isGalleryStageActive(roomKey)) {
+    buildGalleryStageForRoom(roomKey, scene, { radius: 7, arcDegrees: 140, verticalOffset: 0.3, tiltDegrees: -4 });
+  }
+  currentRoomSubMode = 'gallery_stage';
+  var el = renderer ? renderer.domElement : null;
+  if (el) {
+    el.style.cursor = 'grab';
+    _bindGalleryStageDrag(roomKey, el);
+  }
+}
+
+function _exitGalleryStageRoom() {
+  _unbindGalleryStageDrag();
+  currentRoomSubMode = null;
+  if (renderer && renderer.domElement) renderer.domElement.style.cursor = '';
 }
 
 function goToRoom(roomKey, initial) {
@@ -1049,6 +1355,9 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       hideLoader();
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
+
+      // Notify gallery-config consumers on initial room load too
+      _notifyGalleryConfigForRoom(roomKey);
       return;
     }
 
@@ -1086,6 +1395,11 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
         var tagline = document.getElementById('immersive-tagline');
         if (tagline) tagline.classList.remove('is-visible');
         trackImmersiveEvent('room_viewed', { room_key: roomKey });
+
+        // Notify any gallery-config consumers that a new room is active.
+        // immersive-webgl-gallery-config sections populate window.immersiveWebglGalleryConfigs
+        // keyed by room_key. Future gallery-stage plane builders read from this registry.
+        _notifyGalleryConfigForRoom(roomKey);
 
         if (reduceMotion) {
           uiLayer.style.transition = '';
@@ -1361,6 +1675,17 @@ function renderHotspots(roomKey) {
           details.target_editorial_room = hotspot.targetEditorialRoom;
           trackImmersiveEvent('hotspot_clicked', details);
           enterEditorialMode(hotspot.targetEditorialRoom, button);
+          return;
+        }
+        if (hotspot.targetStory) {
+          // Switch to featured_collections and scroll to the story rail.
+          // currentRoomSubMode is set to 'story' immediately; the story section's
+          // IntersectionObserver takes over once the section enters the viewport.
+          details.target_type = 'story';
+          trackImmersiveEvent('hotspot_clicked', details);
+          goToRoom('featured_collections');
+          currentRoomSubMode = 'story';
+          focusStoryRailSection();
           return;
         }
         if (hotspot.targetRoom) {
@@ -1859,70 +2184,6 @@ function closePanel(panel) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Open a glass panel with Section Rendering API content
-// ─────────────────────────────────────────────────────────────
-// Generic helper for opening product/collection/search panels.
-// Accepts fetchUrl, panelId, and renderCallback for panel-specific setup.
-function openGlassPanel(fetchUrl, panelId, renderCallback) {
-  var panel = document.getElementById(panelId);
-  if (!panel) return;
-
-  var triggerEl = document.activeElement;
-
-  // Open panel and set up focus trap
-  openPanel(panel, triggerEl);
-
-  // Fetch and render content
-  fetchWithCache(fetchUrl)
-    .then(function (html) {
-      if (!html) {
-        var errMsg = panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please try again.';
-        showErrorFeedback(panel, errMsg);
-        closePanel(panel);
-        return;
-      }
-
-      function render() {
-        var contentArea = panel.querySelector('.immersive-store__panel-content');
-        if (contentArea) {
-          contentArea.innerHTML = html;
-        } else {
-          panel.innerHTML = html;
-        }
-
-        // Call panel-specific setup
-        if (typeof renderCallback === 'function') {
-          renderCallback(panel);
-        }
-
-        // Setup click handlers for this panel
-        panel.onclick = function (event) {
-          if (event.target === panel) {
-            closePanel(panel);
-            return;
-          }
-          if (event.target.closest('.immersive-store__panel-close')) {
-            closePanel(panel);
-            return;
-          }
-          // Allow renderCallback to add custom handlers
-          if (renderCallback && renderCallback.onPanelClick) {
-            renderCallback.onPanelClick(event, panel);
-          }
-        };
-      }
-
-      transitionPanelContent(panel, render);
-    })
-    .catch(function (error) {
-      console.error('[Immersive] Panel fetch failed:', error);
-      var errMsg = panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please check your connection.';
-      showErrorFeedback(panel, errMsg);
-      closePanel(panel);
-    });
-}
-
-// ─────────────────────────────────────────────────────────────
 // Helper: Open glass panel using Section Rendering API
 // ─────────────────────────────────────────────────────────────
 // Uses fetchSectionHtml for consistent JSON-based Section Rendering.
@@ -2044,33 +2305,6 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Close an overlay with consistent behavior
-// ─────────────────────────────────────────────────────────────
-function closeOverlay(overlay, triggerEl) {
-  if (!overlay) return;
-
-  overlay.classList.remove('is-active');
-  overlay.setAttribute('aria-hidden', 'true');
-
-  // Remove event listeners
-  if (overlay._onEscape) {
-    overlay.removeEventListener('keydown', overlay._onEscape);
-    overlay._onEscape = null;
-  }
-  if (overlay._onClick) {
-    overlay.removeEventListener('click', overlay._onClick);
-    overlay._onClick = null;
-  }
-
-  // Restore focus to trigger
-  if (triggerEl && typeof triggerEl.focus === 'function') {
-    requestAnimationFrame(function () {
-      triggerEl.focus();
-    });
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
 // Helper: Open the glass panel for a product
 // ─────────────────────────────────────────────────────────────
 function openProductPanel(productHandle, collectionHandle) {
@@ -2084,8 +2318,6 @@ function openProductPanel(productHandle, collectionHandle) {
   if (!panel) return;
 
   var triggerEl = document.activeElement;
-
-  console.log('Fetching product:', productHandle, 'from collection:', collectionHandle);
 
   // Open panel and show skeleton immediately
   openPanel(panel, triggerEl);
@@ -2281,8 +2513,6 @@ function openCollectionPanel(collectionHandle) {
 
   var triggerEl = document.activeElement;
 
-  console.log('Fetching collection:', collectionHandle);
-
   // Open panel and show skeleton immediately
   openPanel(panel, triggerEl);
 
@@ -2397,8 +2627,6 @@ function openSearchPanel(encodedQuery) {
 
   var path = shopRoot + 'search';
   var extraParams = { q: query };
-
-  console.log('Searching for:', query);
 
   openGlassPanelWithSection(path, 'immersive-product-grid', extraParams, glassPanelId, function (panel) {
     // Panel-specific setup
@@ -3851,6 +4079,39 @@ function loadProductRecommendations(panel) {
     });
 }
 
+// ─────────────────────────────────────────────────────────────
+// Story-mode helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Smooth-scrolls the page to the immersive story rail section.
+ * Called when a targetStory hotspot is clicked.
+ */
+function focusStoryRailSection() {
+  var story = document.querySelector('[data-immersive-story-rail]');
+  if (!story) return;
+  try {
+    story.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  } catch (e) {
+    var rect = story.getBoundingClientRect();
+    window.scrollTo(0, rect.top + window.pageYOffset - 80);
+  }
+}
+
+/**
+ * Listens for the immersive:story-mode-change event emitted by
+ * sections/immersive-story-rail.liquid when the section enters/leaves
+ * the viewport. Only activates the story sub-mode when we're already
+ * in featured_collections — ignored in all other rooms.
+ */
+window.addEventListener('immersive:story-mode-change', function (event) {
+  var detail = event.detail || {};
+  var active = !!detail.active;
+  if (currentRoomKey === 'featured_collections') {
+    currentRoomSubMode = active ? 'story' : null;
+  }
+});
+
 function bindImmersiveNav() {
   // 1. Wire cart toggle to Dawn's cart-drawer web component
   var cartToggle = document.getElementById('cart-toggle');
@@ -4826,15 +5087,11 @@ function initImmersiveBottomNav() {
     });
   }
 
-  // 2D button mirrors data-mode-switch-2d
+  // 2D button — clear 3D preference so the banner doesn't immediately reappear,
+  // then let the href="/" handle navigation.
   if (twoDBtn) {
-    twoDBtn.addEventListener('click', function (e) {
-      var modeSwitchBtn = document.querySelector('[data-mode-switch-2d]');
-      if (modeSwitchBtn) {
-        e.preventDefault();
-        modeSwitchBtn.click();
-      }
-      // fallback: href="/" on the <a> handles navigation
+    twoDBtn.addEventListener('click', function () {
+      clearImmersivePreference();
     });
   }
 
@@ -6213,6 +6470,14 @@ function safeBindImmersiveInit() {
     currentRoomKey = null;
     transitioning = false;
 
+    // Clean up gallery-stage state
+    _exitGalleryStageRoom();
+    Object.keys(galleryStageRegistry).forEach(function (k) {
+      destroyGalleryStageForRoom(k, null); // scene already null, just dispose GPU resources
+    });
+    currentRoomSubMode = null;
+    _animate_lastTime = null;
+
     // Dispose all cached textures (LRU array)
     textureCache.forEach(function (entry) {
       try {
@@ -6247,6 +6512,7 @@ function safeBindImmersiveInit() {
     initImmersiveRoomRecommender();
     initImmersiveQuickAdd();
     initImmersiveLimitedTime();
+    _enableGalleryStageClickHandling(); // Gallery-stage click-to-open panel
 
     try {
       if (window.URLSearchParams) {

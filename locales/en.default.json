@@ -517,6 +517,34 @@
       }
     }
   },
+  "codex": {
+    "name": "3D Codex",
+    "instructions": "Drag or swipe to rotate the Codex.",
+    "settings": {
+      "display_header": "Content",
+      "heading": {
+        "label": "Heading"
+      },
+      "subheading": {
+        "label": "Subheading"
+      },
+      "behavior_header": "Behaviour",
+      "enable_auto_rotate": {
+        "label": "Enable auto-rotation"
+      },
+      "rotation_speed": {
+        "label": "Rotation speed",
+        "info": "Higher values spin faster. Set to 0 to disable auto-rotation."
+      },
+      "style_header": "Style",
+      "background_color": {
+        "label": "Background colour"
+      }
+    },
+    "presets": {
+      "default": "3D Codex"
+    }
+  },
   "immersive_canvas": {
     "close_panel": "Close panel"
   },
@@ -739,6 +767,30 @@
       "switch_to_3d_aria": "Switch to the immersive 3D store",
       "bridge_label_explore_3d": "Explore in 3D",
       "bridge_subtext": "See curated rooms and collections in an interactive space."
+    },
+    "immersive_webgl_gallery": {
+      "aria_section_label": "Immersive gallery configuration",
+      "empty_state": "Add gallery items to feed this room's immersive WebGL gallery."
+    },
+    "codex_collections_hub": {
+      "aria_section_label": "Codex collections",
+      "eyebrow": "Shahana Codex",
+      "default_heading": "The Collection Index",
+      "default_subheading": "Explore every designer house, occasion, and exclusive in the Shahana world.",
+      "empty_state": "Add Codex entries to this section to build your collection index.",
+      "filters_aria_label": "Filter Codex entries by theme",
+      "filter_all_label": "All",
+      "card_aria_label": "Explore {{ collection_title }} in the 3D Store",
+      "card_cta": "Explore in 3D"
+    },
+    "immersive_story": {
+      "aria_section_label": "Immersive story",
+      "hero_eyebrow_default": "Shahana story",
+      "hero_heading_default": "The world behind the Shahana collection",
+      "hero_subheading_default": "Step into an editorial journey through our designers, rituals, and exclusive pieces — before you enter the immersive store.",
+      "hero_image_alt": "Editorial hero image for the Shahana immersive story",
+      "marquee_label_default": "Craft · Heritage · Exclusives · Shahana Collection",
+      "empty_state": "Add story chapters to this section to build your immersive narrative."
     }
   },
   "localization": {

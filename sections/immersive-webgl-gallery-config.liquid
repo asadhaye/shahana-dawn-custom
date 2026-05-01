@@ -1,0 +1,207 @@
+{%- comment -%}
+  Immersive WebGL Gallery Config ("gallery-stage")
+
+  This section does NOT render its own canvas or visual UI.
+  It exposes a semantic list of gallery entries in the DOM so that
+  assets/immersive-store.js can:
+    - Query [data-immersive-webgl-gallery-config][data-room-key=...]
+    - Read each .immersive-webgl-gallery-config__item
+    - Load its <img> as a WebGL texture
+    - Use title / subtitle / product / collection metadata to drive interactions
+
+  This is intentionally "headless" and room-scoped.
+  Adapted for Shahana Collection — Pakistani luxury fashion.
+{%- endcomment -%}
+
+<section
+  id="immersive-webgl-gallery-config-{{ section.id }}"
+  class="immersive-webgl-gallery-config"
+  aria-label="{{ 'sections.immersive_webgl_gallery.aria_section_label' | t }}"
+  data-immersive-webgl-gallery-config
+  data-room-key="{{ section.settings.room_key }}"
+>
+  {%- assign has_items = false -%}
+
+  <ul class="immersive-webgl-gallery-config__list" role="list">
+    {%- for block in section.blocks -%}
+      {%- if block.type == 'gallery_item' -%}
+        {%- assign has_items = true -%}
+        {%- assign product_obj = block.settings.product -%}
+        {%- assign collection_obj = block.settings.collection -%}
+        {%- assign room_key = section.settings.room_key -%}
+
+        <li
+          class="immersive-webgl-gallery-config__item"
+          {{ block.shopify_attributes }}
+          data-gallery-index="{{ forloop.index0 }}"
+          data-gallery-room="{{ room_key }}"
+          {%- if block.settings.title != blank -%}
+            data-gallery-title="{{ block.settings.title | escape }}"
+          {%- endif -%}
+          {%- if block.settings.subtitle != blank -%}
+            data-gallery-subtitle="{{ block.settings.subtitle | escape }}"
+          {%- endif -%}
+          {%- if product_obj -%}
+            data-gallery-product-handle="{{ product_obj.handle }}"
+            data-gallery-product-id="{{ product_obj.id }}"
+          {%- endif -%}
+          {%- if collection_obj -%}
+            data-gallery-collection-handle="{{ collection_obj.handle }}"
+          {%- endif -%}
+        >
+          {%- if block.settings.image -%}
+            {%- assign gallery_img = block.settings.image | image_url: width: 1920, height: 1080 -%}
+            <img
+              class="immersive-webgl-gallery-config__img"
+              src="{{ gallery_img }}"
+              alt="{{ block.settings.title | default: block.settings.subtitle | escape }}"
+              width="1920"
+              height="1080"
+              loading="lazy"
+            >
+          {%- endif -%}
+        </li>
+      {%- endif -%}
+    {%- endfor -%}
+  </ul>
+
+  {%- unless has_items -%}
+    <p class="immersive-webgl-gallery-config__empty">
+      {{ 'sections.immersive_webgl_gallery.empty_state' | t }}
+    </p>
+  {%- endunless -%}
+</section>
+
+{% stylesheet %}
+  .immersive-webgl-gallery-config {
+    position: relative;
+    padding: 1rem 1.5rem;
+    color: inherit;
+  }
+
+  .immersive-webgl-gallery-config__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .immersive-webgl-gallery-config__item {
+    margin: 0 0 0.75rem;
+    padding: 0;
+  }
+
+  .immersive-webgl-gallery-config__img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .immersive-webgl-gallery-config__empty {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(232, 246, 255, 0.8);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-webgl-gallery-config {
+      scroll-behavior: auto;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  (function () {
+    // This section is primarily a data provider for assets/immersive-store.js.
+    // It exposes a global registry that the immersive engine reads on room entry.
+    var configs = document.querySelectorAll('[data-immersive-webgl-gallery-config]');
+    if (!configs.length) return;
+
+    if (!window.immersiveWebglGalleryConfigs) {
+      window.immersiveWebglGalleryConfigs = {};
+    }
+
+    configs.forEach(function (configEl) {
+      var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
+      var items = Array.prototype.slice
+        .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
+        .map(function (itemEl) {
+          var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
+          return {
+            index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
+            room: itemEl.dataset.galleryRoom || roomKey,
+            title: itemEl.dataset.galleryTitle || '',
+            subtitle: itemEl.dataset.gallerySubtitle || '',
+            productHandle: itemEl.dataset.galleryProductHandle || null,
+            productId: itemEl.dataset.galleryProductId || null,
+            collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
+            imageSrc: imgEl ? imgEl.src : null,
+            imageWidth: imgEl ? imgEl.width : null,
+            imageHeight: imgEl ? imgEl.height : null,
+          };
+        });
+
+      window.immersiveWebglGalleryConfigs[roomKey] = items;
+    });
+  })();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:sections.immersive_webgl_gallery.name",
+  "max_blocks": 24,
+  "settings": [
+    {
+      "type": "select",
+      "id": "room_key",
+      "label": "t:sections.immersive_webgl_gallery.room_key_label",
+      "options": [
+        { "value": "storefront", "label": "t:sections.immersive_webgl_gallery.room_storefront" },
+        { "value": "lounge", "label": "t:sections.immersive_webgl_gallery.room_lounge" },
+        { "value": "designer_houses", "label": "t:sections.immersive_webgl_gallery.room_designer_houses" },
+        { "value": "occasions", "label": "t:sections.immersive_webgl_gallery.room_occasions" },
+        { "value": "featured_collections", "label": "t:sections.immersive_webgl_gallery.room_featured_collections" },
+        { "value": "exclusives_story", "label": "t:sections.immersive_webgl_gallery.room_exclusives_story" }
+      ],
+      "default": "exclusives_story"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "gallery_item",
+      "name": "t:sections.immersive_webgl_gallery.item_name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_webgl_gallery.image_label"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "t:sections.immersive_webgl_gallery.title_label"
+        },
+        {
+          "type": "text",
+          "id": "subtitle",
+          "label": "t:sections.immersive_webgl_gallery.subtitle_label"
+        },
+        {
+          "type": "product",
+          "id": "product",
+          "label": "t:sections.immersive_webgl_gallery.product_label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_webgl_gallery.collection_label"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.immersive_webgl_gallery.preset_name"
+    }
+  ]
+}
+{% endschema %}

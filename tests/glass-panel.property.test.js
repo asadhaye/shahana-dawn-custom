@@ -1114,9 +1114,9 @@ describe('Property 10: Buy Now Button Attribute', () => {
 // ---------------------------------------------------------------------------
 // Property 11: Buy Now Button Styling
 //
-// "For any buy now button, the computed CSS SHALL include glassmorphism
-//  properties consistent with other UI elements (backdrop-filter and rgba
-//  background)."
+// "For any buy now button, the CSS SHALL declare a gold-family background
+//  consistent with brand identity (#d4af37 solid in detail view;
+//  rgba(212, 175, 55, ...) gold-tinted in card view)."
 //
 // Validates: Requirements 4.3
 // ---------------------------------------------------------------------------
@@ -1138,19 +1138,18 @@ describe('Property 11: Buy Now Button Styling', () => {
   /**
    * **Validates: Requirements 4.3**
    *
-   * Two add-to-cart button CSS rules must declare glassmorphism properties:
+   * Two add-to-cart button CSS rules must declare gold-family backgrounds
+   * consistent with brand identity:
    *   - .immersive-add-to-cart (product card view, immersive-product-card.liquid)
+   *     → gold-tinted rgba background (rgba(212, 175, 55, ...))
    *   - .glass-product-section__add-to-cart (product detail view, glass-product.liquid)
-   *
-   * Each rule must have:
-   *   - `backdrop-filter` containing a blur() value
-   *   - `background` using rgba() (transparent background)
+   *     → solid gold background (#d4af37)
    *
    * The CSS is static — product data does not change the stylesheet.
    * We use fast-check to confirm the invariant holds across 100 arbitrary inputs.
    */
   test(// Feature: immersive-store-glass-panel-improvements, Property 11: Buy Now Button Styling
-  'add-to-cart button CSS declares backdrop-filter blur and rgba background in both card and detail views for any product', () => {
+  'add-to-cart button CSS declares solid gold background (#d4af37) in both card and detail views for any product', () => {
     fc.assert(
       fc.property(
         fc.record({
@@ -1165,23 +1164,19 @@ describe('Property 11: Buy Now Button Styling', () => {
           const cardRules = parseCSSTopLevelRules(extractStylesheetCSS());
           const cardBtnRule = cardRules.get('.immersive-add-to-cart');
           if (!cardBtnRule) return false;
-
-          const cardBackdrop = cardBtnRule.get('backdrop-filter');
-          if (!cardBackdrop || !/blur\s*\(/.test(cardBackdrop)) return false;
-
           const cardBackground = cardBtnRule.get('background') || cardBtnRule.get('background-color') || '';
           if (!cardBackground) return false;
+          // Card uses gold-family rgba background (212, 175, 55 components = #d4af37 family)
+          const cardNorm = normaliseColor(cardBackground);
+          const cardIsGold = cardNorm === '#d4af37' || /212,\s*175,\s*55/.test(cardNorm) || /d4af37/.test(cardNorm);
+          if (!cardIsGold) return false;
 
           // --- Product detail add-to-cart button (.glass-product-section__add-to-cart) ---
           const detailRules = parseCSSTopLevelRules(extractGlassProductCSS());
           const detailBtnRule = detailRules.get('.glass-product-section__add-to-cart');
           if (!detailBtnRule) return false;
-
-          const detailBackdrop = detailBtnRule.get('backdrop-filter');
-          if (!detailBackdrop || !/blur\s*\(/.test(detailBackdrop)) return false;
-
           const detailBackground = detailBtnRule.get('background') || detailBtnRule.get('background-color') || '';
-          if (!detailBackground) return false;
+          if (normaliseColor(detailBackground) !== '#d4af37') return false;
 
           return true;
         },

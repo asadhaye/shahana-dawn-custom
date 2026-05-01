@@ -1,0 +1,79 @@
+{% doc %}
+  Renders a Codex collection card that bridges into the immersive store.
+  The card links to /pages/immersive with an open_collection query param.
+  On the immersive page, JavaScript intercepts the click and opens the
+  glass collection panel via the Section Rendering API.
+
+  WebGL-aware: exposes data-* attributes that the immersive engine can
+  read to build a 3D Codex wall (gallery-stage) in a dedicated room.
+
+  @param {collection} collection - The collection to represent in the Codex
+  @param {string} [theme] - Optional theme tag for filtering (e.g. "Bridal")
+  @param {string} [subtitle] - Optional subtitle override
+
+  @example
+  {% render 'codex-collection-card', collection: collections['suffuse'] %}
+{% enddoc %}
+
+{%- assign coll = collection | default: null -%}
+{%- if coll -%}
+  {%- assign bridge_url = '/pages/immersive?open_collection=' | append: coll.handle -%}
+  {%- assign img_src = null -%}
+  {%- if coll.image -%}
+    {%- assign img_src = coll.image | image_url: width: 960, height: 1200 -%}
+  {%- endif -%}
+
+  <article
+    class="codex-collection-card"
+    data-codex-collection-card
+    data-collection-handle="{{ coll.handle }}"
+    data-gallery-source="codex"
+    data-gallery-title="{{ coll.title | escape }}"
+    {%- if subtitle != blank -%}
+      data-gallery-subtitle="{{ subtitle | escape }}"
+    {%- endif -%}
+    {%- if img_src -%}
+      data-gallery-image-src="{{ img_src }}"
+    {%- endif -%}
+    {%- if theme != blank -%}
+      data-codex-theme="{{ theme | escape }}"
+    {%- endif -%}
+  >
+    <a
+      class="codex-collection-card__link"
+      href="{{ bridge_url }}"
+      data-immersive-bridge
+      aria-label="{{ 'sections.codex_collections_hub.card_aria_label' | t: collection_title: coll.title }}"
+    >
+      <div class="codex-collection-card__media">
+        {%- if img_src -%}
+          <img
+            class="codex-collection-card__img"
+            src="{{ img_src }}"
+            alt="{{ coll.title | escape }}"
+            width="960"
+            height="1200"
+            loading="lazy"
+          >
+        {%- else -%}
+          {{ 'collection-1' | placeholder_svg_tag: 'codex-collection-card__placeholder' }}
+        {%- endif -%}
+      </div>
+
+      <div class="codex-collection-card__body">
+        {%- if theme != blank -%}
+          <p class="codex-collection-card__theme">{{ theme | escape }}</p>
+        {%- endif -%}
+        <h3 class="codex-collection-card__title">{{ coll.title | escape }}</h3>
+        {%- if subtitle != blank -%}
+          <p class="codex-collection-card__subtitle">{{ subtitle | escape }}</p>
+        {%- elsif coll.description != blank -%}
+          <p class="codex-collection-card__subtitle">{{ coll.description | strip_html | truncate: 100 }}</p>
+        {%- endif -%}
+        <span class="codex-collection-card__cta" aria-hidden="true">
+          {{ 'sections.codex_collections_hub.card_cta' | t }}
+        </span>
+      </div>
+    </a>
+  </article>
+{%- endif -%}

@@ -1,0 +1,434 @@
+<section
+  id="codex-collections-grid-{{ section.id }}"
+  class="codex-collections-grid"
+  aria-label="{{ 'sections.codex_collections_hub.aria_section_label' | t }}"
+  data-codex-collections-grid
+>
+  <div class="codex-collections-grid__inner">
+    {%- if section.settings.show_header -%}
+      <header class="codex-collections-grid__header">
+        <p class="codex-collections-grid__eyebrow">
+          {{ 'sections.codex_collections_hub.eyebrow' | t }}
+        </p>
+        <h1 class="codex-collections-grid__title">
+          {%- if section.settings.heading != blank -%}
+            {{ section.settings.heading | escape }}
+          {%- else -%}
+            {{ 'sections.codex_collections_hub.default_heading' | t }}
+          {%- endif -%}
+        </h1>
+        <p class="codex-collections-grid__subtitle">
+          {%- if section.settings.subheading != blank -%}
+            {{ section.settings.subheading | escape }}
+          {%- else -%}
+            {{ 'sections.codex_collections_hub.default_subheading' | t }}
+          {%- endif -%}
+        </p>
+      </header>
+    {%- endif -%}
+
+    {%- if section.settings.enable_filtering -%}
+      {%- comment -%}Collect distinct theme values from blocks{%- endcomment -%}
+      {%- assign themes_raw = '' -%}
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'codex_entry' and block.settings.theme != blank -%}
+          {%- unless themes_raw contains block.settings.theme -%}
+            {%- assign themes_raw = themes_raw | append: block.settings.theme | append: '||' -%}
+          {%- endunless -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- assign themes = themes_raw | split: '||' -%}
+
+      {%- if themes.size > 0 -%}
+        <nav
+          class="codex-collections-grid__filters"
+          aria-label="{{ 'sections.codex_collections_hub.filters_aria_label' | t }}"
+        >
+          {%- assign all_label = section.settings.filter_all_label -%}
+          {%- if all_label == blank -%}
+            {%- assign all_label = 'sections.codex_collections_hub.filter_all_label' | t -%}
+          {%- endif -%}
+          <button
+            class="codex-collections-grid__filter-pill is-active"
+            data-codex-filter="all"
+            aria-pressed="true"
+          >
+            {{ all_label }}
+          </button>
+          {%- for theme in themes -%}
+            {%- if theme != blank -%}
+              <button
+                class="codex-collections-grid__filter-pill"
+                data-codex-filter="{{ theme | escape }}"
+                aria-pressed="false"
+              >
+                {{ theme | escape }}
+              </button>
+            {%- endif -%}
+          {%- endfor -%}
+        </nav>
+      {%- endif -%}
+    {%- endif -%}
+
+    {%- assign has_entries = false -%}
+    <ul class="codex-collections-grid__grid" role="list">
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'codex_entry' -%}
+          {%- assign has_entries = true -%}
+          {%- assign entry_collection = block.settings.collection -%}
+          {%- if entry_collection -%}
+            <li
+              class="codex-collections-grid__item"
+              {{ block.shopify_attributes }}
+              {%- if block.settings.theme != blank -%}
+                data-codex-theme="{{ block.settings.theme | escape }}"
+              {%- endif -%}
+            >
+              {%- render 'codex-collection-card',
+                collection: entry_collection,
+                theme: block.settings.theme,
+                subtitle: block.settings.subtitle
+              -%}
+            </li>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </ul>
+
+    {%- unless has_entries -%}
+      <p class="codex-collections-grid__empty">
+        {{ 'sections.codex_collections_hub.empty_state' | t }}
+      </p>
+    {%- endunless -%}
+  </div>
+</section>
+
+{% stylesheet %}
+  /* ── Codex Collections Grid ─────────────────────────────────────── */
+  .codex-collections-grid {
+    padding: 4rem 1.5rem;
+    background: #050509;
+    color: #f5f5f5;
+  }
+
+  .codex-collections-grid__inner {
+    max-width: 80rem;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .codex-collections-grid__header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .codex-collections-grid__eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #d4af37;
+    margin: 0 0 0.75rem;
+  }
+
+  .codex-collections-grid__title {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: 0 0 1rem;
+    color: #f5f5f5;
+  }
+
+  .codex-collections-grid__subtitle {
+    font-size: 1rem;
+    line-height: 1.6;
+    opacity: 0.7;
+    max-width: 44rem;
+    margin: 0 auto;
+  }
+
+  /* Filter pills */
+  .codex-collections-grid__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .codex-collections-grid__filter-pill {
+    padding: 0.4rem 1.1rem;
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(245, 245, 245, 0.7);
+    font-size: 0.8125rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .codex-collections-grid__filter-pill:hover,
+  .codex-collections-grid__filter-pill.is-active {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: #d4af37;
+    color: #d4af37;
+  }
+
+  .codex-collections-grid__filter-pill:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+  }
+
+  /* Grid */
+  .codex-collections-grid__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .codex-collections-grid__item {
+    transition: opacity 0.25s ease;
+  }
+
+  .codex-collections-grid__item[hidden] {
+    display: none;
+  }
+
+  /* Empty state */
+  .codex-collections-grid__empty {
+    text-align: center;
+    opacity: 0.5;
+    font-size: 0.9rem;
+    padding: 3rem 0;
+  }
+
+  /* ── Codex Collection Card ──────────────────────────────────────── */
+  .codex-collection-card {
+    position: relative;
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+    transition: border-color 0.25s ease, transform 0.25s ease;
+    cursor: pointer;
+  }
+
+  .codex-collection-card:hover {
+    border-color: rgba(212, 175, 55, 0.5);
+    transform: translateY(-3px);
+  }
+
+  .codex-collection-card__link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .codex-collection-card__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: #0a0a14;
+  }
+
+  .codex-collection-card__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+    filter: grayscale(20%);
+  }
+
+  .codex-collection-card:hover .codex-collection-card__img {
+    transform: scale(1.04);
+    filter: grayscale(0%);
+  }
+
+  .codex-collection-card__placeholder {
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0.3;
+  }
+
+  .codex-collection-card__body {
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+
+  .codex-collection-card__theme {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #d4af37;
+    margin: 0 0 0.4rem;
+  }
+
+  .codex-collection-card__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    margin: 0 0 0.5rem;
+    color: #f5f5f5;
+  }
+
+  .codex-collection-card__subtitle {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    opacity: 0.65;
+    margin: 0 0 1rem;
+  }
+
+  .codex-collection-card__cta {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #d4af37;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+    padding-bottom: 1px;
+    transition: border-color 0.2s ease;
+  }
+
+  .codex-collection-card:hover .codex-collection-card__cta {
+    border-color: #d4af37;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .codex-collection-card,
+    .codex-collection-card__img {
+      transition: none;
+      transform: none !important;
+    }
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .codex-collections-grid {
+      padding-inline: 1rem;
+    }
+
+    .codex-collections-grid__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .codex-collection-card__body {
+      padding: 0.875rem;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  (function () {
+    var section = document.getElementById('codex-collections-grid-{{ section.id }}');
+    if (!section) return;
+
+    var pills = section.querySelectorAll('[data-codex-filter]');
+    var items = section.querySelectorAll('[data-codex-theme]');
+
+    if (!pills.length) return;
+
+    pills.forEach(function (pill) {
+      pill.addEventListener('click', function () {
+        var filter = pill.getAttribute('data-codex-filter');
+
+        // Update pill active states
+        pills.forEach(function (p) {
+          var isActive = p === pill;
+          p.classList.toggle('is-active', isActive);
+          p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        // Show / hide items
+        items.forEach(function (item) {
+          var theme = item.getAttribute('data-codex-theme') || '';
+          var visible = filter === 'all' || theme === filter;
+          if (visible) {
+            item.removeAttribute('hidden');
+          } else {
+            item.setAttribute('hidden', '');
+          }
+        });
+      });
+    });
+  })();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:sections.codex_collections_hub.name",
+  "max_blocks": 24,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_header",
+      "label": "t:sections.codex_collections_hub.show_header_label",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:sections.codex_collections_hub.heading_label"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "t:sections.codex_collections_hub.subheading_label"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.codex_collections_hub.filtering_header"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_filtering",
+      "label": "t:sections.codex_collections_hub.enable_filtering_label",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "filter_all_label",
+      "label": "t:sections.codex_collections_hub.filter_all_label_schema"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "codex_entry",
+      "name": "t:sections.codex_collections_hub.block_name",
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.codex_collections_hub.block_collection_label"
+        },
+        {
+          "type": "text",
+          "id": "subtitle",
+          "label": "t:sections.codex_collections_hub.block_subtitle_label"
+        },
+        {
+          "type": "text",
+          "id": "theme",
+          "label": "t:sections.codex_collections_hub.block_theme_label",
+          "info": "t:sections.codex_collections_hub.block_theme_info"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.codex_collections_hub.preset_name",
+      "blocks": [
+        { "type": "codex_entry", "settings": { "theme": "Bridal" } },
+        { "type": "codex_entry", "settings": { "theme": "Eid" } },
+        { "type": "codex_entry", "settings": { "theme": "Pret" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

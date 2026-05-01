@@ -665,6 +665,61 @@
     }
   },
 
+  "immersive_webgl_gallery": {
+    "name": "Immersive WebGL gallery (config)",
+    "preset_name": "Immersive WebGL gallery (config)",
+    "room_key_label": "Room to target",
+    "room_storefront": "Storefront",
+    "room_lounge": "Lounge",
+    "room_designer_houses": "Designer houses",
+    "room_occasions": "Occasions",
+    "room_featured_collections": "Featured collections",
+    "room_exclusives_story": "Exclusives story",
+    "item_name": "Gallery item",
+    "image_label": "Gallery image",
+    "title_label": "Title",
+    "subtitle_label": "Subtitle",
+    "product_label": "Linked product (optional)",
+    "collection_label": "Linked collection (optional)"
+  },
+
+  "codex_collections_hub": {
+    "name": "Codex collections grid",
+    "preset_name": "Codex collections grid",
+    "show_header_label": "Show header",
+    "heading_label": "Heading",
+    "subheading_label": "Subheading",
+    "filtering_header": "Filtering",
+    "enable_filtering_label": "Enable theme filters",
+    "filter_all_label_schema": "Label for the \"All\" filter pill",
+    "block_name": "Codex entry",
+    "block_collection_label": "Collection",
+    "block_subtitle_label": "Subtitle (optional)",
+    "block_theme_label": "Theme tag",
+    "block_theme_info": "Used for filter pills, e.g. Bridal, Eid, Pret"
+  },
+
+  "immersive_story": {
+    "name": "Immersive story rail",
+    "preset_name": "Immersive story rail",
+    "show_hero_label": "Show hero",
+    "hero_image_label": "Hero image",
+    "hero_eyebrow_label": "Hero eyebrow",
+    "hero_heading_label": "Hero heading",
+    "hero_subheading_label": "Hero subheading",
+    "block_intro_name": "Intro chapter",
+    "block_journey_name": "Journey chapter",
+    "block_chapter_name": "Story chapter",
+    "block_marquee_name": "Marquee band",
+    "block_closing_name": "Closing chapter",
+    "block_eyebrow_label": "Eyebrow",
+    "block_heading_label": "Heading",
+    "block_body_label": "Body",
+    "block_marquee_text_label": "Marquee text",
+    "block_cta_label": "Button label",
+    "block_cta_url_label": "Button link"
+  },
+
   "immersive_editorial": {
     "name": "Immersive Editorial",
     "settings": {

@@ -1,106 +1,103 @@
-# Immersive Subsystem — Known Gaps & Technical Debt
+# Immersive Subsystem — Known Gaps & Implementation Status
 
-This document tracks identified dead code, unused sections, and technical debt in the immersive subsystem. Items are prioritized for future cleanup sprints.
-
----
-
-## 1. Dead JavaScript Functions
-
-These functions are defined but never called. Safe for removal.
-
-| Function | File | Line | Notes |
-|----------|------|------|-------|
-| `openGlassPanel(fetchUrl, panelId, renderCallback)` | `assets/immersive-store.js` | 1191 | Superseded by `openGlassPanelWithSection()` which uses Section Rendering API |
-| `closeOverlay(overlay, triggerEl)` | `assets/immersive-store.js` | 1374 | Never called; `exitEditorialMode()` has inline deactivation logic |
-| `getNormalizedHotspots(roomKey)` | `assets/immersive-store.js` | 148 | Never called; was intended for normalized hotspot handling |
-| `normalizeHotspot(raw, roomKey, index)` | `assets/immersive-store.js` | 120 | Only called by unused `getNormalizedHotspots()` |
+This document tracks what is built, what is missing, and what technical debt remains.
+For the full customer journey and architecture brief, see `context-for-shopify-dev-assistant.md`.
 
 ---
 
-## 2. Dead JavaScript Globals
+## 1. Feature Gaps (not yet implemented)
 
-These variables are declared but never read or written.
+These are missing sections/snippets/logic needed to complete the customer journey.
 
-| Variable | File | Line | Notes |
-|----------|------|------|-------|
-| `mouseMoveRafPending` | `assets/immersive-store.js` | 597 | Declared `false`, never used |
-| `textureWidth` | `assets/immersive-store.js` | 215 | Declared but never read |
+| Piece | File | Priority | Notes |
+|-------|------|----------|-------|
+| Codex typo index | `sections/codex-typo-index.liquid` | High | Big-type kinetic index; blocks: `typo_entry`; scroll x-offset; hover peek image; `data-immersive-bridge` |
+| Exclusives carousel | `sections/immersive-exclusive-carousel.liquid` | High | CSS 3D ring; DOM-only (no new WebGL); drag-to-rotate; click → `openProductPanel(handle)` |
+| Codex page template | `templates/page.codex.json` | Low | Optional; Codex sections can be added via theme editor to a standard page |
+| "Explore Codex" lounge hotspot | `STORE_ROOMS.lounge.hotspots` in `assets/immersive-store.js` | Medium | Add `{ targetCodex: true }`; ask whether it opens `/pages/codex` or a Codex section within `/pages/immersive` |
+| Codex → room deduction | `assets/immersive-store.js` | Medium | Map Codex theme → room key; `CODEX_THEME_TO_ROOM` lookup; call `goToRoom(roomKey)` before `openCollectionPanel(handle)` |
 
----
+### Suggested theme→room mapping (when implementing deduction logic)
 
-## 3. Unused Liquid Sections
+```javascript
+var CODEX_THEME_TO_ROOM = {
+  'Eid': 'occasions',
+  'Bridal': 'designer_houses',
+  'Heritage': 'designer_houses',
+  'Formals': 'occasions',
+  'Everyday': 'featured_collections',
+};
+// Fallback: 'lounge'
+```
 
-**None identified.** All immersive-related sections are actively used:
-
-| Section | Usage |
-|---------|-------|
-| `immersive-designer-grid.liquid` | Used by `loadTimelineCollection()` in `immersive-store.js` (line 2940) for editorial product grids |
-| `immersive-product-grid.liquid` | Used for search results (`openSearchPanel()` line 1552) and collection panels |
-| `glass-product-recommendations.liquid` | Used by `loadProductRecommendations()` in `immersive-store.js` (line 2829) for related products |
-
----
-
-## 4. Potentially Unused Snippets
-
-**None identified.** All immersive-related snippets are actively used:
-
-| Snippet | Usage |
-|---------|-------|
-| `immersive-product-card.liquid` | Used by `immersive-designer-grid.liquid`, `immersive-product-grid.liquid`, and `glass-panel.liquid` |
+Read theme from `data-codex-theme` attribute on the Codex card element, or from a metafield/tag on the collection.
 
 ---
 
-## 5. Cleanup Checklist
+## 2. Content Gaps (authoring tasks, not code)
 
-When ready to address technical debt, follow this order:
+These require uploading images or configuring settings in the theme editor — no code changes needed.
 
-### Phase 1: JavaScript Cleanup (Low Risk)
-- [ ] Remove `openGlassPanel()` function (line 1191)
-- [ ] Remove `closeOverlay()` function (line 1374)
-- [ ] Remove `getNormalizedHotspots()` function (line 148)
-- [ ] Remove `normalizeHotspot()` function (line 120)
-- [ ] Remove `mouseMoveRafPending` variable (line 597)
-- [ ] Remove `textureWidth` variable (line 215)
-- [ ] Run full test suite after each removal
-
-### Phase 2: Verification
-- [ ] Run `npm test` to ensure no regressions
-- [ ] Test immersive store manually in browser
-- [ ] Test collection panel opening
-- [ ] Test product panel opening
-- [ ] Test editorial overlay opening
+| Item | Location | Notes |
+|------|----------|-------|
+| `exclusives_story` room textures | `page.immersive.json` → `immersive_canvas` settings | Upload dedicated gallery interior image to Shopify Files; replace placeholder CDN URLs in `STORE_ROOMS.exclusives_story` |
+| Gallery-stage item images | `page.immersive.json` → `webgl_gallery_exclusives` blocks | All 5 blocks have no `image` field set |
+| Soraya editorial image | `page.immersive.json` → `editorial_designer_houses` → `designer_soraya` block | No image or logo set |
+| Saad Bin Shahzad editorial image | `page.immersive.json` → `editorial_designer_houses` → `designer_sbs` block | No image or logo set |
+| Occasions room images | `page.immersive.json` → `immersive_canvas` settings | No `occasions_base_image` or `occasions_depth_map` set; falls back to hardcoded CDN URLs in `STORE_ROOMS` |
+| Featured collections mobile depth map | `STORE_ROOMS.featured_collections.mobileDepthMapUrl` | Currently points to `brand.png` (a logo, not a depth map) — replace with a real depth map |
 
 ---
 
-## 6. What Was Already Fixed
+## 3. Dead JavaScript — Already Cleaned Up
 
-| Issue | Resolution | Date |
-|-------|------------|------|
-| Duplicate `enterEditorialMode()` definitions | Removed v1 (inline), kept v2 (helper-based) | 2026-04-13 |
-| Duplicate `exitEditorialMode()` definitions | Removed v1 (inline), kept v2 (helper-based) | 2026-04-13 |
-| Legacy `/pages/immersive-store` URL | Not found in codebase — already fixed | 2026-04-13 |
-| Legacy `?view=immersive` parameter | Not found in codebase — already fixed | 2026-04-13 |
-| Incorrect "unused sections" documentation | Corrected: all sections are actively used | 2026-04-13 |
+These were removed in the May 2026 cleanup session.
 
----
-
-## 7. Statistics
-
-| Category | Count |
-|----------|-------|
-| Dead JS functions | 4 |
-| Dead JS globals | 2 |
-| Unused sections | 0 |
-| Unused snippets | 0 |
-| Dead CSS selectors | 0 |
-| Legacy URLs remaining | 0 |
-| Commented-out blocks | 0 |
+| Item | Was at | Resolution |
+|------|--------|------------|
+| `openGlassPanel()` function | `assets/immersive-store.js` ~line 1191 | Removed — superseded by `openGlassPanelWithSection()` |
+| `closeOverlay()` function | `assets/immersive-store.js` ~line 1374 | Removed — `exitEditorialMode()` handles deactivation |
+| `getNormalizedHotspots()` function | `assets/immersive-store.js` ~line 148 | Removed — never called |
+| `normalizeHotspot()` function | `assets/immersive-store.js` ~line 120 | Removed — only called by `getNormalizedHotspots()` |
+| `mouseMoveRafPending` variable | `assets/immersive-store.js` ~line 597 | Removed — declared but never used |
+| `textureWidth` variable | `assets/immersive-store.js` ~line 215 | Removed — declared but never read |
+| 3 unguarded `console.log` calls | `assets/immersive-store.js` | Removed — were in `openProductPanel`, `openCollectionPanel`, `openSearchPanel` |
+| FPS counter logging every second | `assets/immersive-store.js` | Gated behind `window.__IMMERSIVE_DEV__` |
+| `transition_style` setting | `templates/page.immersive.json` | Removed — schema setting was orphaned |
+| `assets/immersive/` module files | 6 files across `core/`, `editorial/`, `panels/` | Deleted — modular refactor was reverted; monolith is the architecture |
 
 ---
 
-## 8. Notes
+## 4. URL / Legacy Bugs — Already Fixed
 
-- All items in this document were identified through static analysis and grep searches
-- Functions were verified as "never called" by searching the entire codebase
-- Sections were verified as "unused" by checking all JSON templates and Section Rendering API calls
-- Before removing any item, run the test suite and perform manual QA
+| Issue | Resolution |
+|-------|------------|
+| Preference banner linked to `/pages/immersive-store` | Fixed — now uses `/pages/immersive` |
+| Bridge CTAs used `?view=immersive` | Fixed — removed |
+| FAB 2D button didn't call `clearImmersivePreference()` | Fixed — now calls it directly |
+| Designer houses CDN URLs had malformed query strings (`=85` instead of `&quality=85`) | Fixed |
+| `featured_collections` mobile base used `picsum.photos` placeholder | Fixed — now uses real CDN URL at mobile width |
+
+---
+
+## 5. Test Suite Status
+
+| Suite | Status | Notes |
+|-------|--------|-------|
+| `tests/glass-panel.property.test.js` | ✅ 33 tests pass | Property 11 updated to assert `#d4af37` solid gold |
+| `tests/hero-parallax.test.js` | ✅ Rewritten | Static analysis against monolith; no longer requires deleted module file |
+| `tests/room-manager.test.js` | ✅ Rewritten | Static analysis + pure simulation; no longer requires deleted module file |
+| `tests/wishlist-panel.test.js` | ✅ Rewritten | Static analysis against monolith |
+| `tests/theme-editor-reinit.test.js` | ✅ Rewritten | Module directory emptiness check replaces deleted-file load |
+| `tests/module-api.test.js` | ✅ Rewritten | All function presence checks against monolith |
+| All other suites | ✅ Pass | 535 tests, 33 suites, 0 failures |
+
+---
+
+## 6. Architecture Decisions (do not reverse)
+
+- **Monolith**: `assets/immersive-store.js` is a single file. The modular split (`assets/immersive/`) was attempted and reverted. Do not re-introduce module files.
+- **No new shaders**: To change room mood, add a profile to `ROOM_VISUAL_PROFILES` and set `currentRoomSubMode`. Do not add new shader programs.
+- **DOM-first content**: All editorial content stays in Liquid/DOM. Three.js handles background, depth, and motion only.
+- **Bridge links are sacred**: All 2D→3D links must be real `<a href>` elements with `data-immersive-bridge`. No JS-only navigation.
+- **Room keys are canonical**: Do not invent new room keys without adding them to `STORE_ROOMS` and wiring a hotspot to reach them.

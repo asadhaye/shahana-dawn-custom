@@ -101,20 +101,40 @@ describe('Theme editor re-initialisation compatibility', function () {
     });
 
     test('no module file registers its own shopify:section:* listeners (Requirement 8.4)', function () {
-      var moduleFiles = [
-        path.join(__dirname, '..', 'assets', 'immersive', 'editorial', 'hero-parallax.js'),
-        path.join(__dirname, '..', 'assets', 'immersive', 'editorial', 'editorial-mode.js'),
-        path.join(__dirname, '..', 'assets', 'immersive', 'panels', 'glass-panel.js'),
-        path.join(__dirname, '..', 'assets', 'immersive', 'panels', 'product-panel.js'),
-        path.join(__dirname, '..', 'assets', 'immersive', 'panels', 'wishlist-panel.js'),
-        path.join(__dirname, '..', 'assets', 'immersive', 'core', 'room-manager.js'),
-      ];
-      moduleFiles.forEach(function (filePath) {
-        var moduleSource = fs.readFileSync(filePath, 'utf8');
-        expect(moduleSource).not.toContain("'shopify:section:load'");
-        expect(moduleSource).not.toContain("'shopify:section:unload'");
-        expect(moduleSource).not.toContain("'shopify:section:select'");
+      // The modular files (assets/immersive/**/*.js) were deleted as part of
+      // the monolith revert. Verify the module directories are empty — confirming
+      // no module file can register shopify:section:* listeners.
+      var moduleDir = path.join(__dirname, '..', 'assets', 'immersive');
+      var subDirs = ['core', 'editorial', 'panels'];
+
+      subDirs.forEach(function (subDir) {
+        var dirPath = path.join(moduleDir, subDir);
+        var files;
+        try {
+          files = fs.readdirSync(dirPath).filter(function (f) {
+            return f.endsWith('.js');
+          });
+        } catch (e) {
+          // Directory doesn't exist — that's fine, modules are deleted
+          files = [];
+        }
+        expect(files).toHaveLength(0);
       });
+    });
+  });
+
+  describe('wishlist-panel.js exposes window.initWishlist for safeBindImmersiveInit', function () {
+    test('immersive-store.js calls initWishlist() inside safeBindImmersiveInit', function () {
+      var block = extractBlock(source, 'function safeBindImmersiveInit');
+      expect(block).toContain('initWishlist()');
+    });
+
+    test('safeBindImmersiveInit is defined in immersive-store.js', function () {
+      expect(source).toContain('function safeBindImmersiveInit');
+    });
+
+    test('initWishlist is defined in immersive-store.js', function () {
+      expect(source).toContain('function initWishlist');
     });
   });
 });
@@ -202,72 +222,6 @@ describe('Theme editor re-initialisation — behavioural stubs', function () {
 
       simulateSectionUnloadHandler(section);
       expect(immersiveInitBound).toBe(true);
-    });
-  });
-
-  describe('wishlist-panel.js exposes window.initWishlist for safeBindImmersiveInit', function () {
-    beforeEach(function () {
-      jest.resetModules();
-      global.immersiveState = {
-        currentRoom: 'lounge',
-        mode: 'showroom',
-        editorialRoom: null,
-        lastHotspot: null,
-        guided: false,
-        navigationStack: [],
-      };
-      global.WISHLIST_KEY = 'immersive_wishlist';
-      global._wishlistItems = [];
-      global._wishlistProductCache = {};
-      global._wishlistPanelTrigger = null;
-      global.trackImmersiveEvent = jest.fn();
-      global.recordBrowsingSignal = jest.fn();
-      global.openDialogFocus = jest.fn();
-      global.closeDialogFocus = jest.fn();
-      global.getFocusableElements = jest.fn().mockReturnValue([]);
-      global.fetchWithCache = jest.fn().mockResolvedValue('<div></div>');
-      global.openProductPanel = jest.fn();
-      global.syncAllWishlistToggles = jest.fn();
-      global.cacheWishlistProduct = jest.fn();
-      global.renderSkeletonProduct = jest.fn().mockReturnValue('<div></div>');
-      global.renderEmptyState = jest.fn().mockReturnValue('<div></div>');
-      global.handleEmptyStateAction = jest.fn();
-      global.shopRoot = '/';
-      global.reduceMotion = false;
-      global.window.matchMedia = jest.fn().mockImplementation(function (query) {
-        return {
-          matches: false,
-          media: query,
-          onchange: null,
-          addListener: jest.fn(),
-          removeListener: jest.fn(),
-          addEventListener: jest.fn(),
-          removeEventListener: jest.fn(),
-          dispatchEvent: jest.fn(),
-        };
-      });
-      localStorage.clear();
-    });
-
-    test('window.initWishlist is a function after loading wishlist-panel.js', function () {
-      require('../assets/immersive/panels/wishlist-panel.js');
-      expect(typeof window.initWishlist).toBe('function');
-    });
-
-    test('window.initWishlist is the same function as ImmersiveWishlist.initWishlist', function () {
-      require('../assets/immersive/panels/wishlist-panel.js');
-      expect(window.initWishlist).toBe(window.ImmersiveWishlist.initWishlist);
-    });
-
-    test('window.initWishlist loads persisted wishlist items from localStorage', function () {
-      var stored = JSON.stringify([{ handle: 'silk-saree', discoveryRoom: 'lounge' }]);
-      localStorage.setItem('immersive_wishlist', stored);
-
-      require('../assets/immersive/panels/wishlist-panel.js');
-      window.initWishlist();
-
-      expect(global._wishlistItems.length).toBe(1);
-      expect(global._wishlistItems[0].handle).toBe('silk-saree');
     });
   });
 });
