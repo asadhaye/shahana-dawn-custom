@@ -1,0 +1,460 @@
+<section
+  id="codex-typo-index-{{ section.id }}"
+  class="codex-typo-index"
+  aria-label="{{ 'sections.codex_typo_index.aria_section_label' | t }}"
+  data-codex-typo-index
+  data-section-id="{{ section.id }}"
+>
+  <div class="codex-typo-index__inner">
+    {%- if section.settings.eyebrow != blank or section.settings.heading != blank -%}
+      <header class="codex-typo-index__header">
+        {%- if section.settings.eyebrow != blank -%}
+          <p class="codex-typo-index__eyebrow">{{ section.settings.eyebrow | escape }}</p>
+        {%- endif -%}
+        {%- if section.settings.heading != blank -%}
+          <h2 class="codex-typo-index__heading">{{ section.settings.heading | escape }}</h2>
+        {%- endif -%}
+      </header>
+    {%- endif -%}
+
+    {%- assign has_entries = false -%}
+    <ol class="codex-typo-index__list" role="list">
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'typo_entry' -%}
+          {%- assign entry_collection = block.settings.collection -%}
+          {%- if entry_collection -%}
+            {%- assign has_entries = true -%}
+            {%- assign bridge_url = '/pages/immersive?open_collection=' | append: entry_collection.handle -%}
+            {%- assign peek_img = null -%}
+            {%- if block.settings.image != blank -%}
+              {%- assign peek_img = block.settings.image | image_url: width: 600, height: 800 -%}
+            {%- elsif entry_collection.image -%}
+              {%- assign peek_img = entry_collection.image | image_url: width: 600, height: 800 -%}
+            {%- endif -%}
+
+            {%- assign aria_label_text = block.settings.label | default: entry_collection.title -%}
+
+            <li
+              class="codex-typo-index__row"
+              data-codex-typo-row
+              {%- if block.settings.theme != blank -%}
+                data-codex-theme="{{ block.settings.theme | escape }}"
+              {%- endif -%}
+              data-collection-handle="{{ entry_collection.handle | escape }}"
+              {{ block.shopify_attributes }}
+            >
+              <a
+                class="codex-typo-index__link"
+                href="{{ bridge_url }}"
+                data-immersive-bridge
+                aria-label="{{ 'sections.codex_typo_index.row_aria_label' | t: label: aria_label_text }}"
+              >
+                <span class="codex-typo-index__number" aria-hidden="true">
+                  {{- forloop.index | prepend: '0' | slice: -2, 2 -}}
+                </span>
+
+                <span class="codex-typo-index__label">
+                  {%- if block.settings.label != blank -%}
+                    {{ block.settings.label | escape }}
+                  {%- else -%}
+                    {{ entry_collection.title | escape }}
+                  {%- endif -%}
+                </span>
+
+                {%- if block.settings.sub_label != blank -%}
+                  <span class="codex-typo-index__sub-label" aria-hidden="true">
+                    {{ block.settings.sub_label | escape }}
+                  </span>
+                {%- endif -%}
+
+                {%- if block.settings.theme != blank -%}
+                  <span class="codex-typo-index__theme" aria-hidden="true">
+                    {{ block.settings.theme | escape }}
+                  </span>
+                {%- endif -%}
+
+                <span class="codex-typo-index__arrow" aria-hidden="true">→</span>
+
+                {%- if peek_img -%}
+                  <span class="codex-typo-index__peek" aria-hidden="true">
+                    <img
+                      class="codex-typo-index__peek-img"
+                      src="{{ peek_img }}"
+                      alt=""
+                      width="300"
+                      height="400"
+                      loading="lazy"
+                    >
+                  </span>
+                {%- endif -%}
+              </a>
+            </li>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </ol>
+
+    {%- unless has_entries -%}
+      <p class="codex-typo-index__empty">
+        {{ 'sections.codex_typo_index.empty_state' | t }}
+      </p>
+    {%- endunless -%}
+  </div>
+</section>
+
+{% stylesheet %}
+  .codex-typo-index {
+    padding: 5rem 1.5rem;
+    background: #050509;
+    color: #f5f5f5;
+    overflow: hidden;
+  }
+
+  .codex-typo-index__inner {
+    max-width: 80rem;
+    margin: 0 auto;
+  }
+
+  .codex-typo-index__header {
+    margin-bottom: 3rem;
+  }
+
+  .codex-typo-index__eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #d4af37;
+    margin: 0 0 0.75rem;
+  }
+
+  .codex-typo-index__heading {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    margin: 0;
+    color: #f5f5f5;
+  }
+
+  .codex-typo-index__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid rgba(212, 175, 55, 0.12);
+  }
+
+  .codex-typo-index__row {
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+    will-change: transform;
+  }
+
+  .codex-typo-index__link {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    text-decoration: none;
+    color: #f5f5f5;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+
+  .codex-typo-index__row:hover .codex-typo-index__link,
+  .codex-typo-index__row:focus-within .codex-typo-index__link {
+    color: #d4af37;
+  }
+
+  .codex-typo-index__link:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  .codex-typo-index__number {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: rgba(212, 175, 55, 0.5);
+    flex-shrink: 0;
+    width: 2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .codex-typo-index__label {
+    font-size: clamp(1.75rem, 4vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .codex-typo-index__sub-label {
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    color: rgba(245, 245, 245, 0.5);
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .codex-typo-index__theme {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(212, 175, 55, 0.6);
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .codex-typo-index__arrow {
+    font-size: 1.25rem;
+    color: rgba(212, 175, 55, 0.4);
+    flex-shrink: 0;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .codex-typo-index__row:hover .codex-typo-index__arrow {
+    transform: translateX(6px);
+    color: #d4af37;
+  }
+
+  .codex-typo-index__peek {
+    position: absolute;
+    right: 4rem;
+    top: 50%;
+    transform: translateY(-50%) scale(0.92);
+    width: 120px;
+    height: 160px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 10;
+    display: none;
+  }
+
+  .codex-typo-index__peek-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .codex-typo-index__empty {
+    text-align: center;
+    opacity: 0.5;
+    font-size: 0.9rem;
+    padding: 3rem 0;
+  }
+
+  @media (min-width: 768px) {
+    .codex-typo-index__sub-label,
+    .codex-typo-index__theme {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .codex-typo-index__peek {
+      display: block;
+    }
+
+    .codex-typo-index__row:hover .codex-typo-index__peek {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+
+    .codex-typo-index__link {
+      padding: 1.75rem 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .codex-typo-index__peek {
+      width: 160px;
+      height: 210px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .codex-typo-index__row,
+    .codex-typo-index__link,
+    .codex-typo-index__arrow,
+    .codex-typo-index__peek {
+      transition: none !important;
+      transform: none !important;
+    }
+
+    .codex-typo-index__row:hover .codex-typo-index__peek {
+      opacity: 1;
+      transform: translateY(-50%) !important;
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  (function () {
+    var roots = document.querySelectorAll('[data-codex-typo-index]');
+    if (!roots.length) return;
+
+    roots.forEach(function (section) {
+      var rows = section.querySelectorAll('[data-codex-typo-row]');
+      if (!rows.length) return;
+
+      var prefersReducedMotion = false;
+      try {
+        if (window.matchMedia) {
+          prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        }
+      } catch (e) {
+        prefersReducedMotion = false;
+      }
+
+      if (!prefersReducedMotion) {
+        var scrollTarget = 0;
+        var scrollCurrent = 0;
+        var rafId = null;
+
+        function onScroll() {
+          scrollTarget = window.scrollY || window.pageYOffset;
+          if (rafId === null) {
+            rafId = requestAnimationFrame(tick);
+          }
+        }
+
+        function tick() {
+          rafId = null;
+          scrollCurrent += (scrollTarget - scrollCurrent) * 0.08;
+
+          rows.forEach(function (row, i) {
+            var direction = i % 2 === 0 ? 1 : -1;
+            var offset = scrollCurrent * 0.012 * direction;
+            if (offset > 24) offset = 24;
+            if (offset < -24) offset = -24;
+            row.style.transform = 'translateX(' + offset + 'px)';
+          });
+
+          if (Math.abs(scrollTarget - scrollCurrent) > 0.5) {
+            rafId = requestAnimationFrame(tick);
+          }
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+      }
+
+      section.addEventListener('click', function (e) {
+        var link = e.target.closest('[data-immersive-bridge]');
+        if (!link) return;
+
+        var row = link.closest('[data-codex-typo-row]');
+        var handle = row && row.getAttribute('data-collection-handle');
+        if (!handle) return;
+
+        if (typeof window.openCollectionPanel === 'function') {
+          e.preventDefault();
+          window.openCollectionPanel(handle);
+        }
+      });
+
+      if (!window.codexCollectionThemes) {
+        window.codexCollectionThemes = {};
+      }
+      rows.forEach(function (row) {
+        var handle = row.getAttribute('data-collection-handle');
+        var theme = row.getAttribute('data-codex-theme');
+        if (handle && theme) {
+          window.codexCollectionThemes[handle] = theme;
+        }
+      });
+    });
+  })();
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:sections.codex_typo_index.name",
+  "max_blocks": 24,
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "t:sections.codex_typo_index.eyebrow_label"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:sections.codex_typo_index.heading_label"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "typo_entry",
+      "name": "t:sections.codex_typo_index.block_name",
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.codex_typo_index.block_collection_label"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "t:sections.codex_typo_index.block_label_label",
+          "info": "t:sections.codex_typo_index.block_label_info"
+        },
+        {
+          "type": "text",
+          "id": "sub_label",
+          "label": "t:sections.codex_typo_index.block_sub_label_label"
+        },
+        {
+          "type": "text",
+          "id": "theme",
+          "label": "t:sections.codex_typo_index.block_theme_label",
+          "info": "t:sections.codex_typo_index.block_theme_info"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.codex_typo_index.block_image_label"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.codex_typo_index.preset_name",
+      "blocks": [
+        {
+          "type": "typo_entry",
+          "settings": {
+            "label": "Suffuse by Sana Yasir",
+            "sub_label": "Designer House",
+            "theme": "Bridal"
+          }
+        },
+        {
+          "type": "typo_entry",
+          "settings": {
+            "label": "Soraya Eid Pret",
+            "sub_label": "Festive Collection",
+            "theme": "Eid"
+          }
+        },
+        {
+          "type": "typo_entry",
+          "settings": {
+            "label": "Saad Bin Shahzad",
+            "sub_label": "Heritage Formals",
+            "theme": "Heritage"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

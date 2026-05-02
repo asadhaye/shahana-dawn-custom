@@ -305,6 +305,114 @@
         "room_key": "exclusives_story"
       }
     },
+    "exclusive_carousel": {
+      "type": "immersive-exclusive-carousel",
+      "blocks": {},
+      "block_order": [],
+      "settings": {
+        "eyebrow": "Shahana Exclusives",
+        "heading": "The Exclusive Edit",
+        "subheading": "A curated ring of pieces from our most celebrated collections.",
+        "max_items": 8,
+        "ring_radius": 420,
+        "drag_friction": 88,
+        "snap_strength": 12
+      }
+    },
+    "codex_typo": {
+      "type": "codex-typo-index",
+      "blocks": {
+        "typo_suffuse": {
+          "type": "typo_entry",
+          "settings": {
+            "label": "Suffuse by Sana Yasir",
+            "sub_label": "Designer House",
+            "theme": "Bridal"
+          }
+        },
+        "typo_soraya": {
+          "type": "typo_entry",
+          "settings": {
+            "label": "Soraya Eid Pret",
+            "sub_label": "Festive Collection",
+            "theme": "Eid"
+          }
+        },
+        "typo_sbs": {
+          "type": "typo_entry",
+          "settings": {
+            "label": "Saad Bin Shahzad",
+            "sub_label": "Heritage Formals",
+            "theme": "Heritage"
+          }
+        }
+      },
+      "block_order": [
+        "typo_suffuse",
+        "typo_soraya",
+        "typo_sbs"
+      ],
+      "settings": {
+        "eyebrow": "Shahana Codex",
+        "heading": "The Collection Index"
+      }
+    },
+    "codex_grid": {
+      "type": "codex-collections-grid",
+      "blocks": {
+        "entry_suffuse": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "suffuse",
+            "subtitle": "Fluid silhouettes and hand-embroidered textiles.",
+            "theme": "Bridal"
+          }
+        },
+        "entry_soraya": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "lumene-festive-25-26-soraya-official",
+            "subtitle": "Heritage craft meets contemporary form.",
+            "theme": "Eid"
+          }
+        },
+        "entry_sbs": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "saad-bin-shahzad",
+            "subtitle": "Architectural precision and artisanal embroidery.",
+            "theme": "Heritage"
+          }
+        },
+        "entry_eid": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "eid-collection",
+            "subtitle": "Celebrate in colour.",
+            "theme": "Eid"
+          }
+        },
+        "entry_bridal": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "bridal-mehndi",
+            "subtitle": "From mehndi morning to walima evening.",
+            "theme": "Bridal"
+          }
+        }
+      },
+      "block_order": [
+        "entry_suffuse",
+        "entry_soraya",
+        "entry_sbs",
+        "entry_eid",
+        "entry_bridal"
+      ],
+      "settings": {
+        "show_header": false,
+        "enable_filtering": true
+      }
+    },
     "immersive_story": {
       "type": "immersive-story-rail",
       "blocks": {
@@ -362,6 +470,9 @@
     "editorial_occasions",
     "editorial_featured_collections",
     "immersive_story",
+    "exclusive_carousel",
+    "codex_typo",
+    "codex_grid",
     "webgl_gallery_exclusives"
   ]
 }

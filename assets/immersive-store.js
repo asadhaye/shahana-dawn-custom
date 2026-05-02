@@ -35,6 +35,7 @@ const STORE_ROOMS = {
       { x: 50, y: 35, label: 'Occasions', targetRoom: 'occasions', mobileX: 50, mobileY: 80 },
       { x: 80, y: 35, label: 'Featured Collections', targetRoom: 'featured_collections', mobileX: 85, mobileY: 80 },
       { x: 50, y: 65, label: 'The Shahana Story', targetStory: true, mobileX: 50, mobileY: 55 },
+      { x: 20, y: 65, label: 'Explore Codex', targetCodex: true, mobileX: 15, mobileY: 65 },
     ],
   },
 
@@ -83,7 +84,7 @@ const STORE_ROOMS = {
     depthMapUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
     mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=900&quality=60',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-depth-greyscale.png?v=1775054007&width=900&quality=60',
     hotspots: [
       { x: 25, y: 40, label: 'SS5 Summer Pret 26', targetCollection: 'summer-pret-26-eid-edit-saad-bin-shahzad' },
       { x: 50, y: 50, label: 'Suffuse Luxury Pret', targetCollection: 'luxury-pret-suffuse' },
@@ -96,16 +97,16 @@ const STORE_ROOMS = {
 
   exclusives_story: {
     // Gallery-stage room — curved wall of curated product images.
-    // Textures: upload a dark editorial interior to Shopify Files and replace these URLs.
-    // Until real assets are uploaded, falls back to featured_collections base as a placeholder.
+    // Placeholder: using lounge textures until real exclusives_story assets are uploaded.
+    // Replace via Theme Editor → Immersive Canvas → Exclusives Story settings.
     baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=1600&quality=75',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/Lounge-Base-flow.jpg?v=1775054500&width=1600&quality=75',
     mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=900&quality=75',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-base.jpg?v=1775054009&width=900&quality=75',
     depthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-depthmap-Grayscale.png?v=1775054498&width=1600&quality=60',
     mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=900&quality=60',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-depth-greyscale.png?v=1775054007&width=900&quality=60',
     hotspots: [{ x: 50, y: 90, label: 'Back to The Edit', targetRoom: 'featured_collections' }],
   },
 };
@@ -131,7 +132,9 @@ const STORE_ROOMS = {
     Object.keys(roomConfig).forEach(function (field) {
       // Only override if the value is non-null/non-empty
       if (roomConfig[field] !== null && roomConfig[field] !== '') {
-        console.log('[Immersive] Config override:', roomKey, field, JSON.stringify(roomConfig[field]).slice(0, 120));
+        if (window.__IMMERSIVE_DEV__) {
+          console.log('[Immersive] Config override:', roomKey, field, JSON.stringify(roomConfig[field]).slice(0, 120));
+        }
         STORE_ROOMS[roomKey][field] = roomConfig[field];
       }
     });
@@ -1492,7 +1495,9 @@ function loadRoomTextures(roomData, callback) {
       // Remove oldest if over limit
       if (textureCache.length > MAX_CACHED_TEXTURES) {
         var oldest = textureCache.pop();
-        console.log('[Immersive] Evicting oldest texture from cache:', oldest.key);
+        if (window.__IMMERSIVE_DEV__) {
+          console.log('[Immersive] Evicting oldest texture from cache:', oldest.key);
+        }
         try {
           if (oldest.base) oldest.base.dispose();
           if (oldest.depth) oldest.depth.dispose();
@@ -1663,7 +1668,9 @@ function renderHotspots(roomKey) {
 
       button.addEventListener('click', function () {
         var details = { room_key: roomKey, hotspot_label: hotspot.label };
-        console.log('[Immersive] Hotspot clicked:', JSON.stringify(hotspot));
+        if (window.__IMMERSIVE_DEV__) {
+          console.log('[Immersive] Hotspot clicked:', JSON.stringify(hotspot));
+        }
 
         // Exit guided mode on any manual hotspot interaction (unless this is the start trigger)
         if (!hotspot.startExperience) {
@@ -1686,6 +1693,16 @@ function renderHotspots(roomKey) {
           goToRoom('featured_collections');
           currentRoomSubMode = 'story';
           focusStoryRailSection();
+          return;
+        }
+        if (hotspot.targetCodex) {
+          // Switch to designer_houses (the conceptual "Codex hall") and
+          // scroll to the Codex section within /pages/immersive.
+          // Keeps the user in the immersive experience — no page navigation.
+          details.target_type = 'codex';
+          trackImmersiveEvent('hotspot_clicked', details);
+          goToRoom('designer_houses');
+          focusCodexSection();
           return;
         }
         if (hotspot.targetRoom) {
@@ -4080,6 +4097,39 @@ function loadProductRecommendations(panel) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Codex → room deduction
+// ─────────────────────────────────────────────────────────────
+// Maps Codex theme tags to the most appropriate immersive room.
+// Populated by codex-typo-index.liquid and codex-collections-grid.liquid
+// via window.codexCollectionThemes[handle] = theme.
+var CODEX_THEME_TO_ROOM = {
+  Bridal: 'designer_houses',
+  Heritage: 'designer_houses',
+  Formals: 'designer_houses',
+  Eid: 'occasions',
+  Mehndi: 'occasions',
+  Pret: 'occasions',
+  Everyday: 'featured_collections',
+  Exclusives: 'featured_collections',
+};
+
+/**
+ * Returns the best room key for a collection handle based on its Codex theme.
+ * Falls back to null (caller keeps current room) if no mapping is found.
+ *
+ * @param {string} collectionHandle
+ * @returns {string|null}
+ */
+function _getCodexRoomForCollection(collectionHandle) {
+  if (!collectionHandle) return null;
+  var themes = window.codexCollectionThemes;
+  if (!themes || typeof themes !== 'object') return null;
+  var theme = themes[collectionHandle];
+  if (!theme) return null;
+  return CODEX_THEME_TO_ROOM[theme] || null;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Story-mode helpers
 // ─────────────────────────────────────────────────────────────
 
@@ -4094,6 +4144,22 @@ function focusStoryRailSection() {
     story.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   } catch (e) {
     var rect = story.getBoundingClientRect();
+    window.scrollTo(0, rect.top + window.pageYOffset - 80);
+  }
+}
+
+/**
+ * Smooth-scrolls the page to the Codex section (typo index or grid).
+ * Called when a targetCodex hotspot is clicked.
+ */
+function focusCodexSection() {
+  var codex =
+    document.querySelector('[data-codex-typo-index]') || document.querySelector('[data-codex-collections-grid]');
+  if (!codex) return;
+  try {
+    codex.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  } catch (e) {
+    var rect = codex.getBoundingClientRect();
     window.scrollTo(0, rect.top + window.pageYOffset - 80);
   }
 }
@@ -6527,8 +6593,14 @@ function safeBindImmersiveInit() {
             openProductPanel(openProduct);
           }, 400);
         } else if (openCollection) {
-          // Priority 2: collection
+          // Priority 2: collection — with Codex room deduction
           setTimeout(function () {
+            // If the collection came from a Codex surface, deduce the correct room
+            // from the theme tag exposed by codex-typo-index / codex-collections-grid.
+            var deducedRoom = _getCodexRoomForCollection(openCollection);
+            if (deducedRoom && deducedRoom !== currentRoomKey) {
+              goToRoom(deducedRoom);
+            }
             openCollectionPanel(openCollection);
           }, 400);
         } else if (openSearch) {

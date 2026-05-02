@@ -3,6 +3,7 @@
   class="codex-collections-grid"
   aria-label="{{ 'sections.codex_collections_hub.aria_section_label' | t }}"
   data-codex-collections-grid
+  data-section-id="{{ section.id }}"
 >
   <div class="codex-collections-grid__inner">
     {%- if section.settings.show_header -%}
@@ -325,34 +326,34 @@
 
 {% javascript %}
   (function () {
-    var section = document.getElementById('codex-collections-grid-{{ section.id }}');
-    if (!section) return;
+    var roots = document.querySelectorAll('[data-codex-collections-grid]');
+    if (!roots.length) return;
 
-    var pills = section.querySelectorAll('[data-codex-filter]');
-    var items = section.querySelectorAll('[data-codex-theme]');
+    roots.forEach(function (section) {
+      var pills = section.querySelectorAll('[data-codex-filter]');
+      var items = section.querySelectorAll('[data-codex-theme]');
 
-    if (!pills.length) return;
+      if (!pills.length) return;
 
-    pills.forEach(function (pill) {
-      pill.addEventListener('click', function () {
-        var filter = pill.getAttribute('data-codex-filter');
+      pills.forEach(function (pill) {
+        pill.addEventListener('click', function () {
+          var filter = pill.getAttribute('data-codex-filter');
 
-        // Update pill active states
-        pills.forEach(function (p) {
-          var isActive = p === pill;
-          p.classList.toggle('is-active', isActive);
-          p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
+          pills.forEach(function (p) {
+            var isActive = p === pill;
+            p.classList.toggle('is-active', isActive);
+            p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+          });
 
-        // Show / hide items
-        items.forEach(function (item) {
-          var theme = item.getAttribute('data-codex-theme') || '';
-          var visible = filter === 'all' || theme === filter;
-          if (visible) {
-            item.removeAttribute('hidden');
-          } else {
-            item.setAttribute('hidden', '');
-          }
+          items.forEach(function (item) {
+            var theme = item.getAttribute('data-codex-theme') || '';
+            var visible = filter === 'all' || theme === filter;
+            if (visible) {
+              item.removeAttribute('hidden');
+            } else {
+              item.setAttribute('hidden', '');
+            }
+          });
         });
       });
     });

@@ -783,6 +783,19 @@
       "card_aria_label": "Explore {{ collection_title }} in the 3D Store",
       "card_cta": "Explore in 3D"
     },
+    "codex_typo_index": {
+      "aria_section_label": "Codex typographic index",
+      "row_aria_label": "Open {{ label }} in the immersive store",
+      "empty_state": "Add Codex entries to this typographic index by selecting collections you want to feature."
+    },
+    "immersive_exclusive_carousel": {
+      "aria_section_label": "Exclusive products carousel",
+      "stage_aria_label": "3D product ring — drag to rotate",
+      "card_aria_label": "View {{ title }} in the immersive store",
+      "sale_badge": "Sale",
+      "drag_hint": "Drag to explore",
+      "empty_state": "Select a collection to populate the exclusive carousel."
+    },
     "immersive_story": {
       "aria_section_label": "Immersive story",
       "hero_eyebrow_default": "Shahana story",

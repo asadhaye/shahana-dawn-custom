@@ -699,6 +699,37 @@
     "block_theme_info": "Used for filter pills, e.g. Bridal, Eid, Pret"
   },
 
+  "codex_typo_index": {
+    "name": "Codex typographic index",
+    "preset_name": "Codex typographic index",
+    "eyebrow_label": "Eyebrow",
+    "heading_label": "Heading",
+    "block_name": "Typo index entry",
+    "block_collection_label": "Collection",
+    "block_label_label": "Primary label",
+    "block_label_info": "Optional override for the collection title shown in the big type.",
+    "block_sub_label_label": "Secondary label",
+    "block_theme_label": "Theme or category",
+    "block_theme_info": "Optional label used for future filtering or room routing (for example: Eid, Bridal, Heritage).",
+    "block_image_label": "Peek image (desktop hover)"
+  },
+
+  "immersive_exclusive_carousel": {
+    "name": "Exclusive carousel",
+    "preset_name": "Exclusive carousel",
+    "eyebrow_label": "Eyebrow",
+    "heading_label": "Heading",
+    "subheading_label": "Subheading",
+    "collection_label": "Collection",
+    "max_items_label": "Max products",
+    "physics_header": "Ring physics",
+    "ring_radius_label": "Ring radius",
+    "drag_friction_label": "Drag friction",
+    "drag_friction_info": "Higher = slower coast after drag",
+    "snap_strength_label": "Snap strength",
+    "snap_strength_info": "Higher = snaps to nearest card faster"
+  },
+
   "immersive_story": {
     "name": "Immersive story rail",
     "preset_name": "Immersive story rail",
