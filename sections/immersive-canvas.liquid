@@ -35,10 +35,10 @@
     data-base-url="{{ base_url }}"
     data-depth-url="{{ depth_url }}"
     data-logo-url="{%- if section.settings.logo_image != blank -%}{{ section.settings.logo_image | image_url: width: 600 }}{%- else -%}{{ 'sc-logo-transparent-bg.png' | asset_url }}{%- endif -%}"
+    data-transition-style="{{ section.settings.transition_style | default: 'crossfade' | escape }}"
   >
     <canvas
       id="immersive-canvas"
-      aria-hidden="true"
     ></canvas>
     <div
       id="ui-layer"
@@ -148,6 +148,51 @@
           </span>
           <span class="immersive-fab__action-label">{{ 'sections.immersive_store.bottom_nav.cart' | t }}</span>
         </button>
+
+        <!-- Account -->
+        {%- if customer -%}
+          <a
+            href="{{ routes.account_url }}"
+            class="immersive-fab__action"
+            aria-label="{{ 'customer.account.title' | t }}"
+          >
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="immersive-fab__action-label">{{ 'customer.account.title' | t }}</span>
+          </a>
+        {%- else -%}
+          <a
+            href="{{ routes.account_login_url }}"
+            class="immersive-fab__action"
+            aria-label="{{ 'customer.log_in' | t }}"
+          >
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="immersive-fab__action-label">{{ 'customer.log_in' | t }}</span>
+          </a>
+        {%- endif -%}
 
         <!-- Classic Store -->
         <a
@@ -371,106 +416,111 @@
       {%- endif -%}
     </div>
 
-    <!-- Right: expanded search + account -->
-    <div class="immersive-header__right">
-      <div
-        class="immersive-search"
-        data-immersive-search
-        data-placeholder="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
-        data-msg-no-results="{{ 'sections.immersive_store.search.no_results' | t: term: '' | escape }}"
-        data-msg-no-results-hint="{{ 'sections.immersive_store.search.no_results_hint' | t | escape }}"
-        data-msg-unavailable="{{ 'sections.immersive_store.search.unavailable' | t | escape }}"
-        data-label-products="{{ 'sections.immersive_store.search.group_products' | t | escape }}"
-        data-label-collections="{{ 'sections.immersive_store.search.group_collections' | t | escape }}"
-        data-label-rooms="{{ 'sections.immersive_store.search.group_rooms' | t | escape }}"
-      >
-        <label for="immersive-search-input" class="visually-hidden">
-          {{- 'sections.immersive_store.search.placeholder' | t -}}
-        </label>
-        <div class="immersive-search__field">
-          <svg
-            class="immersive-search__icon"
-            aria-hidden="true"
-            focusable="false"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="search"
-            id="immersive-search-input"
-            class="immersive-search__input"
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="off"
-            spellcheck="false"
-            placeholder="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
-            aria-label="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
-            aria-autocomplete="list"
-            aria-controls="immersive-search-results"
-            aria-expanded="false"
-            role="combobox"
-          >
-          <kbd class="immersive-search__shortcut" aria-hidden="true">⌘K</kbd>
-        </div>
-        <div
-          id="immersive-search-results"
-          class="immersive-search__dropdown"
-          role="listbox"
+    <!-- Center: expanded search bar -->
+    <div
+      class="immersive-search"
+      data-immersive-search
+      data-placeholder="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
+      data-msg-no-results="{{ 'sections.immersive_store.search.no_results' | t: term: '' | escape }}"
+      data-msg-no-results-hint="{{ 'sections.immersive_store.search.no_results_hint' | t | escape }}"
+      data-msg-unavailable="{{ 'sections.immersive_store.search.unavailable' | t | escape }}"
+      data-label-products="{{ 'sections.immersive_store.search.group_products' | t | escape }}"
+      data-label-collections="{{ 'sections.immersive_store.search.group_collections' | t | escape }}"
+      data-label-rooms="{{ 'sections.immersive_store.search.group_rooms' | t | escape }}"
+    >
+      <label for="immersive-search-input" class="visually-hidden">
+        {{- 'sections.immersive_store.search.placeholder' | t -}}
+      </label>
+      <div class="immersive-search__field">
+        <svg
+          class="immersive-search__icon"
+          aria-hidden="true"
+          focusable="false"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="search"
+          id="immersive-search-input"
+          class="immersive-search__input"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
           aria-label="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
-          hidden
-        ></div>
+          aria-autocomplete="list"
+          aria-controls="immersive-search-results"
+          aria-expanded="false"
+          role="combobox"
+        >
+        <kbd class="immersive-search__shortcut" aria-hidden="true">⌘K</kbd>
       </div>
-      {%- if customer -%}
-        <a
-          href="{{ routes.account_url }}"
-          class="immersive-header__icon-btn"
-          aria-label="{{ 'customer.account.title' | t }}"
+      <div
+        id="immersive-search-results"
+        class="immersive-search__dropdown"
+        role="listbox"
+        aria-label="{{ 'sections.immersive_store.search.placeholder' | t | escape }}"
+        hidden
+      ></div>
+    </div>
+
+    <!-- Right: cart + back button -->
+    <div class="immersive-header__right">
+      <!-- Cart -->
+      <button
+        type="button"
+        class="immersive-header__icon-btn"
+        data-header-cart
+        aria-label="{{ 'sections.immersive_store.bottom_nav.cart' | t | escape }}"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </a>
-      {%- else -%}
-        <a
-          href="{{ routes.account_login_url }}"
-          class="immersive-header__icon-btn"
-          aria-label="{{ 'customer.log_in' | t }}"
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span class="immersive-header__cart-badge" data-header-cart-badge aria-hidden="true" hidden>0</span>
+      </button>
+
+      <!-- Back button (navigation history) -->
+      <button
+        type="button"
+        class="immersive-header__icon-btn immersive-back-btn"
+        data-immersive-back
+        aria-label="{{ 'sections.immersive_store.back_to_previous_room' | t }}"
+        hidden
+        disabled
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </a>
-      {%- endif -%}
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -486,6 +536,9 @@
     data-msg-load-product-error="{{ 'sections.immersive_store.error_load_product' | t | escape }}"
     data-msg-load-error="{{ 'sections.immersive_store.error_load_product' | t | escape }}"
     data-msg-error-add-to-cart="{{ 'sections.immersive_store.error_add_to_cart' | t | escape }}"
+    data-msg-add-to-cart="{{ 'sections.immersive_store.add_to_cart' | t | escape }}"
+    data-msg-sold-out="{{ 'sections.immersive_store.sold_out' | t | escape }}"
+    data-msg-adding="{{ 'sections.immersive_store.adding' | t | escape }}"
   >
     <header class="immersive-store__panel-header">
       <span class="immersive-store__panel-room-label" data-panel-room-label aria-hidden="true"></span>
@@ -827,6 +880,39 @@
     </div>
     <div id="immersive-editorial-overlay-content" class="immersive-editorial-overlay__content"></div>
   </div>
+
+  <!-- Cookie consent banner -->
+  <div
+    id="immersive-cookie-banner"
+    class="immersive-cookie-banner"
+    role="dialog"
+    aria-modal="false"
+    aria-label="{{ 'sections.immersive_store.cookie_banner.aria_label' | t }}"
+    hidden
+  >
+    <p class="immersive-cookie-banner__text">
+      {{ 'sections.immersive_store.cookie_banner.text' | t }}
+      <a href="/pages/privacy-policy" class="immersive-cookie-banner__learn-more">
+        {{- 'sections.immersive_store.cookie_banner.learn_more' | t -}}
+      </a>
+    </p>
+    <div class="immersive-cookie-banner__actions">
+      <button
+        type="button"
+        id="immersive-cookie-accept"
+        class="immersive-cookie-banner__btn immersive-cookie-banner__btn--accept"
+      >
+        {{ 'sections.immersive_store.cookie_banner.accept' | t }}
+      </button>
+      <button
+        type="button"
+        id="immersive-cookie-decline"
+        class="immersive-cookie-banner__btn immersive-cookie-banner__btn--decline"
+      >
+        {{ 'sections.immersive_store.cookie_banner.decline' | t }}
+      </button>
+    </div>
+  </div>
 </section>
 
 {% stylesheet %}
@@ -876,19 +962,20 @@
   }
 
   .immersive-store__canvas-wrapper {
-    position: fixed;
-    inset: 0;
+    position: sticky;
+    top: 0;
     width: 100%;
-    height: 100%;
+    height: 100vh;
     overflow: hidden;
     background: #000;
+    z-index: 2;
   }
 
   /* Keep immersive viewport below the fixed notification bar */
   body:has([data-immersive-notif-bar]) .immersive-store__canvas-wrapper,
   body.has-immersive-notif-bar .immersive-store__canvas-wrapper {
     top: var(--notif-height, 48px);
-    height: calc(100% - var(--notif-height, 48px));
+    height: calc(100vh - var(--notif-height, 48px));
   }
 
   #immersive-canvas {
@@ -1122,6 +1209,49 @@
     outline-offset: 2px;
   }
 
+  /* Back button — navigation history */
+  .immersive-back-btn {
+    opacity: 1;
+    transition: opacity 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+  }
+
+  .immersive-back-btn:hover:not(:disabled) {
+    color: #e8c84a;
+    background: rgba(212, 175, 55, 0.12);
+    transform: scale(1.05);
+  }
+
+  .immersive-back-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .immersive-back-btn[hidden] {
+    display: none;
+  }
+
+  .immersive-back-btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+  }
+
+  /* Mobile: smaller size for touch */
+  @media (max-width: 768px) {
+    .immersive-back-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0.4rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-back-btn {
+      transition: none;
+      transform: none !important;
+    }
+  }
+
   /* Menu hamburger icon — force gold always, override Dawn globals */
   .immersive-header .header__icon--menu,
   .immersive-header .header__icon--summary,
@@ -1166,40 +1296,6 @@
   }
   .immersive-header .menu-drawer-container[open] .icon-close {
     display: block;
-  }
-
-  /* 3D → 2D mode switch pill */
-  .immersive-header__mode-switch {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.4rem 0.85rem;
-    background: rgba(212, 175, 55, 0.12);
-    border: 1.5px solid rgba(212, 175, 55, 0.6);
-    border-radius: 999px;
-    color: #d4af37;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    text-decoration: none;
-    white-space: nowrap;
-    cursor: pointer;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    min-height: 36px;
-  }
-
-  .immersive-header__mode-switch:hover {
-    background: rgba(212, 175, 55, 0.22);
-    border-color: #d4af37;
-    box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
-  }
-
-  .immersive-header__mode-switch:focus-visible {
-    outline: 2px solid #d4af37;
-    outline-offset: 3px;
   }
 
   /* Cart badge */
@@ -2213,6 +2309,104 @@
     pointer-events: none;
     opacity: 0.65;
   }
+
+  /* ============================================================================
+   COOKIE CONSENT BANNER
+   ============================================================================ */
+  .immersive-cookie-banner {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9100;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1.5rem;
+    background: rgba(10, 15, 30, 0.97);
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    max-width: calc(100vw - 2rem);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    flex-wrap: wrap;
+  }
+
+  .immersive-cookie-banner[hidden] {
+    display: none;
+  }
+
+  .immersive-cookie-banner__text {
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .immersive-cookie-banner__learn-more {
+    color: #d4af37;
+    text-decoration: underline;
+    margin-left: 0.25rem;
+  }
+
+  .immersive-cookie-banner__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .immersive-cookie-banner__btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 4px;
+    border: 1px solid rgba(212, 175, 55, 0.6);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .immersive-cookie-banner__btn--accept {
+    background: rgba(212, 175, 55, 0.2);
+    color: #d4af37;
+  }
+
+  .immersive-cookie-banner__btn--accept:hover {
+    background: rgba(212, 175, 55, 0.35);
+    border-color: #d4af37;
+  }
+
+  .immersive-cookie-banner__btn--decline {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .immersive-cookie-banner__btn--decline:hover {
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .immersive-cookie-banner__btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 600px) {
+    .immersive-cookie-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      bottom: 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-cookie-banner__btn {
+      transition: none;
+    }
+  }
 {% endstylesheet %}
 
 {% schema %}
@@ -2545,6 +2739,24 @@
       "label": "FAB icon SVG",
       "default": "<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-size='22' font-weight='700' fill='#d4af37'>S</text></svg>",
       "info": "Paste custom SVG markup for the floating action button icon. The FAB provides quick access to wishlist, cart, and classic store. Default is the Shahana 'S' monogram."
+    },
+    {
+      "type": "header",
+      "content": "Room Transition"
+    },
+    {
+      "type": "select",
+      "id": "transition_style",
+      "label": "t:sections.immersive_store.settings.transition_style.label",
+      "options": [
+        { "value": "crossfade", "label": "t:sections.immersive_store.settings.transition_style.option_crossfade" },
+        {
+          "value": "pixel_dissolve",
+          "label": "t:sections.immersive_store.settings.transition_style.option_pixel_dissolve"
+        }
+      ],
+      "default": "crossfade",
+      "info": "t:sections.immersive_store.settings.transition_style.info"
     }
   ],
   "blocks": [

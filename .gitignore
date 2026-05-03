@@ -17,3 +17,6 @@ scripts/
 
 # Kiro/AI skill files at repo root
 skills/
+
+# Editor-local backup history
+.history/

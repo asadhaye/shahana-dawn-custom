@@ -1,0 +1,67 @@
+{%- liquid
+  assign bridge_label = 'sections.immersive_journey_bridges.switch_to_3d' | t
+  assign bridge_aria = 'sections.immersive_journey_bridges.switch_to_3d_aria' | t
+-%}
+<div class="immersive-homepage-bridge page-width">
+  {%- render 'immersive-bridge-btn',
+    bridge_url: '/pages/immersive',
+    bridge_label: bridge_label,
+    bridge_aria: bridge_aria,
+    bridge_class: 'homepage'
+  -%}
+</div>
+
+{% stylesheet %}
+  .immersive-homepage-bridge {
+    text-align: center;
+    padding: 1.75rem 1.5rem;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "3D Store Bridge",
+  "tag": "div",
+  "settings": [
+    {
+      "type": "header",
+      "content": "3D Store link"
+    },
+    {
+      "type": "paragraph",
+      "content": "Links visitors to the immersive 3D store from the homepage."
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:sections.all.colors.label",
+      "default": "scheme-1"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_top",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 60,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_bottom",
+      "default": 8
+    }
+  ],
+  "presets": [
+    {
+      "name": "3D Store Bridge"
+    }
+  ]
+}
+{% endschema %}

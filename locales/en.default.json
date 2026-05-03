@@ -391,6 +391,10 @@
     },
     "add_to_edit": "Add to my edit",
     "action_done": "Done",
+    "back_to_previous_room": "Back to previous room",
+    "add_to_cart": "Add to cart",
+    "sold_out": "Sold out",
+    "adding": "Adding...",
     "back_to_room": "← Back to {{ room_name }}",
     "welcome_toast": "You're in the 3D store — tap any hotspot to explore. Switch back anytime.",
     "based_on_saves": "Based on your saves",
@@ -431,7 +435,13 @@
       "sort_price_desc": "Price: High to Low",
       "sort_title_asc": "A–Z",
       "clear_all": "Clear all",
-      "currency_label": "PKR"
+      "currency_label": "PKR",
+      "active_filters": {
+        "label": "Active filters",
+        "clear_all": "Clear all",
+        "clear_all_aria": "Clear all filters",
+        "remove_filter_aria": "Remove {{filter}} filter"
+      }
     },
     "next_actions": {
       "continue_exploring": "Continue exploring {{room}}",
@@ -507,14 +517,6 @@
       "loading_collection": "Loading collection...",
       "loading_product": "Loading product...",
       "loading_room": "Loading room..."
-    },
-    "filters": {
-      "active_filters": {
-        "label": "Active filters",
-        "clear_all": "Clear all",
-        "clear_all_aria": "Clear all filters",
-        "remove_filter_aria": "Remove {{filter}} filter"
-      }
     }
   },
   "codex": {

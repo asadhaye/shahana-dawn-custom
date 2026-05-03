@@ -567,6 +567,16 @@
       "onboarding_show_once": {
         "label": "Show once per visitor",
         "info": "When enabled, the welcome screen only appears on the first visit. Disable to show it every time."
+      },
+      "transition_style": {
+        "label": "Transition style",
+        "option_crossfade": {
+          "label": "Crossfade"
+        },
+        "option_pixel_dissolve": {
+          "label": "Pixel dissolve"
+        },
+        "info": "Choose how room transitions animate."
       }
     },
     "presets": {
