@@ -1,0 +1,131 @@
+{% doc %}
+  Displays a size chart modal if the product's collection has a size chart image.
+  Checks all collections the product belongs to and displays the first one found.
+  @param {product} product - The product object
+  @param {string} [button_label] - Custom label for the size chart button
+  @param {string} [modal_id] - Unique ID for the modal
+@example
+{% render 'size-chart', product: product %}
+{% enddoc %}
+
+{%- if product == blank -%}
+  {%- return -%}
+{%- endif -%}
+
+{%- assign size_chart_image = nil -%}
+{%- assign size_chart_collection = nil -%}
+
+{%- for collection in product.collections -%}
+  {%- if collection.metafields.custom.size_chart_image != blank -%}
+    {%- assign size_chart_image = collection.metafields.custom.size_chart_image -%}
+    {%- assign size_chart_collection = collection.title -%}
+    {%- break -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{%- if size_chart_image == nil -%}
+  {%- return -%}
+{%- endif -%}
+
+{%- assign modal_id = modal_id | default: 'SizeChartModal' -%}
+{%- assign button_label = button_label | default: 'Size Guide' -%}
+
+<modal-opener
+  class="size-chart-modal__opener"
+  data-modal="#{{ modal_id }}"
+  {{ block.shopify_attributes | default: '' }}
+>
+  <button
+    class="size-chart-button link"
+    type="button"
+    aria-haspopup="dialog"
+  >
+    {{ button_label }}
+  </button>
+</modal-opener>
+
+<modal-dialog
+  id="{{ modal_id }}"
+  class="size-chart-modal"
+  {{ block.shopify_attributes | default: '' }}
+>
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="{{ modal_id }}-title"
+  >
+    <div class="size-chart-modal__content" tabindex="-1">
+      <button
+        class="size-chart-modal__close"
+        type="button"
+        aria-label="{{ 'accessibility.close' | t }}"
+      >
+        {% render 'icon-close' %}
+      </button>
+      {%- if size_chart_collection != nil -%}
+        <p class="size-chart-modal__collection">{{ size_chart_collection }}</p>
+      {%- endif -%}
+      <div class="size-chart-modal__image-wrapper">
+        <img
+          src="{{ size_chart_image | image_url: width: 1200 }}"
+          alt="{{ 'products.product.size_chart' | t }}"
+          width="{{ size_chart_image.width }}"
+          height="{{ size_chart_image.height }}"
+          loading="lazy"
+        >
+      </div>
+    </div>
+  </div>
+</modal-dialog>
+
+{% stylesheet %}
+.size-chart-modal__opener {
+  display: inline-block;
+}
+
+.size-chart-button {
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.size-chart-modal {
+  max-width: 90rem;
+}
+
+.size-chart-modal__content {
+  position: relative;
+  padding: 2rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--color-background);
+}
+
+.size-chart-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.size-chart-modal__collection {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-dark-grey);
+  margin-bottom: 1rem;
+}
+
+.size-chart-modal__image-wrapper {
+  text-align: center;
+}
+
+.size-chart-modal__image-wrapper img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+{% endstylesheet %}

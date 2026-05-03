@@ -738,7 +738,8 @@
       "cancel": "Cancel",
       "min_error": "This item has a minimum of {{ min }}",
       "max_error": "This item has a maximum of {{ max }}",
-      "step_error": "You can only add this item in increments of {{ step }}"
+      "step_error": "You can only add this item in increments of {{ step }}",
+      "size_chart": "Size Guide"
     },
     "immersive_journey_bridges": {
       "bridge_eyebrow": "Explore in 3D",

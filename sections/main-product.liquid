@@ -613,6 +613,12 @@
 
               {%- when 'variant_picker' -%}
                 {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
+              {%- when 'size_chart' -%}
+                {%- render 'size-chart',
+                  product: product,
+                  button_label: block.settings.button_label,
+                  modal_id: 'SizeChartModal-' | append: section.id
+                -%}
               {%- when 'buy_buttons' -%}
                 {%- render 'buy-buttons',
                   block: block,
@@ -1327,6 +1333,19 @@
           "id": "page",
           "type": "page",
           "label": "t:sections.main-product.blocks.popup.settings.page.label"
+        }
+      ]
+    },
+    {
+      "type": "size_chart",
+      "name": "t:sections.main-product.blocks.size_chart.name",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "button_label",
+          "default": "Size Guide",
+          "label": "t:sections.main-product.blocks.size_chart.settings.button_label.label"
         }
       ]
     },
