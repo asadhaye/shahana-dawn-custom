@@ -356,6 +356,21 @@
           });
         });
       });
+
+      // Click interception — open glass collection panel if available
+      section.addEventListener('click', function (e) {
+        var link = e.target.closest('[data-immersive-bridge]');
+        if (!link) return;
+
+        var card = link.closest('[data-codex-collection-card]');
+        var handle = card && card.getAttribute('data-collection-handle');
+        if (!handle) return;
+
+        if (typeof window.openCollectionPanel === 'function') {
+          e.preventDefault();
+          window.openCollectionPanel(handle);
+        }
+      });
     });
   })();
 {% endjavascript %}

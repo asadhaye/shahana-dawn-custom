@@ -912,6 +912,9 @@
         {{ 'sections.immersive_store.cookie_banner.decline' | t }}
       </button>
     </div>
+
+  <div class="immersive-scroll-hint" data-immersive-scroll-hint>
+    {{ 'sections.immersive_store.scroll_hint' | t }}
   </div>
 </section>
 
@@ -941,6 +944,24 @@
 
   .immersive-store__tagline.is-visible {
     opacity: 1;
+  }
+
+  .immersive-scroll-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%);
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.8);
+    color: rgba(232, 246, 255, 0.9);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.4s ease;
   }
 
   .immersive-store__tagline p {
@@ -2792,3 +2813,30 @@
   ]
 }
 {% endschema %}
+
+{% javascript %}
+(function() {
+  var hint = document.querySelector('[data-immersive-scroll-hint]');
+  if (!hint) return;
+
+  function dismissHint() {
+    hint.style.opacity = '0';
+    setTimeout(function() {
+      hint.remove();
+    }, 400);
+    window.removeEventListener('scroll', dismissHint, { passive: true });
+    window.removeEventListener('wheel', dismissHint, { passive: true });
+    window.removeEventListener('keydown', handleKey);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+      dismissHint();
+    }
+  }
+
+  window.addEventListener('scroll', dismissHint, { passive: true });
+  window.addEventListener('wheel', dismissHint, { passive: true });
+  window.addEventListener('keydown', handleKey);
+})();
+{% endjavascript %}

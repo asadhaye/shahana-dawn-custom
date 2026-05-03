@@ -417,6 +417,7 @@
           "settings": {
             "title": "Eid Gold Mirage",
             "subtitle": "Hand-embellished chiffon and organza",
+            "image": "shopify://shop_images/gallery-eid-gold-placeholder.jpg",
             "product": "",
             "collection": "eid-collection"
           }
@@ -426,6 +427,7 @@
           "settings": {
             "title": "Bridal Noir",
             "subtitle": "Midnight velvet with gold zardozi",
+            "image": "shopify://shop_images/gallery-bridal-noir-placeholder.jpg",
             "product": "",
             "collection": "bridal-mehndi"
           }
@@ -435,6 +437,7 @@
           "settings": {
             "title": "Suffuse Signature",
             "subtitle": "Fluid silk with hand-painted motifs",
+            "image": "shopify://shop_images/gallery-suffuse-signature-placeholder.jpg",
             "product": "",
             "collection": "suffuse"
           }
@@ -444,6 +447,7 @@
           "settings": {
             "title": "Soraya Lumene",
             "subtitle": "Festive pret in heritage weaves",
+            "image": "shopify://shop_images/gallery-soraya-lumene-placeholder.jpg",
             "product": "",
             "collection": "lumene-festive-25-26-soraya-official"
           }
@@ -453,6 +457,7 @@
           "settings": {
             "title": "SS5 Summer Edit",
             "subtitle": "Architectural cuts in lightweight lawn",
+            "image": "shopify://shop_images/gallery-ss5-summer-placeholder.jpg",
             "product": "",
             "collection": "summer-pret-26-eid-edit-saad-bin-shahzad"
           }
@@ -466,7 +471,7 @@
         "gallery_item_5"
       ],
       "settings": {
-        "room_key": "exclusives_story"
+        "room_key": "featured_collections"
       }
     }
   },

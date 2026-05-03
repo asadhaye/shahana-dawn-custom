@@ -325,6 +325,7 @@
     "heading": "Shahana Collection",
     "intro": "Step inside our immersive store and explore our latest collections.",
     "launch_button": "Enter the store",
+    "scroll_hint": "Scroll to continue the experience",
     "menu": {
       "dialog_title": "Navigation",
       "close": "Close menu",
@@ -563,7 +564,7 @@
   },
   "immersive": {
     "product_grid": {
-      "empty": "No products found",
+      "empty": "No products available in this designer yet.",
       "no_results_filtered": "No products match your filters. Try adjusting or clearing your filters.",
       "back_to_collection": "Back to collection"
     },

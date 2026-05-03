@@ -4,7 +4,7 @@
   DOM-only — no new WebGL canvas. Drag-to-rotate with pointer events.
   On click: calls openProductPanel(handle) if available (immersive store),
   otherwise falls back to the canonical product URL.
-  Associated room: featured_collections / exclusives_story.
+  Associated room: featured_collections.
 {%- endcomment -%}
 
 {%- liquid
@@ -19,11 +19,9 @@
 <section
   id="immersive-exclusive-carousel-{{ section.id }}"
   class="immersive-exclusive-carousel"
-  aria-label="{{ 'sections.immersive_exclusive_carousel.aria_section_label' | t }}"
+  aria-label="{{ 'sections.immersive_exclusives.aria_section_label' | t }}"
   data-immersive-exclusive-carousel
-  data-ring-radius="{{ section.settings.ring_radius | default: 420 }}"
-  data-drag-friction="{{ section.settings.drag_friction | default: 0.88 }}"
-  data-snap-strength="{{ section.settings.snap_strength | default: 0.12 }}"
+  data-section-id="{{ section.id }}"
 >
   <div class="immersive-exclusive-carousel__inner">
     {%- if section.settings.eyebrow != blank or section.settings.heading != blank -%}

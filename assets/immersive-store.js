@@ -34,6 +34,8 @@ const STORE_ROOMS = {
       { x: 20, y: 35, label: 'Designer Houses', targetRoom: 'designer_houses', mobileX: 15, mobileY: 80 },
       { x: 50, y: 35, label: 'Occasions', targetRoom: 'occasions', mobileX: 50, mobileY: 80 },
       { x: 80, y: 35, label: 'Featured Collections', targetRoom: 'featured_collections', mobileX: 85, mobileY: 80 },
+      { x: 40, y: 45, label: 'Story', targetRoom: 'featured_collections', targetStory: true, mobileX: 40, mobileY: 45 },
+      { x: 65, y: 55, label: 'Codex', targetCodex: true, mobileX: 65, mobileY: 50 },
     ],
   },
 
@@ -87,6 +89,175 @@ const STORE_ROOMS = {
     ],
   },
 };
+};
+
+var CODEX_THEME_TO_ROOM = {
+  Eid: 'occasions',
+  Bridal: 'designer_houses',
+  Heritage: 'designer_houses'
+};
+
+function getRoomForCollectionHandleFromCodex(handle) {
+  if (!handle || !window.codexCollectionThemes) return null;
+  var theme = window.codexCollectionThemes[handle];
+  if (!theme) return null;
+  var room = CODEX_THEME_TO_ROOM[theme];
+  if (!room || !STORE_ROOMS[room]) return null;
+  return room;
+}
+
+var ROOM_VISUAL_PROFILES = {
+  default: {
+    uAtmosphericMood: 0.25,
+    uScrollVignette: 0.1,
+    uScrollChroma: 0.05
+  },
+  featured_collections: {
+    uAtmosphericMood: 0.5,
+    uScrollVignette: 0.18,
+    uScrollChroma: 0.09
+  },
+  'featured_collections:story': {
+    uAtmosphericMood: 0.8,
+    uScrollVignette: 0.32,
+    uScrollChroma: 0.16
+  }
+};
+
+function getRoomVisualProfile(roomKey, mode) {
+  var key = mode ? roomKey + ':' + mode : roomKey;
+  var profile = ROOM_VISUAL_PROFILES[key] || ROOM_VISUAL_PROFILES[roomKey] || ROOM_VISUAL_PROFILES.default;
+  return profile || ROOM_VISUAL_PROFILES.default;
+}
+
+function applyRoomVisualProfile(roomKey, mode, deltaTimeSec) {
+  if (!uniforms) return;
+  var profile = getRoomVisualProfile(roomKey, mode);
+  var dt = typeof deltaTimeSec === 'number' ? deltaTimeSec : 0.016;
+  var speed = 2;
+
+  function lerp(current, target, dtLocal) {
+    return current + (target - current) * Math.min(1, dtLocal * speed);
+  }
+
+  if (uniforms.uAtmosphericMood && typeof uniforms.uAtmosphericMood.value === 'number') {
+    uniforms.uAtmosphericMood.value = lerp(uniforms.uAtmosphericMood.value, profile.uAtmosphericMood, dt);
+  }
+  if (uniforms.uScrollVignette && typeof uniforms.uScrollVignette.value === 'number') {
+    uniforms.uScrollVignette.value = lerp(uniforms.uScrollVignette.value, profile.uScrollVignette, dt);
+  }
+  if (uniforms.uScrollChroma && typeof uniforms.uScrollChroma.value === 'number') {
+    uniforms.uScrollChroma.value = lerp(uniforms.uScrollChroma.value, profile.uScrollChroma, dt);
+  }
+}
+
+function buildGalleryStageForRoom(roomKey, scene, options) {
+  var items = getGalleryStageConfig(roomKey);
+  if (!items.length) return null;
+  if (!window.THREE) return null;
+  var THREE = window.THREE;
+
+  options = options || {};
+  var radius = options.radius || 7;
+  var arcDegrees = options.arcDegrees || 140;
+  var verticalOffset = options.verticalOffset || 0.2;
+  var tiltDegrees = options.tiltDegrees || -4;
+
+  var group = new THREE.Group();
+  group.position.set(0, 0, 0);
+  var textureLoader = new THREE.TextureLoader();
+  var planes = [];
+  var textures = [];
+
+  var count = items.length;
+  var step = count > 1 ? arcDegrees / (count - 1) : 0;
+  var startAngle = -arcDegrees / 2;
+
+  items.forEach(function (item, index) {
+    if (!item.imageSrc) return;
+    var tex = textureLoader.load(item.imageSrc);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.anisotropy = 8;
+    textures.push(tex);
+
+    var aspect = (item.imageWidth && item.imageHeight) ? item.imageWidth / item.imageHeight : 16 / 9;
+    var h = 2.0;
+    var w = h * aspect;
+
+    var geom = new THREE.PlaneGeometry(w, h, 1, 1);
+    var mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      roughness: 0.85,
+      metalness: 0.15,
+      transparent: true,
+      opacity: 0.95
+    });
+
+    var mesh = new THREE.Mesh(geom, mat);
+    var angleDeg = startAngle + step * index;
+    var rad = angleDeg * Math.PI / 180;
+    var x = Math.sin(rad) * radius;
+    var z = Math.cos(rad) * radius * -1;
+
+    mesh.position.set(x, verticalOffset, z);
+    mesh.lookAt(new THREE.Vector3(0, verticalOffset, 0));
+    mesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+
+    mesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: item.index,
+      title: item.title || '',
+      productHandle: item.productHandle || null,
+      collectionHandle: item.collectionHandle || null
+    };
+
+    group.add(mesh);
+    planes.push(mesh);
+  });
+
+  scene.add(group);
+
+  galleryStageRegistry[roomKey] = {
+    group: group,
+    planes: planes,
+    textures: textures,
+    currentAngle: 0,
+    targetAngle: 0,
+    radius: radius
+  };
+
+  console.log('[Immersive] Gallery stage built for room:', roomKey, 'items:', items.length);
+  return galleryStageRegistry[roomKey];
+}
+
+var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function() {})();
+var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function() {})();
+
+function handleGalleryStageClick(event, camera, canvas) {
+  if (!currentRoomKey || !galleryStageRegistry[currentRoomKey]) return;
+  if (!window.THREE) return;
+
+  var state = galleryStageRegistry[currentRoomKey];
+  if (!state.planes || !state.planes.length) return;
+
+  var rect = canvas.getBoundingClientRect();
+  var x = (event.clientX - rect.left) / rect.width;
+  var y = (event.clientY - rect.top) / rect.height;
+  galleryMouse.x = x * 2 - 1;
+  galleryMouse.y = -(y * 2 - 1);
+
+  galleryRaycaster.setFromCamera(galleryMouse, camera);
+  var intersects = galleryRaycaster.intersectObjects(state.planes, true);
+  if (!intersects.length) return;
+  var mesh = intersects[0].object;
+  var data = mesh.userData || {};
+
+  if (data.productHandle && typeof window.openProductPanel === 'function') {
+    window.openProductPanel(data.productHandle);
+  } else if (data.collectionHandle && typeof window.openCollectionPanel === 'function') {
+    window.openCollectionPanel(data.collectionHandle);
+  }
+}
 
 // Merge theme-editor-configured room data (from section JSON block) into STORE_ROOMS
 (function mergeDynamicRoomConfig() {
@@ -137,15 +308,23 @@ function normalizeHotspot(raw, roomKey, index) {
   } else if (raw.targetEditorialRoom) {
     type = 'editorial';
     target = raw.targetEditorialRoom;
+  } else if (raw.targetCodex) {
+    type = 'codex';
+    target = null;
+  } else if (raw.targetStory) {
+    type = 'story';
+    target = raw.targetRoom || 'featured_collections';
   } else {
     type = 'unknown';
     target = null;
   }
   return {
-    id: raw.id || roomKey + '-' + (raw.targetRoom || raw.targetCollection || raw.targetEditorialRoom || index),
+    id: raw.id || roomKey + '-' + (raw.targetRoom || raw.targetCollection || raw.targetEditorialRoom || (raw.targetCodex ? 'codex' : (raw.targetStory ? 'story' : index))),
     type: type,
     target: target,
     label: raw.label || '',
+    targetCodex: raw.targetCodex || false,
+    targetStory: raw.targetStory || false,
     position: { x: raw.x, y: raw.y, z: raw.z },
     mobilePosition:
       typeof raw.mobileX === 'number' && typeof raw.mobileY === 'number' ? { x: raw.mobileX, y: raw.mobileY } : null,
@@ -169,6 +348,7 @@ let camera;
 let planeMesh;
 let uniforms;
 let currentRoomKey = null;
+let currentRoomSubMode = null;
 let transitioning = false;
 var currentImageAspect = 16 / 9; // updated when a texture loads
 
@@ -176,6 +356,14 @@ var currentImageAspect = 16 / 9; // updated when a texture loads
 // LRU cache: array of { key, base, depth } ordered by recency (most recent first)
 var textureCache = [];
 var MAX_CACHED_TEXTURES = 5; // Only keep most recently used 5 textures
+
+// Gallery stage registry
+var galleryStageRegistry = {};
+
+function getGalleryStageConfig(roomKey) {
+  if (!window.immersiveWebglGalleryConfigs) return [];
+  return window.immersiveWebglGalleryConfigs[roomKey] || [];
+}
 
 // Performance monitoring (dev only)
 var lastFrameTime = typeof performance !== 'undefined' ? performance.now() : 0;
@@ -440,6 +628,20 @@ function initBackButton() {
       // Navigate without adding to history
       goToRoom(previousRoom, false, true); // Add skipHistory flag
     }
+  });
+}
+
+function initStoryModeListener() {
+  window.addEventListener('immersive:story-mode-change', function(event) {
+    var detail = event && event.detail ? event.detail : {};
+    var active = !!detail.active;
+
+    if (currentRoomKey === 'featured_collections') {
+      currentRoomSubMode = active ? 'story' : null;
+    } else {
+      currentRoomSubMode = null;
+    }
+    console.log('[Immersive] Story mode:', currentRoomSubMode);
   });
 }
 
@@ -711,11 +913,17 @@ function initImmersiveScene() {
   handleResize();
   animate();
 
+  // Gallery stage click handler
+  var canvas = renderer.domElement;
+  canvas.addEventListener('click', function (event) {
+    handleGalleryStageClick(event, camera, canvas);
+  });
+
   // Always start at lounge on a fresh page load.
   // Only restore a non-lounge room if a panel was open (user was mid-browsing).
   var state = loadState();
   var hasOpenPanel = (state.panel === 'product' && state.product) || (state.panel === 'collection' && state.collection);
-  var startRoom = hasOpenPanel && state.room && STORE_ROOMS[state.room] ? state.room : 'lounge';
+  var startRoom = hasOpenPanel && state.room && STORE_ROOMS[state.room] ? state.room : 'storefront';
 
   if (!hasOpenPanel) clearState();
 
@@ -1038,6 +1246,13 @@ function animate() {
     uniforms.uAtmosphericMood.value = 0;
   }
 
+  // Apply room visual profile with lerp
+  var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  var lastNow = window._immersiveLastFrameTime || now;
+  var deltaSec = (now - lastNow) / 1000;
+  window._immersiveLastFrameTime = now;
+  applyRoomVisualProfile(currentRoomKey, currentRoomSubMode, deltaSec);
+
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
@@ -1136,6 +1351,30 @@ function goToRoom(roomKey, initial, skipHistory) {
   }
 }
 
+function focusCodexSection() {
+  var codex = document.querySelector('[data-codex-typo-index]') || document.querySelector('[data-codex-collections-grid]');
+  if (!codex) return;
+  try {
+    codex.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    var rect = codex.getBoundingClientRect();
+    var top = rect.top + window.pageYOffset - 80;
+    window.scrollTo(0, top);
+  }
+}
+
+function focusStoryRailSection() {
+  var story = document.querySelector('[data-immersive-story-rail]');
+  if (!story) return;
+  try {
+    story.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    var rect = story.getBoundingClientRect();
+    var top = rect.top + window.pageYOffset - 80;
+    window.scrollTo(0, top);
+  }
+}
+
 function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
   loadRoomTextures(roomData, function (baseTexture, depthTexture) {
     if (initial || currentRoomKey === null) {
@@ -1183,6 +1422,16 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
         uniforms.uDepth1.value = uniforms.uDepth2.value;
         uniforms.uTransitionProgress.value = 0;
         currentRoomKey = roomKey;
+
+        // Build gallery stage if config exists for this room
+        if (getGalleryStageConfig(roomKey).length) {
+          buildGalleryStageForRoom(roomKey, scene, {
+            radius: 7,
+            arcDegrees: 140,
+            verticalOffset: 0.3,
+            tiltDegrees: -4
+          });
+        }
 
         // Phase 3: Render new hotspots and badge, then fade-in UI layer
         renderHotspots(roomKey);
@@ -1476,6 +1725,22 @@ function renderHotspots(roomKey) {
             activateGuidedMode();
           }
           goToRoom(hotspot.targetRoom);
+        } else if (hotspot.targetStory) {
+          details.target_type = 'story';
+          details.target_room_key = hotspot.target || 'featured_collections';
+          trackImmersiveEvent('hotspot_clicked', details);
+          goToRoom(hotspot.target || 'featured_collections');
+          currentRoomSubMode = 'story';
+          setTimeout(function() {
+            focusStoryRailSection();
+          }, 300);
+        } else if (hotspot.targetCodex) {
+          details.target_type = 'codex';
+          trackImmersiveEvent('hotspot_clicked', details);
+          goToRoom('featured_collections');
+          setTimeout(function() {
+            focusCodexSection();
+          }, 300);
         } else if (hotspot.targetCollection) {
           details.target_type = 'collection';
           details.target_collection_handle = hotspot.targetCollection;
@@ -6570,6 +6835,7 @@ function safeBindImmersiveInit() {
     initTiltControlToggle(); // Tilt-control experiment (opt-in, mobile-only)
     initHotspotKeyboardNav(); // Keyboard navigation for hotspots
     initBackButton(); // Back button navigation history
+    initStoryModeListener(); // Story mode submode tracking
 
     // UX Enhancement modules
     initImmersiveSearch();
@@ -6590,6 +6856,28 @@ function safeBindImmersiveInit() {
         var openProduct = params.get('open_product');
         var openCollection = params.get('open_collection');
         var openSearch = params.get('open_search');
+        var openStory = params.get('open_story');
+        var openCodex = params.get('open_codex');
+
+        if (openStory === '1') {
+          goToRoom('featured_collections', true);
+          setTimeout(function () {
+            if (typeof focusStoryRailSection === 'function') {
+              focusStoryRailSection();
+            }
+          }, 400);
+          return;
+        }
+
+        if (openCodex === '1') {
+          goToRoom('featured_collections', true);
+          setTimeout(function () {
+            if (typeof focusCodexSection === 'function') {
+              focusCodexSection();
+            }
+          }, 400);
+          return;
+        }
 
         if (openProduct) {
           // Priority 1: product (existing behaviour)
@@ -6598,6 +6886,10 @@ function safeBindImmersiveInit() {
           }, 400);
         } else if (openCollection) {
           // Priority 2: collection
+          var targetRoom = getRoomForCollectionHandleFromCodex(openCollection);
+          if (targetRoom) {
+            goToRoom(targetRoom, true);
+          }
           setTimeout(function () {
             openCollectionPanel(openCollection);
           }, 400);
