@@ -9,23 +9,21 @@
 {% enddoc %}
 
 {%- if product == blank -%}
-  {%- return -%}
+  {%- capture output -%}{% endcapture -%}
+{%- else -%}
+  {%- assign size_chart_image = nil -%}
+  {%- assign size_chart_collection = nil -%}
+
+  {%- for collection in product.collections -%}
+    {%- if collection.metafields.custom.size_chart_image != blank -%}
+      {%- assign size_chart_image = collection.metafields.custom.size_chart_image -%}
+      {%- assign size_chart_collection = collection.title -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor -%}
 {%- endif -%}
 
-{%- assign size_chart_image = nil -%}
-{%- assign size_chart_collection = nil -%}
-
-{%- for collection in product.collections -%}
-  {%- if collection.metafields.custom.size_chart_image != blank -%}
-    {%- assign size_chart_image = collection.metafields.custom.size_chart_image -%}
-    {%- assign size_chart_collection = collection.title -%}
-    {%- break -%}
-  {%- endif -%}
-{%- endfor -%}
-
-{%- if size_chart_image == nil -%}
-  {%- return -%}
-{%- endif -%}
+{%- if size_chart_image -%}
 
 {%- assign modal_id = modal_id | default: 'SizeChartModal' -%}
 {%- assign button_label = button_label | default: 'Size Guide' -%}
@@ -77,6 +75,7 @@
     </div>
   </div>
 </modal-dialog>
+{%- endif -%}
 
 {% stylesheet %}
 .size-chart-modal__opener {

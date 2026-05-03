@@ -7,21 +7,18 @@
 {% render 'delivery-time', product: product %}
 {% enddoc %}
 
-{%- if product == blank -%}
-  {%- return -%}
-{%- endif -%}
-
 {%- assign delivery_time = nil -%}
-{%- for collection in product.collections -%}
-  {%- if collection.metafields.custom.lead_time != blank -%}
-    {%- assign delivery_time = collection.metafields.custom.lead_time -%}
-    {%- break -%}
-  {%- endif -%}
-{%- endfor -%}
 
-{%- if delivery_time == nil -%}
-  {%- return -%}
+{%- if product != blank -%}
+  {%- for collection in product.collections -%}
+    {%- if collection.metafields.custom.lead_time != blank -%}
+      {%- assign delivery_time = collection.metafields.custom.lead_time -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor -%}
 {%- endif -%}
+
+{%- if delivery_time -%}
 
 {%- assign prefix_text = prefix_text | default: 'Estimated delivery:' -%}
 
@@ -33,6 +30,7 @@
     {{ prefix_text }} {{ delivery_time }}
   </span>
 </div>
+{%- endif -%}
 
 {% stylesheet %}
 .delivery-time {
