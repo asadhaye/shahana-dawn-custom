@@ -12,12 +12,9 @@
 {%- endif -%}
 
 {%- assign delivery_time = nil -%}
-{%- assign delivery_collection = nil -%}
-
 {%- for collection in product.collections -%}
   {%- if collection.metafields.custom.lead_time != blank -%}
     {%- assign delivery_time = collection.metafields.custom.lead_time -%}
-    {%- assign delivery_collection = collection.title -%}
     {%- break -%}
   {%- endif -%}
 {%- endfor -%}

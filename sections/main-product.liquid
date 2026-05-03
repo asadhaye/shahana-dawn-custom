@@ -619,6 +619,8 @@
                   button_label: block.settings.button_label,
                   modal_id: 'SizeChartModal-' | append: section.id
                 -%}
+              {%- when 'delivery_time' -%}
+                {%- render 'delivery-time', product: product -%}
               {%- when 'buy_buttons' -%}
                 {%- render 'buy-buttons',
                   block: block,
@@ -1348,6 +1350,11 @@
           "label": "t:sections.main-product.blocks.size_chart.settings.button_label.label"
         }
       ]
+    },
+    {
+      "type": "delivery_time",
+      "name": "t:sections.main-product.blocks.delivery_time.name",
+      "limit": 1
     },
     {
       "type": "rating",
