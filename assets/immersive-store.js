@@ -89,7 +89,6 @@ const STORE_ROOMS = {
     ],
   },
 };
-};
 
 var CODEX_THEME_TO_ROOM = {
   Eid: 'occasions',
@@ -6913,12 +6912,19 @@ function safeBindImmersiveInit() {
  * Idle-based initialization wrapper.
  * Defers immersive initialization to reduce main-thread load at initial paint.
  * Uses requestIdleCallback with a 1s timeout fallback, or setTimeout for unsupported browsers.
+ * IMPORTANT: Waits for Three.js to be available before initializing.
  */
 function scheduleImmersiveInit() {
   if (typeof window === 'undefined') return;
 
   function run() {
     try {
+      // Wait for Three.js to be available
+      if (typeof window.THREE === 'undefined') {
+        console.log('[Immersive] Waiting for Three.js to load...');
+        setTimeout(run, 100); // Retry after 100ms
+        return;
+      }
       safeBindImmersiveInit();
     } catch (e) {
       console.error('[Immersive] Init failed:', e);
