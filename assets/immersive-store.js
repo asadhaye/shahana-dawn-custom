@@ -625,11 +625,11 @@ var WISHLIST_KEY = 'immersive_wishlist';
 var PREFERRED_MODE_KEY = 'immersive_preferred_mode';
 var NAVIGATION_HISTORY_KEY = 'immersive_nav_history';
 
-var _wishlistItems = [];
-var _wishlistProductCache = {};
-var _wishlistPanelTrigger = null;
-var _activeHotspots = []; // To track hotspot proximity scaling
-var _navigationHistory = []; // Navigation history stack for back button
+var wishlistItems = [];
+var wishlistProductCache = {};
+var wishlistPanelTrigger = null;
+var activeHotspots = []; // To track hotspot proximity scaling
+var navigationHistory = []; // Navigation history stack for back button
 
 function saveState(patch) {
   try {
