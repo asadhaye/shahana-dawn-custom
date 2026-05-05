@@ -129,6 +129,7 @@
       "sku": "SKU",
       "on_sale": "Sale",
       "product_variants": "Product variants",
+      "size_chart": "Size chart",
       "media": {
         "gallery_viewer": "Gallery Viewer",
         "load_image": "Load image {{ index }} in gallery view",
@@ -690,7 +691,15 @@
     },
     "featured_collection": {
       "view_all": "View all",
-      "view_all_label": "View all products in the {{ collection_name }} collection"
+      "view_all_label": "View all products in the {{ collection_name }} collection",
+      "sale_badge": "On sale",
+      "sale": "Sale",
+      "price_label": "Product price",
+      "add_to_cart": "Add to cart",
+      "adding": "Adding…",
+      "added": "Added",
+      "sold_out": "Sold out",
+      "no_collection": "Select a collection to show products."
     },
     "collection_list": {
       "view_all": "View all"

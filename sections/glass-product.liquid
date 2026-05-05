@@ -375,23 +375,10 @@
           </span>
         </button>
 
-        {%- if section.settings.show_delivery_estimate -%}
-          <div class="glass-product-section__delivery">
-            <svg
-              style="height:18px;float:left;margin-right:8px;margin-top:1px;flex-shrink:0;"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M20 6h-2V4c0-.55-.45-1-1-1s-1 .45-1 1v2H8V4c0-.55-.45-1-1-1s-1 .45-1 1v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 14H4V10h16v10z"/>
-            </svg>
-            <span
-              data-delivery-template="{{ 'sections.immersive.product_panel.delivery_estimate' | t: from: '[[from]]', to: '[[to]]' | escape }}"
-              ><span class="delivery-from">…</span> – <span class="delivery-to">…</span></span
-            >
-          </div>
-        {%- endif -%}
+        {%- for block in section.blocks -%}
+          {%- when 'delivery_time' -%}
+            {%- render 'delivery-time', product: panel_product -%}
+        {%- endfor -%}
 
         <div class="glass-product-section__share">
           {% if section.settings.show_share_buttons %}
@@ -505,57 +492,15 @@
             </div>
           </details>
 
-          {%- comment -%} Size Chart {%- endcomment -%}
-          <details class="glass-product-section__collapsible">
-            <summary class="glass-product-section__collapsible-title">
-              <span>{{ 'sections.immersive.product_panel.size_heading' | t }}</span>
-              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </summary>
-            <div class="glass-product-section__collapsible-content">
-              {% if panel_product.metafields.custom.size_chart %}
-                {{ panel_product.metafields.custom.size_chart }}
-              {% else %}
-                <table class="glass-product-section__size-table">
-                  <thead>
-                    <tr>
-                      <th>{{ 'sections.immersive.product_panel.size_table.size' | t }}</th>
-                      <th>{{ 'sections.immersive.product_panel.size_table.bust' | t }}</th>
-                      <th>{{ 'sections.immersive.product_panel.size_table.waist' | t }}</th>
-                      <th>{{ 'sections.immersive.product_panel.size_table.hip' | t }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>S</td>
-                      <td>34-36"</td>
-                      <td>26-28"</td>
-                      <td>36-38"</td>
-                    </tr>
-                    <tr>
-                      <td>M</td>
-                      <td>38-40"</td>
-                      <td>30-32"</td>
-                      <td>40-42"</td>
-                    </tr>
-                    <tr>
-                      <td>L</td>
-                      <td>42-44"</td>
-                      <td>34-36"</td>
-                      <td>44-46"</td>
-                    </tr>
-                    <tr>
-                      <td>XL</td>
-                      <td>46-48"</td>
-                      <td>38-40"</td>
-                      <td>48-50"</td>
-                    </tr>
-                  </tbody>
-                </table>
-              {% endif %}
-            </div>
-          </details>
+          {%- for block in section.blocks -%}
+            {%- when 'size_chart' -%}
+              {%- render 'size-chart',
+                product: panel_product,
+                button_label: block.settings.button_label,
+                modal_id: 'SizeChartModal-' | append: section.id,
+                block: block
+              -%}
+          {%- endfor -%}
 
           {%- comment -%} Disclaimer {%- endcomment -%}
           <details class="glass-product-section__collapsible">
@@ -1526,12 +1471,6 @@
       "default": true
     },
     {
-      "type": "checkbox",
-      "id": "show_delivery_estimate",
-      "label": "t:sections.glass_product.settings.show_delivery_estimate.label",
-      "default": true
-    },
-    {
       "type": "header",
       "content": "t:sections.glass_product.settings.header_related.content"
     },
@@ -1559,6 +1498,24 @@
       "id": "enable_virtual_tryon",
       "label": "t:sections.glass_product.settings.enable_virtual_tryon.label",
       "default": true
+    }
+  ],
+  "blocks": [
+    {
+      "type": "size_chart",
+      "name": "t:sections.main-product.blocks.size_chart.name",
+      "settings": [
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "t:sections.main-product.blocks.size_chart.settings.button_label.label",
+          "default": "Size Guide"
+        }
+      ]
+    },
+    {
+      "type": "delivery_time",
+      "name": "t:sections.main-product.blocks.delivery_time.name"
     }
   ]
 }

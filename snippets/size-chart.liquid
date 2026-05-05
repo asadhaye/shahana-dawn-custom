@@ -9,7 +9,6 @@
 {% enddoc %}
 
 {%- if product == blank -%}
-  {%- capture output -%}{% endcapture -%}
 {%- else -%}
   {%- assign size_chart_image = nil -%}
   {%- assign size_chart_collection = nil -%}
@@ -31,7 +30,7 @@
 <modal-opener
   class="size-chart-modal__opener"
   data-modal="#{{ modal_id }}"
-  {{ block.shopify_attributes | default: '' }}
+  {% if block %}{{ block.shopify_attributes }}{% endif %}
 >
   <button
     class="size-chart-button link"
@@ -45,7 +44,7 @@
 <modal-dialog
   id="{{ modal_id }}"
   class="size-chart-modal"
-  {{ block.shopify_attributes | default: '' }}
+  {% if block %}{{ block.shopify_attributes }}{% endif %}
 >
   <div
     role="dialog"

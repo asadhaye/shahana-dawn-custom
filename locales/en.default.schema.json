@@ -676,8 +676,8 @@
   },
 
   "immersive_webgl_gallery": {
-    "name": "Immersive WebGL gallery (config)",
-    "preset_name": "Immersive WebGL gallery (config)",
+    "name": "Immersive gallery",
+    "preset_name": "Immersive gallery",
     "room_key_label": "Room to target",
     "room_storefront": "Storefront",
     "room_lounge": "Lounge",
@@ -2482,6 +2482,17 @@
             }
           }
         },
+        "size_chart": {
+          "name": "Size chart",
+          "settings": {
+            "button_label": {
+              "label": "Button label"
+            }
+          }
+        },
+        "delivery_time": {
+          "name": "Delivery time"
+        },
         "collapsible_tab": {
           "name": "Collapsible row",
           "settings": {
@@ -2700,6 +2711,10 @@
         "icon_with_text": {
           "name": "Icon with text",
           "settings": {
+            "content": {
+              "label": "Text content",
+              "info": "Text shown next to the icon."
+            },
             "layout": {
               "label": "Layout",
               "options__1": {
@@ -2728,7 +2743,7 @@
             },
             "pairing_2": {
               "label": "Pairing 2"
-            },            
+            },
             "icon_2": {
               "label": "Icon"
             },
@@ -2741,7 +2756,7 @@
             },
             "pairing_3": {
             "label": "Pairing 3"
-            },             
+            },
             "icon_3": {
               "label": "Icon"
             },

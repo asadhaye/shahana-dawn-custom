@@ -883,39 +883,41 @@
 
   <!-- Cookie consent banner -->
   <div
-    id="immersive-cookie-banner"
-    class="immersive-cookie-banner"
-    role="dialog"
-    aria-modal="false"
-    aria-label="{{ 'sections.immersive_store.cookie_banner.aria_label' | t }}"
-    hidden
-  >
-    <p class="immersive-cookie-banner__text">
-      {{ 'sections.immersive_store.cookie_banner.text' | t }}
-      <a href="/pages/privacy-policy" class="immersive-cookie-banner__learn-more">
-        {{- 'sections.immersive_store.cookie_banner.learn_more' | t -}}
-      </a>
-    </p>
-    <div class="immersive-cookie-banner__actions">
-      <button
-        type="button"
-        id="immersive-cookie-accept"
-        class="immersive-cookie-banner__btn immersive-cookie-banner__btn--accept"
-      >
-        {{ 'sections.immersive_store.cookie_banner.accept' | t }}
-      </button>
-      <button
-        type="button"
-        id="immersive-cookie-decline"
-        class="immersive-cookie-banner__btn immersive-cookie-banner__btn--decline"
-      >
-        {{ 'sections.immersive_store.cookie_banner.decline' | t }}
-      </button>
-    </div>
+  id="immersive-cookie-banner"
+  class="immersive-cookie-banner"
+  role="dialog"
+  aria-modal="false"
+  aria-label="{{ 'sections.immersive_store.cookie_banner.aria_label' | t }}"
+  hidden
+>
+  <p class="immersive-cookie-banner__text">
+    {{ 'sections.immersive_store.cookie_banner.text' | t }}
+    <a href="/pages/privacy-policy" class="immersive-cookie-banner__learn-more">
+      {{- 'sections.immersive_store.cookie_banner.learn_more' | t -}}
+    </a>
+  </p>
 
-  <div class="immersive-scroll-hint" data-immersive-scroll-hint>
-    {{ 'sections.immersive_store.scroll_hint' | t }}
+  <div class="immersive-cookie-banner__actions">
+    <button
+      type="button"
+      id="immersive-cookie-accept"
+      class="immersive-cookie-banner__btn immersive-cookie-banner__btn--accept"
+    >
+      {{ 'sections.immersive_store.cookie_banner.accept' | t }}
+    </button>
+    <button
+      type="button"
+      id="immersive-cookie-decline"
+      class="immersive-cookie-banner__btn immersive-cookie-banner__btn--decline"
+    >
+      {{ 'sections.immersive_store.cookie_banner.decline' | t }}
+    </button>
   </div>
+</div>
+
+<div class="immersive-scroll-hint" data-immersive-scroll-hint>
+  {{ 'sections.immersive_store.scroll_hint' | t }}
+</div>
 </section>
 
 {% stylesheet %}
@@ -1015,7 +1017,7 @@
     right: 0;
     display: block;
     margin: 0 auto;
-    z-index: 19;
+    z-index: 200;
     pointer-events: none;
     height: clamp(110px, 16vh, 200px);
     width: auto;

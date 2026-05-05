@@ -52,6 +52,10 @@
             "show_gift_card_recipient": true
           }
         },
+        "delivery_time": {
+          "type": "delivery_time",
+          "settings": {}
+        },
         "custom_liquid_KLF6bC": {
           "type": "custom_liquid",
           "settings": {
@@ -113,6 +117,7 @@
         "variant_picker",
         "quantity_selector",
         "buy_buttons",
+        "delivery_time",
         "custom_liquid_KLF6bC",
         "description",
         "collapsible-row-0",

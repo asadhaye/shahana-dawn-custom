@@ -72,6 +72,8 @@
           sizes="(max-width: 768px) 100vw, 300px"
           alt="{{ product.featured_image.alt | default: product.title | escape }}"
           loading="lazy"
+          width="{{ product.featured_image.width }}"
+          height="{{ product.featured_image.height }}"
           data-parallax-image
         >
 
@@ -81,6 +83,8 @@
             src="{{ product.images[1] | image_url: width: 600 }}"
             alt="{{ product.images[1].alt | default: product.title | escape }}"
             loading="lazy"
+            width="{{ product.images[1].width }}"
+            height="{{ product.images[1].height }}"
             data-parallax-image
           >
         {%- endif -%}

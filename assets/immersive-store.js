@@ -258,44 +258,66 @@ function handleGalleryStageClick(event, camera, canvas) {
   }
 }
 
-// Merge theme-editor-configured room data (from section JSON block) into STORE_ROOMS
-(function mergeDynamicRoomConfig() {
-  var configEl = document.getElementById('immersive-rooms-config');
-  if (!configEl) return;
-  var jsonText = configEl.textContent || configEl.innerText || '';
-  if (!jsonText.trim()) return;
-  var config;
-  try {
-    config = JSON.parse(jsonText);
-  } catch (e) {
-    console.warn('[Immersive] Failed to parse immersive-rooms-config JSON', e);
-    return;
-  }
-  if (!config || typeof config !== 'object') return;
-  Object.keys(config).forEach(function (roomKey) {
-    var roomConfig = config[roomKey];
-    if (!roomConfig || typeof roomConfig !== 'object') return;
-    if (!STORE_ROOMS[roomKey]) STORE_ROOMS[roomKey] = {};
-    Object.keys(roomConfig).forEach(function (field) {
-      // Only override if the value is non-null/non-empty
-      if (roomConfig[field] !== null && roomConfig[field] !== '') {
-        console.log('[Immersive] Config override:', roomKey, field, JSON.stringify(roomConfig[field]).slice(0, 120));
-        STORE_ROOMS[roomKey][field] = roomConfig[field];
-      }
-    });
+// ---------------------------------------------------------------------------
+// HOTSPOT CONFIGURATION
+// 
+// IMPORTANT: STORE_ROOMS is the single source of truth for room configuration.
+// All room data is defined here. Do NOT add runtime overrides - they create 
+// ambiguity and inconsistent behavior.
+// ---------------------------------------------------------------------------
+
+// Content cache with TTL (5 minutes) for performance
+var contentCache = {};
+var CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+var cacheTimestamps = {};
+
+// Clear content cache when cart/wishlist changes
+function setupCacheInvalidation() {
+  // Listen for cart updates via Shopify events
+  document.addEventListener('cart:updated', function() {
+    console.log('[Immersive] Cart updated, clearing content cache');
+    clearContentCache();
   });
-})();
+  
+  // Listen for wishlist changes (custom event)
+  document.addEventListener('wishlist:updated', function() {
+    console.log('[Immersive] Wishlist updated, clearing content cache');
+    clearContentCache();
+  });
+  
+  // Listen for product availability changes
+  document.addEventListener('product:availabilityChanged', function() {
+    console.log('[Immersive] Product availability changed, clearing content cache');
+    clearContentCache();
+  });
+}
 
-// ---------------------------------------------------------------------------
-// Hotspot normalization helpers
-// Map raw hotspot config into a normalized shape with an explicit type and
-// target. This lets us handle 'room', 'collection_panel', and 'editorial'
-// hotspots consistently regardless of whether they came from the hardcoded
-// STORE_ROOMS or from the immersive-rooms-config JSON override.
-// Pure helpers — no DOM access, no side effects.
-// ---------------------------------------------------------------------------
+function clearContentCache() {
+  Object.keys(contentCache).forEach(function(key) {
+    delete contentCache[key];
+  });
+  Object.keys(cacheTimestamps).forEach(function(key) {
+    delete cacheTimestamps[key];
+  });
+  contentCache = {};
+  cacheTimestamps = {};
+}
 
-function normalizeHotspot(raw, roomKey, index) {
+function getCachedContent(url, allowStale) {
+  var now = Date.now();
+  if (contentCache[url]) {
+    var age = now - (cacheTimestamps[url] || 0);
+    if (age < CACHE_TTL_MS || allowStale) {
+      return contentCache[url];
+    }
+  }
+  return null;
+}
+
+function setCachedContent(url, html) {
+  contentCache[url] = html;
+  cacheTimestamps[url] = Date.now();
+}
   if (!raw) return null;
   var type, target;
   if (raw.targetRoom) {
@@ -329,7 +351,6 @@ function normalizeHotspot(raw, roomKey, index) {
       typeof raw.mobileX === 'number' && typeof raw.mobileY === 'number' ? { x: raw.mobileX, y: raw.mobileY } : null,
     _raw: raw,
   };
-}
 
 function getNormalizedHotspots(roomKey) {
   var room = STORE_ROOMS[roomKey];
@@ -894,6 +915,8 @@ function initImmersiveScene() {
   // Throttled resize handler — RAF-debounced to reduce layout thrashing
   var resizeRaf = null;
   var lastMobile = isMobile;
+  var lastOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
+  
   function onWindowResize() {
     if (resizeRaf !== null) return;
     resizeRaf = requestAnimationFrame(function () {
@@ -901,14 +924,21 @@ function initImmersiveScene() {
       evaluateDeviceFlags();
       updateCanvasRect();
       handleResize();
-      // Re-render hotspots if mobile/desktop breakpoint crossed
-      if (isMobile !== lastMobile) {
+      
+      // Check for breakpoint OR orientation change
+      var currentOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
+      if (isMobile !== lastMobile || currentOrientation !== lastOrientation) {
         lastMobile = isMobile;
+        lastOrientation = currentOrientation;
         if (currentRoomKey) renderHotspots(currentRoomKey);
       }
     });
   }
   window.addEventListener('resize', onWindowResize);
+  // Also listen for orientation change
+  window.matchMedia('(orientation: portrait)').addEventListener('change', function() {
+    onWindowResize();
+  });
   handleResize();
   animate();
 
@@ -1509,6 +1539,7 @@ function loadRoomTextures(roomData, callback) {
   // and setting crossOrigin='anonymous' triggers a preflight that fails
   var loaded = { base: null, depth: null };
   var failed = false;
+  var retryAttempts = 0;
 
   // Safety net: only trigger on genuine network errors, not slow loads.
   // 45s covers large WebP files on slow mobile connections.
@@ -1556,6 +1587,18 @@ function loadRoomTextures(roomData, callback) {
       'currentRoomKey:',
       currentRoomKey,
     );
+    
+    // Retry logic: attempt to reload once
+    if (!retryAttempts || retryAttempts < 1) {
+      retryAttempts = (retryAttempts || 0) + 1;
+      console.log('[Immersive] Retrying texture load (attempt ' + retryAttempts + ')');
+      setTimeout(function() {
+        loadRoomTexture(roomData, callback);
+      }, 1000);
+      return;
+    }
+    
+    // After retry failed, show fallback UI
     hideLoader();
     if (!currentRoomKey) {
       var canvas = document.getElementById(immersiveCanvasId);
@@ -2239,10 +2282,31 @@ function openGlassPanel(fetchUrl, panelId, renderCallback) {
 
   // Open panel and set up focus trap
   openPanel(panel, triggerEl);
+  
+  // Show loading spinner immediately
+  var contentArea = panel.querySelector('.immersive-store__panel-content');
+  if (contentArea) {
+    contentArea.innerHTML = '<div class="immersive-panel-loading" style="display:flex;align-items:center;justify-content:center;padding:3rem;"><div class="immersive-panel-loader" style="width:32px;height:32px;border:2px solid rgba(212,175,55,0.2);border-top-color:#d4af37;border-radius:50%;animation:immersive-spin 0.8s linear infinite;"></div></div>';
+  }
+  
+  // Inject animation keyframes if not present
+  if (!document.getElementById('immersive-panel-loader-style')) {
+    var style = document.createElement('style');
+    style.id = 'immersive-panel-loader-style';
+    style.textContent = '@keyframes immersive-spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+  }
 
+  // Debounce rapid clicks - don't start new fetch if one is in progress
+  if (panel._isLoading) {
+    return;
+  }
+  panel._isLoading = true;
+  
   // Fetch and render content
   fetchWithCache(fetchUrl)
     .then(function (html) {
+      panel._isLoading = false;
       if (!html) {
         var errMsg = panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please try again.';
         showErrorFeedback(panel, errMsg);
