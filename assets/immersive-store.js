@@ -301,6 +301,44 @@ function handleGalleryStageClick(event, camera, canvas) {
 // ambiguity and inconsistent behavior.
 // ---------------------------------------------------------------------------
 
+// Read room config from Liquid section settings (allows theme editor override)
+function getLiquidRoomConfig() {
+  var configEl = document.getElementById('immersive-rooms-config');
+  if (!configEl) return null;
+  try {
+    return JSON.parse(configEl.textContent);
+  } catch (e) {
+    console.warn('[Immersive] Failed to parse room config:', e);
+    return null;
+  }
+}
+
+// Merge Liquid config with JS config - Liquid values override JS for non-null values
+function getRoomConfigWithLiquidOverride(roomKey) {
+  var jsConfig = STORE_ROOMS[roomKey];
+  if (!jsConfig) return null;
+  
+  var liquidConfig = getLiquidRoomConfig();
+  if (!liquidConfig || !liquidConfig[roomKey]) return jsConfig;
+  
+  var liquid = liquidConfig[roomKey];
+  var merged = {};
+  
+  // Copy all JS values first
+  Object.keys(jsConfig).forEach(function(key) {
+    merged[key] = jsConfig[key];
+  });
+  
+  // Override with Liquid values where provided
+  ['baseTextureUrl', 'mobileBaseTextureUrl', 'depthMapUrl', 'mobileDepthMapUrl', 'hotspots'].forEach(function(key) {
+    if (liquid[key] != null) {
+      merged[key] = liquid[key];
+    }
+  });
+  
+  return merged;
+}
+
 // Content cache with TTL (5 minutes) for performance
 var contentCache = {};
 var CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -388,7 +426,7 @@ function setCachedContent(url, html) {
   };
 
 function getNormalizedHotspots(roomKey) {
-  var room = STORE_ROOMS[roomKey];
+  var room = getRoomConfigWithLiquidOverride(roomKey);
   if (!room || !Array.isArray(room.hotspots)) return [];
   return room.hotspots
     .map(function (raw, index) {
@@ -801,7 +839,7 @@ const fragmentShaderSource = `
 `;
 
 function getRoomTextureUrls(roomKey) {
-  var room = STORE_ROOMS[roomKey];
+  var room = getRoomConfigWithLiquidOverride(roomKey);
   if (!room) {
     console.error('[Immersive] Room definition not found for key:', roomKey);
     return null;
@@ -1021,7 +1059,7 @@ function isWebGLSupported() {
 }
 
 function showWebGLFallback(canvas) {
-  var room = STORE_ROOMS['lounge'];
+  var room = getRoomConfigWithLiquidOverride('lounge');
   if (!room) return;
   var wrapper = canvas.parentElement;
   if (!wrapper) return;
@@ -1687,7 +1725,7 @@ function isCachedTexture(texture) {
 }
 
 function renderHotspots(roomKey) {
-  var room = STORE_ROOMS[roomKey];
+  var room = getRoomConfigWithLiquidOverride(roomKey);
   var uiLayer = document.getElementById(uiLayerId);
   if (!room || !uiLayer) return;
 
@@ -7490,7 +7528,7 @@ function _guidedAdvance() {
 }
 
 function _guidedGetFirstCollection(wingKey) {
-  var room = STORE_ROOMS[wingKey];
+  var room = getRoomConfigWithLiquidOverride(wingKey);
   if (!room || !room.hotspots) return null;
   for (var i = 0; i < room.hotspots.length; i++) {
     if (room.hotspots[i].targetCollection) return room.hotspots[i].targetCollection;
