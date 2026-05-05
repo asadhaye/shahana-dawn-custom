@@ -6,3 +6,5 @@ RemoteAsset:
   enabled: true
   ignore:
     - sections/ai-virtual-try-on.liquid
+VariableName:
+  enabled: false
