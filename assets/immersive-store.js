@@ -2393,6 +2393,21 @@ function initImmersiveSceneIfReady() {
   });
 }
 
+function showImmersiveOnboardingIfNeeded() {
+  console.log('[Immersive] showImmersiveOnboardingIfNeeded called');
+  try {
+    var seen = localStorage.getItem(ONBOARDING_KEY);
+    if (seen) {
+      console.log('[Immersive] onboarding already seen');
+      return;
+    }
+  } catch (e) {}
+  var overlay = document.getElementById('immersive-onboarding');
+  if (overlay) {
+    overlay.style.display = 'block';
+  }
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initImmersiveSceneIfReady);
 } else {
