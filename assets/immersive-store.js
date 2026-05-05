@@ -460,6 +460,8 @@ const immersiveCanvasId = 'immersive-canvas';
 const uiLayerId = 'ui-layer';
 const glassPanelId = 'glass-panel';
 
+var _immersiveInitBound = false;
+
 var contentCache = {};
 
 var immersiveState = {
