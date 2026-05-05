@@ -1,29 +1,33 @@
-// IMMERSIVE_THREE.JS_COMPATIBILITY Shim for backwards compatibility with three.js r150-r170+
-(function() {
+/* IMMERSIVE_THREE.JS_COMPATIBILITY
+ * Shim for backwards compatibility with three.js r150–r170+.
+ */
+(function () {
   if (typeof THREE === 'undefined') return;
-  
+
   // Encoding shims - sRGBEncoding was renamed to SRGBColorSpace in r152+
   if (!THREE.SRGBColorSpace && THREE.sRGBEncoding) {
     THREE.SRGBColorSpace = THREE.sRGBEncoding;
   }
-  
-  // LinearEncoding was renamed in later versions  
+
+  // LinearEncoding was renamed in later versions
   if (!THREE.LinearEncoding) {
     THREE.LinearEncoding = 3001;
   }
-  
+
   // LinearFilter should always exist, but just in case
   if (!THREE.LinearFilter) {
     THREE.LinearFilter = 9728;
   }
-  
+
   // MathUtils.degToRad was moved in r155+
   if (!THREE.MathUtils) {
     THREE.MathUtils = {
-      degToRad: function(degrees) { return degrees * Math.PI / 180; }
+      degToRad: function (degrees) {
+        return (degrees * Math.PI) / 180;
+      },
     };
   }
-  
+
   console.log('[Immersive] three.js compatibility shims applied');
 })();
 
@@ -122,7 +126,7 @@ const STORE_ROOMS = {
 var CODEX_THEME_TO_ROOM = {
   Eid: 'occasions',
   Bridal: 'designer_houses',
-  Heritage: 'designer_houses'
+  Heritage: 'designer_houses',
 };
 
 function getRoomForCollectionHandleFromCodex(handle) {
@@ -140,18 +144,18 @@ var ROOM_VISUAL_PROFILES = {
   default: {
     uAtmosphericMood: 0.25,
     uScrollVignette: 0.1,
-    uScrollChroma: 0.05
+    uScrollChroma: 0.05,
   },
   featured_collections: {
     uAtmosphericMood: 0.5,
     uScrollVignette: 0.18,
-    uScrollChroma: 0.09
+    uScrollChroma: 0.09,
   },
   'featured_collections:story': {
     uAtmosphericMood: 0.8,
     uScrollVignette: 0.32,
-    uScrollChroma: 0.16
-  }
+    uScrollChroma: 0.16,
+  },
 };
 
 function getRoomVisualProfile(roomKey, mode) {
@@ -240,24 +244,25 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
-    
-    var tex = textureLoader.load(item.imageSrc, 
-      function(texture) {
+
+    var tex = textureLoader.load(
+      item.imageSrc,
+      function (texture) {
         // Success callback
         texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
         texture.anisotropy = 8;
       },
       undefined,
-      function(err) {
+      function (err) {
         // Error callback - texture failed to load
         console.warn('[Immersive] Gallery texture load error:', err);
-      }
+      },
     );
     tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
     tex.anisotropy = 8;
     textures.push(tex);
 
-    var aspect = (item.imageWidth && item.imageHeight) ? item.imageWidth / item.imageHeight : 16 / 9;
+    var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
     var h = 2.0;
     var w = h * aspect;
 
@@ -267,12 +272,12 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       roughness: 0.85,
       metalness: 0.15,
       transparent: true,
-      opacity: 0.95
+      opacity: 0.95,
     });
 
     var mesh = new THREE.Mesh(geom, mat);
     var angleDeg = startAngle + step * index;
-    var rad = angleDeg * Math.PI / 180;
+    var rad = (angleDeg * Math.PI) / 180;
     var x = Math.sin(rad) * radius;
     var z = Math.cos(rad) * radius * -1;
 
@@ -285,7 +290,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       galleryIndex: item.index,
       title: item.title || '',
       productHandle: item.productHandle || null,
-      collectionHandle: item.collectionHandle || null
+      collectionHandle: item.collectionHandle || null,
     };
 
     group.add(mesh);
@@ -300,15 +305,15 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
     textures: textures,
     currentAngle: 0,
     targetAngle: 0,
-    radius: radius
+    radius: radius,
   };
 
   console.log('[Immersive] Gallery stage built for room:', roomKey, 'items:', items.length);
   return galleryStageRegistry[roomKey];
 }
 
-var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function() {})();
-var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function() {})();
+var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function () {})();
+var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function () {})();
 
 function handleGalleryStageClick(event, camera, canvas) {
   if (!currentRoomKey || !galleryStageRegistry[currentRoomKey]) return;
@@ -354,30 +359,31 @@ function getLiquidRoomConfig() {
 function getRoomConfigWithLiquidOverride(roomKey) {
   var jsConfig = STORE_ROOMS[roomKey];
   if (!jsConfig) return null;
-  
+
   var liquidConfig = getLiquidRoomConfig();
   if (!liquidConfig || !liquidConfig[roomKey]) return jsConfig;
-  
+
   var liquid = liquidConfig[roomKey];
   var merged = {};
-  
-  Object.keys(jsConfig).forEach(function(key) {
+
+  Object.keys(jsConfig).forEach(function (key) {
     merged[key] = jsConfig[key];
   });
-  
-  ['baseTextureUrl', 'mobileBaseTextureUrl', 'depthMapUrl', 'mobileDepthMapUrl', 'hotspots'].forEach(function(key) {
+
+  ['baseTextureUrl', 'mobileBaseTextureUrl', 'depthMapUrl', 'mobileDepthMapUrl', 'hotspots'].forEach(function (key) {
     if (liquid[key] != null) {
       merged[key] = liquid[key];
     }
   });
-  
+
   return merged;
 }
 
 function getRoomData(roomKey) {
-  var room = typeof getRoomConfigWithLiquidOverride === 'function'
-    ? getRoomConfigWithLiquidOverride(roomKey)
-    : STORE_ROOMS[roomKey];
+  var room =
+    typeof getRoomConfigWithLiquidOverride === 'function'
+      ? getRoomConfigWithLiquidOverride(roomKey)
+      : STORE_ROOMS[roomKey];
 
   if (!room) {
     console.warn('[Immersive] Room config missing for key "%s". Skipping room.', roomKey);
@@ -410,7 +416,14 @@ function normalizeHotspot(raw, roomKey, index) {
     target = null;
   }
   return {
-    id: raw.id || roomKey + '-' + (raw.targetRoom || raw.targetCollection || raw.targetEditorialRoom || (raw.targetCodex ? 'codex' : (raw.targetStory ? 'story' : index))),
+    id:
+      raw.id ||
+      roomKey +
+        '-' +
+        (raw.targetRoom ||
+          raw.targetCollection ||
+          raw.targetEditorialRoom ||
+          (raw.targetCodex ? 'codex' : raw.targetStory ? 'story' : index)),
     type: type,
     target: target,
     label: raw.label || '',
@@ -626,11 +639,35 @@ function popNavigationHistory() {
     saveNavigationHistory();
     updateBackButton();
     var previousRoom = _navigationHistory[_navigationHistory.length - 1];
-    console.log('[Immersive] popNavigationHistory - after:', JSON.stringify(_navigationHistory), 'returning:', previousRoom);
+    console.log(
+      '[Immersive] popNavigationHistory - after:',
+      JSON.stringify(_navigationHistory),
+      'returning:',
+      previousRoom,
+    );
     return previousRoom;
   }
   console.log('[Immersive] popNavigationHistory - no history to pop');
   return null;
+}
+
+function initWishlist() {
+  console.log('[Immersive] initWishlist called');
+  try {
+    var saved = localStorage.getItem(WISHLIST_KEY);
+    if (saved) {
+      wishlistItems = JSON.parse(saved);
+      console.log('[Immersive] loaded wishlist:', wishlistItems.length, 'items');
+    }
+  } catch (e) {
+    wishlistItems = [];
+  }
+  wishlistPanelTrigger = document.querySelector('[data-wishlist-trigger]') || document.getElementById('wishlist-panel-trigger');
+  if (wishlistPanelTrigger) {
+    wishlistPanelTrigger.addEventListener('click', function () {
+      console.log('[Immersive] wishlist trigger clicked');
+    });
+  }
 }
 
 function saveNavigationHistory() {
@@ -651,7 +688,12 @@ function loadNavigationHistory() {
 function updateBackButton() {
   var backBtn = document.querySelector('[data-immersive-back]');
   if (!backBtn) return;
-  console.log('[Immersive] updateBackButton - history length:', _navigationHistory.length, 'history:', _navigationHistory);
+  console.log(
+    '[Immersive] updateBackButton - history length:',
+    _navigationHistory.length,
+    'history:',
+    _navigationHistory,
+  );
   if (_navigationHistory.length > 1) {
     backBtn.hidden = false;
     backBtn.disabled = false;
@@ -679,7 +721,7 @@ function initBackButton() {
 }
 
 function initStoryModeListener() {
-  window.addEventListener('immersive:story-mode-change', function(event) {
+  window.addEventListener('immersive:story-mode-change', function (event) {
     var detail = event && event.detail ? event.detail : {};
     var active = !!detail.active;
     if (currentRoomKey === 'featured_collections') {
@@ -862,7 +904,9 @@ function showWelcomeToast() {
   toast.setAttribute('aria-live', 'polite');
   if (!reduceMotion) toast.classList.add('immersive-welcome-toast--animate-in');
   toast.innerHTML =
-    '<span class="immersive-welcome-toast__text">' + msg + '</span>' +
+    '<span class="immersive-welcome-toast__text">' +
+    msg +
+    '</span>' +
     '<button type="button" class="immersive-welcome-toast__close" aria-label="Close">×</button>';
   wrapper.appendChild(toast);
   var timer = setTimeout(function () {
@@ -1054,7 +1098,7 @@ function onWindowResize() {
     evaluateDeviceFlags();
     updateCanvasRect();
     handleResize();
-    
+
     var currentOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
     if (isMobile !== lastMobile || currentOrientation !== lastOrientation) {
       lastMobile = isMobile;
@@ -1373,7 +1417,8 @@ function goToRoom(roomKey, initial, skipHistory) {
 }
 
 function focusCodexSection() {
-  var codex = document.querySelector('[data-codex-typo-index]') || document.querySelector('[data-codex-collections-grid]');
+  var codex =
+    document.querySelector('[data-codex-typo-index]') || document.querySelector('[data-codex-collections-grid]');
   if (!codex) return;
   try {
     codex.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1449,7 +1494,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
             radius: 7,
             arcDegrees: 140,
             verticalOffset: 0.3,
-            tiltDegrees: -4
+            tiltDegrees: -4,
           });
         }
 
@@ -1527,16 +1572,16 @@ function loadRoomTextures(roomData, callback) {
     failed = true;
     clearTimeout(timeoutId);
     console.warn('[Immersive] Failed to load ' + which + ' texture.');
-    
+
     if (!retryAttempts || retryAttempts < 1) {
       retryAttempts = (retryAttempts || 0) + 1;
       console.log('[Immersive] Retrying texture load (attempt ' + retryAttempts + ')');
-      setTimeout(function() {
+      setTimeout(function () {
         loadRoomTextures(roomData, callback);
       }, 1000);
       return;
     }
-    
+
     hideLoader();
     if (!currentRoomKey) {
       var canvas = document.getElementById(immersiveCanvasId);
@@ -1544,30 +1589,40 @@ function loadRoomTextures(roomData, callback) {
     }
   }
 
-  loader.load(roomData.baseTextureUrl, function (tex) {
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    if (tex.image && tex.image.width && tex.image.height) {
-      currentImageAspect = tex.image.width / tex.image.height;
-      var loadingRoomKey = roomData.roomKey;
-      requestAnimationFrame(function () {
-        handleResize(loadingRoomKey);
-      });
-    }
-    loaded.base = tex;
-    onBothLoaded();
-  }, undefined, function () {
-    onError('base');
-  });
+  loader.load(
+    roomData.baseTextureUrl,
+    function (tex) {
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      if (tex.image && tex.image.width && tex.image.height) {
+        currentImageAspect = tex.image.width / tex.image.height;
+        var loadingRoomKey = roomData.roomKey;
+        requestAnimationFrame(function () {
+          handleResize(loadingRoomKey);
+        });
+      }
+      loaded.base = tex;
+      onBothLoaded();
+    },
+    undefined,
+    function () {
+      onError('base');
+    },
+  );
 
-  loader.load(roomData.depthMapUrl, function (tex) {
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    loaded.depth = tex;
-    onBothLoaded();
-  }, undefined, function () {
-    onError('depth');
-  });
+  loader.load(
+    roomData.depthMapUrl,
+    function (tex) {
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      loaded.depth = tex;
+      onBothLoaded();
+    },
+    undefined,
+    function () {
+      onError('depth');
+    },
+  );
 }
 
 function isCachedTexture(texture) {
@@ -1675,11 +1730,15 @@ function renderHotspots(roomKey) {
       });
 
       if (hotspot.targetRoom || hotspot.targetEditorialRoom) {
-        button.addEventListener('mouseenter', function () {
-          if (hotspot.targetRoom) {
-            preloadRoom(hotspot.targetRoom);
-          }
-        }, { once: true });
+        button.addEventListener(
+          'mouseenter',
+          function () {
+            if (hotspot.targetRoom) {
+              preloadRoom(hotspot.targetRoom);
+            }
+          },
+          { once: true },
+        );
       }
 
       uiLayer.appendChild(button);
@@ -1697,7 +1756,11 @@ function openDialogFocus(panel, triggerEl) {
   if (!panel) return;
   panel._panelTrigger = triggerEl || null;
   var closeBtn = panel.querySelector('.immersive-store__panel-close');
-  var firstFocusable = closeBtn || panel.querySelector('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  var firstFocusable =
+    closeBtn ||
+    panel.querySelector(
+      'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
   if (firstFocusable) {
     requestAnimationFrame(function () {
       firstFocusable.focus();
@@ -1731,7 +1794,8 @@ function openPanel(panel, triggerEl) {
   panel.classList.remove('hidden');
   panel.removeAttribute('hidden');
   panel.setAttribute('data-open', 'true');
-  var enteringClass = panel.id === 'glass-panel' ? 'immersive-store__panel--entering' : 'immersive-editorial-overlay--entering';
+  var enteringClass =
+    panel.id === 'glass-panel' ? 'immersive-store__panel--entering' : 'immersive-editorial-overlay--entering';
   if (!reduceMotion) {
     panel.classList.add(enteringClass);
     setTimeout(function () {
@@ -1977,11 +2041,16 @@ function enterEditorialMode(roomKey, triggerEl) {
   if (!sectionInstanceId) return;
 
   var fetchUrl = window.location.pathname + '?section_id=' + sectionInstanceId;
-  openOverlay('immersive-editorial-overlay', 'immersive-editorial-overlay-content', fetchUrl, function (overlay, overlayContent) {
-    performEditorialUIActivation(overlay, canvas);
-    initEditorialHeroParallax();
-    updateBackToLoungeVisibility(roomKey);
-  });
+  openOverlay(
+    'immersive-editorial-overlay',
+    'immersive-editorial-overlay-content',
+    fetchUrl,
+    function (overlay, overlayContent) {
+      performEditorialUIActivation(overlay, canvas);
+      initEditorialHeroParallax();
+      updateBackToLoungeVisibility(roomKey);
+    },
+  );
 }
 
 function performEditorialUIActivation(overlay, canvas) {
@@ -2067,7 +2136,8 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
   if (!overlay || !overlayContent) return;
 
   if (!contentCache[fetchUrl]) {
-    overlayContent.innerHTML = '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
+    overlayContent.innerHTML =
+      '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
   }
 
   var performUIActivation = function () {
@@ -2097,7 +2167,8 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
     })
     .catch(function (err) {
       console.error('[Immersive] Overlay fetch failed:', err);
-      overlayContent.innerHTML = '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">The story is temporarily unavailable.</div>';
+      overlayContent.innerHTML =
+        '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">The story is temporarily unavailable.</div>';
     });
 }
 
@@ -2143,16 +2214,16 @@ function initEditorialHeroParallax() {
   rafId = requestAnimationFrame(loop);
 }
 
-function destroyEditorialHeroParallax() {
-}
+function destroyEditorialHeroParallax() {}
 
 function showFeedback(message, type) {
   var feedback = document.createElement('div');
   feedback.className = 'immersive-feedback';
   feedback.textContent = message;
   feedback.setAttribute('role', 'alert');
-  feedback.style.cssText = 'position:fixed;top:20px;right:20px;background:' + 
-    (type === 'error' ? 'rgba(239,68,68,0.9)' : 'rgba(212,175,55,0.9)') + 
+  feedback.style.cssText =
+    'position:fixed;top:20px;right:20px;background:' +
+    (type === 'error' ? 'rgba(239,68,68,0.9)' : 'rgba(212,175,55,0.9)') +
     ';color:#fff;padding:1rem 1.5rem;border-radius:8px;z-index:10000;font-weight:600;cursor:pointer;';
   document.body.appendChild(feedback);
   setTimeout(function () {
@@ -2174,7 +2245,8 @@ function renderSkeletonGrid(count) {
   count = count || 6;
   var cards = '';
   for (var i = 0; i < count; i++) {
-    cards += '<div class="immersive-skeleton-card"><div class="immersive-skeleton-card__image"></div><div class="immersive-skeleton-card__content"><div class="immersive-skeleton-card__line"></div><div class="immersive-skeleton-card__line"></div></div></div>';
+    cards +=
+      '<div class="immersive-skeleton-card"><div class="immersive-skeleton-card__image"></div><div class="immersive-skeleton-card__content"><div class="immersive-skeleton-card__line"></div><div class="immersive-skeleton-card__line"></div></div></div>';
   }
   return '<div class="immersive-skeleton-grid">' + cards + '</div>';
 }
@@ -2189,8 +2261,10 @@ function openImmersiveCart() {
   var modal = document.createElement('div');
   modal.id = 'immersive-cart-modal';
   modal.className = 'immersive-cart-shell';
-  modal.innerHTML = '<div class="immersive-cart-shell__panel" role="dialog" aria-labelledby="cart-title"><header class="immersive-cart-shell__header"><h1 id="cart-title">Your Cart</h1><button type="button" data-close-cart>×</button></header><div class="immersive-cart-shell__content">Loading...</div></div>';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(6,8,14,0.65);display:flex;align-items:center;justify-content:center;padding:2rem;z-index:10000;';
+  modal.innerHTML =
+    '<div class="immersive-cart-shell__panel" role="dialog" aria-labelledby="cart-title"><header class="immersive-cart-shell__header"><h1 id="cart-title">Your Cart</h1><button type="button" data-close-cart>×</button></header><div class="immersive-cart-shell__content">Loading...</div></div>';
+  modal.style.cssText =
+    'position:fixed;inset:0;background:rgba(6,8,14,0.65);display:flex;align-items:center;justify-content:center;padding:2rem;z-index:10000;';
   document.body.appendChild(modal);
 
   var closeBtn = modal.querySelector('[data-close-cart]');
@@ -2200,7 +2274,9 @@ function openImmersiveCart() {
   });
 
   fetch(shopRoot + '?section_id=cart-drawer', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-    .then(function (r) { return r.text(); })
+    .then(function (r) {
+      return r.text();
+    })
     .then(function (html) {
       var content = modal.querySelector('.immersive-cart-shell__content');
       if (content) content.innerHTML = html;
