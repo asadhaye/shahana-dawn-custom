@@ -358,7 +358,7 @@
         "entry_suffuse": {
           "type": "codex_entry",
           "settings": {
-            "collection": "suffuse",
+            "collection": "el-veneto-luxury-formals-saad-bin-shahzad",
             "subtitle": "Fluid silhouettes and hand-embroidered textiles.",
             "theme": "Bridal"
           }
@@ -374,7 +374,7 @@
         "entry_sbs": {
           "type": "codex_entry",
           "settings": {
-            "collection": "saad-bin-shahzad",
+            "collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
             "subtitle": "Architectural precision and artisanal embroidery.",
             "theme": "Heritage"
           }
@@ -390,7 +390,7 @@
         "entry_bridal": {
           "type": "codex_entry",
           "settings": {
-            "collection": "bridal-mehndi",
+            "collection": "silk-pret-summer-26-suffuse-by-sana-yasir",
             "subtitle": "From mehndi morning to walima evening.",
             "theme": "Bridal"
           }
