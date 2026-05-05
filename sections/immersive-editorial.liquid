@@ -25,12 +25,12 @@
                 >
               {%- else -%}
                 {%- comment -%}Placeholder — replace with designer hero image in theme editor{%- endcomment -%}
-                {%- assign _designer_placeholders = '1062,1074,1076' | split: ',' -%}
-                {%- assign _dp_index = forloop.index0 | modulo: 3 -%}
-                {%- assign _dp_id = _designer_placeholders[_dp_index] -%}
+                {%- assign designer_placeholders = '1062,1074,1076' | split: ',' -%}
+                {%- assign dp_index = forloop.index0 | modulo: 3 -%}
+                {%- assign dp_id = designer_placeholders[dp_index] -%}
                 <img
                   class="immersive-designers__hero-bg immersive-designers__hero-bg--placeholder"
-                  src="https://picsum.photos/id/{{ _dp_id }}/1600/900"
+                  src="https://picsum.photos/id/{{ dp_id }}/1600/900"
                   alt=""
                   loading="lazy"
                   width="1600"
@@ -74,17 +74,17 @@
         >
       {%- else -%}
         {%- comment -%}Placeholder stock image — replace with merchant image in theme editor{%- endcomment -%}
-        {%- assign _placeholder_map = 'occasions:1041,featured_collections:1083,designer_houses:1062' | split: ',' -%}
-        {%- assign _placeholder_src = 'https://picsum.photos/id/1062/1600/900' -%}
-        {%- for _entry in _placeholder_map -%}
-          {%- assign _parts = _entry | split: ':' -%}
-          {%- if _parts[0] == section.settings.room_key -%}
-            {%- assign _placeholder_src = 'https://picsum.photos/id/' | append: _parts[1] | append: '/1600/900' -%}
+        {%- assign placeholder_map = 'occasions:1041,featured_collections:1083,designer_houses:1062' | split: ',' -%}
+        {%- assign placeholder_src = 'https://picsum.photos/id/1062/1600/900' -%}
+        {%- for entry in placeholder_map -%}
+          {%- assign parts = entry | split: ':' -%}
+          {%- if parts[0] == section.settings.room_key -%}
+            {%- assign placeholder_src = 'https://picsum.photos/id/' | append: parts[1] | append: '/1600/900' -%}
           {%- endif -%}
         {%- endfor -%}
         <img
           class="immersive-editorial__hero-bg immersive-editorial__hero-bg--placeholder"
-          src="{{ _placeholder_src }}"
+          src="{{ placeholder_src }}"
           alt=""
           loading="lazy"
           width="1600"
@@ -165,12 +165,12 @@
                   >
                 {%- else -%}
                   {%- comment -%}Placeholder — replace with occasion card image in theme editor{%- endcomment -%}
-                  {%- assign _occ_placeholders = '64,65,66,67,68' | split: ',' -%}
-                  {%- assign _occ_index = forloop.index0 | modulo: 5 -%}
-                  {%- assign _occ_id = _occ_placeholders[_occ_index] -%}
+                  {%- assign occ_placeholders = '64,65,66,67,68' | split: ',' -%}
+                  {%- assign occ_index = forloop.index0 | modulo: 5 -%}
+                  {%- assign occ_id = occ_placeholders[occ_index] -%}
                   <img
                     class="immersive-occasions__card-placeholder-img"
-                    src="https://picsum.photos/id/{{ _occ_id }}/900/1200"
+                    src="https://picsum.photos/id/{{ occ_id }}/900/1200"
                     alt="{{ card_label | escape }}"
                     loading="lazy"
                     width="900"
@@ -248,12 +248,12 @@
                   >
                 {%- else -%}
                   {%- comment -%}Placeholder — replace with featured item image in theme editor{%- endcomment -%}
-                  {%- assign _feat_placeholders = '1080,1081,1082,1083' | split: ',' -%}
-                  {%- assign _feat_index = forloop.index0 | modulo: 4 -%}
-                  {%- assign _feat_id = _feat_placeholders[_feat_index] -%}
+                  {%- assign feat_placeholders = '1080,1081,1082,1083' | split: ',' -%}
+                  {%- assign feat_index = forloop.index0 | modulo: 4 -%}
+                  {%- assign feat_id = feat_placeholders[feat_index] -%}
                   <img
                     class="immersive-featured__item-placeholder-img"
-                    src="https://picsum.photos/id/{{ _feat_id }}/1000/750"
+                    src="https://picsum.photos/id/{{ feat_id }}/1000/750"
                     alt="{{ card_label | escape }}"
                     loading="lazy"
                     width="1000"

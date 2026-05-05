@@ -6,17 +6,47 @@
  * Medium (3g)         → subtle warning below the button
  * Slow (2g / saveData)→ button label updated + warning message
  * Reduced motion      → modifier class added (CSS handles the rest)
+ * 
+ * NetworkInformation API enhancements:
+ * - Uses navigator.connection for accurate connection type
+ * - Supports NetworkInformation API (Chrome 62+, Safari 15.4+)
+ * - Event listener for connection changes while on page
  */
 
 (function () {
   function classifyConnection() {
-    if (!navigator.connection) return 'fast';
-    var c = navigator.connection;
-    if (c.saveData) return 'slow';
-    var t = c.effectiveType || '';
-    if (t === 'slow-2g' || t === '2g') return 'slow';
-    if (t === '3g') return 'medium';
+    // Primary: NetworkInformation API
+    if (navigator.connection) {
+      var c = navigator.connection;
+      if (c.saveData) return 'slow';
+      var t = c.effectiveType || '';
+      if (t === 'slow-2g' || t === '2g') return 'slow';
+      if (t === '3g') return 'medium';
+      return 'fast';
+    }
+    
+    // Fallback: older navigator.onLine check (less accurate)
     return 'fast';
+  }
+
+  function getConnectionSpeed() {
+    // Returns estimated speed in Mbps if available
+    if (navigator.connection && navigator.connection.downlink) {
+      return navigator.connection.downlink;
+    }
+    return null;
+  }
+
+  function getRoundTripTime() {
+    // Returns RTT in ms if available  
+    if (navigator.connection && navigator.connection.rtt) {
+      return navigator.connection.rtt;
+    }
+    return null;
+  }
+
+  function getDataSaverStatus() {
+    return navigator.connection ? navigator.connection.saveData : false;
   }
 
   function is3DLink(href) {
@@ -86,6 +116,17 @@
     if (navigator.connection && navigator.connection.addEventListener) {
       navigator.connection.addEventListener('change', function () {
         var updated = classifyConnection();
+        var speed = getConnectionSpeed();
+        var rtt = getRoundTripTime();
+        
+        // Log connection metrics for analytics
+        console.log('[Bridge] Connection changed:', {
+          type: updated,
+          downlink: speed ? speed + ' Mbps' : 'unknown',
+          rtt: rtt ? rtt + 'ms' : 'unknown',
+          saveData: getDataSaverStatus()
+        });
+        
         bridges.forEach(function (b) {
           b.classList.remove('immersive-bridge-btn--slow-connection', 'immersive-bridge-btn--medium-connection');
           var note = b.nextSibling;

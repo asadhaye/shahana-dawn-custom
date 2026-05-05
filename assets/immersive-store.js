@@ -1,3 +1,32 @@
+/IMMERSIVE_THREE.JS_COMPATIBILITY Shim for backwards compatibility with three.js r150-r170+/
+(function() {
+  if (typeof THREE === 'undefined') return;
+  
+  // Encoding shims - sRGBEncoding was renamed to SRGBColorSpace in r152+
+  if (!THREE.SRGBColorSpace && THREE.sRGBEncoding) {
+    THREE.SRGBColorSpace = THREE.sRGBEncoding;
+  }
+  
+  // LinearEncoding was renamed in later versions  
+  if (!THREE.LinearEncoding) {
+    THREE.LinearEncoding = 3001;
+  }
+  
+  // LinearFilter should always exist, but just in case
+  if (!THREE.LinearFilter) {
+    THREE.LinearFilter = 9728;
+  }
+  
+  // MathUtils.degToRad was moved in r155+
+  if (!THREE.MathUtils) {
+    THREE.MathUtils = {
+      degToRad: function(degrees) { return degrees * Math.PI / 180; }
+    };
+  }
+  
+  console.log('[Immersive] three.js compatibility shims applied');
+})();
+
 const STORE_ROOMS = {
   storefront: {
     baseTextureUrl:
@@ -209,8 +238,20 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
-    var tex = textureLoader.load(item.imageSrc);
-    tex.encoding = THREE.sRGBEncoding;
+    
+    var tex = textureLoader.load(item.imageSrc, 
+      function(texture) {
+        // Success callback
+        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        texture.anisotropy = 8;
+      },
+      undefined,
+      function(err) {
+        // Error callback - texture failed to load
+        console.warn('[Immersive] Gallery texture load error:', err);
+      }
+    );
+    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
     tex.anisotropy = 8;
     textures.push(tex);
 
@@ -6957,6 +6998,27 @@ function safeBindImmersiveInit() {
       } catch (e) {}
     });
     textureCache = [];
+
+    // Dispose gallery stage objects if present
+    Object.keys(galleryStageRegistry).forEach(function(key) {
+      try {
+        var stage = galleryStageRegistry[key];
+        if (stage.group) stage.group.traverse(function(obj) {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach(function(m) { m.dispose(); });
+            } else {
+              obj.material.dispose();
+            }
+          }
+        });
+        if (stage.textures) {
+          stage.textures.forEach(function(t) { t.dispose(); });
+        }
+      } catch (e) {}
+    });
+    galleryStageRegistry = {};
 
     contentCache = {};
   }
