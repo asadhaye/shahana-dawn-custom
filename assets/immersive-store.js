@@ -2144,8 +2144,6 @@ function initEditorialHeroParallax() {
 function destroyEditorialHeroParallax() {
 }
 
-var immersiveCanvasId = 'immersive-canvas';
-
 function showFeedback(message, type) {
   var feedback = document.createElement('div');
   feedback.className = 'immersive-feedback';
@@ -2299,12 +2297,6 @@ function setCachedContent(url, html) {
   contentCache[url] = html;
   cacheTimestamps[url] = Date.now();
 }
-
-var immersiveCanvasId = 'immersive-canvas';
-var uiLayerId = 'ui-layer';
-var glassPanelId = 'glass-panel';
-
-var _immersiveInitBound = false;
 
 function initImmersiveSceneIfReady() {
   if (_immersiveInitBound) return;
