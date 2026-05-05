@@ -1,4 +1,4 @@
-/IMMERSIVE_THREE.JS_COMPATIBILITY Shim for backwards compatibility with three.js r150-r170+/
+// IMMERSIVE_THREE.JS_COMPATIBILITY Shim for backwards compatibility with three.js r150-r170+
 (function() {
   if (typeof THREE === 'undefined') return;
   
