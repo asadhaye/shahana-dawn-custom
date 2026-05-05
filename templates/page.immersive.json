@@ -96,14 +96,16 @@
         "featured_collections_slot_3_label": "Soraya Eid Pret",
         "faq_url": "shopify://pages/faqs",
         "menu": "immersive-menu-1",
+        "logo_image": "shopify://shop_images/sc-logo-transpartent-bg.png",
         "onboarding_enabled": true,
         "onboarding_title": "Welcome to Shahana Collection",
         "onboarding_description": "Step inside our immersive 3D store. Move your mouse to explore the space, then click any glowing hotspot to discover our curated collections.",
         "onboarding_dismiss_label": "Start exploring",
         "onboarding_show_once": true,
-        "low_stock_threshold": 5,
+        "low_stock_threshold": 3,
         "guided_featured_wing": "designer_houses",
-        "fab_icon_svg": "<svg viewbox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><text x=\"50%\" y=\"54%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"serif\" font-size=\"22\" font-weight=\"700\" fill=\"#d4af37\">S</text></svg>"
+        "fab_icon_svg": "<svg viewbox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><text x=\"50%\" y=\"54%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"serif\" font-size=\"22\" font-weight=\"700\" fill=\"#d4af37\">S</text></svg>",
+        "transition_style": "crossfade"
       }
     },
     "editorial_designer_houses": {
@@ -302,11 +304,11 @@
         "eyebrow": "Shahana Exclusives",
         "heading": "The Exclusive Edit",
         "subheading": "A curated ring of pieces from our most celebrated collections.",
-        "exclusive_collection": "el-veneto-luxury-formals",
-        "max_items": 8,
-        "ring_radius": 420,
+        "exclusive_collection": "noa-summer-pret-26-soraya-official",
+        "max_items": 12,
+        "ring_radius": 300,
         "drag_friction": 88,
-        "snap_strength": 12
+        "snap_strength": 15
       }
     },
     "codex_typo": {
@@ -417,7 +419,6 @@
           "settings": {
             "title": "Eid Gold Mirage",
             "subtitle": "Hand-embellished chiffon and organza",
-            "image": "shopify://shop_images/gallery-eid-gold-placeholder.jpg",
             "product": "",
             "collection": "eid-collection"
           }
@@ -427,7 +428,6 @@
           "settings": {
             "title": "Bridal Noir",
             "subtitle": "Midnight velvet with gold zardozi",
-            "image": "shopify://shop_images/gallery-bridal-noir-placeholder.jpg",
             "product": "",
             "collection": "bridal-mehndi"
           }
@@ -437,7 +437,6 @@
           "settings": {
             "title": "Suffuse Signature",
             "subtitle": "Fluid silk with hand-painted motifs",
-            "image": "shopify://shop_images/gallery-suffuse-signature-placeholder.jpg",
             "product": "",
             "collection": "suffuse"
           }
@@ -447,7 +446,6 @@
           "settings": {
             "title": "Soraya Lumene",
             "subtitle": "Festive pret in heritage weaves",
-            "image": "shopify://shop_images/gallery-soraya-lumene-placeholder.jpg",
             "product": "",
             "collection": "lumene-festive-25-26-soraya-official"
           }
@@ -457,7 +455,6 @@
           "settings": {
             "title": "SS5 Summer Edit",
             "subtitle": "Architectural cuts in lightweight lawn",
-            "image": "shopify://shop_images/gallery-ss5-summer-placeholder.jpg",
             "product": "",
             "collection": "summer-pret-26-eid-edit-saad-bin-shahzad"
           }
