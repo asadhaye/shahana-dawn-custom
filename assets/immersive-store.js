@@ -2390,6 +2390,7 @@ function initImmersiveSceneIfReady() {
     initTiltControlToggle();
     initWishlist();
     showImmersiveOnboardingIfNeeded();
+    checkUrlForCollection();
   });
 }
 
@@ -2405,6 +2406,20 @@ function showImmersiveOnboardingIfNeeded() {
   var overlay = document.getElementById('immersive-onboarding');
   if (overlay) {
     overlay.style.display = 'block';
+  }
+}
+
+function checkUrlForCollection() {
+  var params = new URLSearchParams(window.location.search);
+  var collection = params.get('open_collection');
+  if (collection && typeof openCollectionPanel === 'function') {
+    console.log('[Immersive] Opening collection from URL:', collection);
+    openCollectionPanel(collection);
+  }
+  var product = params.get('open_product');
+  if (product && typeof openProductPanel === 'function') {
+    console.log('[Immersive] Opening product from URL:', product);
+    openProductPanel(product, null);
   }
 }
 
