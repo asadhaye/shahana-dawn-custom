@@ -150,7 +150,42 @@ function applyRoomVisualProfile(roomKey, mode, deltaTimeSec) {
   }
 }
 
+// Dispose gallery stage resources to prevent GPU memory leaks
+function disposeGalleryStage(roomKey) {
+  var state = galleryStageRegistry[roomKey];
+  if (!state) return;
+
+  if (state.group) {
+    state.group.traverse(function (obj) {
+      if (obj.isMesh) {
+        if (obj.geometry) {
+          obj.geometry.dispose();
+        }
+        if (obj.material) {
+          if (obj.material.map) obj.material.map.dispose();
+          obj.material.dispose();
+        }
+      }
+    });
+    scene.remove(state.group);
+  }
+
+  if (state.textures) {
+    state.textures.forEach(function (tex) {
+      if (tex) tex.dispose();
+    });
+  }
+
+  delete galleryStageRegistry[roomKey];
+  console.log('[Immersive] Disposed gallery stage for room:', roomKey);
+}
+
 function buildGalleryStageForRoom(roomKey, scene, options) {
+  // Dispose old gallery stage before creating new one
+  if (currentRoomKey && galleryStageRegistry[currentRoomKey]) {
+    disposeGalleryStage(currentRoomKey);
+  }
+
   var items = getGalleryStageConfig(roomKey);
   if (!items.length) return null;
   if (!window.THREE) return null;
