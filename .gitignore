@@ -21,6 +21,22 @@ skills/
 # Editor-local backup history
 .history/
 
+# Agent/AI skill files (not part of the theme)
+.agent/
+.agents/
+.claude/skills/
+.codebuddy/skills/
+.codex/skills/
+.continue/skills/
+.cursor/skills/
+.gemini/skills/
+.kiro/
+.opencode/skills/
+.qoder/skills/
+.roo/skills/
+.trae/skills/
+.windsurf/skills/
+
 # Theme Editor dynamically modified files
 # These should NOT be tracked - they are modified by Shopify Theme Editor
 templates/page.immersive.json
