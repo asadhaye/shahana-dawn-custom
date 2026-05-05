@@ -1,16 +1,16 @@
 {%- comment -%}
   Immersive Exclusive Carousel
   A CSS 3D ring of exclusive product cards arranged around a y-axis.
-  DOM-only — no new WebGL canvas. Drag-to-rotate with pointer events.
-  On click: calls openProductPanel(handle) if available (immersive store),
-  otherwise falls back to the canonical product URL.
-  Associated room: featured_collections.
+  DOM-only — no new WebGL canvas.
+  Assumes window.openProductPanel(handle) exists on immersive store pages;
+  otherwise falls back to canonical product URL.
 {%- endcomment -%}
 
 {%- liquid
   assign source_collection = section.settings.exclusive_collection
   assign max_items = section.settings.max_items | default: 8
   assign products = null
+
   if source_collection != blank
     assign products = source_collection.products | slice: 0, max_items
   endif
@@ -22,6 +22,9 @@
   aria-label="{{ 'sections.immersive_exclusive_carousel.aria_section_label' | t }}"
   data-immersive-exclusive-carousel
   data-section-id="{{ section.id }}"
+  data-ring-radius="{{ section.settings.ring_radius }}"
+  data-drag-friction="{{ section.settings.drag_friction | divided_by: 100.0 }}"
+  data-snap-strength="{{ section.settings.snap_strength | divided_by: 100.0 }}"
 >
   <div class="immersive-exclusive-carousel__inner">
     {%- if section.settings.eyebrow != blank or section.settings.heading != blank -%}
@@ -77,12 +80,14 @@
                   {%- else -%}
                     {{ 'product-1' | placeholder_svg_tag: 'immersive-exclusive-carousel__card-placeholder' }}
                   {%- endif -%}
+
                   {%- if product.compare_at_price > product.price -%}
                     <span class="immersive-exclusive-carousel__badge">
                       {{ 'sections.immersive_exclusive_carousel.sale_badge' | t }}
                     </span>
                   {%- endif -%}
                 </div>
+
                 <div class="immersive-exclusive-carousel__card-body">
                   <p class="immersive-exclusive-carousel__card-vendor">{{ product.vendor | escape }}</p>
                   <h3 class="immersive-exclusive-carousel__card-title">{{ product.title | escape }}</h3>
@@ -99,7 +104,6 @@
           {{ 'sections.immersive_exclusive_carousel.drag_hint' | t }}
         </p>
       </div>
-
     {%- else -%}
       <p class="immersive-exclusive-carousel__empty">
         {{ 'sections.immersive_exclusive_carousel.empty_state' | t }}
@@ -357,10 +361,10 @@
       var hint = section.querySelector('[data-carousel-hint]');
 
       if (!ring || !panels.length) return;
-
       if (window.innerWidth < 768) return;
 
-      var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var prefersReducedMotion =
+        window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       var radiusAttr = section.getAttribute('data-ring-radius');
       var frictionAttr = section.getAttribute('data-drag-friction');
@@ -392,6 +396,7 @@
 
       var animate = function () {
         rafId = null;
+
         if (!isDragging) {
           velocity *= friction;
           targetAngle += velocity;
@@ -406,6 +411,7 @@
           var panelAngle = (angleStep * i - currentAngle) % 360;
           while (panelAngle > 180) panelAngle -= 360;
           while (panelAngle < -180) panelAngle += 360;
+
           var absAngle = Math.abs(panelAngle);
           var opacity = absAngle > 90 ? 0 : 1 - (absAngle / 90) * 0.4;
           panel.style.opacity = opacity;
@@ -483,7 +489,8 @@
     });
 
     document.addEventListener('shopify:section:load', function (event) {
-      var loadedSection = event.target && event.target.querySelector('[data-immersive-exclusive-carousel]');
+      var loadedSection =
+        event.target && event.target.querySelector('[data-immersive-exclusive-carousel]');
       if (loadedSection) initCarousel(loadedSection);
     });
   })();
