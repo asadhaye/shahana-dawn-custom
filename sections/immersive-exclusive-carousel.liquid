@@ -12,14 +12,14 @@
   assign max_items = section.settings.max_items | default: 8
   assign products = null
   if source_collection != blank
-    assign products = source_collection.products | limit: max_items
+    assign products = source_collection.products | slice: 0, max_items
   endif
 -%}
 
 <section
   id="immersive-exclusive-carousel-{{ section.id }}"
   class="immersive-exclusive-carousel"
-  aria-label="{{ 'sections.immersive_exclusives.aria_section_label' | t }}"
+  aria-label="{{ 'sections.immersive_exclusive_carousel.aria_section_label' | t }}"
   data-immersive-exclusive-carousel
   data-section-id="{{ section.id }}"
 >
@@ -95,7 +95,6 @@
           {%- endfor -%}
         </div>
 
-        {%- comment -%}Drag hint — hidden once user interacts{%- endcomment -%}
         <p class="immersive-exclusive-carousel__hint" data-carousel-hint aria-hidden="true">
           {{ 'sections.immersive_exclusive_carousel.drag_hint' | t }}
         </p>
@@ -110,7 +109,6 @@
 </section>
 
 {% stylesheet %}
-  /* ── Immersive Exclusive Carousel ───────────────────────────────── */
   .immersive-exclusive-carousel {
     padding: 5rem 0 6rem;
     background: #050509;
@@ -126,7 +124,6 @@
     padding: 0 1.5rem;
   }
 
-  /* Header */
   .immersive-exclusive-carousel__header {
     text-align: center;
     margin-bottom: 3.5rem;
@@ -156,7 +153,6 @@
     margin: 0 auto;
   }
 
-  /* Stage — the 3D perspective container */
   .immersive-exclusive-carousel__stage {
     position: relative;
     height: 520px;
@@ -169,15 +165,12 @@
     cursor: grabbing;
   }
 
-  /* Ring — rotates around the y-axis */
   .immersive-exclusive-carousel__ring {
     position: absolute;
     inset: 0;
     transform-style: preserve-3d;
-    /* Initial rotation set by JS */
   }
 
-  /* Individual panel */
   .immersive-exclusive-carousel__panel {
     position: absolute;
     top: 50%;
@@ -186,11 +179,9 @@
     margin-left: -110px;
     margin-top: -260px;
     transform-style: preserve-3d;
-    /* translateZ and rotateY set by JS */
     transition: opacity 0.3s ease;
   }
 
-  /* Card */
   .immersive-exclusive-carousel__card {
     display: block;
     text-decoration: none;
@@ -238,7 +229,6 @@
     opacity: 0.2;
   }
 
-  /* Sale badge */
   .immersive-exclusive-carousel__badge {
     position: absolute;
     top: 0.75rem;
@@ -281,7 +271,6 @@
     margin: 0;
   }
 
-  /* Drag hint */
   .immersive-exclusive-carousel__hint {
     position: absolute;
     bottom: 0;
@@ -299,7 +288,6 @@
     display: none;
   }
 
-  /* Empty state */
   .immersive-exclusive-carousel__empty {
     text-align: center;
     opacity: 0.5;
@@ -307,7 +295,6 @@
     padding: 3rem 0;
   }
 
-  /* Mobile: flatten to a horizontal scroll strip */
   @media (max-width: 767px) {
     .immersive-exclusive-carousel__stage {
       height: auto;
@@ -346,7 +333,6 @@
     }
   }
 
-  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .immersive-exclusive-carousel__card,
     .immersive-exclusive-carousel__card-img {
@@ -361,148 +347,144 @@
 
 {% javascript %}
   (function () {
-    var section = document.getElementById('immersive-exclusive-carousel-{{ section.id }}');
-    if (!section) return;
+    var carouselSections = document.querySelectorAll('[data-immersive-exclusive-carousel]');
+    if (!carouselSections.length) return;
 
-    var stage = section.querySelector('[data-carousel-stage]');
-    var ring = section.querySelector('[data-carousel-ring]');
-    var panels = section.querySelectorAll('[data-carousel-panel]');
-    var hint = section.querySelector('[data-carousel-hint]');
+    var initCarousel = function (section) {
+      var stage = section.querySelector('[data-carousel-stage]');
+      var ring = section.querySelector('[data-carousel-ring]');
+      var panels = section.querySelectorAll('[data-carousel-panel]');
+      var hint = section.querySelector('[data-carousel-hint]');
 
-    if (!ring || !panels.length) return;
+      if (!ring || !panels.length) return;
 
-    // Mobile: native scroll, no 3D
-    if (window.innerWidth < 768) return;
+      if (window.innerWidth < 768) return;
 
-    var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    var radius = parseInt(section.getAttribute('data-ring-radius') || '420', 10);
-    var friction = parseFloat(section.getAttribute('data-drag-friction') || '0.88');
-    var snapStrength = parseFloat(section.getAttribute('data-snap-strength') || '0.12');
+      var radiusAttr = section.getAttribute('data-ring-radius');
+      var frictionAttr = section.getAttribute('data-drag-friction');
+      var snapAttr = section.getAttribute('data-snap-strength');
 
-    var count = panels.length;
-    var angleStep = 360 / count;
+      var radius = parseInt(radiusAttr || '420', 10);
+      var friction = parseFloat(frictionAttr || '0.88');
+      var snapStrength = parseFloat(snapAttr || '0.12');
 
-    // Position each panel around the ring
-    panels.forEach(function (panel, i) {
-      var angle = angleStep * i;
-      panel.style.transform = 'rotateY(' + angle + 'deg) translateZ(' + radius + 'px)';
-    });
+      var count = panels.length;
+      var angleStep = 360 / count;
 
-    // Ring rotation state
-    var currentAngle = 0;
-    var targetAngle = 0;
-    var velocity = 0;
-    var isDragging = false;
-    var lastX = 0;
-    var rafId = null;
-
-    function snapToNearest() {
-      var nearest = Math.round(targetAngle / angleStep) * angleStep;
-      targetAngle = nearest;
-    }
-
-    function animate() {
-      rafId = null;
-      if (!isDragging) {
-        // Apply friction and snap
-        velocity *= friction;
-        targetAngle += velocity;
-        currentAngle += (targetAngle - currentAngle) * snapStrength;
-      } else {
-        currentAngle += (targetAngle - currentAngle) * 0.3;
-      }
-
-      ring.style.transform = 'rotateY(' + -currentAngle + 'deg)';
-
-      // Fade panels that are facing away
       panels.forEach(function (panel, i) {
-        var panelAngle = (angleStep * i - currentAngle) % 360;
-        // Normalise to [-180, 180]
-        while (panelAngle > 180) panelAngle -= 360;
-        while (panelAngle < -180) panelAngle += 360;
-        var absAngle = Math.abs(panelAngle);
-        var opacity = absAngle > 90 ? 0 : 1 - (absAngle / 90) * 0.4;
-        panel.style.opacity = opacity;
+        var angle = angleStep * i;
+        panel.style.transform = 'rotateY(' + angle + 'deg) translateZ(' + radius + 'px)';
       });
 
-      if (Math.abs(velocity) > 0.05 || Math.abs(targetAngle - currentAngle) > 0.05) {
-        rafId = requestAnimationFrame(animate);
+      var currentAngle = 0;
+      var targetAngle = 0;
+      var velocity = 0;
+      var isDragging = false;
+      var lastX = 0;
+      var rafId = null;
+
+      var snapToNearest = function () {
+        var nearest = Math.round(targetAngle / angleStep) * angleStep;
+        targetAngle = nearest;
+      };
+
+      var animate = function () {
+        rafId = null;
+        if (!isDragging) {
+          velocity *= friction;
+          targetAngle += velocity;
+          currentAngle += (targetAngle - currentAngle) * snapStrength;
+        } else {
+          currentAngle += (targetAngle - currentAngle) * 0.3;
+        }
+
+        ring.style.transform = 'rotateY(' + -currentAngle + 'deg)';
+
+        panels.forEach(function (panel, i) {
+          var panelAngle = (angleStep * i - currentAngle) % 360;
+          while (panelAngle > 180) panelAngle -= 360;
+          while (panelAngle < -180) panelAngle += 360;
+          var absAngle = Math.abs(panelAngle);
+          var opacity = absAngle > 90 ? 0 : 1 - (absAngle / 90) * 0.4;
+          panel.style.opacity = opacity;
+        });
+
+        if (Math.abs(velocity) > 0.05 || Math.abs(targetAngle - currentAngle) > 0.05) {
+          rafId = requestAnimationFrame(animate);
+        }
+      };
+
+      var startRaf = function () {
+        if (rafId === null) {
+          rafId = requestAnimationFrame(animate);
+        }
+      };
+
+      if (!prefersReducedMotion) {
+        stage.addEventListener('pointerdown', function (e) {
+          isDragging = true;
+          lastX = e.clientX;
+          velocity = 0;
+          stage.setPointerCapture(e.pointerId);
+          if (hint) hint.setAttribute('hidden', '');
+          startRaf();
+        });
+
+        stage.addEventListener('pointermove', function (e) {
+          if (!isDragging) return;
+          var dx = e.clientX - lastX;
+          lastX = e.clientX;
+          velocity = dx * 0.4;
+          targetAngle += dx * 0.25;
+          startRaf();
+        });
+
+        stage.addEventListener('pointerup', function () {
+          isDragging = false;
+          snapToNearest();
+          startRaf();
+        });
+
+        stage.addEventListener('pointercancel', function () {
+          isDragging = false;
+          snapToNearest();
+          startRaf();
+        });
+
+        targetAngle = angleStep * 0.5;
+        startRaf();
+      } else {
+        ring.style.transform = 'rotateY(0deg)';
+        panels.forEach(function (panel) {
+          panel.style.opacity = '1';
+        });
       }
-    }
 
-    function startRaf() {
-      if (rafId === null) {
-        rafId = requestAnimationFrame(animate);
-      }
-    }
+      section.addEventListener('click', function (e) {
+        if (Math.abs(velocity) > 2) return;
 
-    if (!prefersReducedMotion) {
-      // Pointer drag
-      stage.addEventListener('pointerdown', function (e) {
-        isDragging = true;
-        lastX = e.clientX;
-        velocity = 0;
-        stage.setPointerCapture(e.pointerId);
-        if (hint) hint.setAttribute('hidden', '');
-        startRaf();
+        var card = e.target.closest('[data-carousel-panel]');
+        if (!card) return;
+
+        var handle = card.getAttribute('data-product-handle');
+        if (!handle) return;
+
+        if (typeof window.openProductPanel === 'function') {
+          e.preventDefault();
+          window.openProductPanel(handle);
+        }
       });
+    };
 
-      stage.addEventListener('pointermove', function (e) {
-        if (!isDragging) return;
-        var dx = e.clientX - lastX;
-        lastX = e.clientX;
-        velocity = dx * 0.4;
-        targetAngle += dx * 0.25;
-        startRaf();
-      });
-
-      stage.addEventListener('pointerup', function () {
-        isDragging = false;
-        snapToNearest();
-        startRaf();
-      });
-
-      stage.addEventListener('pointercancel', function () {
-        isDragging = false;
-        snapToNearest();
-        startRaf();
-      });
-
-      // Initial gentle spin to show depth
-      targetAngle = angleStep * 0.5;
-      startRaf();
-    } else {
-      // Reduced motion: just position the ring, no animation
-      ring.style.transform = 'rotateY(0deg)';
-      panels.forEach(function (panel) {
-        panel.style.opacity = '1';
-      });
-    }
-
-    // Click interception — open glass product panel if available
-    section.addEventListener('click', function (e) {
-      // Ignore drag-end clicks (significant pointer movement)
-      if (Math.abs(velocity) > 2) return;
-
-      var card = e.target.closest('[data-carousel-panel]');
-      if (!card) return;
-
-      var handle = card.getAttribute('data-product-handle');
-      if (!handle) return;
-
-      if (typeof window.openProductPanel === 'function') {
-        e.preventDefault();
-        window.openProductPanel(handle);
-      }
-      // else: let the <a href> navigate naturally
+    carouselSections.forEach(function (section) {
+      initCarousel(section);
     });
 
-    // Theme editor re-init
-    document.addEventListener('shopify:section:load', function (e) {
-      if (e.target && e.target.querySelector('[data-immersive-exclusive-carousel]')) {
-        // Re-init handled by the IIFE re-running on section load
-      }
+    document.addEventListener('shopify:section:load', function (event) {
+      var loadedSection = event.target && event.target.querySelector('[data-immersive-exclusive-carousel]');
+      if (loadedSection) initCarousel(loadedSection);
     });
   })();
 {% endjavascript %}

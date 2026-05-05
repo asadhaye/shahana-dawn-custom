@@ -3,6 +3,7 @@
   class="immersive-story-rail"
   aria-label="{{ 'sections.immersive_story.aria_section_label' | t }}"
   data-immersive-story-rail
+  data-section-id="{{ section.id }}"
 >
   <div class="immersive-story-rail__inner">
     {%- if section.settings.show_hero -%}
@@ -176,7 +177,6 @@
 </section>
 
 {% stylesheet %}
-  /* ── Immersive Story Rail ────────────────────────────────────────── */
   .immersive-story-rail {
     position: relative;
     background: #050509;
@@ -190,7 +190,6 @@
     padding: 0 1.5rem;
   }
 
-  /* Hero */
   .immersive-story-rail__hero {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -239,7 +238,6 @@
     display: block;
   }
 
-  /* Chapters */
   .immersive-story-rail__chapters {
     display: flex;
     flex-direction: column;
@@ -247,7 +245,6 @@
     padding-bottom: 5rem;
   }
 
-  /* Scroll-reveal: chapters start invisible and slide up */
   [data-story-chapter] {
     opacity: 0;
     transform: translateY(2.5rem);
@@ -259,12 +256,10 @@
     transform: translateY(0);
   }
 
-  /* Intro chapter */
   .immersive-story-rail__chapter--intro {
     max-width: 52rem;
   }
 
-  /* Journey chapter — image + text side by side */
   .immersive-story-rail__chapter--journey {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -285,12 +280,10 @@
     display: block;
   }
 
-  /* Generic chapter */
   .immersive-story-rail__chapter--generic {
     max-width: 52rem;
   }
 
-  /* Closing chapter */
   .immersive-story-rail__chapter--closing {
     text-align: center;
     max-width: 44rem;
@@ -299,7 +292,6 @@
     border-top: 1px solid rgba(212, 175, 55, 0.12);
   }
 
-  /* Shared chapter typography */
   .immersive-story-rail__chapter-eyebrow {
     font-size: 0.75rem;
     letter-spacing: 0.16em;
@@ -327,11 +319,11 @@
   .immersive-story-rail__chapter-body p {
     margin: 0 0 1em;
   }
+
   .immersive-story-rail__chapter-body p:last-child {
     margin-bottom: 0;
   }
 
-  /* CTA button */
   .immersive-story-rail__chapter-cta {
     display: inline-block;
     margin-top: 2rem;
@@ -356,7 +348,6 @@
     outline-offset: 3px;
   }
 
-  /* Marquee band */
   .immersive-story-rail__marquee {
     overflow: hidden;
     padding: 1.5rem 0;
@@ -397,7 +388,6 @@
     }
   }
 
-  /* Empty state */
   .immersive-story-rail__empty {
     text-align: center;
     opacity: 0.4;
@@ -405,7 +395,6 @@
     padding: 4rem 0;
   }
 
-  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     [data-story-chapter],
     .immersive-story-rail__marquee {
@@ -419,7 +408,6 @@
     }
   }
 
-  /* Mobile */
   @media (max-width: 768px) {
     .immersive-story-rail__inner {
       padding-inline: 1rem;
@@ -444,88 +432,99 @@
 
 {% javascript %}
   (function () {
-    var section = document.getElementById('immersive-story-rail-{{ section.id }}');
-    if (!section) return;
+    var sections = document.querySelectorAll('[data-immersive-story-rail]');
+    if (!sections.length) return;
 
-    var chapters = section.querySelectorAll('[data-story-chapter]');
-    if (!chapters.length) return;
+    var prefersReducedMotion =
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // ── Helper: fire story-mode-change event ──────────────────────────
     function dispatchStoryMode(active) {
       try {
         window.dispatchEvent(
           new CustomEvent('immersive:story-mode-change', {
             detail: { active: active },
-            bubbles: false,
+            bubbles: false
           })
         );
       } catch (e) {}
     }
 
-    // If reduced motion, reveal everything immediately
-    if (prefersReducedMotion) {
-      chapters.forEach(function (ch) {
-        ch.classList.add('is-visible');
-      });
-      return;
-    }
+    function initStoryRail(section) {
+      var chapters = section.querySelectorAll('[data-story-chapter]');
+      if (!chapters.length) return;
 
-    // IntersectionObserver scroll-reveal for individual chapters
-    if (!('IntersectionObserver' in window)) {
-      chapters.forEach(function (ch) {
-        ch.classList.add('is-visible');
-      });
-      return;
-    }
+      var sectionId = section.getAttribute('data-section-id') || null;
 
-    var observer = new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
+      if (prefersReducedMotion) {
+        chapters.forEach(function (ch) {
+          ch.classList.add('is-visible');
         });
-      },
-      {
-        threshold: 0.15,
-        rootMargin: '0px 0px -60px 0px',
+        return;
       }
-    );
 
-    chapters.forEach(function (ch) {
-      observer.observe(ch);
-    });
-
-    // ── Section-level observer: signal story-mode on/off ─────────────
-    // Fires immersive:story-mode-change when ≥40% of the section is
-    // visible, and again when it leaves. The engine uses this to switch
-    // the featured_collections:story visual profile.
-    var sectionObserver = new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (entry) {
-          dispatchStoryMode(entry.isIntersecting);
+      if (!('IntersectionObserver' in window)) {
+        chapters.forEach(function (ch) {
+          ch.classList.add('is-visible');
         });
-      },
-      { threshold: 0.4 }
-    );
-    sectionObserver.observe(section);
+        return;
+      }
 
-    // Theme editor: re-reveal on section select
-    document.addEventListener('shopify:section:select', function (e) {
-      if (e.detail && e.detail.sectionId === '{{ section.id }}') {
+      var chapterObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              chapterObserver.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          threshold: 0.15,
+          rootMargin: '0px 0px -60px 0px'
+        }
+      );
+
+      chapters.forEach(function (ch) {
+        chapterObserver.observe(ch);
+      });
+
+      var sectionObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            dispatchStoryMode(entry.isIntersecting);
+          });
+        },
+        { threshold: 0.4 }
+      );
+      sectionObserver.observe(section);
+
+      document.addEventListener('shopify:section:select', function (e) {
+        if (!e.detail || !sectionId) return;
+        if (e.detail.sectionId !== sectionId) return;
+
         chapters.forEach(function (ch) {
           ch.classList.add('is-visible');
         });
         dispatchStoryMode(true);
-      }
+      });
+
+      document.addEventListener('shopify:section:deselect', function (e) {
+        if (!e.detail || !sectionId) return;
+        if (e.detail.sectionId !== sectionId) return;
+
+        dispatchStoryMode(false);
+      });
+    }
+
+    sections.forEach(function (section) {
+      initStoryRail(section);
     });
 
-    document.addEventListener('shopify:section:deselect', function (e) {
-      if (e.detail && e.detail.sectionId === '{{ section.id }}') {
-        dispatchStoryMode(false);
+    document.addEventListener('shopify:section:load', function (event) {
+      var loadedSection =
+        event.target && event.target.querySelector('[data-immersive-story-rail]');
+      if (loadedSection) {
+        initStoryRail(loadedSection);
       }
     });
   })();
@@ -568,28 +567,68 @@
       "type": "intro",
       "name": "t:sections.immersive_story.block_intro_name",
       "settings": [
-        { "type": "text", "id": "eyebrow", "label": "t:sections.immersive_story.block_eyebrow_label" },
-        { "type": "text", "id": "heading", "label": "t:sections.immersive_story.block_heading_label" },
-        { "type": "richtext", "id": "body", "label": "t:sections.immersive_story.block_body_label" }
+        {
+          "type": "text",
+          "id": "eyebrow",
+          "label": "t:sections.immersive_story.block_eyebrow_label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_story.block_heading_label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_story.block_body_label"
+        }
       ]
     },
     {
       "type": "journey",
       "name": "t:sections.immersive_story.block_journey_name",
       "settings": [
-        { "type": "image_picker", "id": "image", "label": "t:sections.immersive_story.hero_image_label" },
-        { "type": "text", "id": "eyebrow", "label": "t:sections.immersive_story.block_eyebrow_label" },
-        { "type": "text", "id": "heading", "label": "t:sections.immersive_story.block_heading_label" },
-        { "type": "richtext", "id": "body", "label": "t:sections.immersive_story.block_body_label" }
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_story.hero_image_label"
+        },
+        {
+          "type": "text",
+          "id": "eyebrow",
+          "label": "t:sections.immersive_story.block_eyebrow_label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_story.block_heading_label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_story.block_body_label"
+        }
       ]
     },
     {
       "type": "chapter",
       "name": "t:sections.immersive_story.block_chapter_name",
       "settings": [
-        { "type": "text", "id": "eyebrow", "label": "t:sections.immersive_story.block_eyebrow_label" },
-        { "type": "text", "id": "heading", "label": "t:sections.immersive_story.block_heading_label" },
-        { "type": "richtext", "id": "body", "label": "t:sections.immersive_story.block_body_label" }
+        {
+          "type": "text",
+          "id": "eyebrow",
+          "label": "t:sections.immersive_story.block_eyebrow_label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_story.block_heading_label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_story.block_body_label"
+        }
       ]
     },
     {
@@ -607,11 +646,31 @@
       "type": "closing",
       "name": "t:sections.immersive_story.block_closing_name",
       "settings": [
-        { "type": "text", "id": "eyebrow", "label": "t:sections.immersive_story.block_eyebrow_label" },
-        { "type": "text", "id": "heading", "label": "t:sections.immersive_story.block_heading_label" },
-        { "type": "richtext", "id": "body", "label": "t:sections.immersive_story.block_body_label" },
-        { "type": "text", "id": "cta_label", "label": "t:sections.immersive_story.block_cta_label" },
-        { "type": "url", "id": "cta_url", "label": "t:sections.immersive_story.block_cta_url_label" }
+        {
+          "type": "text",
+          "id": "eyebrow",
+          "label": "t:sections.immersive_story.block_eyebrow_label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_story.block_heading_label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_story.block_body_label"
+        },
+        {
+          "type": "text",
+          "id": "cta_label",
+          "label": "t:sections.immersive_story.block_cta_label"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_story.block_cta_url_label"
+        }
       ]
     }
   ],
@@ -644,7 +703,7 @@
           "settings": {
             "eyebrow": "Enter the store",
             "heading": "Explore the collection",
-            "cta_label": "Open the 3D Store",
+            "cta_label": "Open the 3D store",
             "cta_url": "/pages/immersive"
           }
         }
