@@ -3,6 +3,20 @@
    Scoped to .template-page-immersive only — homepage is now standard 2D
    ============================================================================= */
 
+/* Z-Index Scale for predictable modal layering */
+:root {
+  --z-base: 1;
+  --z-scrim: 100;
+  --z-panel: 150;
+  --z-dropdown: 145;
+  --z-header: 210;
+  --z-hotspot: 250;
+  --z-fab: 300;
+  --z-overlay: 315;
+  --z-modal: 320;
+  --z-toast: 400;
+}
+
 /* Base: dark background — lock to viewport, no scroll */
 .template-page-immersive,
 .template-page-immersive body {
@@ -38,259 +52,8 @@
 }
 
 /* Header overrides */
-.template-page-immersive .header,
-.template-page-immersive .header-wrapper {
-  background: rgba(10, 15, 30, 0.95) !important;
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.15) !important;
-}
-
-.template-page-immersive .header__heading-link,
-.template-page-immersive .header__menu-item,
-.template-page-immersive .header a {
-  color: #d4af37 !important;
-}
-
-.template-page-immersive .header__menu-item:hover,
-.template-page-immersive .header a:hover {
-  color: #d4af37 !important;
-}
-
-/* Search page */
-.template-search .search__title,
-.template-search h1,
-.template-search h2 {
-  color: #d4af37;
-}
-
-.template-search .search-modal__form,
-.template-search .search-form,
-.template-search .field {
-  border: 2px solid rgba(212, 175, 55, 0.8) !important;
-  border-radius: 0 !important;
-  overflow: hidden;
-}
-
-.template-search input[type='search'],
-.template-search .field__input {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #d4af37 !important;
-  border: 2px solid rgba(212, 175, 55, 0.8) !important;
-  border-radius: 0 !important;
-}
-
-.template-search input[type='search']:focus,
-.template-search .field__input:focus {
-  border-color: #d4af37 !important;
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
-}
-
-.template-search input[type='search']:focus-visible,
-.template-search .field__input:focus-visible {
-  outline: 2px solid #d4af37 !important;
-  outline-offset: 2px !important;
-}
-
-.template-search input[type='search']::placeholder,
-.template-search .field__input::placeholder {
-  color: rgba(241, 245, 249, 0.4) !important;
-}
-
-.template-search .field__button,
-.template-search .search-form__submit {
-  color: #d4af37 !important;
-}
-
-/* Product cards on search results */
-.template-search .card-wrapper,
-.template-search .card {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 0 !important;
-  backdrop-filter: blur(8px);
-  transition:
-    border-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.template-search .card-wrapper:hover,
-.template-search .card:hover {
-  border-color: rgba(212, 175, 55, 0.4) !important;
-  transform: translateY(-3px);
-}
-
-.template-search .card__heading a,
-.template-search .card__information .caption {
-  color: #d4af37 !important;
-}
-
-.template-search .price {
-  color: #d4af37 !important;
-}
-
-/* Facets / filters */
-.template-search .facets__summary,
-.template-search .facets-vertical .facets__summary {
-  color: #d4af37 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.template-search .facets__label {
-  color: rgba(241, 245, 249, 0.7) !important;
-}
-
-/* Buttons */
-.template-search .button,
-.template-search button[type='submit'] {
-  background: rgba(212, 175, 55, 0.9) !important;
-  color: #000 !important;
-  border: none !important;
-}
-
-.template-search .button:hover {
-  background: #d4af37 !important;
-}
-
-/* Cart page */
-.template-cart .cart__title,
-.template-cart h1 {
-  color: #d4af37;
-}
-
-.template-cart .cart-item__name,
-.template-cart .cart-item__details {
-  color: #d4af37 !important;
-}
-
-.template-cart .cart-item__price,
-.template-cart .totals__total-value {
-  color: #d4af37 !important;
-}
-
-.template-cart .cart__footer {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-top: 1px solid rgba(212, 175, 55, 0.15) !important;
-}
-
-.template-cart .cart__checkout-button {
-  background: rgba(212, 175, 55, 0.9) !important;
-  color: #000 !important;
-  border-radius: 0 !important;
-}
-
-.template-cart .cart__checkout-button:hover {
-  background: #d4af37 !important;
-}
-
-/* Predictive search dropdown */
-.template-page-immersive predictive-search .predictive-search,
-.template-page-immersive .predictive-search,
-.template-search predictive-search .predictive-search,
-.template-search .predictive-search {
-  background: rgba(10, 15, 30, 0.97) !important;
-  border: 1px solid rgba(212, 175, 55, 0.2) !important;
-  backdrop-filter: blur(20px);
-}
-
-.template-page-immersive .predictive-search__item,
-.template-search .predictive-search__item {
-  color: #d4af37 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-.template-page-immersive .predictive-search__item:hover,
-.template-page-immersive .predictive-search__item--link:hover,
-.template-search .predictive-search__item:hover,
-.template-search .predictive-search__item--link:hover {
-  background: rgba(212, 175, 55, 0.08) !important;
-}
-
-.template-page-immersive .predictive-search__item-heading,
-.template-search .predictive-search__item-heading {
-  color: #d4af37 !important;
-}
-
-.template-page-immersive .predictive-search__item .price,
-.template-search .predictive-search__item .price {
-  color: #d4af37 !important;
-}
-
-/* Footer */
-.template-page-immersive .footer {
-  background: rgba(5, 8, 18, 0.98) !important;
-  border-top: 1px solid rgba(212, 175, 55, 0.1) !important;
-  color: rgba(241, 245, 249, 0.6) !important;
-}
-
-.template-page-immersive .footer a {
-  color: rgba(241, 245, 249, 0.6) !important;
-}
-
-.template-page-immersive .footer a:hover {
-  color: #d4af37 !important;
-}
-
-/* Scrollbar */
-.template-page-immersive ::-webkit-scrollbar {
-  width: 6px;
-}
-
-.template-page-immersive ::-webkit-scrollbar-track {
-  background: #0a0f1e;
-}
-
-.template-page-immersive ::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.3);
-  border-radius: 3px;
-}
-
-.template-page-immersive ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.6);
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .template-search .card-wrapper,
-  .template-search .card,
-  .template-cart .cart__checkout-button,
-  .template-page-immersive .predictive-search__item,
-  .template-search .predictive-search__item {
-    transition: none !important;
-    animation: none !important;
-    transform: none !important;
-  }
-}
-
-/* =============================================================================
-   Header group overrides — hide Dawn header, keep announcement bar
-   ============================================================================= */
-
-.template-page-immersive .shopify-section-group-header-group-section:has(.header-wrapper) {
-  display: none !important;
-}
-
-/* Fallback: target by Dawn's section ID directly */
-.template-page-immersive #shopify-section-header {
-  display: none !important;
-}
-
-/* Fallback: hide the header-wrapper itself */
-.template-page-immersive .header-wrapper {
-  display: none !important;
-}
-
-/* Fallback: hide sticky-header web component Dawn uses */
-.template-page-immersive sticky-header {
-  display: none !important;
-}
-
-.template-page-immersive .shopify-section-group-header-group-section:has(.announcement-bar-section) {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 101;
+.custom-logo-link {
+  z-index: var(--z-header);
   /* Hide Dawn's announcement bar on the immersive template — the notification bar replaces it */
   display: none !important;
 }
@@ -337,7 +100,7 @@
   position: absolute;
   bottom: 2rem;
   left: 1.5rem;
-  z-index: 315;
+  z-index: var(--z-overlay);
   pointer-events: none;
   display: flex;
   flex-direction: column;
@@ -422,7 +185,7 @@
   opacity: 0;
   transition: opacity 0.15s ease;
   pointer-events: none;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .immersive-hotspot:hover .immersive-hotspot__label,
@@ -688,7 +451,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  z-index: 300;
+  z-index: var(--z-fab);
 }
 
 .immersive-search__dropdown[hidden] {
@@ -834,7 +597,7 @@
   top: 50%;
   right: 1.25rem;
   transform: translateY(-50%);
-  z-index: 320;
+  z-index: var(--z-modal);
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
@@ -1048,7 +811,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 250;
+  z-index: var(--z-hotspot);
   border-radius: 1.25rem 1.25rem 0 0;
   border-top: 1px solid rgba(212, 175, 55, 0.25);
   background: rgba(10, 10, 10, 0.96);
@@ -1245,7 +1008,7 @@
   bottom: 5.5rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 150;
+  z-index: var(--z-panel);
   pointer-events: auto;
 }
 
@@ -1304,7 +1067,7 @@
   position: fixed;
   bottom: 5.5rem;
   right: 1.5rem;
-  z-index: 150;
+  z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1377,7 +1140,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 210;
+  z-index: var(--z-header);
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -1528,7 +1291,7 @@
   bottom: 4.5rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 145;
+  z-index: var(--z-dropdown);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -1609,7 +1372,7 @@
   position: fixed;
   top: 1.5rem;
   left: 1.5rem;
-  z-index: 210;
+  z-index: var(--z-header);
 }
 
 /* Back to Lounge chip — secondary action alongside close button */
@@ -1677,7 +1440,7 @@
   top: 5rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 315;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1724,7 +1487,7 @@
   bottom: 7rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 315;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   gap: 0.75rem;
