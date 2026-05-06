@@ -2319,6 +2319,7 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
         images[i].setAttribute('loading', 'lazy');
       }
       overlayContent.innerHTML = temp.innerHTML;
+      initDesignersEditorial(overlayContent);
     })
     .catch(function (err) {
       console.error('[Immersive] Overlay fetch failed:', err);
@@ -2334,6 +2335,63 @@ function closeOverlay(overlay, triggerEl) {
   if (triggerEl && typeof triggerEl.focus === 'function') {
     requestAnimationFrame(function () {
       triggerEl.focus();
+    });
+  }
+}
+
+function initDesignersEditorial(rootEl) {
+  if (!rootEl) return;
+  var designersRoot = rootEl.querySelector('.immersive-designers');
+  if (!designersRoot) return;
+  var roomKey = designersRoot.getAttribute('data-room-key');
+  var markers = designersRoot.querySelectorAll('.immersive-designers__marker');
+  var thumb = designersRoot.querySelector('.immersive-designers__thumb');
+  var heroWrap = rootEl.querySelector('.immersive-designers__hero-transition-wrap');
+  var heroStates = heroWrap ? heroWrap.querySelectorAll('.immersive-designers__hero-state') : [];
+  if (!markers.length || !thumb) return;
+  function updateThumb(position) {
+    if (!thumb || !position) return;
+    thumb.style.left = position.left + 'px';
+    thumb.style.width = position.width + 'px';
+    if (!reduceMotion) {
+      thumb.style.transition = 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    }
+  }
+  markers.forEach(function (marker, index) {
+    marker.addEventListener('click', function (e) {
+      e.preventDefault();
+      markers.forEach(function (m) { m.classList.remove('is-active'); });
+      this.classList.add('is-active');
+      heroStates.forEach(function (state, si) {
+        if (si === index) {
+          state.classList.add('is-active');
+          state.style.visibility = 'visible';
+          state.style.opacity = '1';
+          state.style.zIndex = '1';
+        } else {
+          state.classList.remove('is-active');
+          state.style.visibility = 'hidden';
+          state.style.opacity = '0';
+          state.style.zIndex = '0';
+        }
+      });
+      var timeline = designersRoot.querySelector('.immersive-designers__timeline');
+      var rect = this.getBoundingClientRect();
+      var railRect = timeline.querySelector('.immersive-designers__rail').getBoundingClientRect();
+      updateThumb({
+        left: rect.left - railRect.left,
+        width: rect.width
+      });
+    });
+  });
+  var activeMarker = designersRoot.querySelector('.immersive-designers__marker.is-active') || markers[0];
+  if (activeMarker && markers.length > 0) {
+    var timeline = designersRoot.querySelector('.immersive-designers__timeline');
+    var firstRect = activeMarker.getBoundingClientRect();
+    var railRect = timeline.querySelector('.immersive-designers__rail').getBoundingClientRect();
+    updateThumb({
+      left: firstRect.left - railRect.left,
+      width: firstRect.width
     });
   }
 }
@@ -2601,5 +2659,8 @@ document.addEventListener('shopify:section:load', function (e) {
   if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
     _immersiveInitBound = false;
     initImmersiveSceneIfReady();
+  }
+  if (e.target && e.target.classList && e.target.classList.contains('immersive-editorial')) {
+    initDesignersEditorial(e.target);
   }
 });
