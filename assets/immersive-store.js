@@ -704,7 +704,9 @@ function initBackButton() {
   loadNavigationHistory();
   updateBackButton();
   backBtn.addEventListener('click', function () {
+    console.log('[Back] Clicked, mode:', immersiveState.mode, 'history length:', _navigationHistory.length);
     if (immersiveState.mode === 'editorial') {
+      console.log('[Back] Exiting editorial mode');
       exitEditorialMode();
       return;
     }
