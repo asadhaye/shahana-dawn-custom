@@ -721,6 +721,86 @@ function initBackButton() {
   });
 }
 
+function initFab() {
+  var fab = document.querySelector('[data-immersive-fab]');
+  var trigger = fab && fab.querySelector('[data-fab-trigger]');
+  var actionsContainer = fab && fab.querySelector('[data-fab-actions]');
+  if (!fab || !trigger || !actionsContainer) return;
+
+  var isOpen = false;
+
+  trigger.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    isOpen = !isOpen;
+    trigger.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      actionsContainer.removeAttribute('hidden');
+      fab.classList.add('immersive-fab--open');
+    } else {
+      actionsContainer.setAttribute('hidden', '');
+      fab.classList.remove('immersive-fab--open');
+    }
+  });
+
+  var isDragging = false;
+  var startY, startTopPct;
+
+  fab.addEventListener('mousedown', function (e) {
+    if (e.target === trigger || trigger.contains(e.target)) return;
+    isDragging = true;
+    startY = e.clientY;
+    var style = window.getComputedStyle(fab);
+    var topMatch = style.top.match(/([\d.]+)%/);
+    startTopPct = topMatch ? parseFloat(topMatch[1]) : 50;
+    fab.style.transition = 'none';
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!isDragging) return;
+    var dy = startY - e.clientY;
+    var windowH = window.innerHeight;
+    var newTopPct = startTopPct + (dy / windowH) * 100;
+    fab.style.top = newTopPct + '%';
+    fab.style.transform = 'none';
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (isDragging) {
+      isDragging = false;
+      fab.style.transition = '';
+    }
+  });
+
+  fab.addEventListener('click', function (e) {
+    var action = e.target.closest('[data-bottom-nav-wishlist]');
+    if (action) {
+      var wishlist = document.querySelector('[data-wishlist-toggle]');
+      if (wishlist) wishlist.click();
+      return;
+    }
+    action = e.target.closest('[data-bottom-nav-cart]');
+    if (action) {
+      var cart = document.querySelector('[data-cart-toggle]');
+      if (cart) cart.click();
+      return;
+    }
+    action = e.target.closest('[data-bottom-nav-2d]');
+    if (action) {
+      window.location.href = '/';
+    }
+  });
+
+  fab.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen) {
+      isOpen = false;
+      trigger.setAttribute('aria-expanded', 'false');
+      actionsContainer.setAttribute('hidden', '');
+      fab.classList.remove('immersive-fab--open');
+    }
+  });
+}
+
 function initStoryModeListener() {
   window.addEventListener('immersive:story-mode-change', function (event) {
     var detail = event && event.detail ? event.detail : {};
@@ -2457,6 +2537,7 @@ function initImmersiveSceneIfReady() {
     initStoryModeListener();
     initTiltControlToggle();
     initWishlist();
+    initFab();
     showImmersiveOnboardingIfNeeded();
     checkUrlForCollection();
   });

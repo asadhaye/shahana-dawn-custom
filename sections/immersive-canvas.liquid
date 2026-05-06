@@ -79,15 +79,15 @@
       data-immersive-fab
       aria-label="{{ 'sections.immersive_store.fab.label' | t | escape }}"
     >
-      <!-- FAB trigger button -->
-      <button
-        type="button"
-        class="immersive-fab__trigger"
-        data-fab-trigger
-        aria-expanded="false"
-        aria-haspopup="true"
-        aria-label="{{ 'sections.immersive_store.fab.open' | t | escape }}"
-      >
+<!-- FAB trigger button -->
+    <button
+      type="button"
+      class="immersive-fab__trigger"
+      data-fab-trigger
+      aria-expanded="false"
+      aria-haspopup="true"
+      aria-label="{{ 'sections.immersive_store.fab.open' | t | escape }}"
+    >
         {%- if section.settings.fab_icon_svg != blank -%}
           {{ section.settings.fab_icon_svg }}
         {%- else -%}
