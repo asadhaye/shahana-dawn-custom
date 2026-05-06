@@ -2554,8 +2554,20 @@ function showImmersiveOnboardingIfNeeded() {
     }
   } catch (e) {}
   var overlay = document.getElementById('immersive-onboarding');
+  var dismissBtn = overlay && overlay.querySelector('[data-onboarding-dismiss]');
+  if (dismissBtn && !dismissBtn._onboardingDismissBound) {
+    dismissBtn._onboardingDismissBound = true;
+    dismissBtn.addEventListener('click', function () {
+      try {
+        localStorage.setItem(ONBOARDING_KEY, 'true');
+      } catch (e) {}
+      overlay.style.display = 'none';
+      overlay.setAttribute('hidden', '');
+    });
+  }
   if (overlay) {
     overlay.style.display = 'flex';
+    overlay.removeAttribute('hidden');
   }
 }
 
