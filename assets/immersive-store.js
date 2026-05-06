@@ -704,6 +704,10 @@ function initBackButton() {
   loadNavigationHistory();
   updateBackButton();
   backBtn.addEventListener('click', function () {
+    if (immersiveState.mode === 'editorial') {
+      exitEditorialMode();
+      return;
+    }
     var panel = document.getElementById(glassPanelId);
     if (panel && !panel.hasAttribute('hidden')) {
       closePanel(panel);
