@@ -150,11 +150,17 @@
 
   {%- if section.settings.layout == 'featured_collections' -%}
     <div class="immersive-featured" data-room-key="{{ section.settings.room_key | escape }}">
-      <div
-        class="immersive-featured__grid"
-        role="list"
-        aria-label="{{ section.settings.hero_heading | default: 'Featured collections' | escape }}"
-      >
+      {%- if section.settings.hero_heading != blank or section.settings.hero_subheading != blank -%}
+        <div class="immersive-featured__hero">
+          {%- if section.settings.hero_heading != blank -%}
+            <h2 class="immersive-featured__hero-heading">{{ section.settings.hero_heading | escape }}</h2>
+          {%- endif -%}
+          {%- if section.settings.hero_subheading != blank -%}
+            <div class="immersive-featured__hero-subheading">{{ section.settings.hero_subheading }}</div>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+      <div class="immersive-featured__grid" role="list">
         {%- for block in section.blocks -%}
           {%- if block.type == 'featured_item' -%}
             {%- assign collection = block.settings.collection -%}
@@ -1465,6 +1471,26 @@
     position: relative;
     padding: 6rem 0;
     background: linear-gradient(to bottom, #0a0f1e, #050812);
+  }
+
+  .immersive-featured__hero {
+    padding: 3rem 1.5rem 1rem;
+    text-align: center;
+  }
+
+  .immersive-featured__hero-heading {
+    font-family: serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    margin: 0 0 0.5rem;
+    color: #d4af37;
+  }
+
+  .immersive-featured__hero-subheading {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 600px;
+    margin: 0 auto;
   }
 
   .immersive-featured__grid {
