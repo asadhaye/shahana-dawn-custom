@@ -561,7 +561,11 @@
     "carousel_prev": "Previous",
     "carousel_next": "Next",
     "stacked_next": "Next look",
-    "back_to_lounge": "Back to Lounge"
+    "back_to_lounge": "Back to Lounge",
+    "story_chapter": {
+      "view_collection": "View collection",
+      "learn_more": "Learn more"
+    }
   },
   "immersive": {
     "product_grid": {

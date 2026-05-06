@@ -1,8 +1,9 @@
+{%- assign layout = section.settings.layout -%}
 <section
   id="immersive-editorial-{{ section.settings.room_key | escape }}"
-  class="immersive-editorial immersive-editorial--{{ section.settings.room_key | escape }} immersive-editorial--layout-{{ section.settings.layout | escape }}"
+  class="immersive-editorial immersive-editorial--{{ section.settings.room_key | escape }} immersive-editorial--layout-{{ layout | escape }}"
   data-room-key="{{ section.settings.room_key | escape }}"
-  data-layout="{{ section.settings.layout | escape }}"
+  data-layout="{{ layout | escape }}"
   data-section-id="{{ section.id }}"
 >
   <div class="immersive-editorial__hero {% if section.settings.layout == 'designers' %}immersive-editorial__hero--designers{% endif %}">
@@ -278,6 +279,54 @@
     </div>
   {%- endif -%}
 
+  {%- if layout == 'story' -%}
+    <div class="immersive-story-layout" data-room-key="{{ section.settings.room_key | escape }}">
+      <div class="immersive-story-layout__chapters" role="list">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'story_chapter' -%}
+            <article class="immersive-story-layout__chapter" {{ block.shopify_attributes }}>
+              {%- if block.settings.image -%}
+                <div class="immersive-story-layout__chapter-media">
+                  <img
+                    src="{{ block.settings.image | image_url: width: 1200 }}"
+                    alt="{{ block.settings.image.alt | escape }}"
+                    loading="lazy"
+                    width="{{ block.settings.image.width }}"
+                    height="{{ block.settings.image.height }}"
+                  >
+                </div>
+              {%- endif -%}
+              <div class="immersive-story-layout__chapter-content">
+                {%- if block.settings.eyebrow != blank -%}
+                  <span class="immersive-story-layout__chapter-eyebrow">{{ block.settings.eyebrow | escape }}</span>
+                {%- endif -%}
+                {%- if block.settings.heading != blank -%}
+                  <h3 class="immersive-story-layout__chapter-heading">{{ block.settings.heading | escape }}</h3>
+                {%- endif -%}
+                {%- if block.settings.body != blank -%}
+                  <div class="immersive-story-layout__chapter-body">{{ block.settings.body }}</div>
+                {%- endif -%}
+                {%- if block.settings.collection != blank or block.settings.cta_url != blank -%}
+                  <div class="immersive-story-layout__chapter-cta">
+                    {%- if block.settings.collection != blank -%}
+                      <a href="{{ block.settings.collection.url }}" class="immersive-story-layout__cta-link">
+                        Explore Collection
+                      </a>
+                    {%- elsif block.settings.cta_url != blank -%}
+                      <a href="{{ block.settings.cta_url }}" class="immersive-story-layout__cta-link">
+                        Learn More
+                      </a>
+                    {%- endif -%}
+                  </div>
+                {%- endif -%}
+              </div>
+            </article>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
+
   {%- if section.settings.layout == 'designers' -%}
     <div class="immersive-designers" data-room-key="{{ section.settings.room_key | escape }}">
       <div
@@ -315,40 +364,64 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'custom' -%}
-    <div class="immersive-editorial__banners">
-      {%- for block in section.blocks -%}
-        {%- if block.type == 'banner' -%}
-          <article
-            class="immersive-editorial__banner immersive-editorial__banner--{{ section.settings.layout | escape }}"
-            data-editorial-layer="{{ block.settings.depth_layer | default: 50 }}"
-            {{ block.shopify_attributes }}
-          >
-            {%- if block.settings.image -%}
-              <div class="immersive-editorial__banner-media">
-                <img
-                  src="{{ block.settings.image | image_url: width: 1200 }}"
-                  srcset="
-                    {{ block.settings.image | image_url: width: 600 }} 600w,
-                    {{ block.settings.image | image_url: width: 900 }} 900w,
-                    {{ block.settings.image | image_url: width: 1200 }} 1200w
-                  "
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  width="{{ block.settings.image.width }}"
-                  height="{{ block.settings.image.height }}"
-                  alt="{{ block.settings.image.alt | escape }}"
-                  loading="lazy"
-                >
-                {%- if block.settings.logo -%}
-                  <img
-                    class="immersive-editorial__banner-logo"
-                    src="{{ block.settings.logo | image_url: width: 300 }}"
-                    width="{{ block.settings.logo.width }}"
-                    height="{{ block.settings.logo.height }}"
-                    alt="{{ block.settings.logo.alt | escape }}"
-                    loading="lazy"
-                  >
+{%- if section.settings.layout == 'custom' -%}
+    <div class="immersive-custom" data-room-key="{{ section.settings.room_key | escape }}">
+      <div class="immersive-custom__grid">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'banner' -%}
+            <a href="{{ block.settings.collection.url | default: block.settings.cta_url | default: '#' }}"
+               class="immersive-custom__card"
+               {{ block.shopify_attributes }}>
+              {%- if block.settings.image -%}
+                <div class="immersive-custom__card-media">
+                  <img src="{{ block.settings.image | image_url: width: 800 }}" alt="{{ block.settings.image.alt | escape }}" loading="lazy">
+                </div>
+              {%- endif -%}
+              <div class="immersive-custom__card-content">
+                {%- if block.settings.heading != blank -%}
+                  <h3 class="immersive-custom__card-heading">{{ block.settings.heading | escape }}</h3>
                 {%- endif -%}
+                {%- if block.settings.body != blank -%}
+                  <div class="immersive-custom__card-body">{{ block.settings.body }}</div>
+                {%- endif -%}
+              </div>
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
+
+  {%- if layout == 'gallery' -%}
+    <div class="immersive-gallery-layout" data-room-key="{{ section.settings.room_key | escape }}">
+      <div class="immersive-gallery-layout__grid" role="list">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'gallery_card' -%}
+            {%- assign card_collection = block.settings.collection -%}
+            <a href="{{ card_collection.url | default: block.settings.cta_url | default: '#' }}"
+               class="immersive-gallery-layout__card"
+               role="listitem"
+               {{ block.shopify_attributes }}>
+              {%- if block.settings.image -%}
+                <div class="immersive-gallery-layout__card-media">
+                  <img
+                    src="{{ block.settings.image | image_url: width: 600 }}"
+                    alt="{{ block.settings.image.alt | escape }}"
+                    loading="lazy"
+                    width="{{ block.settings.image.width }}"
+                    height="{{ block.settings.image.height }}"
+                  >
+                </div>
+              {%- endif -%}
+              <div class="immersive-gallery-layout__card-label">
+                <span>{{ block.settings.heading | escape }}</span>
+              </div>
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
               </div>
             {%- endif -%}
             <div class="immersive-editorial__banner-content">
@@ -1895,6 +1968,239 @@
       width: auto;
     }
   }
+
+  /* ============================================================================
+      Story layout — vertical narrative chapters
+  ============================================================================ */
+  .immersive-story-layout {
+    position: relative;
+    padding: 4rem 2rem 6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .immersive-story-layout__chapters {
+    display: flex;
+    flex-direction: column;
+    gap: 6rem;
+  }
+
+  .immersive-story-layout__chapter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .immersive-story-layout__chapter:nth-child(even) {
+    direction: rtl;
+  }
+
+  .immersive-story-layout__chapter:nth-child(even) > * {
+    direction: ltr;
+  }
+
+  .immersive-story-layout__chapter-media {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+
+  .immersive-story-layout__chapter-media img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .immersive-story-layout__chapter:hover .immersive-story-layout__chapter-media img {
+    transform: scale(1.03);
+  }
+
+  .immersive-story-layout__chapter-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .immersive-story-layout__chapter-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #d4af37;
+  }
+
+  .immersive-story-layout__chapter-heading {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+
+  .immersive-story-layout__chapter-body {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.7;
+  }
+
+  .immersive-story-layout__chapter-cta {
+    margin-top: 1rem;
+  }
+
+  .immersive-story-layout__cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: 1px solid rgba(212, 175, 55, 0.6);
+    color: #d4af37;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+
+  .immersive-story-layout__cta-link:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: #d4af37;
+  }
+
+  .immersive-story-layout__cta-link:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 768px) {
+    .immersive-story-layout {
+      padding: 2rem 1rem 4rem;
+      gap: 3rem;
+    }
+
+    .immersive-story-layout__chapters {
+      gap: 4rem;
+    }
+
+    .immersive-story-layout__chapter {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .immersive-story-layout__chapter:nth-child(even) {
+      direction: ltr;
+    }
+
+    .immersive-story-layout__chapter-heading {
+      font-size: 1.75rem;
+    }
+
+    .immersive-story-layout__chapter-body {
+      font-size: 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-story-layout__chapter-media img {
+      transition: none;
+    }
+  }
+
+  /* ============================================================================
+      Gallery layout — grid of collection cards
+  ============================================================================ */
+  .immersive-gallery-layout {
+    position: relative;
+    padding: 4rem 2rem 6rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .immersive-gallery-layout__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .immersive-gallery-layout__card {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    overflow: hidden;
+    border-radius: 4px;
+    aspect-ratio: 3/4;
+    background: rgba(10, 15, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .immersive-gallery-layout__card-media {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .immersive-gallery-layout__card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .immersive-gallery-layout__card:hover .immersive-gallery-layout__card-media img {
+    transform: scale(1.08);
+  }
+
+  .immersive-gallery-layout__card-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem 1.5rem 1.5rem;
+    background: linear-gradient(to top, rgba(10, 15, 30, 0.95), transparent);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .immersive-gallery-layout__card-label span {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+  }
+
+  @media (max-width: 1024px) {
+    .immersive-gallery-layout__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .immersive-gallery-layout {
+      padding: 2rem 1rem 4rem;
+    }
+
+    .immersive-gallery-layout__grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .immersive-gallery-layout__card-label span {
+      font-size: 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-gallery-layout__card-media img {
+      transition: none;
+    }
+  }
 {% endstylesheet %}
 
 {% javascript %}
@@ -2187,7 +2493,8 @@
         { "value": "coverflow", "label": "t:sections.immersive_editorial.settings.layout.options__6.label" },
         { "value": "stacked", "label": "t:sections.immersive_editorial.settings.layout.options__7.label" },
         { "value": "perspective", "label": "t:sections.immersive_editorial.settings.layout.options__8.label" },
-        { "value": "marquee", "label": "t:sections.immersive_editorial.settings.layout.options__9.label" }
+        { "value": "marquee", "label": "t:sections.immersive_editorial.settings.layout.options__9.label" },
+        { "value": "story", "label": "t:sections.immersive_editorial.settings.layout_story_label", "info": "t:sections.immersive_editorial.settings.layout_story_info" }
       ]
     },
     {
@@ -2435,6 +2742,42 @@
           "type": "url",
           "id": "cta_url",
           "label": "t:sections.immersive_editorial.blocks.marquee_item.settings.cta_url.label"
+        }
+      ]
+    },
+    {
+      "type": "story_chapter",
+      "name": "t:sections.immersive_editorial.blocks.story_chapter.name",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:sections.immersive_editorial.blocks.story_chapter.settings.image.label"
+        },
+        {
+          "type": "text",
+          "id": "eyebrow",
+          "label": "t:sections.immersive_editorial.blocks.story_chapter.settings.eyebrow.label"
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.immersive_editorial.blocks.story_chapter.settings.heading.label"
+        },
+        {
+          "type": "richtext",
+          "id": "body",
+          "label": "t:sections.immersive_editorial.blocks.story_chapter.settings.body.label"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.immersive_editorial.blocks.story_chapter.settings.collection.label"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_editorial.blocks.story_chapter.settings.cta_url.label"
         }
       ]
     }

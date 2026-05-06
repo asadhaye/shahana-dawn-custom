@@ -73,10 +73,10 @@ const STORE_ROOMS = {
   },
 
   designer_houses: {
-    baseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-base.jpg?v=1775510548=85',
-    mobileBaseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126=75',
-    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548=70',
-    mobileDepthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.png?v=1775516123=70',
+    baseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-base.jpg?v=1775510548&width=1600',
+    mobileBaseTextureUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126&width=900',
+    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548&width=1600',
+    mobileDepthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.png?v=1775516123&width=900',
     hotspots: [
       { x: 50, y: 15, label: 'Explore Designers', targetEditorialRoom: 'designer_houses' },
       { x: 13, y: 40, label: 'Suffuse', targetCollection: 'suffuse' },
@@ -108,11 +108,12 @@ const STORE_ROOMS = {
   featured_collections: {
     baseTextureUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=1600&quality=75',
-    mobileBaseTextureUrl: 'https://picsum.photos/id/1080/900/1600',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=900&quality=75',
     depthMapUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
     mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/brand.png?v=1772196733&width=900&quality=60',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=900&quality=60',
     hotspots: [
       { x: 25, y: 40, label: 'SS5 Summer Pret 26', targetCollection: 'summer-pret-26-eid-edit-saad-bin-shahzad' },
       { x: 50, y: 40, label: 'Suffuse Luxury Pret', targetCollection: 'luxury-pret-suffuse' },
@@ -1819,6 +1820,7 @@ function closePanel(panel) {
   }, 400);
 }
 
+
 function openProductPanel(productHandle, collectionHandle) {
   exitGuidedMode();
   recordBrowsingSignal(immersiveState.currentRoom);
@@ -2040,7 +2042,7 @@ function enterEditorialMode(roomKey, triggerEl) {
 
   if (!sectionInstanceId) return;
 
-  var fetchUrl = window.location.pathname + '?section_id=' + sectionInstanceId;
+  var fetchUrl = window.location.pathname + '?sections=' + sectionInstanceId;
   openOverlay(
     'immersive-editorial-overlay',
     'immersive-editorial-overlay-content',
@@ -2113,6 +2115,65 @@ function exitEditorialMode() {
     performUIDeactivation();
     immersiveState.lastHotspot = null;
   }
+}
+
+function exitGuidedMode() {
+  if (!immersiveState || !immersiveState.guided) return;
+
+  immersiveState.guided = false;
+
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (prompt) {
+    prompt.style.display = 'none';
+    prompt.setAttribute('aria-hidden', 'true');
+  }
+
+  var progress = document.getElementById('immersive-guided-progress');
+  if (progress) {
+    progress.style.display = 'none';
+    progress.setAttribute('aria-hidden', 'true');
+  }
+
+  if (window.__immersiveGuidedTimeout) {
+    clearTimeout(window.__immersiveGuidedTimeout);
+    window.__immersiveGuidedTimeout = null;
+  }
+
+  try {
+    trackImmersiveEvent && trackImmersiveEvent('guided_mode_exited', {
+      room: immersiveState.currentRoom || null
+    });
+  } catch (e) {}
+}
+
+function activateGuidedMode() {
+  if (!immersiveState) return;
+
+  immersiveState.guided = true;
+
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (prompt) {
+    prompt.style.display = 'block';
+    prompt.removeAttribute('aria-hidden');
+  }
+
+  var progress = document.getElementById('immersive-guided-progress');
+  if (progress) {
+    progress.style.display = 'flex';
+    progress.removeAttribute('aria-hidden');
+  }
+
+  var progressDots = progress ? progress.querySelectorAll('.immersive-guided-progress__dot') : [];
+  progressDots.forEach(function (dot, index) {
+    dot.classList.remove('is-active', 'is-done');
+    if (index === 0) dot.classList.add('is-active');
+  });
+
+  try {
+    trackImmersiveEvent && trackImmersiveEvent('guided_mode_entered', {
+      room: immersiveState.currentRoom || null
+    });
+  } catch (e) {}
 }
 
 function updateCameraForMode() {
@@ -2405,7 +2466,7 @@ function showImmersiveOnboardingIfNeeded() {
   } catch (e) {}
   var overlay = document.getElementById('immersive-onboarding');
   if (overlay) {
-    overlay.style.display = 'block';
+    overlay.style.display = 'flex';
   }
 }
 
