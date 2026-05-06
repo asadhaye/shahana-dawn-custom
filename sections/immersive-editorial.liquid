@@ -107,89 +107,41 @@
   </div>
 
   {%- if section.settings.layout == 'occasions' -%}
-    <div class="immersive-occasions" data-room-key="{{ section.settings.room_key | escape }}">
-      <div
-        class="immersive-occasions__list"
-        role="list"
-        aria-label="{{ section.settings.hero_heading | default: 'Occasions' | escape }}"
-      >
+    <div class="immersive-occasions immersive-occasions--story" data-room-key="{{ section.settings.room_key | escape }}">
+      {%- if section.settings.hero_heading != blank or section.settings.hero_subheading != blank -%}
+        <div class="immersive-occasions__hero">
+          {%- if section.settings.hero_heading != blank -%}
+            <h2 class="immersive-occasions__hero-heading">{{ section.settings.hero_heading | escape }}</h2>
+          {%- endif -%}
+          {%- if section.settings.hero_subheading != blank -%}
+            <div class="immersive-occasions__hero-subheading">{{ section.settings.hero_subheading }}</div>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+      <div class="immersive-occasions__chapters" role="list">
         {%- for block in section.blocks -%}
           {%- if block.type == 'occasion_card' -%}
-            {%- if forloop.index == 2 or forloop.index == 4 -%}
-              <div class="immersive-occasions__interstitial" {{ block.shopify_attributes }}>
-                <span class="immersive-occasions__interstitial-line"></span>
-                <p class="immersive-occasions__interstitial-text">A Celebration of Heritage</p>
-              </div>
-            {%- endif -%}
-
-            {%- assign collection = block.settings.collection -%}
-            {%- assign card_url = collection.url | default: block.settings.cta_url | default: '#' -%}
-            {%- assign card_label = block.settings.heading | default: collection.title -%}
-            <a
-              class="immersive-occasions__card immersive-occasions__card--{{ forloop.index | modulo: 3 }}"
-              href="{{ card_url }}"
-              role="listitem"
-              aria-label="{{ card_label | escape }}"
-              {%- if collection != blank -%}
-                data-collection="{{ collection.handle }}"
-              {%- endif -%}
-              {{ block.shopify_attributes }}
-            >
-              <div class="immersive-occasions__card-media">
-                {%- if block.settings.image != blank -%}
-                  <img
-                    src="{{ block.settings.image | image_url: width: 1200 }}"
-                    srcset="
-                      {{ block.settings.image | image_url: width: 600 }} 600w,
-                      {{ block.settings.image | image_url: width: 900 }} 900w,
-                      {{ block.settings.image | image_url: width: 1200 }} 1200w
-                    "
-                    sizes="(max-width: 768px) 100vw, 1100px"
-                    width="{{ block.settings.image.width }}"
-                    height="{{ block.settings.image.height }}"
-                    alt="{{ block.settings.image.alt | default: card_label | escape }}"
-                    loading="lazy"
-                  >
-                {%- elsif collection.featured_image != blank -%}
-                  <img
-                    src="{{ collection.featured_image | image_url: width: 1200 }}"
-                    srcset="
-                      {{ collection.featured_image | image_url: width: 600 }} 600w,
-                      {{ collection.featured_image | image_url: width: 900 }} 900w,
-                      {{ collection.featured_image | image_url: width: 1200 }} 1200w
-                    "
-                    sizes="(max-width: 768px) 100vw, 1100px"
-                    width="{{ collection.featured_image.width }}"
-                    height="{{ collection.featured_image.height }}"
-                    alt="{{ collection.featured_image.alt | default: card_label | escape }}"
-                    loading="lazy"
-                  >
-                {%- else -%}
-                  {%- comment -%}Placeholder — replace with occasion card image in theme editor{%- endcomment -%}
-                  {%- assign _occ_placeholders = '64,65,66,67,68' | split: ',' -%}
-                  {%- assign _occ_index = forloop.index0 | modulo: 5 -%}
-                  {%- assign _occ_id = _occ_placeholders[_occ_index] -%}
-                  <img
-                    class="immersive-occasions__card-placeholder-img"
-                    src="https://picsum.photos/id/{{ _occ_id }}/900/1200"
-                    alt="{{ card_label | escape }}"
-                    loading="lazy"
-                    width="900"
-                    height="1200"
-                  >
-                {%- endif -%}
-              </div>
-              <div class="immersive-occasions__card-content">
-                <h3 class="immersive-occasions__card-heading">{{ card_label | escape }}</h3>
-                {%- if block.settings.body != blank -%}
-                  <div class="immersive-occasions__card-body">{{ block.settings.body }}</div>
-                {%- endif -%}
-                <div class="immersive-occasions__card-footer">
-                  <span class="immersive-occasions__card-discover">Discover the Edit</span>
-                  <span class="immersive-occasions__card-arrow" aria-hidden="true">→</span>
+            <article class="immersive-occasions__chapter" {{ block.shopify_attributes }}>
+              {%- if block.settings.image -%}
+                <div class="immersive-occasions__chapter-media">
+                  <img src="{{ block.settings.image | image_url: width: 1200 }}" alt="{{ block.settings.image.alt | escape }}" loading="lazy" width="{{ block.settings.image.width }}" height="{{ block.settings.image.height }}">
                 </div>
+              {%- endif -%}
+              <div class="immersive-occasions__chapter-content">
+                {%- if block.settings.body != blank -%}
+                  <span class="immersive-occasions__chapter-eyebrow">{{ block.settings.body | escape }}</span>
+                {%- endif -%}
+                {%- if block.settings.heading != blank -%}
+                  <h3 class="immersive-occasions__chapter-heading">{{ block.settings.heading | escape }}</h3>
+                {%- endif -%}
+                {%- assign collection = block.settings.collection -%}
+                {%- if collection != blank -%}
+                  <a href="{{ collection.url }}" class="immersive-occasions__chapter-link" data-collection="{{ collection.handle }}">View Collection</a>
+                {%- elsif block.settings.cta_url != blank -%}
+                  <a href="{{ block.settings.cta_url }}" class="immersive-occasions__chapter-link">Learn More</a>
+                {%- endif -%}
               </div>
-            </a>
+            </article>
           {%- endif -%}
         {%- endfor -%}
       </div>
@@ -1262,6 +1214,96 @@
     font-size: 1.5rem;
     letter-spacing: 0.1em;
     color: rgba(255, 255, 255, 0.5);
+  }
+
+  .immersive-occasions__hero {
+    padding: 4rem 1.5rem 2rem;
+    text-align: center;
+  }
+
+  .immersive-occasions__hero-heading {
+    font-family: serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    margin: 0 0 0.5rem;
+    color: #d4af37;
+  }
+
+  .immersive-occasions__hero-subheading {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .immersive-occasions__chapters {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+    padding: 0 1.5rem 4rem;
+  }
+
+  .immersive-occasions__chapter {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  @media screen and (min-width: 768px) {
+    .immersive-occasions__chapter {
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+    }
+
+    .immersive-occasions__chapter:nth-child(even) .immersive-occasions__chapter-media {
+      order: 1;
+    }
+  }
+
+  .immersive-occasions__chapter-media img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 0.5rem;
+  }
+
+  .immersive-occasions__chapter-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .immersive-occasions__chapter-eyebrow {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #d4af37;
+  }
+
+  .immersive-occasions__chapter-heading {
+    font-family: serif;
+    font-size: 1.75rem;
+    margin: 0;
+    color: #fff;
+  }
+
+  .immersive-occasions__chapter-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #d4af37;
+    text-decoration: none;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    transition: gap 0.2s ease;
+  }
+
+  .immersive-occasions__chapter-link:hover {
+    gap: 0.75rem;
   }
 
   .immersive-occasions__card {
