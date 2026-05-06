@@ -2251,6 +2251,7 @@
         var el = sections[i];
         if (el.classList.contains('immersive-editorial')) {
           initEditorialParallax(el.dataset.roomKey);
+          initDesignersTimeline(el);
         }
       }
     }
@@ -2274,6 +2275,73 @@
     } else {
       initAll();
     }
+
+    // ── Designers timeline ─────────────────────────────────────────────────
+    function initDesignersTimeline(container) {
+      container = container || document;
+      var timeline = container.querySelector('.immersive-designers__timeline');
+      if (!timeline) return;
+
+      var markers = timeline.querySelectorAll('.immersive-designers__marker');
+      var thumb = timeline.querySelector('.immersive-designers__thumb');
+      var heroWrap = container.querySelector('.immersive-designers__hero-transition-wrap');
+      var heroStates = heroWrap ? heroWrap.querySelectorAll('.immersive-designers__hero-state') : [];
+
+      function updateThumb(position) {
+        if (!thumb || !position) return;
+        thumb.style.left = position.left + 'px';
+        thumb.style.width = position.width + 'px';
+        if (!reduceMotion) {
+          thumb.style.transition = 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+      }
+
+      markers.forEach(function (marker, index) {
+        marker.addEventListener('click', function (e) {
+          e.preventDefault();
+          markers.forEach(function (m) { return m.classList.remove('is-active'); });
+          this.classList.add('is-active');
+
+          heroStates.forEach(function (state, si) {
+            if (si === index) {
+              state.classList.add('is-active');
+              state.style.visibility = 'visible';
+              state.style.opacity = '1';
+              state.style.zIndex = '1';
+            } else {
+              state.classList.remove('is-active');
+              state.style.visibility = 'hidden';
+              state.style.opacity = '0';
+              state.style.zIndex = '0';
+            }
+          });
+
+          var rect = this.getBoundingClientRect();
+          var railRect = timeline.querySelector('.immersive-designers__rail').getBoundingClientRect();
+          updateThumb({
+            left: rect.left - railRect.left,
+            width: rect.width
+          });
+        });
+      });
+
+      var activeMarker = timeline.querySelector('.immersive-designers__marker.is-active') || markers[0];
+      if (activeMarker && markers.length > 0) {
+        var firstRect = activeMarker.getBoundingClientRect();
+        var railRect = timeline.querySelector('.immersive-designers__rail').getBoundingClientRect();
+        updateThumb({
+          left: firstRect.left - railRect.left,
+          width: firstRect.width
+        });
+      }
+    }
+
+    document.addEventListener('shopify:section:load', function (e) {
+      var section = e.target;
+      if (section && section.classList.contains('immersive-editorial')) {
+        initDesignersTimeline(section);
+      }
+    });
 
     // ── CoverFlow carousel ──────────────────────────────────────────────────
     function initCoverflow(root) {
