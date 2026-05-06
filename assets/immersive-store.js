@@ -738,16 +738,18 @@ function initFab() {
   });
 
   var isDragging = false;
-  var startY, startTopPct;
+  var startY, startTopPct, startRight;
 
   fab.addEventListener('mousedown', function (e) {
-    if (e.target === trigger || trigger.contains(e.target)) return;
     isDragging = true;
     startY = e.clientY;
     var style = window.getComputedStyle(fab);
     var topMatch = style.top.match(/([\d.]+)%/);
     startTopPct = topMatch ? parseFloat(topMatch[1]) : 50;
+    var rightMatch = style.right.match(/([\d.]+)px/);
+    startRight = rightMatch ? parseFloat(rightMatch[1]) : 20;
     fab.style.transition = 'none';
+    fab.style.transform = 'none';
   });
 
   document.addEventListener('mousemove', function (e) {
@@ -756,13 +758,14 @@ function initFab() {
     var windowH = window.innerHeight;
     var newTopPct = startTopPct + (dy / windowH) * 100;
     fab.style.top = newTopPct + '%';
-    fab.style.transform = 'none';
+    fab.style.right = startRight + 'px';
   });
 
   document.addEventListener('mouseup', function () {
     if (isDragging) {
       isDragging = false;
       fab.style.transition = '';
+      fab.style.transform = 'translateY(-50%)';
     }
   });
 
