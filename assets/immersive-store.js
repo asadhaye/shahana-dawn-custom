@@ -1163,6 +1163,9 @@ function handleMouseMove(event) {
   var rect = canvasRect;
   mouseTarget.x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
   mouseTarget.y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+  if (Math.abs(mouseTarget.x - 0.5) > 0.01 || Math.abs(mouseTarget.y - 0.5) > 0.01) {
+    console.log('[Immersive] Mouse position:', mouseTarget.x.toFixed(2), mouseTarget.y.toFixed(2));
+  }
 }
 
 var resizeRaf = null;
@@ -1694,6 +1697,7 @@ function loadRoomTextures(roomData, callback) {
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
       loaded.depth = tex;
+      console.log('[Immersive] Depth texture loaded for', roomData.roomKey, 'size:', tex.image?.width, 'x', tex.image?.height);
       onBothLoaded();
     },
     undefined,
