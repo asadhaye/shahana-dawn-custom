@@ -2382,6 +2382,10 @@ function initDesignersEditorial(rootEl) {
         left: rect.left - railRect.left,
         width: rect.width
       });
+      var collectionHandle = this.getAttribute('data-collection-handle');
+      if (collectionHandle) {
+        loadDesignerGrid(collectionHandle, designersRoot);
+      }
     });
   });
   var activeMarker = designersRoot.querySelector('.immersive-designers__marker.is-active') || markers[0];
@@ -2393,7 +2397,37 @@ function initDesignersEditorial(rootEl) {
       left: firstRect.left - railRect.left,
       width: firstRect.width
     });
+    var firstCollectionHandle = activeMarker.getAttribute('data-collection-handle');
+    if (firstCollectionHandle) {
+      loadDesignerGrid(firstCollectionHandle, designersRoot);
+    }
   }
+}
+
+function loadDesignerGrid(collectionHandle, designersRoot) {
+  var productsEl = designersRoot.querySelector('.immersive-designers__products');
+  if (!productsEl || !collectionHandle) return;
+  productsEl.innerHTML = '<div class="immersive-designers__products-loading" style="padding:2rem;text-align:center;color:#d4af37;">Loading...</div>';
+  var fetchUrl = '/collections/' + collectionHandle + '?sections=immersive-designer-grid';
+  fetchWithCache(fetchUrl)
+    .then(function (html) {
+      var temp = document.createElement('div');
+      temp.innerHTML = html;
+      var gridHtml = temp.querySelector('.immersive-designer-grid');
+      if (gridHtml) {
+        productsEl.innerHTML = gridHtml.outerHTML;
+        var images = productsEl.querySelectorAll('img:not([loading])');
+        for (var i = 0; i < images.length; i++) {
+          images[i].setAttribute('loading', 'lazy');
+        }
+      } else {
+        productsEl.innerHTML = '<p style="padding:2rem;text-align:center;color:rgba(255,255,255,0.5);">No products found.</p>';
+      }
+    })
+    .catch(function (err) {
+      console.error('[Immersive] Designer grid load failed:', err);
+      productsEl.innerHTML = '<p style="padding:2rem;text-align:center;color:rgba(255,255,255,0.5);">Unable to load products.</p>';
+    });
 }
 
 function initEditorialHeroParallax() {
