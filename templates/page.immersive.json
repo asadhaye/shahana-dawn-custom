@@ -154,52 +154,43 @@
     "editorial_occasions": {
       "type": "immersive-editorial",
       "blocks": {
-        "occasion_eid": {
-          "type": "occasion_card",
+        "story_eid": {
+          "type": "story_chapter",
           "settings": {
-            "heading": "Eid Collection",
+            "image": "shopify://shop_images/SILK_PRET.webp",
+            "eyebrow": "Eid Collection",
+            "heading": "A Celebration of Colour",
             "body": "<p>Celebrate in colour. Our Eid edit brings together the finest embroidered lawns, silk kurtas, and festive separates for every gathering.</p>",
-            "collection": "eid-collection",
-            "cta_url": ""
+            "collection": "eid-collection"
           }
         },
-        "occasion_bridal": {
-          "type": "occasion_card",
+        "story_bridal": {
+          "type": "story_chapter",
           "settings": {
-            "heading": "Bridal & Mehndi",
-            "body": "<p>From the mehndi morning to the walima evening — a complete bridal wardrobe curated for every ritual of the celebration.</p>",
-            "collection": "bridal-mehndi",
-            "cta_url": ""
+            "eyebrow": "Bridal & Mehndi",
+            "heading": "Forever in Gold",
+            "body": "<p>For the moments that matter most. Our bridal collections are crafted with zardozi, kamdani, and generations of expertise — designed to be heirlooms.</p>",
+            "collection": "bridal-mehndi"
           }
         },
-        "occasion_formals": {
-          "type": "occasion_card",
+        "story_formals": {
+          "type": "story_chapter",
           "settings": {
-            "heading": "Luxury Formals",
-            "body": "<p>Dawat, nikah, and formal evenings call for something extraordinary. Discover heavily embellished pieces crafted for the moments that matter.</p>",
-            "collection": "luxury-formals",
-            "cta_url": ""
-          }
-        },
-        "occasion_pret": {
-          "type": "occasion_card",
-          "settings": {
-            "heading": "Casual Pret",
-            "body": "<p>Effortless elegance for everyday. Our pret line brings the same quality and craft to your daily wardrobe.</p>",
-            "collection": "casual-pret",
-            "cta_url": ""
+            "eyebrow": "Luxury Formals",
+            "heading": "Power Dressing, Reimagined",
+            "body": "<p>From boardrooms to black-tie events. Our luxury formals combine architectural precision with artisanal detailing for the modern power dresser.</p>",
+            "collection": "luxury-formals"
           }
         }
       },
       "block_order": [
-        "occasion_eid",
-        "occasion_bridal",
-        "occasion_formals",
-        "occasion_pret"
+        "story_eid",
+        "story_bridal",
+        "story_formals"
       ],
       "settings": {
         "room_key": "occasions",
-        "layout": "occasions",
+        "layout": "story",
         "hero_eyebrow": "Curated for every moment",
         "hero_heading": "Dress the Occasion",
         "hero_subheading": "<p>From intimate gatherings to grand celebrations — find the perfect expression for every chapter of your story.</p>"
@@ -208,42 +199,40 @@
     "editorial_featured_collections": {
       "type": "immersive-editorial",
       "blocks": {
-        "featured_ss5": {
-          "type": "featured_item",
+        "gallery_ss5": {
+          "type": "gallery_card",
           "settings": {
+            "image": "shopify://shop_images/SILK_PRET.webp",
             "heading": "SS5 Summer Pret '26",
-            "body": "<p>Saad Bin Shahzad's summer pret edit — lightweight fabrics, architectural cuts, and the quiet confidence of a house at its peak.</p>",
             "collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
             "cta_url": ""
           }
         },
-        "featured_suffuse_pret": {
-          "type": "featured_item",
+        "gallery_suffuse": {
+          "type": "gallery_card",
           "settings": {
             "heading": "Suffuse Luxury Pret",
-            "body": "<p>The everyday elevated. Suffuse's luxury pret line brings signature embroidery and refined silhouettes to your daily wardrobe.</p>",
             "collection": "luxury-pret-suffuse",
             "cta_url": ""
           }
         },
-        "featured_soraya_eid": {
-          "type": "featured_item",
+        "gallery_soraya": {
+          "type": "gallery_card",
           "settings": {
             "heading": "Soraya Eid Pret",
-            "body": "<p>Lumene Festive '25–'26 — Soraya's most celebrated seasonal collection, now available in the immersive store.</p>",
             "collection": "lumene-festive-25-26-soraya-official",
             "cta_url": ""
           }
         }
       },
       "block_order": [
-        "featured_ss5",
-        "featured_suffuse_pret",
-        "featured_soraya_eid"
+        "gallery_ss5",
+        "gallery_suffuse",
+        "gallery_soraya"
       ],
       "settings": {
         "room_key": "featured_collections",
-        "layout": "featured_collections",
+        "layout": "gallery",
         "hero_eyebrow": "This season",
         "hero_heading": "The Edit",
         "hero_subheading": "<p>Three collections. Three stories. One curated moment in Pakistani fashion.</p>"

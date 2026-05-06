@@ -473,6 +473,43 @@
   "immersive_store": {
     "name": "Immersive store",
     "panel_title": "Panel title",
+    "blocks": {
+      "hotspot": {
+        "name": "Hotspot",
+        "settings": {
+          "room": {
+            "label": "Room"
+          },
+          "label": {
+            "label": "Label"
+          },
+          "target_type": {
+            "label": "Target type",
+            "options": {
+              "room": "Navigate to room",
+              "editorial": "Open editorial",
+              "collection": "Open collection"
+            }
+          },
+          "target_value": {
+            "label": "Target value",
+            "info": "Room key (e.g., 'lounge') or collection handle"
+          },
+          "x": {
+            "label": "X position (desktop, %)"
+          },
+          "y": {
+            "label": "Y position (desktop, %)"
+          },
+          "mobile_x": {
+            "label": "X position (mobile, %)"
+          },
+          "mobile_y": {
+            "label": "Y position (mobile, %)"
+          }
+        }
+      }
+    },
     "settings": {
       "base_image": {
         "label": "Base image"
@@ -518,6 +555,33 @@
         "label_2": "Hotspot 2 — Label",
         "label_3": "Hotspot 3 — Label",
         "label_4": "Hotspot 4 — Label"
+      },
+      "header_storefront_hotspots": {
+        "content": "Storefront hotspots"
+      },
+      "header_lounge_hotspots": {
+        "content": "Lounge hotspots"
+      },
+      "header_designer_houses_hotspots": {
+        "content": "Designer Houses hotspots"
+      },
+      "header_occasions_hotspots": {
+        "content": "Occasions hotspots"
+      },
+      "header_featured_collections_hotspots": {
+        "content": "Featured Collections hotspots"
+      },
+      "hotspot_x": {
+        "label": "X position (desktop, %)"
+      },
+      "hotspot_y": {
+        "label": "Y position (desktop, %)"
+      },
+      "hotspot_mobile_x": {
+        "label": "X position (mobile, %)"
+      },
+      "hotspot_mobile_y": {
+        "label": "Y position (mobile, %)"
       },
       "enable_vto": {
         "label": "Enable Virtual Try-On"
@@ -779,7 +843,9 @@
         "options__6": { "label": "CoverFlow carousel" },
         "options__7": { "label": "Stacked cards" },
         "options__8": { "label": "3D perspective carousel" },
-        "options__9": { "label": "Marquee" }
+        "options__9": { "label": "Marquee" },
+        "layout_story_label": "Vertical story",
+        "layout_story_info": "Narrative chapter layout for storytelling"
       },
       "hero_background_image": { "label": "Hero background image" },
       "hero_eyebrow": { "label": "Eyebrow text" },
@@ -855,6 +921,17 @@
           "logo": { "label": "Brand logo" },
           "heading": { "label": "Brand name (if no logo)" },
           "collection": { "label": "Collection" },
+          "cta_url": { "label": "Override link" }
+        }
+      },
+      "story_chapter": {
+        "name": "Story chapter",
+        "settings": {
+          "image": { "label": "Chapter image" },
+          "eyebrow": { "label": "Eyebrow text" },
+          "heading": { "label": "Chapter heading" },
+          "body": { "label": "Chapter body" },
+          "collection": { "label": "Collection link" },
           "cta_url": { "label": "Override link" }
         }
       }
