@@ -689,20 +689,12 @@ function loadNavigationHistory() {
 function updateBackButton() {
   var backBtn = document.querySelector('[data-immersive-back]');
   if (!backBtn) return;
-  console.log(
-    '[Immersive] updateBackButton - history length:',
-    _navigationHistory.length,
-    'history:',
-    _navigationHistory,
-  );
   if (_navigationHistory.length > 1) {
     backBtn.hidden = false;
     backBtn.disabled = false;
-    console.log('[Immersive] Back button shown');
   } else {
     backBtn.hidden = true;
     backBtn.disabled = true;
-    console.log('[Immersive] Back button hidden');
   }
 }
 
@@ -712,9 +704,11 @@ function initBackButton() {
   loadNavigationHistory();
   updateBackButton();
   backBtn.addEventListener('click', function () {
-    console.log('[Immersive] Back button clicked');
+    var panel = document.getElementById(glassPanelId);
+    if (panel && !panel.hasAttribute('hidden')) {
+      closePanel(panel);
+    }
     var previousRoom = popNavigationHistory();
-    console.log('[Immersive] Previous room:', previousRoom);
     if (previousRoom && typeof goToRoom === 'function') {
       goToRoom(previousRoom, false, true);
     }
