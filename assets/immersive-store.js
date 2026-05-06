@@ -1792,6 +1792,13 @@ function closeDialogFocus(panel, triggerEl) {
 
 function openPanel(panel, triggerEl) {
   if (!panel) return null;
+  var closeBtn = panel.querySelector('.immersive-store__panel-close');
+  if (closeBtn && !closeBtn._clickBound) {
+    closeBtn._clickBound = true;
+    closeBtn.addEventListener('click', function () {
+      closePanel(panel);
+    });
+  }
   panel.classList.remove('hidden');
   panel.removeAttribute('hidden');
   panel.setAttribute('data-open', 'true');
