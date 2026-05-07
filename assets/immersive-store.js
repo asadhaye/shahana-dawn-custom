@@ -313,6 +313,83 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   return galleryStageRegistry[roomKey];
 }
 
+// Gallery carousel interaction - drag to rotate like Indrajaal
+var galleryDragState = {
+  isDragging: false,
+  startX: 0,
+  lastX: 0,
+  velocity: 0,
+};
+
+function initGalleryCarousel(canvas) {
+  if (!canvas) return;
+  var startHandler = function (e) {
+    if (!galleryStageRegistry[currentRoomKey]) return;
+    galleryDragState.isDragging = true;
+    galleryDragState.startX = e.clientX || e.touches?.[0]?.clientX || 0;
+    galleryDragState.lastX = galleryDragState.startX;
+    canvas.style.cursor = 'grabbing';
+  };
+  var moveHandler = function (e) {
+    if (!galleryDragState.isDragging) return;
+    var x = e.clientX || e.touches?.[0]?.clientX || 0;
+    var delta = (x - galleryDragState.lastX) * 0.008;
+    var state = galleryStageRegistry[currentRoomKey];
+    if (state) {
+      state.targetAngle += delta;
+    }
+    galleryDragState.lastX = x;
+    galleryDragState.velocity = delta;
+  };
+  var endHandler = function () {
+    galleryDragState.isDragging = false;
+    canvas.style.cursor = 'grab';
+  };
+  var wheelHandler = function (e) {
+    if (!galleryStageRegistry[currentRoomKey]) return;
+    e.preventDefault();
+    var state = galleryStageRegistry[currentRoomKey];
+    if (state) {
+      state.targetAngle += e.deltaY * 0.002;
+    }
+  };
+  canvas.style.cursor = 'grab';
+  canvas.addEventListener('mousedown', startHandler);
+  canvas.addEventListener('touchstart', startHandler, { passive: true });
+  document.addEventListener('mousemove', moveHandler);
+  document.addEventListener('touchmove', moveHandler, { passive: true });
+  document.addEventListener('mouseup', endHandler);
+  document.addEventListener('touchend', endHandler);
+  canvas.addEventListener('wheel', wheelHandler, { passive: false });
+}
+
+function animateGalleryCarousel() {
+  var state = galleryStageRegistry[currentRoomKey];
+  if (!state || !state.group) return;
+  // Apply inertia when not dragging
+  if (!galleryDragState.isDragging && Math.abs(galleryDragState.velocity) > 0.0001) {
+    state.targetAngle += galleryDragState.velocity;
+    galleryDragState.velocity *= 0.95;
+  }
+  // Smooth rotation
+  state.currentAngle += (state.targetAngle - state.currentAngle) * 0.08;
+  var count = state.planes.length;
+  if (count < 2) return;
+  var arcDegrees = 140;
+  var radius = state.radius || 7;
+  var step = arcDegrees / (count - 1);
+  var startAngle = -arcDegrees / 2;
+  state.planes.forEach(function (plane, index) {
+    var baseAngle = startAngle + step * index;
+    var angleDeg = baseAngle + state.currentAngle * (180 / Math.PI);
+    var rad = (angleDeg * Math.PI) / 180;
+    var x = Math.sin(rad) * radius;
+    var z = Math.cos(rad) * radius * -1;
+    plane.position.x = x;
+    plane.position.z = z;
+  });
+}
+
 var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function () {})();
 var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function () {})();
 
@@ -1357,6 +1434,11 @@ function animate() {
   mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
   uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
 
+  // Animate gallery carousel rotation
+  if (galleryStageRegistry[currentRoomKey]) {
+    animateGalleryCarousel();
+  }
+
   if (!reduceMotion && activeHotspots.length > 0) {
     for (var i = 0; i < activeHotspots.length; i++) {
       var h = activeHotspots[i];
@@ -1583,6 +1665,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
             verticalOffset: 0.3,
             tiltDegrees: -4,
           });
+          initGalleryCarousel(canvasEl);
         }
 
         renderHotspots(roomKey);
