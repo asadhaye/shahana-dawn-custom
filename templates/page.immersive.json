@@ -489,6 +489,16 @@
     "webgl_gallery_exclusives": {
       "type": "immersive-webgl-gallery-config",
       "blocks": {
+        "gallery_item_hqmG9k": {
+          "type": "gallery_item",
+          "settings": {
+            "image": "shopify://shop_images/1O9A0502.png",
+            "title": "Aura",
+            "subtitle": "Soraya",
+            "product": "aura",
+            "collection": ""
+          }
+        },
         "gallery_item_1": {
           "type": "gallery_item",
           "settings": {
@@ -541,6 +551,7 @@
         }
       },
       "block_order": [
+        "gallery_item_hqmG9k",
         "gallery_item_1",
         "gallery_item_2",
         "gallery_item_3",
