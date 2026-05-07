@@ -558,6 +558,7 @@
         "gallery_item_4",
         "gallery_item_5"
       ],
+      "disabled": true,
       "settings": {
         "room_key": "storefront"
       }
