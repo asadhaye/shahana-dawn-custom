@@ -492,6 +492,7 @@
         "gallery_item_1": {
           "type": "gallery_item",
           "settings": {
+            "image": "shopify://shop_images/6_7eee4c23-ac96-4839-828d-c3a51575d45e.jpg",
             "title": "Eid Gold Mirage",
             "subtitle": "Hand-embellished chiffon and organza",
             "product": "",
@@ -501,6 +502,7 @@
         "gallery_item_2": {
           "type": "gallery_item",
           "settings": {
+            "image": "shopify://shop_images/5_85fbc7b9-e1c0-4f1b-9fdc-d6da0a63dbf6.jpg",
             "title": "Bridal Noir",
             "subtitle": "Midnight velvet with gold zardozi",
             "product": "",
@@ -510,6 +512,7 @@
         "gallery_item_3": {
           "type": "gallery_item",
           "settings": {
+            "image": "shopify://shop_images/6_14f60a5b-0f1a-4552-b6b4-83ec010b4e7b.jpg",
             "title": "Suffuse Signature",
             "subtitle": "Fluid silk with hand-painted motifs",
             "product": "",
@@ -519,6 +522,7 @@
         "gallery_item_4": {
           "type": "gallery_item",
           "settings": {
+            "image": "shopify://shop_images/5_ad1aabc8-1954-4653-8dfe-b7eeb7b2757a.jpg",
             "title": "Soraya Lumene",
             "subtitle": "Festive pret in heritage weaves",
             "product": "",
@@ -528,6 +532,7 @@
         "gallery_item_5": {
           "type": "gallery_item",
           "settings": {
+            "image": "shopify://shop_images/1_622c5e89-ec58-41d3-ac38-d54563736e53.jpg",
             "title": "SS5 Summer Edit",
             "subtitle": "Architectural cuts in lightweight lawn",
             "product": "",
