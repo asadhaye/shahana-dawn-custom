@@ -52,34 +52,81 @@
     },
     "immersive_canvas": {
       "type": "immersive-canvas",
-      "blocks": {
-        "flash_eid": {
-          "type": "flash_sale",
-          "settings": {
-            "enabled": false,
-            "message": "Eid Sale — Up to 30% off selected styles",
-            "sale_end_date": ""
-          }
-        }
-      },
-      "block_order": [
-        "flash_eid"
-      ],
       "settings": {
         "storefront_base_image": "shopify://shop_images/storefront-d-base_93d33ae8-f941-4164-a33f-8a0b36dfc97b.webp",
         "storefront_base_image_mobile": "shopify://shop_images/storefront-m-base_b35506f7-ca41-46bb-8f7e-2a7631bb0bdd.webp",
         "storefront_depth_map": "shopify://shop_images/storefront-d-depth_460bca0c-499e-4dd7-8c88-9f5f250101a1.webp",
         "storefront_depth_map_mobile": "shopify://shop_images/storefront-m-depth_3ce5f154-42f8-4478-bd53-91ffaad69c20.webp",
+        "storefront_hotspot_1_x": 50,
+        "storefront_hotspot_1_y": 68,
+        "storefront_hotspot_1_mobile_x": 55,
+        "storefront_hotspot_1_mobile_y": 63,
+        "lounge_hotspot_1_x": 25,
+        "lounge_hotspot_1_y": 27,
+        "lounge_hotspot_1_mobile_x": 17,
+        "lounge_hotspot_1_mobile_y": 32,
+        "lounge_hotspot_2_x": 50,
+        "lounge_hotspot_2_y": 27,
+        "lounge_hotspot_2_mobile_x": 50,
+        "lounge_hotspot_2_mobile_y": 32,
+        "lounge_hotspot_3_x": 75,
+        "lounge_hotspot_3_y": 28,
+        "lounge_hotspot_3_mobile_x": 83,
+        "lounge_hotspot_3_mobile_y": 32,
         "designer_houses_base_image": "shopify://shop_images/designer-d-base.jpg",
         "designer_houses_base_image_mobile": "shopify://shop_images/designer-m-base.jpg",
         "designer_houses_depth_map": "shopify://shop_images/designer-d-depth.webp",
         "designer_houses_depth_map_mobile": "shopify://shop_images/designer-m-depth.png",
+        "designer_houses_hotspot_1_x": 50,
+        "designer_houses_hotspot_1_y": 15,
+        "designer_houses_hotspot_1_mobile_x": 50,
+        "designer_houses_hotspot_1_mobile_y": 15,
+        "designer_houses_hotspot_2_x": 13,
+        "designer_houses_hotspot_2_y": 40,
+        "designer_houses_hotspot_2_mobile_x": 13,
+        "designer_houses_hotspot_2_mobile_y": 40,
+        "designer_houses_hotspot_3_x": 50,
+        "designer_houses_hotspot_3_y": 45,
+        "designer_houses_hotspot_3_mobile_x": 50,
+        "designer_houses_hotspot_3_mobile_y": 45,
+        "designer_houses_hotspot_4_x": 87,
+        "designer_houses_hotspot_4_y": 40,
+        "designer_houses_hotspot_4_mobile_x": 87,
+        "designer_houses_hotspot_4_mobile_y": 40,
+        "designer_houses_hotspot_5_x": 50,
+        "designer_houses_hotspot_5_y": 90,
+        "designer_houses_hotspot_5_mobile_x": 50,
+        "designer_houses_hotspot_5_mobile_y": 90,
         "designer_houses_slot_1_collection": "suffuse",
         "designer_houses_slot_1_label": "Suffuse",
         "designer_houses_slot_2_collection": "soraya",
         "designer_houses_slot_2_label": "Soraya",
         "designer_houses_slot_3_collection": "saad-bin-shahzad",
         "designer_houses_slot_3_label": "Saad Bin Shahzad",
+        "occasions_hotspot_1_x": 50,
+        "occasions_hotspot_1_y": 15,
+        "occasions_hotspot_1_mobile_x": 50,
+        "occasions_hotspot_1_mobile_y": 15,
+        "occasions_hotspot_2_x": 25,
+        "occasions_hotspot_2_y": 40,
+        "occasions_hotspot_2_mobile_x": 25,
+        "occasions_hotspot_2_mobile_y": 40,
+        "occasions_hotspot_3_x": 42,
+        "occasions_hotspot_3_y": 50,
+        "occasions_hotspot_3_mobile_x": 42,
+        "occasions_hotspot_3_mobile_y": 50,
+        "occasions_hotspot_4_x": 58,
+        "occasions_hotspot_4_y": 40,
+        "occasions_hotspot_4_mobile_x": 58,
+        "occasions_hotspot_4_mobile_y": 40,
+        "occasions_hotspot_5_x": 75,
+        "occasions_hotspot_5_y": 50,
+        "occasions_hotspot_5_mobile_x": 75,
+        "occasions_hotspot_5_mobile_y": 50,
+        "occasions_hotspot_6_x": 50,
+        "occasions_hotspot_6_y": 85,
+        "occasions_hotspot_6_mobile_x": 50,
+        "occasions_hotspot_6_mobile_y": 85,
         "occasions_slot_1_collection": "eid-collection",
         "occasions_slot_1_label": "Eid Collection",
         "occasions_slot_2_collection": "bridal-mehndi",
@@ -88,6 +135,26 @@
         "occasions_slot_3_label": "Luxury Formals",
         "occasions_slot_4_collection": "casual-pret",
         "occasions_slot_4_label": "Casual Pret",
+        "featured_collections_hotspot_1_x": 50,
+        "featured_collections_hotspot_1_y": 15,
+        "featured_collections_hotspot_1_mobile_x": 50,
+        "featured_collections_hotspot_1_mobile_y": 15,
+        "featured_collections_hotspot_2_x": 25,
+        "featured_collections_hotspot_2_y": 40,
+        "featured_collections_hotspot_2_mobile_x": 25,
+        "featured_collections_hotspot_2_mobile_y": 40,
+        "featured_collections_hotspot_3_x": 50,
+        "featured_collections_hotspot_3_y": 40,
+        "featured_collections_hotspot_3_mobile_x": 50,
+        "featured_collections_hotspot_3_mobile_y": 40,
+        "featured_collections_hotspot_4_x": 75,
+        "featured_collections_hotspot_4_y": 40,
+        "featured_collections_hotspot_4_mobile_x": 75,
+        "featured_collections_hotspot_4_mobile_y": 40,
+        "featured_collections_hotspot_5_x": 50,
+        "featured_collections_hotspot_5_y": 85,
+        "featured_collections_hotspot_5_mobile_x": 50,
+        "featured_collections_hotspot_5_mobile_y": 85,
         "featured_collections_slot_1_collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
         "featured_collections_slot_1_label": "SS5 Summer Pret '26",
         "featured_collections_slot_2_collection": "luxury-pret-suffuse",
@@ -124,6 +191,8 @@
         "designer_soraya": {
           "type": "designer",
           "settings": {
+            "image": "shopify://shop_images/Soraya.jpg",
+            "logo": "shopify://shop_images/Soraya-logo.png",
             "heading": "Soraya",
             "body": "<p>Where heritage craft meets contemporary form. Soraya's collections speak to the modern South Asian woman — bold, refined, and unapologetically elegant.</p>",
             "collection": "soraya"
@@ -132,6 +201,8 @@
         "designer_sbs": {
           "type": "designer",
           "settings": {
+            "image": "shopify://shop_images/SBS-Summer-Pret-26.webp",
+            "logo": "shopify://shop_images/saad_bin_shahzad_logo.png",
             "heading": "Saad Bin Shahzad",
             "body": "<p>Architectural precision and artisanal embroidery define Saad Bin Shahzad's vision — a house built on the belief that menswear and womenswear can share the same quiet power.</p>",
             "collection": "saad-bin-shahzad"
@@ -154,43 +225,52 @@
     "editorial_occasions": {
       "type": "immersive-editorial",
       "blocks": {
-        "story_eid": {
-          "type": "story_chapter",
+        "occasion_eid": {
+          "type": "occasion_card",
           "settings": {
-            "image": "shopify://shop_images/SILK_PRET.webp",
-            "eyebrow": "Eid Collection",
-            "heading": "A Celebration of Colour",
+            "heading": "Eid Collection",
             "body": "<p>Celebrate in colour. Our Eid edit brings together the finest embroidered lawns, silk kurtas, and festive separates for every gathering.</p>",
-            "collection": "eid-collection"
+            "collection": "eid-collection",
+            "cta_url": ""
           }
         },
-        "story_bridal": {
-          "type": "story_chapter",
+        "occasion_bridal": {
+          "type": "occasion_card",
           "settings": {
-            "eyebrow": "Bridal & Mehndi",
-            "heading": "Forever in Gold",
-            "body": "<p>For the moments that matter most. Our bridal collections are crafted with zardozi, kamdani, and generations of expertise — designed to be heirlooms.</p>",
-            "collection": "bridal-mehndi"
+            "heading": "Bridal & Mehndi",
+            "body": "<p>From the mehndi morning to the walima evening — a complete bridal wardrobe curated for every ritual of the celebration.</p>",
+            "collection": "bridal-mehndi",
+            "cta_url": ""
           }
         },
-        "story_formals": {
-          "type": "story_chapter",
+        "occasion_formals": {
+          "type": "occasion_card",
           "settings": {
-            "eyebrow": "Luxury Formals",
-            "heading": "Power Dressing, Reimagined",
-            "body": "<p>From boardrooms to black-tie events. Our luxury formals combine architectural precision with artisanal detailing for the modern power dresser.</p>",
-            "collection": "luxury-formals"
+            "heading": "Luxury Formals",
+            "body": "<p>Dawat, nikah, and formal evenings call for something extraordinary. Discover heavily embellished pieces crafted for the moments that matter.</p>",
+            "collection": "luxury-formals",
+            "cta_url": ""
+          }
+        },
+        "occasion_pret": {
+          "type": "occasion_card",
+          "settings": {
+            "heading": "Casual Pret",
+            "body": "<p>Effortless elegance for everyday. Our pret line brings the same quality and craft to your daily wardrobe.</p>",
+            "collection": "casual-pret",
+            "cta_url": ""
           }
         }
       },
       "block_order": [
-        "story_eid",
-        "story_bridal",
-        "story_formals"
+        "occasion_eid",
+        "occasion_bridal",
+        "occasion_formals",
+        "occasion_pret"
       ],
       "settings": {
         "room_key": "occasions",
-        "layout": "story",
+        "layout": "occasions",
         "hero_eyebrow": "Curated for every moment",
         "hero_heading": "Dress the Occasion",
         "hero_subheading": "<p>From intimate gatherings to grand celebrations — find the perfect expression for every chapter of your story.</p>"
@@ -199,40 +279,42 @@
     "editorial_featured_collections": {
       "type": "immersive-editorial",
       "blocks": {
-        "gallery_ss5": {
-          "type": "gallery_card",
+        "featured_ss5": {
+          "type": "featured_item",
           "settings": {
-            "image": "shopify://shop_images/SILK_PRET.webp",
             "heading": "SS5 Summer Pret '26",
+            "body": "<p>Saad Bin Shahzad's summer pret edit — lightweight fabrics, architectural cuts, and the quiet confidence of a house at its peak.</p>",
             "collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
             "cta_url": ""
           }
         },
-        "gallery_suffuse": {
-          "type": "gallery_card",
+        "featured_suffuse_pret": {
+          "type": "featured_item",
           "settings": {
             "heading": "Suffuse Luxury Pret",
+            "body": "<p>The everyday elevated. Suffuse's luxury pret line brings signature embroidery and refined silhouettes to your daily wardrobe.</p>",
             "collection": "luxury-pret-suffuse",
             "cta_url": ""
           }
         },
-        "gallery_soraya": {
-          "type": "gallery_card",
+        "featured_soraya_eid": {
+          "type": "featured_item",
           "settings": {
             "heading": "Soraya Eid Pret",
+            "body": "<p>Lumene Festive '25–'26 — Soraya's most celebrated seasonal collection, now available in the immersive store.</p>",
             "collection": "lumene-festive-25-26-soraya-official",
             "cta_url": ""
           }
         }
       },
       "block_order": [
-        "gallery_ss5",
-        "gallery_suffuse",
-        "gallery_soraya"
+        "featured_ss5",
+        "featured_suffuse_pret",
+        "featured_soraya_eid"
       ],
       "settings": {
         "room_key": "featured_collections",
-        "layout": "gallery",
+        "layout": "featured_collections",
         "hero_eyebrow": "This season",
         "hero_heading": "The Edit",
         "hero_subheading": "<p>Three collections. Three stories. One curated moment in Pakistani fashion.</p>"
@@ -280,6 +362,7 @@
         "story_journey",
         "story_closing"
       ],
+      "disabled": true,
       "settings": {
         "show_hero": true,
         "hero_eyebrow": "Shahana story",
@@ -289,6 +372,7 @@
     },
     "exclusive_carousel": {
       "type": "immersive-exclusive-carousel",
+      "disabled": true,
       "settings": {
         "eyebrow": "Shahana Exclusives",
         "heading": "The Exclusive Edit",
@@ -336,6 +420,7 @@
         "typo_soraya",
         "typo_sbs"
       ],
+      "disabled": true,
       "settings": {
         "eyebrow": "Shahana Codex",
         "heading": "The Collection Index"
@@ -392,6 +477,7 @@
         "entry_eid",
         "entry_bridal"
       ],
+      "disabled": true,
       "settings": {
         "show_header": false,
         "heading": "",
