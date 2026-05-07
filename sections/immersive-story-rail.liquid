@@ -5,28 +5,9 @@
   data-immersive-story-rail
   data-section-id="{{ section.id }}"
 >
-<div class="immersive-story-rail__inner">
-        {%- assign gallery_images = section.settings.gallery_images -%}
-        {%- if gallery_images.size > 0 -%}
-          <div class="immersive-story-rail__gallery" data-gallery>
-            <div class="immersive-story-rail__gallery-track" data-gallery-track>
-              {%- for img in gallery_images -%}
-                <div class="immersive-story-rail__gallery-item">
-                  <img src="{{ img | image_url: width: 1600 }}" alt="" class="immersive-story-rail__gallery-img" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
-                </div>
-              {%- endfor -%}
-            </div>
-            <p class="immersive-story-rail__gallery-hint">Drag to explore</p>
-            <div class="immersive-story-rail__gallery-nav">
-              {%- for img in gallery_images -%}
-                <button class="immersive-story-rail__gallery-dot {% if forloop.first %}is-active{% endif %}" data-gallery-dot="{{ forloop.index0 }}" aria-label="Slide {{ forloop.index }}"></button>
-              {%- endfor -%}
-            </div>
-          </div>
-        {%- endif -%}
-
-        {%- if section.settings.show_hero -%}
-          <header class="immersive-story-rail__hero">
+  <div class="immersive-story-rail__inner">
+    {%- if section.settings.show_hero -%}
+      <header class="immersive-story-rail__hero">
         <div class="immersive-story-rail__hero-copy">
           <p class="immersive-story-rail__hero-eyebrow">
             {%- if section.settings.hero_eyebrow != blank -%}
@@ -204,79 +185,9 @@
   }
 
   .immersive-story-rail__inner {
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-
-  .immersive-story-rail__gallery {
-    position: relative;
-    height: 65vh;
-    min-height: 400px;
-    overflow: hidden;
-    cursor: grab;
-  }
-
-  .immersive-story-rail__gallery:active {
-    cursor: grabbing;
-  }
-
-  .immersive-story-rail__gallery-track {
-    display: flex;
-    height: 100%;
-    will-change: transform;
-  }
-
-  .immersive-story-rail__gallery-item {
-    flex: 0 0 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 8vw;
-  }
-
-  .immersive-story-rail__gallery-img {
-    max-height: 100%;
-    max-width: 100%;
-    object-fit: contain;
-    border-radius: 0.5rem;
-  }
-
-  .immersive-story-rail__gallery-hint {
-    position: absolute;
-    bottom: 1.5rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.75rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(212, 175, 55, 0.7);
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  .immersive-story-rail__gallery-nav {
-    position: absolute;
-    bottom: 1.5rem;
-    right: 2rem;
-    display: flex;
-    gap: 0.5rem;
-    z-index: 10;
-  }
-
-  .immersive-story-rail__gallery-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(212, 175, 55, 0.3);
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-
-  .immersive-story-rail__gallery-dot.is-active {
-    background: #d4af37;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
   }
 
   .immersive-story-rail__hero {
@@ -527,88 +438,6 @@
     var prefersReducedMotion =
       window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Gallery drag carousel
-    function initGalleryCarousel(root) {
-      var gallery = root.querySelector('[data-gallery]');
-      if (!gallery) return;
-      var track = gallery.querySelector('[data-gallery-track]');
-      if (!track) return;
-      var dots = gallery.querySelectorAll('[data-gallery-dot]');
-      var items = track.querySelectorAll('.immersive-story-rail__gallery-item');
-      if (items.length < 2) return;
-
-      var state = {
-        isDragging: false,
-        startX: 0,
-        currentIndex: 0,
-        targetIndex: 0,
-      };
-
-      function updatePosition() {
-        var offset = -state.currentIndex * 100;
-        track.style.transition = 'transform 0.5s ease';
-        track.style.transform = 'translateX(' + offset + '%)';
-        dots.forEach(function (dot, i) {
-          dot.classList.toggle('is-active', i === state.currentIndex);
-        });
-      }
-
-      function goTo(index) {
-        state.currentIndex = Math.max(0, Math.min(index, items.length - 1));
-        updatePosition();
-      }
-
-      var onStart = function (e) {
-        state.isDragging = true;
-        state.startX = e.clientX || e.touches?.[0]?.clientX || 0;
-        track.style.transition = 'none';
-      };
-
-      var onMove = function (e) {
-        if (!state.isDragging) return;
-        var x = e.clientX || e.touches?.[0]?.clientX || 0;
-        var delta = x - state.startX;
-        var percent = delta / track.offsetWidth * 100;
-        var offset = -(state.currentIndex * 100) + percent;
-        track.style.transform = 'translateX(' + offset + '%)';
-      };
-
-      var onEnd = function () {
-        if (!state.isDragging) return;
-        state.isDragging = false;
-        var currentX = state.startX;
-        if (Math.abs(currentX) {
-          var threshold = window.innerWidth * 0.2;
-          if (currentX < -threshold) {
-            goTo(state.currentIndex + 1);
-          } else if (currentX > threshold) {
-            goTo(state.currentIndex - 1);
-          } else {
-            updatePosition();
-          }
-        }
-      };
-
-      gallery.addEventListener('mousedown', onStart);
-      gallery.addEventListener('touchstart', onStart, { passive: true });
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('touchmove', onMove, { passive: true });
-      document.addEventListener('mouseup', onEnd);
-      document.addEventListener('touchend', onEnd);
-
-      dots.forEach(function (dot, i) {
-        dot.addEventListener('click', function () { goTo(i); });
-      });
-
-      // Scroll to navigate
-      var wheelHandler = function (e) {
-        e.preventDefault();
-        if (e.deltaY > 30) { goTo(state.currentIndex + 1); }
-        else if (e.deltaY < -30) { goTo(state.currentIndex - 1); }
-      };
-      gallery.addEventListener('wheel', wheelHandler, { passive: false });
-    }
-
     function dispatchStoryMode(active) {
       try {
         window.dispatchEvent(
@@ -689,7 +518,6 @@
 
     sections.forEach(function (section) {
       initStoryRail(section);
-      initGalleryCarousel(section);
     });
 
     document.addEventListener('shopify:section:load', function (event) {
@@ -697,7 +525,6 @@
         event.target && event.target.querySelector('[data-immersive-story-rail]');
       if (loadedSection) {
         initStoryRail(loadedSection);
-        initGalleryCarousel(loadedSection);
       }
     });
   })();
@@ -713,12 +540,6 @@
       "id": "show_hero",
       "label": "t:sections.immersive_story.show_hero_label",
       "default": true
-    },
-    {
-      "type": "image_picker",
-      "id": "gallery_images",
-      "label": "Gallery images",
-      "info": "Add up to 10 images for horizontal gallery at top"
     },
     {
       "type": "image_picker",
