@@ -350,9 +350,12 @@
         var link = e.target.closest('[data-immersive-bridge]');
         if (!link) return;
 
+        // Only intercept clicks within this section's typo rows
         var row = link.closest('[data-codex-typo-row]');
-        var handle = row && row.getAttribute('data-collection-handle');
-        if (!handle) return;
+        if (!row) return; // Let other bridge clicks (e.g., homepage) proceed normally
+
+        var handle = row.getAttribute('data-collection-handle');
+        if (!handle) return; // No handle, let normal navigation proceed
 
         if (typeof window.openCollectionPanel === 'function') {
           e.preventDefault();

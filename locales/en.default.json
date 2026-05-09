@@ -468,6 +468,10 @@
       "added": "Added to cart",
       "select_size": "Please select a size"
     },
+    "quick_view": {
+      "button_label": "Quick view",
+      "button_aria": "Quick view {{title}}"
+    },
     "fab": {
       "label": "Navigation menu",
       "open": "Open navigation menu",
@@ -497,8 +501,8 @@
     },
     "room_visited": "Visited",
     "guided": {
-      "prompt_cta": "Begin a curated experience",
-      "prompt_skip": "Explore freely",
+      "prompt_cta": "Begin the Experience",
+      "prompt_skip": "Explore at Your Own Pace",
       "step_lounge": "Lounge",
       "step_editorial": "Editorial",
       "step_collection": "Collection",
@@ -518,7 +522,9 @@
     "skeleton": {
       "loading_collection": "Loading collection...",
       "loading_product": "Loading product...",
-      "loading_room": "Loading room..."
+      "loading_room": "Loading room...",
+      "loading": "Loading...",
+      "error_load_cart": "Unable to load cart. Please try again."
     }
   },
   "codex": {
@@ -553,20 +559,20 @@
     "close_panel": "Close panel"
   },
   "immersive_editorial": {
-    "name": "Immersive Editorial",
-    "overlay_title": "Editorial Story",
-    "loading": "Loading Story...",
-    "error_unavailable": "The story is temporarily unavailable.",
-    "try_again": "Try again",
-    "carousel_prev": "Previous",
-    "carousel_next": "Next",
-    "stacked_next": "Next look",
-    "back_to_lounge": "Back to Lounge",
-    "story_chapter": {
-      "view_collection": "View collection",
-      "learn_more": "Learn more"
-    }
-  },
+      "name": "Immersive Editorial",
+      "overlay_title": "Editorial Story",
+      "loading": "Loading Story...",
+      "error_unavailable": "The story is temporarily unavailable.",
+      "try_again": "Try again",
+      "carousel_prev": "Previous",
+      "carousel_next": "Next",
+      "stacked_next": "Next look",
+      "back_to_lounge": "Return to the Lounge",
+      "story_chapter": {
+        "view_collection": "View collection",
+        "learn_more": "Learn more"
+      }
+    },
   "immersive": {
     "product_grid": {
       "empty": "No products available in this designer yet.",
@@ -755,16 +761,16 @@
       "size_chart": "Size Guide"
     },
     "immersive_journey_bridges": {
-      "bridge_eyebrow": "Explore in 3D",
-      "collection_cta": "Explore in 3D Store",
-      "collection_cta_aria": "Explore {{ title }} in the 3D Store",
-      "search_cta": "View results in 3D Store",
-      "search_cta_aria": "View results for {{ terms }} in the 3D Store",
+      "bridge_eyebrow": "Immersive Experience",
+      "collection_cta": "Experience This Collection Immersively",
+      "collection_cta_aria": "Experience {{ title }} in the 3D Store",
+      "search_cta": "Explore Results in the Immersive Store",
+      "search_cta_aria": "Explore results for {{ terms }} in the 3D Store",
       "search_heading": "Search: {{ terms }}",
       "product_cta": "Experience in 3D Store",
       "product_cta_aria": "Experience {{ title }} in the 3D Store",
-      "cart_cta": "Return to 3D Browsing",
-      "cart_cta_aria": "Return to 3D Browsing in the immersive store",
+      "cart_cta": "Continue Exploring",
+      "cart_cta_aria": "Continue exploring in the immersive store",
       "cart_heading": "Continue Shopping in 3D",
       "collections_list_cta": "Explore in 3D Store",
       "collections_list_cta_aria": "Explore all collections in the 3D Store",
@@ -778,12 +784,12 @@
       "preference_banner_dismiss": "Dismiss",
       "preference_banner_dismiss_aria": "Dismiss the 3D store prompt",
       "preference_banner_aria": "3D store preference prompt",
-      "switch_to_2d": "Switch to 2D",
-      "switch_to_2d_aria": "Switch to the standard 2D store",
-      "switch_to_3d": "Switch to 3D",
-      "switch_to_3d_aria": "Switch to the immersive 3D store",
-      "bridge_label_explore_3d": "Explore in 3D",
-      "bridge_subtext": "See curated rooms and collections in an interactive space."
+      "switch_to_2d": "Return to Collection View",
+      "switch_to_2d_aria": "Return to the standard collection view",
+      "switch_to_3d": "Enter the Immersive Store",
+      "switch_to_3d_aria": "Enter the immersive 3D store",
+      "bridge_label_explore_3d": "Immersive Experience",
+      "bridge_subtext": "Navigate through curated rooms, designer edits, and made-to-order collections within an immersive fashion environment."
     },
     "immersive_webgl_gallery": {
       "aria_section_label": "Immersive gallery configuration",

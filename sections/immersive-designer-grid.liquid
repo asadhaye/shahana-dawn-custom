@@ -1,10 +1,14 @@
-<div class="immersive-designer-grid" data-section-id="{{ section.id }}" data-collection-handle="{{ collection.handle | escape }}">
+<div
+  class="immersive-designer-grid"
+  data-section-id="{{ section.id }}"
+  data-collection-handle="{{ collection.handle | escape }}"
+>
   {%- assign products = collection.products | default: blank -%}
   {%- if products == blank -%}
     {%- assign products = collections[collection.handle].products -%}
   {%- endif -%}
   {%- for product in products limit: 12 -%}
-    {%- render 'immersive-product-card', product: product -%}
+    {%- render 'immersive-product-card', product: product, show_quick_view: true -%}
   {%- else -%}
     <p class="immersive-designer-grid__empty">{{ 'sections.immersive.product_grid.empty' | t }}</p>
   {%- endfor -%}

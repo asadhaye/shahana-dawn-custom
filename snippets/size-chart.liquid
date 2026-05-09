@@ -30,7 +30,6 @@
 <modal-opener
   class="size-chart-modal__opener"
   data-modal="#{{ modal_id }}"
-  {% if block %}{{ block.shopify_attributes }}{% endif %}
 >
   <button
     class="size-chart-button link"
@@ -44,7 +43,6 @@
 <modal-dialog
   id="{{ modal_id }}"
   class="size-chart-modal"
-  {% if block %}{{ block.shopify_attributes }}{% endif %}
 >
   <div
     role="dialog"

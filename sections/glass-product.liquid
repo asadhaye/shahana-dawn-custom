@@ -376,8 +376,9 @@
         </button>
 
         {%- for block in section.blocks -%}
-          {%- when 'delivery_time' -%}
+          {%- if block.type == 'delivery_time' -%}
             {%- render 'delivery-time', product: panel_product -%}
+          {%- endif -%}
         {%- endfor -%}
 
         <div class="glass-product-section__share">
@@ -493,13 +494,15 @@
           </details>
 
           {%- for block in section.blocks -%}
-            {%- when 'size_chart' -%}
-              {%- render 'size-chart',
+            {%- if block.type == 'size_chart' -%}
+              {%-
+                render 'size-chart',
                 product: panel_product,
                 button_label: block.settings.button_label,
                 modal_id: 'SizeChartModal-' | append: section.id,
                 block: block
               -%}
+            {%- endif -%}
           {%- endfor -%}
 
           {%- comment -%} Disclaimer {%- endcomment -%}
@@ -1419,6 +1422,16 @@
     .glass-product-section__product-nav-btn {
       transition: none !important;
     }
+  }
+
+  /* ValidScopedCSSClass fix: Move global styles for glass panel into scoped stylesheet */
+  .glass-panel-section__empty {
+    padding: 3rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: serif;
+    font-style: italic;
+    font-size: 1.2rem;
   }
 {% endstylesheet %}
 

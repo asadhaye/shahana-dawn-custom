@@ -5,10 +5,9 @@
   data-room-key="{{ section.settings.room_key | escape }}"
   data-layout="{{ layout | escape }}"
   data-section-id="{{ section.id }}"
-  style="display: none;"
 >
-  {%- if section.settings.layout == 'designers' -%}
-    <div class="immersive-designers" data-room-key="{{ section.settings.room_key | escape }}">
+  <div class="immersive-editorial__hero {% if section.settings.layout == 'designers' %}immersive-editorial__hero--designers{% endif %}">
+    {%- if section.settings.layout == 'designers' -%}
       <div class="immersive-designers__hero-transition-wrap">
         {%- for block in section.blocks -%}
           {%- if block.type == 'designer' -%}
@@ -27,10 +26,17 @@
                 >
               {%- else -%}
                 {%- comment -%}Placeholder — replace with designer hero image in theme editor{%- endcomment -%}
-                <div
-                  class="immersive-designers__hero-bg-placeholder"
-                  style="position:absolute;inset:0;background:#1a1a1a;"
-                ></div>
+                {%- assign _designer_placeholders = '1062,1074,1076' | split: ',' -%}
+                {%- assign _dp_index = forloop.index0 | modulo: 3 -%}
+                {%- assign _dp_id = _designer_placeholders[_dp_index] -%}
+                <img
+                  class="immersive-designers__hero-bg immersive-designers__hero-bg--placeholder"
+                  src="https://picsum.photos/id/{{ _dp_id }}/1600/900"
+                  alt=""
+                  loading="lazy"
+                  width="1600"
+                  height="900"
+                >
               {%- endif -%}
               <div class="immersive-designers__hero-content">
                 {%- if block.settings.logo -%}
@@ -44,50 +50,14 @@
                   >
                 {%- endif -%}
                 {%- if block.settings.body != blank -%}
-                  <div class="immersive-designers__manifest">{{ block.settings.body | newline_to_br }}</div>
+                  <div class="immersive-designers__manifest">{{ block.settings.body }}</div>
                 {%- endif -%}
               </div>
             </div>
           {%- endif -%}
         {%- endfor -%}
       </div>
-
-      <div
-        class="immersive-designers__timeline"
-        role="list"
-        aria-label="{{ section.settings.hero_heading | default: 'Designers' | escape }}"
-      >
-        <div class="immersive-designers__timeline-ghost-label">Select Designer</div>
-        <div class="immersive-designers__rail">
-          {%- for block in section.blocks -%}
-            {%- if block.type == 'designer' -%}
-              {%- assign collection = block.settings.collection -%}
-              <button
-                class="immersive-designers__marker"
-                type="button"
-                role="listitem"
-                data-index="{{ forloop.index0 }}"
-                {%- if collection != blank -%}
-                  data-collection-handle="{{ collection.handle }}"
-                {%- endif -%}
-                data-designer-label="{{ block.settings.heading | escape }}"
-                {{ block.shopify_attributes }}
-              >
-                <span class="immersive-designers__marker-label">{{ block.settings.heading | escape }}</span>
-              </button>
-            {%- endif -%}
-          {%- endfor -%}
-        </div>
-        <div class="immersive-designers__thumb" aria-hidden="true"></div>
-      </div>
-
-      <div
-        class="immersive-designers__products"
-        id="immersive-designers-products-{{ section.settings.room_key | escape }}"
-      ></div>
-    </div>
-  {%- else -%}
-    <div class="immersive-editorial__hero">
+    {%- else -%}
       {%- if section.settings.hero_background_image -%}
         <img
           class="immersive-editorial__hero-bg"
@@ -104,11 +74,23 @@
           loading="lazy"
         >
       {%- else -%}
-        {%- comment -%}Placeholder — replace with merchant image in theme editor{%- endcomment -%}
-        <div
-          class="immersive-editorial__hero-bg-placeholder"
-          style="position:absolute;inset:0;background:#1a1a1a;"
-        ></div>
+        {%- comment -%}Placeholder stock image — replace with merchant image in theme editor{%- endcomment -%}
+        {%- assign _placeholder_map = 'occasions:1041,featured_collections:1083,designer_houses:1062' | split: ',' -%}
+        {%- assign _placeholder_src = 'https://picsum.photos/id/1062/1600/900' -%}
+        {%- for _entry in _placeholder_map -%}
+          {%- assign _parts = _entry | split: ':' -%}
+          {%- if _parts[0] == section.settings.room_key -%}
+            {%- assign _placeholder_src = 'https://picsum.photos/id/' | append: _parts[1] | append: '/1600/900' -%}
+          {%- endif -%}
+        {%- endfor -%}
+        <img
+          class="immersive-editorial__hero-bg immersive-editorial__hero-bg--placeholder"
+          src="{{ _placeholder_src }}"
+          alt=""
+          loading="lazy"
+          width="1600"
+          height="900"
+        >
       {%- endif -%}
       <div class="immersive-editorial__hero-panel">
         {%- if section.settings.hero_eyebrow != blank -%}
@@ -118,26 +100,21 @@
           <h2 class="immersive-editorial__heading">{{ section.settings.hero_heading | escape }}</h2>
         {%- endif -%}
         {%- if section.settings.hero_subheading != blank -%}
-          <div class="immersive-editorial__subheading">{{ section.settings.hero_subheading | newline_to_br }}</div>
+          <div class="immersive-editorial__subheading">{{ section.settings.hero_subheading }}</div>
         {%- endif -%}
       </div>
-    </div>
-  {%- endif -%}
+    {%- endif -%}
+  </div>
 
   {%- if section.settings.layout == 'occasions' -%}
-    <div
-      class="immersive-occasions immersive-occasions--story"
-      data-room-key="{{ section.settings.room_key | escape }}"
-    >
+    <div class="immersive-occasions immersive-occasions--story" data-room-key="{{ section.settings.room_key | escape }}">
       {%- if section.settings.hero_heading != blank or section.settings.hero_subheading != blank -%}
         <div class="immersive-occasions__hero">
           {%- if section.settings.hero_heading != blank -%}
             <h2 class="immersive-occasions__hero-heading">{{ section.settings.hero_heading | escape }}</h2>
           {%- endif -%}
           {%- if section.settings.hero_subheading != blank -%}
-            <div class="immersive-occasions__hero-subheading">
-              {{ section.settings.hero_subheading | newline_to_br }}
-            </div>
+            <div class="immersive-occasions__hero-subheading">{{ section.settings.hero_subheading }}</div>
           {%- endif -%}
         </div>
       {%- endif -%}
@@ -147,13 +124,7 @@
             <article class="immersive-occasions__chapter" {{ block.shopify_attributes }}>
               {%- if block.settings.image -%}
                 <div class="immersive-occasions__chapter-media">
-                  <img
-                    src="{{ block.settings.image | image_url: width: 1200 }}"
-                    alt="{{ block.settings.image.alt | escape }}"
-                    loading="lazy"
-                    width="{{ block.settings.image.width }}"
-                    height="{{ block.settings.image.height }}"
-                  >
+                  <img src="{{ block.settings.image | image_url: width: 1200 }}" alt="{{ block.settings.image.alt | escape }}" loading="lazy" width="{{ block.settings.image.width }}" height="{{ block.settings.image.height }}">
                 </div>
               {%- endif -%}
               <div class="immersive-occasions__chapter-content">
@@ -165,12 +136,7 @@
                 {%- endif -%}
                 {%- assign collection = block.settings.collection -%}
                 {%- if collection != blank -%}
-                  <a
-                    href="{{ collection.url }}"
-                    class="immersive-occasions__chapter-link"
-                    data-collection="{{ collection.handle }}"
-                    >View Collection</a
-                  >
+                  <a href="{{ collection.url }}" class="immersive-occasions__chapter-link" data-collection="{{ collection.handle }}">View Collection</a>
                 {%- elsif block.settings.cta_url != blank -%}
                   <a href="{{ block.settings.cta_url }}" class="immersive-occasions__chapter-link">Learn More</a>
                 {%- endif -%}
@@ -190,9 +156,7 @@
             <h2 class="immersive-featured__hero-heading">{{ section.settings.hero_heading | escape }}</h2>
           {%- endif -%}
           {%- if section.settings.hero_subheading != blank -%}
-            <div class="immersive-featured__hero-subheading">
-              {{ section.settings.hero_subheading | newline_to_br }}
-            </div>
+            <div class="immersive-featured__hero-subheading">{{ section.settings.hero_subheading }}</div>
           {%- endif -%}
         </div>
       {%- endif -%}
@@ -243,10 +207,17 @@
                   >
                 {%- else -%}
                   {%- comment -%}Placeholder — replace with featured item image in theme editor{%- endcomment -%}
-                  <div
-                    class="immersive-featured__item-placeholder"
-                    style="position:relative;width:100%;aspect-ratio:1000/750;background:#1a1a1a;"
-                  ></div>
+                  {%- assign _feat_placeholders = '1080,1081,1082,1083' | split: ',' -%}
+                  {%- assign _feat_index = forloop.index0 | modulo: 4 -%}
+                  {%- assign _feat_id = _feat_placeholders[_feat_index] -%}
+                  <img
+                    class="immersive-featured__item-placeholder-img"
+                    src="https://picsum.photos/id/{{ _feat_id }}/1000/750"
+                    alt="{{ card_label | escape }}"
+                    loading="lazy"
+                    width="1000"
+                    height="750"
+                  >
                 {%- endif -%}
                 <div class="immersive-featured__item-reveal">
                   <span class="immersive-featured__item-tag">New Collection</span>
@@ -274,15 +245,13 @@
             <article class="immersive-story-layout__chapter" {{ block.shopify_attributes }}>
               {%- if block.settings.image -%}
                 <div class="immersive-story-layout__chapter-media">
-                  {%- if block.settings.image != blank -%}
-                    <img
-                      src="{{ block.settings.image | image_url: width: 1200 }}"
-                      alt="{{ block.settings.image.alt | escape }}"
-                      loading="lazy"
-                      width="{{ block.settings.image.width }}"
-                      height="{{ block.settings.image.height }}"
-                    >
-                  {%- endif -%}
+                  <img
+                    src="{{ block.settings.image | image_url: width: 1200 }}"
+                    alt="{{ block.settings.image.alt | escape }}"
+                    loading="lazy"
+                    width="{{ block.settings.image.width }}"
+                    height="{{ block.settings.image.height }}"
+                  >
                 </div>
               {%- endif -%}
               <div class="immersive-story-layout__chapter-content">
@@ -302,7 +271,9 @@
                         Explore Collection
                       </a>
                     {%- elsif block.settings.cta_url != blank -%}
-                      <a href="{{ block.settings.cta_url }}" class="immersive-story-layout__cta-link"> Learn More </a>
+                      <a href="{{ block.settings.cta_url }}" class="immersive-story-layout__cta-link">
+                        Learn More
+                      </a>
                     {%- endif -%}
                   </div>
                 {%- endif -%}
@@ -351,27 +322,19 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'custom' -%}
+{%- if section.settings.layout == 'custom' -%}
     <div class="immersive-custom" data-room-key="{{ section.settings.room_key | escape }}">
       <div class="immersive-custom__grid">
         {%- for block in section.blocks -%}
           {%- if block.type == 'banner' -%}
-            <a
-              href="{{ block.settings.collection.url | default: block.settings.cta_url | default: '#' }}"
-              class="immersive-custom__card"
-              {{ block.shopify_attributes }}
-            >
-              <div class="immersive-custom__card-media">
-                {%- if block.settings.image != blank -%}
-                  <img
-                    src="{{ block.settings.image | image_url: width: 800 }}"
-                    alt="{{ block.settings.image.alt | escape }}"
-                    loading="lazy"
-                    width="{{ block.settings.image.width }}"
-                    height="{{ block.settings.image.height }}"
-                  >
-                {%- endif -%}
-              </div>
+            <a href="{{ block.settings.collection.url | default: block.settings.cta_url | default: '#' }}"
+               class="immersive-custom__card"
+               {{ block.shopify_attributes }}>
+              {%- if block.settings.image -%}
+                <div class="immersive-custom__card-media">
+                  <img src="{{ block.settings.image | image_url: width: 800 }}" alt="{{ block.settings.image.alt | escape }}" loading="lazy">
+                </div>
+              {%- endif -%}
               <div class="immersive-custom__card-content">
                 {%- if block.settings.heading != blank -%}
                   <h3 class="immersive-custom__card-heading">{{ block.settings.heading | escape }}</h3>
@@ -393,14 +356,12 @@
         {%- for block in section.blocks -%}
           {%- if block.type == 'gallery_card' -%}
             {%- assign card_collection = block.settings.collection -%}
-            <a
-              href="{{ card_collection.url | default: block.settings.cta_url | default: '#' }}"
-              class="immersive-gallery-layout__card"
-              role="listitem"
-              {{ block.shopify_attributes }}
-            >
-              <div class="immersive-gallery-layout__card-media">
-                {%- if block.settings.image != blank -%}
+            <a href="{{ card_collection.url | default: block.settings.cta_url | default: '#' }}"
+               class="immersive-gallery-layout__card"
+               role="listitem"
+               {{ block.shopify_attributes }}>
+              {%- if block.settings.image -%}
+                <div class="immersive-gallery-layout__card-media">
                   <img
                     src="{{ block.settings.image | image_url: width: 600 }}"
                     alt="{{ block.settings.image.alt | escape }}"
@@ -408,8 +369,8 @@
                     width="{{ block.settings.image.width }}"
                     height="{{ block.settings.image.height }}"
                   >
-                {%- endif -%}
-              </div>
+                </div>
+              {%- endif -%}
               <div class="immersive-gallery-layout__card-label">
                 <span>{{ block.settings.heading | escape }}</span>
               </div>
@@ -417,6 +378,33 @@
           {%- endif -%}
         {%- endfor -%}
       </div>
+    </div>
+  {%- endif -%}
+              </div>
+            {%- endif -%}
+            <div class="immersive-editorial__banner-content">
+              <h3 class="immersive-editorial__banner-heading">{{ block.settings.heading | escape }}</h3>
+              {%- if block.settings.body != blank -%}
+                <div class="immersive-editorial__banner-body">{{ block.settings.body }}</div>
+              {%- endif -%}
+              {%- if block.settings.cta_label != blank and block.settings.cta_url != blank -%}
+                <a class="immersive-editorial__cta" href="{{ block.settings.cta_url }}">
+                  {{- block.settings.cta_label | escape -}}
+                </a>
+              {%- endif -%}
+              {%- if block.settings.collection != blank -%}
+                <a
+                  class="immersive-editorial__collection-link"
+                  href="{{ block.settings.collection.url }}"
+                  data-collection="{{ block.settings.collection.handle | escape }}"
+                >
+                  {{- block.settings.collection.title | escape -}}
+                </a>
+              {%- endif -%}
+            </div>
+          </article>
+        {%- endif -%}
+      {%- endfor -%}
     </div>
   {%- endif -%}
 
@@ -673,9 +661,8 @@
   }
 
   /* When rendered inside the overlay, show normally */
-  .immersive-editorial-overlay__content .immersive-editorial,
-  #immersive-editorial-overlay-content .immersive-editorial {
-    display: block !important;
+  .immersive-editorial-overlay__content .immersive-editorial {
+    display: block;
     position: relative;
     width: 100%;
     color: #fff;
@@ -1097,8 +1084,6 @@
     flex-direction: column;
     gap: 0;
     padding: 0;
-    min-height: 100vh;
-    height: 100vh;
   }
 
   .immersive-designers__timeline {
@@ -2287,7 +2272,328 @@
 {% endstylesheet %}
 
 {% javascript %}
-  // Monolithic: Logic consolidated in immersive-store.js
+  (function () {
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function clamp(val, min, max) {
+      return Math.min(Math.max(val, min), max);
+    }
+
+    function initEditorialParallax(sectionId) {
+      var root = document.getElementById('immersive-editorial-' + sectionId);
+      if (!root) return;
+
+      var layers = root.querySelectorAll('[data-editorial-layer]');
+      if (!layers.length) return;
+
+      if (reduceMotion) return;
+
+      var rafPending = false;
+
+      function tick() {
+        rafPending = false;
+        var rect = root.getBoundingClientRect();
+        var viewportH = window.innerHeight || document.documentElement.clientHeight;
+        var progress = clamp((rect.top + rect.height / 2 - viewportH / 2) / viewportH, -1, 1);
+        for (var i = 0; i < layers.length; i++) {
+          var depth = parseInt(layers[i].dataset.editorialLayer, 10) / 100;
+          var offset = progress * depth * 40;
+          layers[i].style.transform = 'translateY(' + offset + 'px)';
+        }
+      }
+
+      function onScroll() {
+        if (!rafPending) {
+          rafPending = true;
+          requestAnimationFrame(tick);
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      tick();
+    }
+
+    function initAll() {
+      var sections = document.querySelectorAll('[data-section-id]');
+      for (var i = 0; i < sections.length; i++) {
+        var el = sections[i];
+        if (el.classList.contains('immersive-editorial')) {
+          initEditorialParallax(el.dataset.roomKey);
+        }
+      }
+    }
+
+    document.addEventListener('shopify:section:load', function (e) {
+      var section = e.target;
+      if (section && section.classList.contains('immersive-editorial')) {
+        initEditorialParallax(section.dataset.roomKey);
+      }
+    });
+
+    document.addEventListener('shopify:section:select', function (e) {
+      var section = e.target;
+      if (section && section.classList.contains('immersive-editorial')) {
+        initEditorialParallax(section.dataset.roomKey);
+      }
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAll);
+    } else {
+      initAll();
+    }
+
+    // ── Designers timeline ─────────────────────────────────────────────────
+    function initDesignersTimeline(container) {
+      container = container || document;
+      var timeline = container.querySelector('.immersive-designers__timeline');
+      if (!timeline) return;
+
+      var markers = timeline.querySelectorAll('.immersive-designers__marker');
+      var thumb = timeline.querySelector('.immersive-designers__thumb');
+      var heroWrap = container.querySelector('.immersive-designers__hero-transition-wrap');
+      var heroStates = heroWrap ? heroWrap.querySelectorAll('.immersive-designers__hero-state') : [];
+
+      function updateThumb(position) {
+        if (!thumb || !position) return;
+        thumb.style.left = position.left + 'px';
+        thumb.style.width = position.width + 'px';
+        if (!reduceMotion) {
+          thumb.style.transition = 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+      }
+
+      markers.forEach(function (marker, index) {
+        marker.addEventListener('click', function (e) {
+          e.preventDefault();
+          markers.forEach(function (m) { return m.classList.remove('is-active'); });
+          this.classList.add('is-active');
+
+          heroStates.forEach(function (state, si) {
+            if (si === index) {
+              state.classList.add('is-active');
+              state.style.visibility = 'visible';
+              state.style.opacity = '1';
+              state.style.zIndex = '1';
+            } else {
+              state.classList.remove('is-active');
+              state.style.visibility = 'hidden';
+              state.style.opacity = '0';
+              state.style.zIndex = '0';
+            }
+          });
+
+          var rect = this.getBoundingClientRect();
+          var railRect = timeline.querySelector('.immersive-designers__rail').getBoundingClientRect();
+          updateThumb({
+            left: rect.left - railRect.left,
+            width: rect.width
+          });
+        });
+      });
+
+      var activeMarker = timeline.querySelector('.immersive-designers__marker.is-active') || markers[0];
+      if (activeMarker && markers.length > 0) {
+        var firstRect = activeMarker.getBoundingClientRect();
+        var railRect = timeline.querySelector('.immersive-designers__rail').getBoundingClientRect();
+        updateThumb({
+          left: firstRect.left - railRect.left,
+          width: firstRect.width
+        });
+      }
+    }
+
+    document.addEventListener('shopify:section:load', function (e) {
+      var section = e.target;
+      if (section && section.classList.contains('immersive-editorial')) {
+        initDesignersTimeline(section);
+      }
+    });
+
+    // ── CoverFlow carousel ──────────────────────────────────────────────────
+    function initCoverflow(root) {
+      var track = root.querySelector('[data-coverflow-track]');
+      if (!track) return;
+      var slides = Array.from(track.querySelectorAll('.immersive-coverflow__slide'));
+      if (!slides.length) return;
+      var current = Math.floor(slides.length / 2);
+
+      function render() {
+        slides.forEach(function (slide, i) {
+          var offset = i - current;
+          var absOffset = Math.abs(offset);
+          var x = offset * 220;
+          var rotY = offset < 0 ? 45 : offset > 0 ? -45 : 0;
+          var scale = absOffset === 0 ? 1 : absOffset === 1 ? 0.85 : 0.7;
+          var opacity = absOffset === 0 ? 1 : absOffset === 1 ? 0.7 : 0.4;
+          var zIndex = slides.length - absOffset;
+          var shadow = absOffset === 0 ? '0 30px 80px rgba(0,0,0,0.6)' : 'none';
+          if (reduceMotion) {
+            slide.style.transform = 'translateX(' + x + 'px)';
+          } else {
+            slide.style.transform = 'translateX(' + x + 'px) rotateY(' + rotY + 'deg) scale(' + scale + ')';
+          }
+          slide.style.opacity = opacity;
+          slide.style.zIndex = zIndex;
+          slide.style.boxShadow = shadow;
+        });
+      }
+
+      function prev() {
+        if (current > 0) {
+          current--;
+          render();
+        }
+      }
+      function next() {
+        if (current < slides.length - 1) {
+          current++;
+          render();
+        }
+      }
+
+      var prevBtn = root.querySelector('.immersive-coverflow__btn--prev');
+      var nextBtn = root.querySelector('.immersive-coverflow__btn--next');
+      if (prevBtn) prevBtn.addEventListener('click', prev);
+      if (nextBtn) nextBtn.addEventListener('click', next);
+
+      slides.forEach(function (slide, i) {
+        slide.addEventListener('click', function (e) {
+          if (i !== current) {
+            e.preventDefault();
+            current = i;
+            render();
+          }
+        });
+      });
+
+      render();
+    }
+
+    // ── Stacked card carousel ───────────────────────────────────────────────
+    function initStacked(root) {
+      var deck = root.querySelector('[data-stacked-deck]');
+      if (!deck) return;
+      var cards = Array.from(deck.querySelectorAll('.immersive-stacked__card'));
+      if (!cards.length) return;
+      var current = 0;
+
+      function render() {
+        cards.forEach(function (card, i) {
+          var offset = (i - current + cards.length) % cards.length;
+          var maxVisible = Math.min(4, cards.length);
+          if (offset >= maxVisible) {
+            card.style.opacity = '0';
+            card.style.pointerEvents = 'none';
+            card.style.zIndex = '0';
+            return;
+          }
+          var scale = 1 - offset * 0.05;
+          var translateY = offset * -12;
+          var translateX = offset * 6;
+          card.style.transform =
+            'translateY(' + translateY + 'px) translateX(' + translateX + 'px) scale(' + scale + ')';
+          card.style.opacity = offset === 0 ? '1' : String(1 - offset * 0.2);
+          card.style.zIndex = String(maxVisible - offset);
+          card.style.pointerEvents = offset === 0 ? 'auto' : 'none';
+          card.style.boxShadow = offset === 0 ? '0 40px 80px rgba(0,0,0,0.5)' : 'none';
+        });
+      }
+
+      var nextBtn = root.querySelector('[data-stacked-next]');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+          current = (current + 1) % cards.length;
+          render();
+        });
+      }
+
+      render();
+    }
+
+    // ── 3D Perspective carousel ─────────────────────────────────────────────
+    function initPerspective(root) {
+      var stage = root.querySelector('[data-perspective-stage]');
+      if (!stage) return;
+      var items = Array.from(stage.querySelectorAll('.immersive-perspective__item'));
+      if (!items.length) return;
+      var current = 0;
+      var total = items.length;
+
+      function render() {
+        items.forEach(function (item, i) {
+          var offset = i - current;
+          // Wrap around
+          if (offset > total / 2) offset -= total;
+          if (offset < -total / 2) offset += total;
+          var absOffset = Math.abs(offset);
+          var x = offset * 260;
+          var z = -absOffset * 120;
+          var scale = absOffset === 0 ? 1 : Math.max(0.6, 1 - absOffset * 0.15);
+          var opacity = absOffset === 0 ? 1 : Math.max(0.3, 1 - absOffset * 0.25);
+          var zIndex = total - absOffset;
+          if (reduceMotion) {
+            item.style.transform = 'translateX(' + x + 'px)';
+          } else {
+            item.style.transform = 'translateX(' + x + 'px) translateZ(' + z + 'px) scale(' + scale + ')';
+          }
+          item.style.opacity = opacity;
+          item.style.zIndex = zIndex;
+          item.style.boxShadow = absOffset === 0 ? '0 20px 60px rgba(0,0,0,0.5)' : 'none';
+        });
+      }
+
+      function prev() {
+        current = (current - 1 + total) % total;
+        render();
+      }
+      function next() {
+        current = (current + 1) % total;
+        render();
+      }
+
+      var prevBtn = root.querySelector('.immersive-perspective__btn--prev');
+      var nextBtn = root.querySelector('.immersive-perspective__btn--next');
+      if (prevBtn) prevBtn.addEventListener('click', prev);
+      if (nextBtn) nextBtn.addEventListener('click', next);
+
+      items.forEach(function (item, i) {
+        item.addEventListener('click', function (e) {
+          if (i !== current) {
+            e.preventDefault();
+            current = i;
+            render();
+          }
+        });
+      });
+
+      render();
+    }
+
+    // ── Init all carousel layouts ───────────────────────────────────────────
+    function initCarousels(container) {
+      container = container || document;
+      container.querySelectorAll('.immersive-coverflow').forEach(initCoverflow);
+      container.querySelectorAll('.immersive-stacked').forEach(initStacked);
+      container.querySelectorAll('.immersive-perspective').forEach(initPerspective);
+    }
+
+    document.addEventListener('shopify:section:load', function (e) {
+      initCarousels(e.target);
+    });
+
+    document.addEventListener('shopify:section:select', function (e) {
+      initCarousels(e.target);
+    });
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        initCarousels();
+      });
+    } else {
+      initCarousels();
+    }
+  })();
 {% endjavascript %}
 
 {% schema %}
@@ -2323,10 +2629,7 @@
         { "value": "stacked", "label": "t:sections.immersive_editorial.settings.layout.options__7.label" },
         { "value": "perspective", "label": "t:sections.immersive_editorial.settings.layout.options__8.label" },
         { "value": "marquee", "label": "t:sections.immersive_editorial.settings.layout.options__9.label" },
-        {
-          "value": "story",
-          "label": "Vertical story"
-        }
+        { "value": "story", "label": "t:sections.immersive_editorial.settings.layout_story_label", "info": "t:sections.immersive_editorial.settings.layout_story_info" }
       ]
     },
     {

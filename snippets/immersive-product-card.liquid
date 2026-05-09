@@ -8,11 +8,20 @@
   @param {form} [form] - Product form object; snippet must be used inside a product form or passed an explicit form.
   @param {collection} [collection] - Optional originating collection object for back-navigation context.
   @param {string} [collection_handle] - Optional originating collection handle (used when collection object is unavailable).
+  @param {boolean} [show_quick_add] - Show the quick-add hover button. Default: true. Set to false when showing full form.
+  @param {boolean} [show_quick_view] - Show the quick view button. Default: false. Set to true in product grids.
 
   @example
   {% render 'immersive-product-card', product: product %}
   {% render 'immersive-product-card', product: product, collection: collection %}
+  {% render 'immersive-product-card', product: product, show_quick_add: false %}
+  {% render 'immersive-product-card', product: product, show_quick_view: true %}
 {% enddoc %}
+
+{%- liquid
+  assign show_quick_add = show_quick_add | default: true
+  assign show_quick_view = show_quick_view | default: false
+-%}
 
 {%- liquid
   assign collection_handle_resolved = ''
@@ -131,19 +140,34 @@
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
       </svg>
     </button>
-    <button
-      type="button"
-      class="immersive-product-card__quick-add"
-      data-quick-add
-      data-product-handle="{{ product.handle }}"
-      aria-label="{{ 'sections.immersive_store.quick_add.button_aria' | t: title: product.title | escape }}"
-    >
-      {{ 'sections.immersive_store.quick_add.button_label' | t }}
-    </button>
+    {%- if show_quick_add -%}
+      <button
+        type="button"
+        class="immersive-product-card__quick-add"
+        data-quick-add
+        data-product-handle="{{ product.handle }}"
+        aria-label="{{ 'sections.immersive_store.quick_add.button_aria' | t: title: product.title | escape }}"
+      >
+        {{ 'sections.immersive_store.quick_add.button_label' | t }}
+      </button>
+    {%- endif -%}
   {%- else -%}
     <div class="immersive-product-image immersive-product-image-placeholder">
       {{ 'products.product.no_image' | t }}
     </div>
+  {%- endif -%}
+
+  {%- if show_quick_view -%}
+    <button
+      type="button"
+      class="immersive-product-card__quick-view"
+      data-quick-view
+      data-product-handle="{{ product.handle }}"
+      data-product-url="{{ product.url }}"
+      aria-label="{{ 'sections.immersive_store.quick_view.button_aria' | t: title: product.title | escape }}"
+    >
+      {{ 'sections.immersive_store.quick_view.button_label' | t }}
+    </button>
   {%- endif -%}
 
   <div class="immersive-product-info">
@@ -612,6 +636,53 @@
 
   @media (prefers-reduced-motion: reduce) {
     .immersive-product-card__quick-add {
+      transition: none;
+    }
+  }
+
+  /* ── Quick-View Button ────────────────────────────────── */
+  .immersive-product-card__quick-view {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 10, 10, 0.85);
+    border: 1px solid rgba(212, 175, 55, 0.5);
+    border-radius: 9999px;
+    color: #d4af37;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, background 0.2s ease, transform 0.2s ease;
+    z-index: 5;
+  }
+
+  .immersive-product-card:hover .immersive-product-card__quick-view,
+  .immersive-product-card:focus-within .immersive-product-card__quick-view {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .immersive-product-card__quick-view:hover {
+    background: rgba(212, 175, 55, 0.2);
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+
+  @media (max-width: 768px) {
+    /* Always visible on touch devices */
+    .immersive-product-card__quick-view {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .immersive-product-card__quick-view {
       transition: none;
     }
   }

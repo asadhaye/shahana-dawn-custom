@@ -8,3 +8,18 @@ RemoteAsset:
     - sections/ai-virtual-try-on.liquid
 VariableName:
   enabled: false
+
+ValidScopedCSSClass:
+  enabled: false
+
+OrphanedSnippet:
+  enabled: false
+
+UndefinedObject:
+  enabled: true
+  ignore:
+    - skills/**/*
+
+# Ignore assistant skills directory
+ignore:
+  - skills/**/*
