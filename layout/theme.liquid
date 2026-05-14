@@ -45,8 +45,10 @@
 
     {%- comment -%}Three.js + immersive scene manager on immersive templates{%- endcomment -%}
     {%- if template == 'page.immersive' -%}
-      <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
-      <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
+      <script src="{{ 'three.min.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive-core.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive-features.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive-luxury-refinements.js' | asset_url }}" defer></script>
     {%- endif -%}
 
     {%- comment -%}Device/connection-aware bridge behavior on all pages{%- endcomment -%}
@@ -282,6 +284,7 @@
     {{ 'base.css' | asset_url | stylesheet_tag }}
     {%- if template == 'page.immersive' -%}
       {{ 'immersive-theme.css' | asset_url | stylesheet_tag }}
+      {{ 'immersive-luxury-refinements.css' | asset_url | stylesheet_tag }}
     {%- endif -%}
     <link rel="stylesheet" href="{{ 'component-cart-items.css' | asset_url }}" media="print" onload="this.media='all'">
 

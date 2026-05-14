@@ -54,6 +54,7 @@
           {%- for product in collection.products -%}
             {% render 'immersive-product-card',
               product: product,
+              collection: collection,
               show_vendor: section.settings.show_vendor,
               show_secondary_image: section.settings.show_secondary_image,
               show_quick_view: true

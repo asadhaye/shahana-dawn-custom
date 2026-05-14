@@ -9,6 +9,19 @@ ehthumbs.db
 Thumbs.db
 .shopify
 
+# Backup and temporary files #
+##############################
+*.bak
+*.backup
+*.tmp
+*.temp
+*~
+*.swp
+*.swo
+.#*
+#*#
+*.orig
+
 # Dependencies
 node_modules/
 

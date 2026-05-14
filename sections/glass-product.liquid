@@ -1,19 +1,10 @@
 {% liquid
   assign originating_collection_handle = request.params.collection_handle
 
-  # When rendered from /products/{handle}?section_id=glass-product,
-  # the product object is automatically available
   if product
     assign panel_product = product
-  else
-    # Fallback: try to get from all_products if product_handle param exists
-    assign product_handle = request.params.product_handle
-    if product_handle != blank
-      assign panel_product = all_products[product_handle]
-    endif
   endif
 
-  # Fall back to the product's first real collection (skip the system 'all' collection)
   if originating_collection_handle == blank and panel_product
     for col in panel_product.collections
       if col.handle != 'all' and col.handle != blank
@@ -22,8 +13,7 @@
         break
       endif
     endfor
-  else
-    # Resolve the title from the handle if we have one
+  elsif originating_collection_handle != blank and panel_product
     for col in panel_product.collections
       if col.handle == originating_collection_handle
         assign originating_collection_title = col.title
@@ -32,14 +22,13 @@
     endfor
   endif
 
-  # Final fallback title: humanise the handle
   if originating_collection_title == blank and originating_collection_handle != blank
     assign originating_collection_title = originating_collection_handle | replace: '-', ' ' | capitalize
   endif
 
-  # Prev/next navigation within the originating collection
   assign prev_product = null
   assign next_product = null
+
   if originating_collection_handle != blank and panel_product
     assign nav_collection = collections[originating_collection_handle]
     if nav_collection
@@ -49,6 +38,7 @@
           assign next_product = nav_product
           break
         endif
+
         if nav_product.handle == panel_product.handle
           assign found_current = true
         else
@@ -459,7 +449,6 @@
           {%- render 'virtual-tryon', product: panel_product -%}
         {%- endif -%}
 
-        {%- comment -%} Eid Delivery Badge {%- endcomment -%}
         {% if panel_product.metafields.custom.eid_delivery %}
           <div class="glass-product-section__eid-badge">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -469,9 +458,7 @@
           </div>
         {% endif %}
 
-        {%- comment -%} Collapsible Sections {%- endcomment -%}
         <div class="glass-product-section__collapsibles">
-          {%- comment -%} Care Instructions {%- endcomment -%}
           <details class="glass-product-section__collapsible">
             <summary class="glass-product-section__collapsible-title">
               <span>{{ 'sections.immersive.product_panel.care_heading' | t }}</span>
@@ -505,7 +492,6 @@
             {%- endif -%}
           {%- endfor -%}
 
-          {%- comment -%} Disclaimer {%- endcomment -%}
           <details class="glass-product-section__collapsible">
             <summary class="glass-product-section__collapsible-title">
               <span>{{ 'sections.immersive.product_panel.disclaimer_heading' | t }}</span>
@@ -805,7 +791,7 @@
     transform: translateY(-1px);
   }
 
-  .glass-product-section__variant-button:focus {
+  .glass-product-section__variant-button:focus-visible {
     outline: 2px solid #d4af37;
     outline-offset: 2px;
   }
@@ -1163,6 +1149,28 @@
   .glass-product-section__wishlist-toggle:focus-visible {
     outline: 2px solid #d4af37;
     outline-offset: 2px;
+  }
+
+  /* Close button focus style */
+  .glass-product-section__close {
+    background: none;
+    border: none;
+    color: rgba(245, 240, 232, 0.6);
+    cursor: pointer;
+    padding: 0.5rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .glass-product-section__close:hover {
+    color: #d4af37;
+  }
+
+  .glass-product-section__close:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+    border-radius: 4px;
   }
 
   .glass-product-section__heart--filled {

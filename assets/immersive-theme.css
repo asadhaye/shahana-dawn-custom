@@ -3,6 +3,11 @@
    Scoped to .template-page-immersive only — homepage is now standard 2D
    ============================================================================= */
 
+/* Motion curve standard */
+:root {
+  --motion-curve: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* Z-Index Scale for predictable modal layering */
 :root {
   --z-base: 1;
@@ -254,6 +259,13 @@
   text-transform: uppercase;
   color: rgba(212, 175, 55, 0.7);
   margin-bottom: 0.25rem;
+}
+
+/* Glass panel close button focus style */
+.immersive-store__panel-close:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 /* ============================================================
@@ -2050,5 +2062,454 @@
   .immersive-empty-state__action {
     transition: none;
     transform: none !important;
+  }
+}
+
+/* =============================================================================
+   MOBILE-FIRST ATMOSPHERIC FOUNDATION
+   ============================================================================= */
+
+/* ============================================================
+   1. MOBILE HERO RECOMPOSITION
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* Hero height: min 82vh, max 900px */
+  .immersive-designers,
+  .immersive-editorial--layout-designers {
+    min-height: 82vh;
+    max-height: 900px;
+  }
+
+  /* Hero content layout: move upward, breathing room */
+  .immersive-designers__hero {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+  }
+
+  /* Mobile overlay: cinematic black gradient */
+  .immersive-designers__hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 40%,
+      rgba(10, 15, 30, 0.6) 70%,
+      rgba(10, 15, 30, 0.95) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Cleaner vertical rhythm for hero content */
+  .immersive-designers__hero-title {
+    margin-bottom: 1rem;
+  }
+
+  .immersive-designers__hero-manifest {
+    margin-bottom: 2rem;
+  }
+}
+
+/* ============================================================
+   2. TIMELINE — MOBILE FIRST
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* Timeline: horizontal scroll rail */
+  .immersive-designers__timeline {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 16px);
+  }
+
+  /* Timeline rail: upgraded with gradient and box-shadow */
+  .immersive-designers__timeline::before {
+    content: '';
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(212, 175, 55, 0.25),
+      rgba(255, 255, 255, 0.05)
+    );
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.08);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  /* Floating thumb: luxury breathing object */
+  .immersive-designers__timeline-thumb {
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom, 20px) + 15px);
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: radial-gradient(circle, #d4af37 0%, rgba(212, 175, 55, 0.2) 60%, transparent 100%);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.35);
+    transition: transform 600ms var(--motion-curve);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Timeline markers: increased spacing */
+  .immersive-designers__timeline-marker {
+    scroll-snap-align: center;
+    padding: 0 1.5rem;
+    min-width: 120px;
+    font-size: 0.9375rem;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+    opacity: 0.45;
+    transition: opacity 400ms var(--motion-curve), transform 400ms var(--motion-curve);
+    position: relative;
+    color: rgba(212, 175, 55, 0.85);
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+  }
+
+  .immersive-designers__timeline-marker:hover {
+    opacity: 0.8;
+  }
+
+  /* Active marker: full opacity, gold glow, underline */
+  .immersive-designers__timeline-marker.is-active {
+    opacity: 1;
+  }
+
+  /* Gold underline with refined motion */
+  .immersive-designers__timeline-marker::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 400ms var(--motion-curve);
+  }
+
+  .immersive-designers__timeline-marker:hover::after,
+  .immersive-designers__timeline-marker.is-active::after {
+    transform: scaleX(1);
+  }
+
+  /* Gradient fading edges for timeline */
+  .immersive-designers__timeline-wrapper {
+    position: relative;
+  }
+
+  .immersive-designers__timeline-wrapper::before,
+  .immersive-designers__timeline-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 48px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .immersive-designers__timeline-wrapper::before {
+    left: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(10, 15, 30, 0.9) 0%,
+      transparent 100%
+    );
+  }
+
+  .immersive-designers__timeline-wrapper::after {
+    right: 0;
+    background: linear-gradient(
+      270deg,
+      rgba(10, 15, 30, 0.9) 0%,
+      transparent 100%
+    );
+  }
+}
+
+/* ============================================================
+   3. TYPOGRAPHY PASS
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* Designer name: increased hierarchy */
+  .immersive-designers__designer-name {
+    font-size: 1.125rem;
+    letter-spacing: 0.14em;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Manifest text: improved readability */
+  .immersive-designers__hero-manifest {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    max-width: 90%;
+    color: rgba(245, 240, 232, 0.85);
+    margin-top: 1.5rem;
+  }
+
+  /* Product typography: reduced aggressive styling */
+  .immersive-product-card__title {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.375rem;
+  }
+
+  .immersive-product-card__price {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgba(212, 175, 55, 0.9);
+    margin-bottom: 0.5rem;
+  }
+
+  .immersive-product-card__vendor {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: rgba(212, 175, 55, 0.6);
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* ============================================================
+   4. ATMOSPHERIC MOTION STANDARDIZATION
+   ============================================================ */
+
+/* Apply motion curve to all transitions */
+@media (max-width: 768px) {
+  .immersive-designers__timeline-marker,
+  .immersive-designers__hero-title,
+  .immersive-designers__hero-manifest,
+  .immersive-product-card {
+    transition: all 0.4s var(--motion-curve);
+  }
+
+  /* Hero transition layering */
+  .immersive-designers__hero-bg {
+    transition: transform 0.6s var(--motion-curve);
+  }
+
+  .immersive-designers__hero-overlay {
+    transition: opacity 0.5s var(--motion-curve);
+  }
+
+  .immersive-designers__hero-title {
+    transition: transform 0.55s var(--motion-curve), opacity 0.55s var(--motion-curve);
+  }
+
+  .immersive-designers__hero-manifest {
+    transition: transform 0.6s var(--motion-curve), opacity 0.6s var(--motion-curve);
+  }
+
+  /* Subtle background motion */
+  .immersive-designers__hero-bg {
+    animation: subtle-drift 20s var(--motion-curve) infinite alternate;
+  }
+
+  @keyframes subtle-drift {
+    0% {
+      transform: scale(1) translate(0, 0);
+    }
+    100% {
+      transform: scale(1.02) translate(-1%, -0.5%);
+    }
+  }
+
+  /* Product card reveal on scroll */
+  .immersive-product-card {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .immersive-product-card.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced motion override */
+@media (prefers-reduced-motion: reduce) {
+  .immersive-designers__hero-bg {
+    animation: none !important;
+  }
+
+  .immersive-designers__timeline-marker,
+  .immersive-designers__hero-title,
+  .immersive-designers__hero-manifest,
+  .immersive-product-card {
+    transition: none !important;
+  }
+
+  .immersive-product-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ============================================================
+   5. PRODUCT CARD MOBILE REFINEMENT
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* Card surface: softer glass effect */
+  .immersive-product-card {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(10, 15, 30, 0.75);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s var(--motion-curve);
+  }
+
+  /* Remove aggressive hover on mobile */
+  .immersive-product-card:hover {
+    transform: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Quick actions: lower opacity, softer appearance */
+  .immersive-product-card__quick-actions {
+    opacity: 0.5;
+    transition: opacity 0.2s var(--motion-curve);
+  }
+
+  .immersive-product-card__quick-actions:hover {
+    opacity: 0.8;
+  }
+
+  .immersive-product-card__quick-action {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    color: rgba(212, 175, 55, 0.8);
+    transition: all 0.2s var(--motion-curve);
+  }
+
+  .immersive-product-card__quick-action:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: rgba(212, 175, 55, 0.3);
+  }
+}
+
+/* Desktop hover refinement */
+@media (min-width: 769px) {
+  .immersive-product-card {
+    transition: all 0.4s var(--motion-curve);
+  }
+
+  .immersive-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ============================================================
+   6. LOADING EXPERIENCE — SKELETON/SHIMMER
+   ============================================================ */
+
+/* Skeleton container */
+.immersive-skeleton {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.immersive-skeleton__shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Image placeholder */
+.immersive-skeleton__image {
+  aspect-ratio: 2 / 3;
+  width: 100%;
+}
+
+/* Metadata line placeholder */
+.immersive-skeleton__line {
+  height: 12px;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.immersive-skeleton__line--short {
+  width: 40%;
+}
+
+.immersive-skeleton__line--medium {
+  width: 70%;
+}
+
+.immersive-skeleton__line--long {
+  width: 100%;
+}
+
+/* Staggered fade-up reveal */
+.immersive-skeleton {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s var(--motion-curve), transform 0.5s var(--motion-curve);
+}
+
+.immersive-skeleton.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays */
+.immersive-skeleton:nth-child(1) {
+  transition-delay: 0ms;
+}
+
+.immersive-skeleton:nth-child(2) {
+  transition-delay: 100ms;
+}
+
+.immersive-skeleton:nth-child(3) {
+  transition-delay: 200ms;
+}
+
+.immersive-skeleton:nth-child(4) {
+  transition-delay: 300ms;
+}
+
+/* Reduced motion override for loading */
+@media (prefers-reduced-motion: reduce) {
+  .immersive-skeleton__shimmer {
+    animation: none;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .immersive-skeleton {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

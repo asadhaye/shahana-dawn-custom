@@ -256,6 +256,11 @@
     color: #d4af37;
   }
 
+  .vtryon__gate-btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
+  }
+
   .vtryon__subtitle {
     margin: 0 0 1.25rem;
     font-size: 0.8rem;
@@ -280,6 +285,11 @@
   .vtryon__upload-label:hover {
     background: rgba(212, 175, 55, 0.1);
     border-color: rgba(212, 175, 55, 0.5);
+  }
+
+  .vtryon__upload-label:focus-within {
+    border-color: #d4af37;
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
   }
 
   .vtryon__upload-icon svg {
@@ -325,6 +335,12 @@
     flex-shrink: 0;
   }
 
+  .vtryon__consent-input:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   .vtryon__consent-text {
     font-size: 0.75rem;
     color: rgba(212, 175, 55, 0.55);
@@ -349,6 +365,11 @@
   .vtryon__btn:hover:not(:disabled) {
     background: rgba(212, 175, 55, 0.2);
     border-color: rgba(212, 175, 55, 0.7);
+  }
+
+  .vtryon__btn:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 3px;
   }
 
   .vtryon__btn:disabled {

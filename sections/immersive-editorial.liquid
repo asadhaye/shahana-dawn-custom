@@ -70,6 +70,12 @@
                 {%- if collection != blank -%}
                   data-collection-handle="{{ collection.handle }}"
                 {%- endif -%}
+                data-artifact-open
+                data-artifact-title="{{ block.settings.heading | escape }}"
+                data-artifact-body="{{ block.settings.body | strip_html | escape }}"
+                {%- if block.settings.image != blank -%}
+                  data-artifact-image="{{ block.settings.image | image_url: width: 1200 }}"
+                {%- endif -%}
                 data-designer-label="{{ block.settings.heading | escape }}"
                 {{ block.shopify_attributes }}
               >
@@ -144,7 +150,22 @@
       <div class="immersive-occasions__chapters" role="list">
         {%- for block in section.blocks -%}
           {%- if block.type == 'occasion_card' -%}
-            <article class="immersive-occasions__chapter" {{ block.shopify_attributes }}>
+            {%- assign collection = block.settings.collection -%}
+            <article
+              class="immersive-occasions__chapter"
+              data-artifact-open
+              data-artifact-title="{{ block.settings.heading | escape }}"
+              data-artifact-body="{{ block.settings.body | strip_html | escape }}"
+              {%- if collection != blank -%}
+                data-collection="{{ collection.handle }}"
+              {%- endif -%}
+              {%- if block.settings.image != blank -%}
+                data-artifact-image="{{ block.settings.image | image_url: width: 1200 }}"
+              {%- elsif collection.featured_image != blank -%}
+                data-artifact-image="{{ collection.featured_image | image_url: width: 1200 }}"
+              {%- endif -%}
+              {{ block.shopify_attributes }}
+            >
               {%- if block.settings.image -%}
                 <div class="immersive-occasions__chapter-media">
                   <img
@@ -155,21 +176,31 @@
                     height="{{ block.settings.image.height }}"
                   >
                 </div>
+              {%- elsif collection.featured_image != blank -%}
+                <div class="immersive-occasions__chapter-media">
+                  <img
+                    src="{{ collection.featured_image | image_url: width: 1200 }}"
+                    alt="{{ collection.featured_image.alt | default: block.settings.heading | escape }}"
+                    loading="lazy"
+                    width="{{ collection.featured_image.width }}"
+                    height="{{ collection.featured_image.height }}"
+                  >
+                </div>
               {%- endif -%}
               <div class="immersive-occasions__chapter-content">
-                {%- if block.settings.body != blank -%}
-                  <span class="immersive-occasions__chapter-eyebrow">{{ block.settings.body | escape }}</span>
-                {%- endif -%}
+                <span class="immersive-occasions__chapter-eyebrow">{{ forloop.index | prepend: 'Chapter ' }}</span>
                 {%- if block.settings.heading != blank -%}
                   <h3 class="immersive-occasions__chapter-heading">{{ block.settings.heading | escape }}</h3>
                 {%- endif -%}
-                {%- assign collection = block.settings.collection -%}
+                {%- if block.settings.body != blank -%}
+                  <div class="immersive-occasions__chapter-body">{{ block.settings.body }}</div>
+                {%- endif -%}
                 {%- if collection != blank -%}
                   <a
                     href="{{ collection.url }}"
                     class="immersive-occasions__chapter-link"
                     data-collection="{{ collection.handle }}"
-                    >View Collection</a
+                    >View Collection →</a
                   >
                 {%- elsif block.settings.cta_url != blank -%}
                   <a href="{{ block.settings.cta_url }}" class="immersive-occasions__chapter-link">Learn More</a>
@@ -209,6 +240,14 @@
               aria-label="{{ card_label | escape }}"
               {%- if collection != blank -%}
                 data-collection="{{ collection.handle }}"
+                data-artifact-open
+                data-artifact-title="{{ card_label | escape }}"
+                data-artifact-body="{{ block.settings.body | strip_html | escape }}"
+                {%- if block.settings.image != blank -%}
+                  data-artifact-image="{{ block.settings.image | image_url: width: 1200 }}"
+                {%- elsif collection.featured_image != blank -%}
+                  data-artifact-image="{{ collection.featured_image | image_url: width: 1200 }}"
+                {%- endif -%}
               {%- endif -%}
               {{ block.shopify_attributes }}
             >
@@ -266,7 +305,7 @@
     </div>
   {%- endif -%}
 
-  {%- if layout == 'story' -%}
+  {%- if false and layout == 'story' -%}
     <div class="immersive-story-layout" data-room-key="{{ section.settings.room_key | escape }}">
       <div class="immersive-story-layout__chapters" role="list">
         {%- for block in section.blocks -%}
@@ -314,7 +353,7 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'designers' -%}
+  {%- if false and section.settings.layout == 'designers' -%}
     <div class="immersive-designers" data-room-key="{{ section.settings.room_key | escape }}">
       <div
         class="immersive-designers__timeline"
@@ -351,17 +390,17 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'custom' -%}
+  {%- if false and section.settings.layout == 'custom' -%}
     <div class="immersive-custom" data-room-key="{{ section.settings.room_key | escape }}">
-      <div class="immersive-custom__grid">
+      <div class="immersive-editorial__banners">
         {%- for block in section.blocks -%}
           {%- if block.type == 'banner' -%}
             <a
               href="{{ block.settings.collection.url | default: block.settings.cta_url | default: '#' }}"
-              class="immersive-custom__card"
+              class="immersive-editorial__banner immersive-custom__card"
               {{ block.shopify_attributes }}
             >
-              <div class="immersive-custom__card-media">
+              <div class="immersive-editorial__banner-media immersive-custom__card-media">
                 {%- if block.settings.image != blank -%}
                   <img
                     src="{{ block.settings.image | image_url: width: 800 }}"
@@ -372,12 +411,14 @@
                   >
                 {%- endif -%}
               </div>
-              <div class="immersive-custom__card-content">
+              <div class="immersive-editorial__banner-content immersive-custom__card-content">
                 {%- if block.settings.heading != blank -%}
-                  <h3 class="immersive-custom__card-heading">{{ block.settings.heading | escape }}</h3>
+                  <h3 class="immersive-editorial__banner-heading immersive-custom__card-heading">
+                    {{ block.settings.heading | escape }}
+                  </h3>
                 {%- endif -%}
                 {%- if block.settings.body != blank -%}
-                  <div class="immersive-custom__card-body">{{ block.settings.body }}</div>
+                  <div class="immersive-editorial__banner-body immersive-custom__card-body">{{ block.settings.body }}</div>
                 {%- endif -%}
               </div>
             </a>
@@ -387,7 +428,7 @@
     </div>
   {%- endif -%}
 
-  {%- if layout == 'gallery' -%}
+  {%- if false and layout == 'gallery' -%}
     <div class="immersive-gallery-layout" data-room-key="{{ section.settings.room_key | escape }}">
       <div class="immersive-gallery-layout__grid" role="list">
         {%- for block in section.blocks -%}
@@ -420,7 +461,7 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'coverflow' -%}
+  {%- if false and section.settings.layout == 'coverflow' -%}
     <div
       class="immersive-coverflow"
       data-room-key="{{ section.settings.room_key | escape }}"
@@ -488,7 +529,7 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'stacked' -%}
+  {%- if false and section.settings.layout == 'stacked' -%}
     <div
       class="immersive-stacked"
       data-room-key="{{ section.settings.room_key | escape }}"
@@ -554,7 +595,7 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'perspective' -%}
+  {%- if false and section.settings.layout == 'perspective' -%}
     <div
       class="immersive-perspective"
       data-room-key="{{ section.settings.room_key | escape }}"
@@ -620,7 +661,7 @@
     </div>
   {%- endif -%}
 
-  {%- if section.settings.layout == 'marquee' -%}
+  {%- if false and section.settings.layout == 'marquee' -%}
     <div
       class="immersive-marquee"
       data-room-key="{{ section.settings.room_key | escape }}"
@@ -2282,6 +2323,504 @@
   @media (prefers-reduced-motion: reduce) {
     .immersive-gallery-layout__card-media img {
       transition: none;
+    }
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections {
+    min-height: 100vh;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(212, 175, 55, 0.16), transparent 24rem),
+      radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.08), transparent 22rem),
+      #050505;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers::before,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions::before,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections::before {
+    content: 'INDEX';
+    position: fixed;
+    top: calc(var(--notif-height, 0px) + 5.25rem);
+    left: 1.5rem;
+    z-index: 4;
+    font-size: clamp(2.25rem, 8vw, 7rem);
+    line-height: 0.8;
+    font-family: serif;
+    color: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers::after {
+    content: 'CODEX';
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions::after {
+    content: 'STORY';
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections::after {
+    content: 'GALLERY';
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers::after,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions::after,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections::after {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.25rem;
+    z-index: 4;
+    font-size: clamp(2.5rem, 9vw, 8rem);
+    line-height: 0.78;
+    font-family: serif;
+    letter-spacing: -0.02em;
+    color: rgba(212, 175, 55, 0.14);
+    pointer-events: none;
+  }
+
+  #immersive-editorial-overlay-content .immersive-museum-nav {
+    position: fixed;
+    left: clamp(1rem, 3vw, 2rem);
+    bottom: clamp(1rem, 3vw, 2rem);
+    z-index: 40;
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.35rem 1.5rem;
+    align-items: end;
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+
+  #immersive-editorial-overlay-content .immersive-museum-nav__title {
+    grid-column: 1 / -1;
+    font-family: serif;
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    line-height: 0.75;
+  }
+
+  #immersive-editorial-overlay-content .immersive-museum-nav__mode {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #immersive-editorial-overlay-content .immersive-museum-nav__mode.is-active {
+    color: #d4af37;
+  }
+
+  #immersive-editorial-overlay-content .immersive-museum-nav__hint {
+    grid-column: 1 / -1;
+    max-width: 18rem;
+    font-size: 0.6rem;
+    line-height: 1.3;
+    letter-spacing: 0.16em;
+    color: rgba(255, 255, 255, 0.62);
+  }
+
+  #immersive-editorial-overlay-content [data-museum-mode='story'] .immersive-designers__hero-transition-wrap,
+  #immersive-editorial-overlay-content [data-museum-mode='story'] .immersive-featured__grid {
+    filter: saturate(0.45) contrast(1.12);
+  }
+
+  #immersive-editorial-overlay-content [data-museum-mode='story'] .immersive-featured__grid {
+    scroll-snap-type: none;
+  }
+
+  #immersive-editorial-overlay-content [data-museum-mode='story'] .immersive-featured__item {
+    flex-basis: clamp(22rem, 42vw, 42rem);
+  }
+
+  #immersive-editorial-overlay-content [data-museum-mode='story'] .immersive-occasions__chapter {
+    opacity: 1;
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study {
+    position: fixed;
+    inset: clamp(5rem, 10vh, 7rem) clamp(1rem, 5vw, 5rem) clamp(1rem, 5vh, 3rem) auto;
+    z-index: 55;
+    width: min(28rem, calc(100vw - 2rem));
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(5, 5, 5, 0.86);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    color: #fff;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.55);
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study[hidden] {
+    display: none;
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study__close {
+    justify-self: end;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.68);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study__image {
+    width: 100%;
+    max-height: 42vh;
+    object-fit: cover;
+    filter: saturate(0.8) contrast(1.1);
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study__meta,
+  #immersive-editorial-overlay-content .immersive-artifact-study__cta {
+    font-size: 0.66rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #d4af37;
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study__title {
+    margin: 0;
+    font-family: serif;
+    font-size: clamp(2rem, 6vw, 4rem);
+    line-height: 0.88;
+    color: #fff;
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study__body {
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.55;
+  }
+
+  #immersive-editorial-overlay-content .immersive-artifact-study__cta {
+    justify-self: start;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    background: rgba(212, 175, 55, 0.08);
+    cursor: pointer;
+  }
+
+  #immersive-editorial-overlay-content .is-studying-artifact .immersive-featured__grid,
+  #immersive-editorial-overlay-content .is-studying-artifact .immersive-occasions__chapters,
+  #immersive-editorial-overlay-content .is-studying-artifact .immersive-designers__hero-transition-wrap,
+  #immersive-editorial-overlay-content .is-studying-artifact .immersive-designers__products {
+    filter: blur(3px) brightness(0.65);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers {
+    display: grid;
+    grid-template-columns: minmax(15rem, 26vw) minmax(0, 1fr);
+    min-height: 100vh;
+    height: auto;
+    padding: clamp(5rem, 10vh, 8rem) clamp(1rem, 3vw, 3rem) 3rem;
+    gap: clamp(1rem, 3vw, 3rem);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__hero-transition-wrap {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: min(64vh, 44rem);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    overflow: hidden;
+    background: #0b0b0b;
+    box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.5);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__hero-state {
+    min-height: min(64vh, 44rem);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__hero-bg {
+    filter: contrast(1.08) saturate(0.75) brightness(0.72);
+    transform: scale(1.04);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__timeline {
+    position: sticky;
+    top: 6rem;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__timeline-ghost-label,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__hero-subheading,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__hero-subheading {
+    color: rgba(255, 255, 255, 0.58);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__rail {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__marker {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    font-family: serif;
+    font-size: clamp(1.5rem, 3vw, 3rem);
+    letter-spacing: 0;
+    text-align: left;
+    color: rgba(255, 255, 255, 0.76);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__marker::after {
+    content: 'STUDY';
+    align-self: center;
+    font-family: inherit;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: rgba(212, 175, 55, 0.68);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__marker.is-active {
+    color: #d4af37;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__thumb {
+    display: none;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__products {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 14rem;
+    overflow: hidden;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designer-grid {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0 1.5rem;
+    scroll-snap-type: x mandatory;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-product-card {
+    flex: 0 0 clamp(13rem, 22vw, 19rem);
+    scroll-snap-align: start;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-editorial__hero {
+    min-height: 42vh;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions {
+    padding: 0 clamp(1rem, 4vw, 4rem) 5rem;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__hero {
+    position: sticky;
+    top: 5rem;
+    z-index: 2;
+    max-width: 38rem;
+    padding: 2rem 0;
+    text-align: left;
+    mix-blend-mode: screen;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__hero-heading {
+    font-size: clamp(3rem, 10vw, 9rem);
+    line-height: 0.82;
+    letter-spacing: -0.04em;
+    max-width: 7ch;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapters {
+    gap: 0;
+    padding: 0;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter {
+    min-height: 92vh;
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 0.62fr);
+    align-items: end;
+    gap: clamp(1rem, 4vw, 4rem);
+    padding: 8vh 0;
+    opacity: 0.38;
+    transform: translateY(2rem);
+    transition: opacity 500ms ease, transform 500ms ease;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter.is-active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter:nth-child(even) .immersive-occasions__chapter-media {
+    order: 0;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter-media {
+    min-height: 68vh;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    overflow: hidden;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter-media img {
+    height: 68vh;
+    aspect-ratio: auto;
+    border-radius: 0;
+    object-fit: cover;
+    filter: saturate(0.78) contrast(1.08);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter-content {
+    align-self: center;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.42);
+    border-left: 1px solid rgba(212, 175, 55, 0.38);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter-heading {
+    font-size: clamp(2.4rem, 6vw, 5.5rem);
+    line-height: 0.88;
+    letter-spacing: -0.035em;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter-body {
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.55;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured {
+    min-height: 100vh;
+    padding: clamp(5rem, 10vh, 8rem) 0 3rem;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__hero {
+    position: fixed;
+    left: 1.5rem;
+    top: calc(var(--notif-height, 0px) + 8rem);
+    z-index: 3;
+    max-width: 24rem;
+    padding: 0;
+    text-align: left;
+    pointer-events: none;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__hero-heading {
+    font-size: clamp(3.8rem, 12vw, 10rem);
+    line-height: 0.76;
+    letter-spacing: -0.05em;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__grid {
+    display: flex;
+    grid-template-columns: none;
+    gap: clamp(1rem, 3vw, 3rem);
+    max-width: none;
+    width: max-content;
+    min-height: calc(100vh - 8rem);
+    align-items: center;
+    padding: 0 10vw 0 34vw;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    cursor: grab;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__grid.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item {
+    flex: 0 0 clamp(18rem, 32vw, 32rem);
+    min-height: 68vh;
+    justify-content: flex-end;
+    padding: 0 !important;
+    margin: 0 !important;
+    scroll-snap-align: center;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item:nth-child(even) {
+    transform: translateY(8vh);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item:hover {
+    transform: translateY(-1rem);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item:nth-child(even):hover {
+    transform: translateY(calc(8vh - 1rem));
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item-media {
+    height: 62vh;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item-media img,
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__item-info {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  @media (max-width: 768px) {
+    #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers {
+      display: flex;
+      padding: 5rem 1rem 2rem;
+    }
+
+    #immersive-editorial-overlay-content .immersive-editorial--layout-designers .immersive-designers__timeline {
+      position: relative;
+      top: auto;
+      order: -1;
+    }
+
+    #immersive-editorial-overlay-content .immersive-editorial--layout-occasions .immersive-occasions__chapter {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__hero {
+      position: relative;
+      top: auto;
+      left: auto;
+      padding: 0 1rem 2rem;
+    }
+
+    #immersive-editorial-overlay-content .immersive-editorial--layout-featured_collections .immersive-featured__grid {
+      width: 100%;
+      padding: 0 1rem 2rem;
     }
   }
 {% endstylesheet %}

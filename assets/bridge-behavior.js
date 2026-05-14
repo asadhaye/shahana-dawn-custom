@@ -16,16 +16,12 @@
 (function () {
   function classifyConnection() {
     // Primary: NetworkInformation API
-    if (navigator.connection) {
-      var c = navigator.connection;
-      if (c.saveData) return 'slow';
-      var t = c.effectiveType || '';
-      if (t === 'slow-2g' || t === '2g') return 'slow';
-      if (t === '3g') return 'medium';
-      return 'fast';
-    }
-    
-    // Fallback: default to fast
+    if (!navigator.connection) return 'fast';
+    var c = navigator.connection;
+    if (c.saveData) return 'slow';
+    var t = c.effectiveType || '';
+    if (t === 'slow-2g' || t === '2g') return 'slow';
+    if (t === '3g') return 'medium';
     return 'fast';
   }
 
