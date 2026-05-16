@@ -30,6 +30,70 @@ function trackImmersiveEvent(name, params) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Skeleton Loaders for Panel Content
+// ─────────────────────────────────────────────────────────────
+
+function renderSkeletonGrid(count) {
+  count = count || 6;
+  var cards = '';
+  for (var i = 0; i < count; i++) {
+    cards +=
+      '<div class="immersive-skeleton-card">' +
+      '<div class="immersive-skeleton-card__image"></div>' +
+      '<div class="immersive-skeleton-card__content">' +
+      '<div class="immersive-skeleton-card__line immersive-skeleton-card__line--short"></div>' +
+      '<div class="immersive-skeleton-card__line immersive-skeleton-card__line--medium"></div>' +
+      '<div class="immersive-skeleton-card__line immersive-skeleton-card__line--long"></div>' +
+      '</div>' +
+      '</div>';
+  }
+  return '<div class="immersive-skeleton-grid">' + cards + '</div>';
+}
+
+function renderSkeletonProduct() {
+  return (
+    '<div class="immersive-skeleton-product">' +
+    '<div class="immersive-skeleton-product__media"></div>' +
+    '<div class="immersive-skeleton-product__details">' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--title"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--price"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--description"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--description"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--description"></div>' +
+    '<div class="immersive-skeleton-product__cta"></div>' +
+    '</div>' +
+    '</div>'
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Content Transition Helpers
+// ─────────────────────────────────────────────────────────────
+
+function fadeInContent(container, html) {
+  if (!container) return;
+  if (reduceMotion) {
+    container.innerHTML = html;
+    return;
+  }
+  container.style.transition = 'opacity 150ms ease-in-out';
+  container.style.opacity = '0';
+  setTimeout(function () {
+    container.innerHTML = html;
+    container.style.opacity = '1';
+  }, 150);
+}
+
+function transitionPanelContent(panel, renderCallback) {
+  if (!panel) return;
+  if (document.startViewTransition) {
+    document.startViewTransition(renderCallback);
+  } else {
+    renderCallback();
+  }
+}
+
 function initTiltControlToggle() {
   var toggleBtn = document.querySelector('[data-immersive-tilt-toggle]');
   if (!toggleBtn) return;
