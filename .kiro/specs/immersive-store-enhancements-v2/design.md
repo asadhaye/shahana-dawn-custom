@@ -49,6 +49,14 @@ Feature B — Onboarding
     └── ONBOARDING_KEY constant  (NEW)
     └── showImmersiveOnboardingIfNeeded()  (NEW)
     └── bindImmersiveInit() calls showImmersiveOnboardingIfNeeded() after setupImageParallax()
+
+Feature C — Feature Extraction (NEW)
+  immersive-features.js  (NEW)
+    └── Extracted feature-specific functions from immersive-store.js
+    └── Panel setup functions: setupVariantButtons, setupBuyNowForm, setupMediaThumbs, setupImageParallax, setupShareButton, setupDeliveryDates, setupVirtualTryOn
+    └── Product recommendations: loadProductRecommendations
+    └── Onboarding: showImmersiveOnboardingIfNeeded
+    └── Other utilities: Wishlist manager, Filters, Next actions, Room recommender, Limited time features
 ```
 
 ### Data Flow — Feature A
@@ -75,6 +83,42 @@ bindImmersiveInit()
             → localStorage.getItem(ONBOARDING_KEY)
             → if falsy: remove hidden, focus dismiss button
             → on dismiss: localStorage.setItem, add hidden, restore focus
+```
+
+### Feature C — Feature Extraction
+
+The `immersive-features.js` file contains extracted functionality from `immersive-store.js` to improve code organization and maintainability. This is a refactoring effort that moves feature-specific functions into a dedicated file while maintaining the same API and behavior.
+
+**Functions moved to `immersive-features.js`:**
+
+| Category | Functions |
+|----------|-----------|
+| Panel setup | `setupVariantButtons`, `setupBuyNowForm`, `setupMediaThumbs`, `setupImageParallax`, `setupShareButton`, `setupDeliveryDates`, `setupVirtualTryOn` |
+| Product recommendations | `loadProductRecommendations` |
+| Onboarding | `showImmersiveOnboardingIfNeeded` |
+| Wishlist | `getWishlist`, `_persistWishlist`, `updateWishlistBadge`, `syncAllWishlistToggles`, `addToWishlist`, `removeFromWishlist`, `toggleWishlistItem`, `cacheWishlistProduct`, `renderWishlistPanel`, `openWishlistPanel`, `closeWishlistPanel`, `initWishlist` |
+| Filters | `initImmersiveFilters`, `saveFilters`, `loadFilters`, `buildFilterUrl` |
+| Next actions | `showNextActions`, `dismissNextActions`, `showAfterAddToCart` |
+| Room recommender | `getRecommendation`, `evaluateRoomRecommendation`, `showRoomRecommendation`, `trackRoomVisit` |
+| Limited time | `computeCountdown`, `renderCountdown`, `renderLowStockBadge`, `scanLimitedTimeCards`, `showFlashSaleAlert` |
+| Editorial | `ImmersiveEditorial.init`, `initDesignersTimeline`, `initStoryChapters`, `initGalleryDrag`, `initArtifactStudy` |
+| Search | `ImmersiveSearch` (not yet implemented) |
+
+**Key principles for feature extraction:**
+
+1. **No API changes**: All functions maintain the same signatures and behavior as in `immersive-store.js`
+2. **No new dependencies**: `immersive-features.js` depends only on `immersive-store.js` and standard browser APIs
+3. **Backward compatibility**: Existing code in `immersive-store.js` that calls these functions continues to work without modification
+4. **Loading order**: `immersive-features.js` must be loaded after `immersive-store.js` to ensure all dependencies are available
+
+**Loading order in `layout/theme.liquid`:**
+
+```liquid
+{%- if template == 'page.immersive' -%}
+  <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'immersive-features.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
 ```
 
 ---
@@ -254,6 +298,49 @@ function bindImmersiveInit() {
 }
 ```
 
+### 6. `assets/immersive-features.js` — Feature Extraction
+
+The `immersive-features.js` file contains extracted feature-specific functions from `immersive-store.js`. This is a refactoring effort to improve code organization and maintainability.
+
+**Key principles:**
+
+1. **No API changes**: All functions maintain the same signatures and behavior as in `immersive-store.js`
+2. **No new dependencies**: `immersive-features.js` depends only on `immersive-store.js` and standard browser APIs
+3. **Backward compatibility**: Existing code in `immersive-store.js` that calls these functions continues to work without modification
+4. **Loading order**: `immersive-features.js` must be loaded after `immersive-store.js` to ensure all dependencies are available
+
+**Loading order in `layout/theme.liquid`:**
+
+```liquid
+{%- if template == 'page.immersive' -%}
+  <script src="{{ 'three.min.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'immersive-store.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'immersive-features.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+```
+
+**Functions moved to `immersive-features.js`:**
+
+| Category | Functions |
+|----------|-----------|
+| Panel setup | `setupVariantButtons`, `setupBuyNowForm`, `setupMediaThumbs`, `setupImageParallax`, `setupShareButton`, `setupDeliveryDates`, `setupVirtualTryOn` |
+| Product recommendations | `loadProductRecommendations` |
+| Onboarding | `showImmersiveOnboardingIfNeeded` |
+| Wishlist | `getWishlist`, `_persistWishlist`, `updateWishlistBadge`, `syncAllWishlistToggles`, `addToWishlist`, `removeFromWishlist`, `toggleWishlistItem`, `cacheWishlistProduct`, `renderWishlistPanel`, `openWishlistPanel`, `closeWishlistPanel`, `initWishlist` |
+| Filters | `initImmersiveFilters`, `saveFilters`, `loadFilters`, `buildFilterUrl` |
+| Next actions | `showNextActions`, `dismissNextActions`, `showAfterAddToCart` |
+| Room recommender | `getRecommendation`, `evaluateRoomRecommendation`, `showRoomRecommendation`, `trackRoomVisit` |
+| Limited time | `computeCountdown`, `renderCountdown`, `renderLowStockBadge`, `scanLimitedTimeCards`, `showFlashSaleAlert` |
+| Editorial | `ImmersiveEditorial.init`, `initDesignersTimeline`, `initStoryChapters`, `initGalleryDrag`, `initArtifactStudy` |
+| Search | `ImmersiveSearch` (not yet implemented) |
+
+**Implementation notes:**
+
+- All functions are defined as global functions in `immersive-features.js`
+- Functions reference global variables from `immersive-store.js` (e.g., `STORE_ROOMS`, `immersiveState`, `uniforms`, etc.)
+- Functions use the same `data-*` attribute patterns and `| t` filter for localization as in `immersive-store.js`
+- All `localStorage`/`sessionStorage` calls are wrapped in `try/catch` to handle private browsing
+
 ---
 
 ## Data Models
@@ -361,6 +448,24 @@ All eight items are confirmed present in the current codebase (verified during d
 
 **Validates: Requirements 2.9**
 
+### Property 8: Feature extraction API consistency
+
+*For any* function in `immersive-features.js`, calling it with the same inputs should produce the same output as calling the corresponding function in `immersive-store.js`.
+
+**Validates: Requirements 4.1, 4.2, 4.3**
+
+### Property 9: Wishlist state round-trip
+
+*For any* product handle passed to `addToWishlist`, calling `getWishlist` should return an array containing that handle.
+
+**Validates: Requirements 4.1, 4.2, 4.3**
+
+### Property 10: Filter state persistence
+
+*For any* filter state passed to `saveFilters`, calling `loadFilters` with the same room key should return an object containing all the same key-value pairs.
+
+**Validates: Requirements 4.1, 4.2, 4.3**
+
 ---
 
 ## Error Handling
@@ -383,6 +488,16 @@ All eight items are confirmed present in the current codebase (verified during d
 | `#immersive-onboarding` element not in DOM | `showImmersiveOnboardingIfNeeded` returns early |
 | Dismiss button not found | Overlay is shown but no dismiss handler attached; overlay remains visible until page reload |
 | `previousFocus` element removed from DOM before dismiss | `focus()` call is a no-op; no error thrown |
+
+### Feature C — Feature Extraction
+
+| Scenario | Behavior |
+|----------|----------|
+| `localStorage` blocked (private browsing, storage full) | `try/catch` around all `localStorage` calls; graceful degradation |
+| `sessionStorage` blocked (private browsing, storage full) | `try/catch` around all `sessionStorage` calls; graceful degradation |
+| Dependency missing (e.g. `immersive-store.js` not loaded) | Functions may throw errors; `immersive-features.js` should check for dependencies before defining functions |
+| Function called before dependencies are ready | Functions should check for required globals (e.g. `STORE_ROOMS`, `immersiveState`) and return early if missing |
+| Network timeout / offline | Functions that make network requests (e.g. `loadProductRecommendations`) should handle errors gracefully and leave UI unchanged |
 
 ---
 
@@ -520,6 +635,7 @@ tests/
     requirement-0-verification.test.js   — structural checks for all 8 Req 0 items
     recommendations.test.js              — loadProductRecommendations unit tests
     onboarding.test.js                   — showImmersiveOnboardingIfNeeded unit tests
+    features.test.js                     — immersive-features.js function tests
   property/
     state-roundtrip.property.test.js     — Property 1
     fetch-cache.property.test.js         — Property 2
@@ -527,4 +643,41 @@ tests/
     recommendations-inject.property.test.js — Property 4
     rec-card-structure.property.test.js  — Property 5
     onboarding-visibility.property.test.js — Properties 6 & 7
+    features-api-consistency.property.test.js — Property 8
+    wishlist-roundtrip.property.test.js — Property 9
+    filter-persistence.property.test.js — Property 10
 ```
+
+### Feature C — Feature Extraction Testing
+
+**Unit Tests:**
+
+Focus areas:
+- Feature extraction verification: assert each function in `immersive-features.js` has a matching implementation in `immersive-store.js`
+- Panel setup functions: test each setup function with mock DOM elements
+- Wishlist manager: test add/remove/toggle operations with localStorage mocking
+- Filter functions: test filter state persistence and URL building
+- Room recommender: test recommendation rules with various browsing contexts
+- Limited time features: test countdown computation and low-stock badge rendering
+
+**Property-Based Tests:**
+
+Use **fast-check** (JavaScript) for all property tests. Each test runs a minimum of 100 iterations.
+
+**Property 8: Feature extraction API consistency**
+
+*For any* function in `immersive-features.js`, calling it with the same inputs should produce the same output as calling the corresponding function in `immersive-store.js`.
+
+**Validates: Requirement 4 — Feature Extraction**
+
+**Property 9: Wishlist state round-trip**
+
+*For any* product handle passed to `addToWishlist`, calling `getWishlist` should return an array containing that handle.
+
+**Validates: Requirement 4 — Wishlist Manager**
+
+**Property 10: Filter state persistence**
+
+*For any* filter state passed to `saveFilters`, calling `loadFilters` with the same room key should return an object containing all the same key-value pairs.
+
+**Validates: Requirement 4 — Filters**

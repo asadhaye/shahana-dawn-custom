@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="theme-color" content="">
+    <meta name="theme-color" content="#121212">
     <link rel="canonical" href="{{ canonical_url }}">
 
     {%- if settings.favicon != blank -%}
@@ -353,8 +353,11 @@
             endif
           endfor
         -%}
-        {%- if social_urls != '' -%}
-          ,"sameAs": {{ social_urls | split: '|' | json }}
+      {%- if social_urls != '' -%}
+        {%- assign social_array = social_urls | split: '|' | compact -%}
+          {%- if social_array.size > 0 -%}
+            ,"sameAs": {{ social_array | json }}
+          {%- endif -%}
         {%- endif -%}
       }
     </script>

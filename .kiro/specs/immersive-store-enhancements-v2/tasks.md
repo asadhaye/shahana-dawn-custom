@@ -109,51 +109,142 @@ Implement two additive features on top of the existing WebGL immersive store: dy
     - In `locales/en.default.json`, add a `"recommendations"` object inside `"sections"."immersive_store"` with keys: `"heading": "You May Also Like"`, `"card_aria": "View {{ title }}"`
     - _Requirements: 3.1, 3.3_
 
-- [x] 8. Set up property-based test infrastructure and write all property tests
-  - [x] 8.1 Set up fast-check test infrastructure
+- [x] 10. Feature C — Feature extraction to `immersive-features.js`
+  - [x] 10.1 Extract panel setup functions from `immersive-store.js`
+    - Move `setupVariantButtons`, `setupBuyNowForm`, `setupMediaThumbs`, `setupImageParallax`, `setupShareButton`, `setupDeliveryDates`, `setupVirtualTryOn` to `assets/immersive-features.js`
+    - Ensure all functions maintain the same signatures and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.2 Extract product recommendations function
+    - Move `loadProductRecommendations` to `assets/immersive-features.js`
+    - Ensure the function maintains the same signature and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.3 Extract onboarding function
+    - Move `showImmersiveOnboardingIfNeeded` to `assets/immersive-features.js`
+    - Ensure the function maintains the same signature and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.4 Extract wishlist manager functions
+    - Move `getWishlist`, `_persistWishlist`, `updateWishlistBadge`, `syncAllWishlistToggles`, `addToWishlist`, `removeFromWishlist`, `toggleWishlistItem`, `cacheWishlistProduct`, `renderWishlistPanel`, `openWishlistPanel`, `closeWishlistPanel`, `initWishlist` to `assets/immersive-features.js`
+    - Ensure all functions maintain the same signatures and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.5 Extract filter functions
+    - Move `initImmersiveFilters`, `saveFilters`, `loadFilters`, `buildFilterUrl` to `assets/immersive-features.js`
+    - Ensure all functions maintain the same signatures and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.6 Extract next actions functions
+    - Move `showNextActions`, `dismissNextActions`, `showAfterAddToCart` to `assets/immersive-features.js`
+    - Ensure all functions maintain the same signatures and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.7 Extract room recommender functions
+    - Move `getRecommendation`, `evaluateRoomRecommendation`, `showRoomRecommendation`, `trackRoomVisit` to `assets/immersive-features.js`
+    - Ensure all functions maintain the same signatures and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.8 Extract limited time functions
+    - Move `computeCountdown`, `renderCountdown`, `renderLowStockBadge`, `scanLimitedTimeCards`, `showFlashSaleAlert` to `assets/immersive-features.js`
+    - Ensure all functions maintain the same signatures and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.9 Extract editorial functions
+    - Move `ImmersiveEditorial.init`, `initDesignersTimeline`, `initStoryChapters`, `initGalleryDrag`, `initArtifactStudy` to `assets/immersive-features.js`
+    - Ensure all functions maintain the same signatures and behavior as in `immersive-store.js`
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.10 Update `layout/theme.liquid` to load `immersive-features.js`
+    - Add `<script src="{{ 'immersive-features.js' | asset_url }}" defer="defer"></script>` after `immersive-store.js` in the `page.immersive` conditional block
+    - _Requirements: 4.4, 4.5_
+  - [x] 10.11 Add feature extraction comment block to `immersive-features.js`
+    - Add a comment block at the top of `assets/immersive-features.js` explaining the purpose of the file and the principles of feature extraction
+    - _Requirements: 4.10_
+
+- [x] 11. Set up property-based test infrastructure and write all property tests
+  - [x] 11.1 Set up fast-check test infrastructure
     - Confirm `fast-check` is available in `package.json` (install if missing: `npm install --save-dev fast-check`)
     - Create `tests/` directory with `unit/` and `property/` subdirectories
     - Create shared test helpers: `buildMockPanel(productId)`, `buildMockOverlay()`, `mockLocalStorage(key, value)`, `clearMockLocalStorage()`, `parseHTML(html)` in a `tests/helpers.js` file
-  - [ ]* 8.2 Write property test — Property 1: State round-trip
+  - [ ]* 11.2 Write property test — Property 1: State round-trip
     - Create `tests/property/state-roundtrip.property.test.js`
     - Use `fc.record({ room: fc.string(), panel: fc.option(fc.string()), product: fc.option(fc.string()) })` as the arbitrary
     - Assert that `loadState()` after `saveState(patch)` returns an object containing all patch key-value pairs
     - **Property 1: State round-trip**
     - **Validates: Requirements 0.3**
-  - [ ]* 8.3 Write property test — Property 2: fetchWithCache idempotence
+  - [ ]* 11.3 Write property test — Property 2: fetchWithCache idempotence
     - Create `tests/property/fetch-cache.property.test.js`
     - Mock `global.fetch` to count calls; reset `contentCache` between runs
     - Assert that two sequential calls to `fetchWithCache(url)` result in exactly one network request
     - **Property 2: fetchWithCache idempotence**
     - **Validates: Requirements 0.4**
-  - [ ]* 8.4 Write property test — Property 3: Recommendations data attributes on product section
+  - [ ]* 11.4 Write property test — Property 3: Recommendations data attributes on product section
     - Create `tests/property/product-section-attrs.property.test.js`
     - Use `fc.record({ id: fc.integer({ min: 1 }), handle: fc.stringMatching(/^[a-z0-9-]+$/) })` as the arbitrary
     - Parse rendered HTML and assert `section.dataset.productId` and `section.dataset.productHandle` match the product fixture
     - **Property 3: Recommendations data attributes on product section**
     - **Validates: Requirements 1.2**
-  - [ ]* 8.5 Write property test — Property 4: Recommendations fetch and inject round-trip
+  - [ ]* 11.5 Write property test — Property 4: Recommendations fetch and inject round-trip
     - Create `tests/property/recommendations-inject.property.test.js`
     - Use `fc.integer({ min: 1 })` and `fc.string({ minLength: 1 })` as arbitraries
     - Mock `fetchWithCache` to return `responseHtml`; assert `[data-related-root].innerHTML === responseHtml` after `loadProductRecommendations(panel)`
     - **Property 4: Recommendations fetch and inject round-trip**
     - **Validates: Requirements 1.4, 1.5**
-  - [ ]* 8.6 Write property test — Property 5: Recommendation card structure
+  - [ ]* 11.6 Write property test — Property 5: Recommendation card structure
     - Create `tests/property/rec-card-structure.property.test.js`
     - Use `fc.array(fc.record({ handle: fc.stringMatching(/^[a-z0-9-]+$/), title: fc.string() }), { minLength: 1, maxLength: 4 })` as the arbitrary
     - Parse rendered HTML; assert every `a[data-product-handle]` has a non-empty handle and every `img` has `loading="lazy"` plus non-zero `width` and `height`
     - **Property 5: Recommendation card structure**
     - **Validates: Requirements 1.8, 1.10**
-  - [ ]* 8.7 Write property tests — Properties 6 & 7: Onboarding visibility and dismiss round-trip
+  - [ ]* 11.7 Write property tests — Properties 6 & 7: Onboarding visibility and dismiss round-trip
     - Create `tests/property/onboarding-visibility.property.test.js`
     - Property 6: use `fc.option(fc.oneof(fc.constant('1'), fc.string({ minLength: 1 })))` as the arbitrary; assert overlay is hidden iff stored value is truthy
     - Property 7: use `fc.constant(null)`; call `showImmersiveOnboardingIfNeeded()`, simulate dismiss click, assert `hidden` attribute is set and `localStorage.getItem(ONBOARDING_KEY)` is truthy
     - **Property 6: Onboarding visibility controlled by localStorage**
     - **Property 7: Onboarding dismiss round-trip**
     - **Validates: Requirements 2.7, 2.8, 2.9**
+  - [ ]* 11.8 Write property test — Property 8: Feature extraction API consistency
+    - Create `tests/property/features-api-consistency.property.test.js`
+    - For each function in `immersive-features.js`, compare output with corresponding function in `immersive-store.js`
+    - **Property 8: Feature extraction API consistency**
+    - **Validates: Requirement 4**
+  - [ ]* 11.9 Write property test — Property 9: Wishlist state round-trip
+    - Create `tests/property/wishlist-roundtrip.property.test.js`
+    - Use `fc.string()` as the arbitrary for product handle
+    - Assert that `getWishlist()` after `addToWishlist(handle)` contains the handle
+    - **Property 9: Wishlist state round-trip**
+    - **Validates: Requirement 4**
+  - [ ]* 11.10 Write property test — Property 10: Filter state persistence
+    - Create `tests/property/filter-persistence.property.test.js`
+    - Use `fc.record({ colors: fc.array(fc.string()), priceMin: fc.option(fc.string()), priceMax: fc.option(fc.string()), sortBy: fc.string() })` as the arbitrary
+    - Assert that `loadFilters(roomKey)` after `saveFilters(roomKey, state)` returns the same state
+    - **Property 10: Filter state persistence**
+    - **Validates: Requirement 4**
 
-- [x] 9. Final checkpoint — Ensure all tests pass
+- [x] 12. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
+
+## Task Dependency Graph
+
+```json
+{
+  "waves": [
+    ["0"],
+    ["1", "5"],
+    ["2"],
+    ["3"],
+    ["6"],
+    ["7"],
+    ["10"],
+    ["11"],
+    ["12"]
+  ],
+  "tasks": {
+    "0": "Verify previously-implemented foundation",
+    "1": "Feature A — Prepare glass-product.liquid",
+    "2": "Feature A — Create glass-product-recommendations.liquid",
+    "3": "Feature A — Add loadProductRecommendations",
+    "5": "Feature B — Add onboarding overlay HTML",
+    "6": "Feature B — Add onboarding JS",
+    "7": "Add locale keys",
+    "10": "Feature C — Feature extraction",
+    "11": "Set up property-based test infrastructure",
+    "12": "Final checkpoint"
+  }
+}
+```
 
 ## Notes
 
@@ -161,5 +252,6 @@ Implement two additive features on top of the existing WebGL immersive store: dy
 - Task 0 is read-only — no file modifications; document gaps as comments only
 - Task 1.2 removes the static collection-based related products block; the dynamic `loadProductRecommendations` function (Task 3) replaces it entirely
 - The existing `panel.onclick` handler in `openProductPanel` already intercepts `a[data-product-handle]` clicks — no additional click handler is needed for recommendation cards (Requirement 1.9)
-- All `localStorage` calls must be wrapped in `try/catch` to handle private browsing (Requirement 2.11)
+- All `localStorage`/`sessionStorage` calls must be wrapped in `try/catch` to handle private browsing (Requirements 2.11, 4.6)
 - Property tests require a test runner that supports async properties; configure fast-check with `{ numRuns: 100 }`
+- Feature extraction (Task 10) is a refactoring effort to improve code organization; all functions in `immersive-features.js` must maintain the same API as in `immersive-store.js` (Requirement 4.2)

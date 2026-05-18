@@ -43,11 +43,23 @@ skills/
 .continue/skills/
 .cursor/skills/
 .gemini/skills/
-.kiro/
 .opencode/skills/
 .qoder/skills/
 .roo/skills/
 .trae/skills/
+.vscode
+.windsurf
+.trae
+.roo
+.qodo
+.kilocode
+.gemini
+.devin
+.qwen
+.codex
+.codebuddy
+.claude
+.qopder
 .windsurf/skills/
 
 # Theme Editor dynamically modified files

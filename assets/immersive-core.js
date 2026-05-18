@@ -141,6 +141,8 @@ var CODEX_THEME_TO_ROOM = {
   Eid: 'occasions',
   Bridal: 'designer_houses',
   Heritage: 'designer_houses',
+  Formals: 'occasions',
+  Everyday: 'occasions',
 };
 
 function getRoomForCollectionHandleFromCodex(handle) {
@@ -174,8 +176,22 @@ var ROOM_VISUAL_PROFILES = {
 
 function getRoomVisualProfile(roomKey, mode) {
   var key = mode ? roomKey + ':' + mode : roomKey;
-  var profile = ROOM_VISUAL_PROFILES[key] || ROOM_VISUAL_PROFILES[roomKey] || ROOM_VISUAL_PROFILES.default;
-  return profile || ROOM_VISUAL_PROFILES.default;
+  var profile = ROOM_VISUAL_PROFILES[key] || ROOM_VISUAL_PROFILES[roomKey] || null;
+
+  if (!profile) {
+    if (window.__IMMERSIVE_DEV__) {
+      console.warn(
+        '[Immersive] No visual profile defined for room "' +
+          roomKey +
+          '"' +
+          (mode ? ' (mode: "' + mode + '")' : '') +
+          '. Falling back to default profile. Add a profile to ROOM_VISUAL_PROFILES to fix.',
+      );
+    }
+    profile = ROOM_VISUAL_PROFILES.default;
+  }
+
+  return profile;
 }
 
 function applyRoomVisualProfile(roomKey, mode, deltaTimeSec) {
@@ -221,7 +237,15 @@ function disposeGalleryStage(roomKey) {
 
   if (state.textures) {
     state.textures.forEach(function (tex) {
-      if (tex) tex.dispose();
+      if (tex) {
+        try {
+          tex.dispose();
+        } catch (e) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Texture disposal failed:', tex, e);
+          }
+        }
+      }
     });
   }
 
@@ -490,59 +514,6 @@ function getRoomData(roomKey) {
   return room;
 }
 
-function normalizeHotspot(raw, roomKey, index) {
-  if (!raw) return null;
-  var type, target;
-  if (raw.targetRoom) {
-    type = 'room';
-    target = raw.targetRoom;
-  } else if (raw.targetCollection) {
-    type = 'collection_panel';
-    target = raw.targetCollection;
-  } else if (raw.targetEditorialRoom) {
-    type = 'editorial';
-    target = raw.targetEditorialRoom;
-  } else if (raw.targetCodex) {
-    type = 'codex';
-    target = null;
-  } else if (raw.targetStory) {
-    type = 'story';
-    target = raw.targetRoom || 'featured_collections';
-  } else {
-    type = 'unknown';
-    target = null;
-  }
-  return {
-    id:
-      raw.id ||
-      roomKey +
-        '-' +
-        (raw.targetRoom ||
-          raw.targetCollection ||
-          raw.targetEditorialRoom ||
-          (raw.targetCodex ? 'codex' : raw.targetStory ? 'story' : index)),
-    type: type,
-    target: target,
-    label: raw.label || '',
-    targetCodex: raw.targetCodex || false,
-    targetStory: raw.targetStory || false,
-    position: { x: raw.x, y: raw.y, z: raw.z },
-    mobilePosition:
-      typeof raw.mobileX === 'number' && typeof raw.mobileY === 'number' ? { x: raw.mobileX, y: raw.mobileY } : null,
-    _raw: raw,
-  };
-}
-
-function getNormalizedHotspots(roomKey) {
-  var room = getRoomData(roomKey);
-  if (!room || !Array.isArray(room.hotspots)) return [];
-  return room.hotspots
-    .map(function (raw, index) {
-      return normalizeHotspot(raw, roomKey, index);
-    })
-    .filter(Boolean);
-}
-
 var renderer;
 var scene;
 var camera;
@@ -629,36 +600,6 @@ evaluateDeviceFlags();
 var textureWidth = usesMobileImg ? 1200 : 1920;
 var parallaxStrength = usesMobileImg ? 0.03 : 0.08;
 
-function trackImmersiveEvent(name, params) {
-  params = params || {};
-  var payload = Object.assign(
-    {
-      event_category: 'immersive_store',
-      event_label: name,
-      immersive_surface: 'immersive-3d-store',
-    },
-    params,
-  );
-
-  if (window.dataLayer && Array.isArray(window.dataLayer)) {
-    window.dataLayer.push({ event: 'immersive_' + name, ecommerce: null, immersive: payload });
-  }
-
-  if (typeof window.fbq === 'function') {
-    if (name === 'add_to_cart_checkout') {
-      window.fbq('track', 'AddToCart', payload);
-    } else {
-      var metaName =
-        'Immersive' +
-        name.replace(/_([a-z])/g, function (_, c) {
-          return c.toUpperCase();
-        });
-      metaName = metaName.charAt(0).toUpperCase() + metaName.slice(1);
-      window.fbq('trackCustom', metaName, payload);
-    }
-  }
-}
-
 var STATE_KEY = 'immersive_state';
 var ONBOARDING_KEY = 'immersive_onboarding_seen';
 var WISHLIST_KEY = 'immersive_wishlist';
@@ -675,13 +616,20 @@ function saveState(patch) {
   try {
     var current = JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
     sessionStorage.setItem(STATE_KEY, JSON.stringify(Object.assign(current, patch)));
-  } catch (e) {}
+  } catch (e) {
+    if (window.__IMMERSIVE_DEV__) {
+      console.warn('[Immersive] saveState failed:', e);
+    }
+  }
 }
 
 function loadState() {
   try {
     return JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
   } catch (e) {
+    if (window.__IMMERSIVE_DEV__) {
+      console.warn('[Immersive] loadState failed:', e);
+    }
     return {};
   }
 }
@@ -1267,7 +1215,6 @@ function hideLoader() {
   }, 400);
 }
 
-var mouseMoveRafPending = false;
 var mouseTarget = { x: 0.5, y: 0.5 };
 var mouseCurrent = { x: 0.5, y: 0.5 };
 var lerpFactor = 0.08;
@@ -1487,84 +1434,89 @@ function animate() {
   }
 
   if (tiltControlEnabled && immersiveState.mode === 'showroom' && !reduceMotion) {
-    var tiltNormX = Math.max(-1, Math.min(1, (tiltGamma || 0) / 45));
-    var tiltNormY = Math.max(-1, Math.min(1, ((tiltBeta || 0) - 45) / 45));
-
-    tiltXSmoothed += (tiltNormX - tiltXSmoothed) * 0.1;
-    tiltYSmoothed += (tiltNormY - tiltYSmoothed) * 0.1;
-
-    if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
-      uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
-      uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
-    }
-  } else if (!tiltControlEnabled && (tiltXSmoothed !== 0 || tiltYSmoothed !== 0)) {
-    tiltXSmoothed *= 0.85;
-    tiltYSmoothed *= 0.85;
-    if (Math.abs(tiltXSmoothed) < 0.001) tiltXSmoothed = 0;
-    if (Math.abs(tiltYSmoothed) < 0.001) tiltYSmoothed = 0;
-    if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
-      uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
-      uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
+    if (typeof tiltBeta === 'undefined' || typeof tiltGamma === 'undefined') {
+      // Device doesn't support orientation
+      disableTiltControl();
+    } else {
+      var tiltNormX = Math.max(-1, Math.min(1, (tiltGamma || 0) / 45));
+      var tiltNormY = Math.max(-1, Math.min(1, ((tiltBeta || 0) - 45) / 45));
     }
   }
+  tiltXSmoothed += (tiltNormX - tiltXSmoothed) * 0.1;
+  tiltYSmoothed += (tiltNormY - tiltYSmoothed) * 0.1;
 
-  if (immersiveState.mode === 'editorial') {
-    if (!editorialOverlayEl) cacheEditorialOverlay();
-    if (editorialOverlayEl && editorialMaxScroll > 0) {
-      var targetProgress = editorialOverlayEl.scrollTop / editorialMaxScroll;
-      editorialScrollProgress += (targetProgress - editorialScrollProgress) * 0.1;
-      uniforms.uScrollOffset.value = editorialScrollProgress;
-      if (!reduceMotion) {
-        uniforms.uScrollVignette.value += (editorialScrollProgress - uniforms.uScrollVignette.value) * 0.06;
-        uniforms.uScrollChroma.value += (editorialScrollProgress - uniforms.uScrollChroma.value) * 0.06;
-        if (immersiveState.editorialRoom === 'featured_collections') {
-          atmosphericMoodProgress += (editorialScrollProgress - atmosphericMoodProgress) * 0.04;
-          uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
-        }
-      }
-    }
-  } else if (editorialScrollProgress > 0.001) {
-    editorialScrollProgress *= 0.85;
+  if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
+    uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
+    uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
+  }
+}
+if (!tiltControlEnabled && (tiltXSmoothed !== 0 || tiltYSmoothed !== 0)) {
+  tiltXSmoothed *= 0.85;
+  tiltYSmoothed *= 0.85;
+  if (Math.abs(tiltXSmoothed) < 0.001) tiltXSmoothed = 0;
+  if (Math.abs(tiltYSmoothed) < 0.001) tiltYSmoothed = 0;
+  if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
+    uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
+    uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
+  }
+}
+
+if (immersiveState.mode === 'editorial') {
+  if (!editorialOverlayEl) cacheEditorialOverlay();
+  if (editorialOverlayEl && editorialMaxScroll > 0) {
+    var targetProgress = editorialOverlayEl.scrollTop / editorialMaxScroll;
+    editorialScrollProgress += (targetProgress - editorialScrollProgress) * 0.1;
     uniforms.uScrollOffset.value = editorialScrollProgress;
     if (!reduceMotion) {
-      uniforms.uScrollVignette.value *= 0.85;
-      uniforms.uScrollChroma.value *= 0.85;
-      atmosphericMoodProgress *= 0.85;
-      uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+      uniforms.uScrollVignette.value += (editorialScrollProgress - uniforms.uScrollVignette.value) * 0.06;
+      uniforms.uScrollChroma.value += (editorialScrollProgress - uniforms.uScrollChroma.value) * 0.06;
+      if (immersiveState.editorialRoom === 'featured_collections') {
+        atmosphericMoodProgress += (editorialScrollProgress - atmosphericMoodProgress) * 0.04;
+        uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+      }
     }
-  } else {
-    editorialScrollProgress = 0;
-    atmosphericMoodProgress = 0;
-    uniforms.uScrollOffset.value = 0;
-    uniforms.uScrollVignette.value = 0;
-    uniforms.uScrollChroma.value = 0;
-    uniforms.uAtmosphericMood.value = 0;
   }
-
-  var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  var lastNow = window._immersiveLastFrameTime || now;
-  var deltaSec = (now - lastNow) / 1000;
-  window._immersiveLastFrameTime = now;
-  applyRoomVisualProfile(currentRoomKey, currentRoomSubMode, deltaSec);
-
-  if (renderer && scene && camera) {
-    renderer.render(scene, camera);
+} else if (editorialScrollProgress > 0.001) {
+  editorialScrollProgress *= 0.85;
+  uniforms.uScrollOffset.value = editorialScrollProgress;
+  if (!reduceMotion) {
+    uniforms.uScrollVignette.value *= 0.85;
+    uniforms.uScrollChroma.value *= 0.85;
+    atmosphericMoodProgress *= 0.85;
+    uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
   }
+} else {
+  editorialScrollProgress = 0;
+  atmosphericMoodProgress = 0;
+  uniforms.uScrollOffset.value = 0;
+  uniforms.uScrollVignette.value = 0;
+  uniforms.uScrollChroma.value = 0;
+  uniforms.uAtmosphericMood.value = 0;
+}
 
-  if (typeof performance !== 'undefined' && window.__IMMERSIVE_DEV__) {
-    var now = performance.now();
-    var frameTime = now - lastFrameTime;
-    lastFrameTime = now;
-    fpsCounter++;
-    if (now - fpsTimer > 1000) {
-      var fps = Math.round((fpsCounter * 1000) / (now - fpsTimer));
-      // FPS tracked silently
-      fpsCounter = 0;
-      fpsTimer = now;
-    }
-    if (frameTime > 16.67) {
-      // Frame budget exceeded - tracked silently
-    }
+var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+var lastNow = window._immersiveLastFrameTime || now;
+var deltaSec = (now - lastNow) / 1000;
+window._immersiveLastFrameTime = now;
+applyRoomVisualProfile(currentRoomKey, currentRoomSubMode, deltaSec);
+
+if (renderer && scene && camera) {
+  renderer.render(scene, camera);
+}
+
+if (typeof performance !== 'undefined' && window.__IMMERSIVE_DEV__) {
+  var now = performance.now();
+  var frameTime = now - lastFrameTime;
+  lastFrameTime = now;
+  fpsCounter++;
+  if (now - fpsTimer > 1000) {
+    var fps = Math.round((fpsCounter * 1000) / (now - fpsTimer));
+    // FPS tracked silently
+    fpsCounter = 0;
+    fpsTimer = now;
+  }
+  if (frameTime > 16.67) {
+    // Frame budget exceeded - tracked silently
   }
 }
 
@@ -1748,7 +1700,7 @@ function loadRoomTextures(roomData, callback) {
     if (!loaded.base || !loaded.depth) {
       onError('timeout');
     }
-  }, 45000);
+  }, 15000);
 
   function onBothLoaded() {
     if (!loaded.base || !loaded.depth) return;
@@ -2038,80 +1990,6 @@ function closePanel(panel) {
   }, 400);
 }
 
-function openProductPanel(productHandle, collectionHandle) {
-  exitGuidedMode();
-  recordBrowsingSignal(immersiveState.currentRoom);
-  saveState({ panel: 'product', product: productHandle, collection: collectionHandle || null });
-
-  var path = shopRoot + 'products/' + productHandle;
-  var panel = document.getElementById(glassPanelId);
-  if (!panel) return;
-
-  var triggerEl = document.activeElement;
-  openPanel(panel, triggerEl);
-
-  var contentArea = panel.querySelector('.immersive-store__panel-content');
-  if (contentArea) {
-    contentArea.innerHTML =
-      '<div style="padding:3rem;text-align:center;">' +
-      (window.immersiveStrings?.loading_product || window.immersiveStrings?.loading || 'Loading...') +
-      '</div>';
-  }
-
-  fetchSectionHtml(path, 'glass-product', collectionHandle ? { collection_handle: collectionHandle } : null)
-    .then(function (html) {
-      if (!html) {
-        closePanel(panel);
-        return;
-      }
-      if (contentArea) {
-        contentArea.innerHTML = html;
-      }
-      setPanelRoomLabel(panel);
-      trackImmersiveEvent('panel_opened', { panel_type: 'product', product_handle: productHandle });
-    })
-    .catch(function () {
-      closePanel(panel);
-    });
-}
-
-function openCollectionPanel(collectionHandle) {
-  exitGuidedMode();
-  recordBrowsingSignal(immersiveState.currentRoom);
-  saveState({ panel: 'collection', collection: collectionHandle, product: null });
-
-  var path = shopRoot + 'collections/' + collectionHandle;
-  var panel = document.getElementById(glassPanelId);
-  if (!panel) return;
-
-  var triggerEl = document.activeElement;
-  openPanel(panel, triggerEl);
-
-  var contentArea = panel.querySelector('.immersive-store__panel-content');
-  if (contentArea) {
-    contentArea.innerHTML =
-      '<div style="padding:3rem;text-align:center;">' +
-      (window.immersiveStrings?.loading_product || window.immersiveStrings?.loading || 'Loading...') +
-      '</div>';
-  }
-
-  fetchSectionHtml(path, 'glass-panel', null)
-    .then(function (html) {
-      if (!html) {
-        closePanel(panel);
-        return;
-      }
-      if (contentArea) {
-        contentArea.innerHTML = html;
-      }
-      setPanelRoomLabel(panel);
-      trackImmersiveEvent('panel_opened', { panel_type: 'collection', collection_handle: collectionHandle });
-    })
-    .catch(function () {
-      closePanel(panel);
-    });
-}
-
 function setPanelRoomLabel(panel) {
   var labelEl = panel && panel.querySelector('[data-panel-room-label]');
   if (!labelEl) return;
@@ -2237,47 +2115,6 @@ function showRoomRecommendation(rec) {
   if (existing) existing.remove();
 }
 
-function enterEditorialMode(roomKey, triggerEl) {
-  immersiveState.mode = 'editorial';
-  immersiveState.editorialRoom = roomKey;
-  immersiveState.lastHotspot = triggerEl || null;
-
-  editorialScrollProgress = 0;
-  if (uniforms) {
-    uniforms.uScrollOffset.value = 0;
-    uniforms.uScrollVignette.value = 0;
-    uniforms.uScrollChroma.value = 0;
-    uniforms.uAtmosphericMood.value = 0;
-  }
-  cacheEditorialOverlay();
-  updateCameraForMode();
-
-  trackImmersiveEvent('editorial_entered', { room: roomKey });
-
-  var overlay = document.getElementById('immersive-editorial-overlay');
-  var overlayContent = document.getElementById('immersive-editorial-overlay-content');
-  var canvas = document.getElementById(immersiveCanvasId);
-
-  if (!overlay || !overlayContent) return;
-
-  var sourceSection = document.querySelector('.immersive-editorial[data-room-key="' + roomKey + '"]');
-  var sectionInstanceId = sourceSection && sourceSection.getAttribute('data-section-id');
-
-  if (!sectionInstanceId) return;
-
-  var fetchUrl = window.location.pathname + '?sections=' + sectionInstanceId;
-  openOverlay(
-    'immersive-editorial-overlay',
-    'immersive-editorial-overlay-content',
-    fetchUrl,
-    function (overlay, overlayContent) {
-      performEditorialUIActivation(overlay, canvas);
-      initEditorialHeroParallax();
-      updateBackToLoungeVisibility(roomKey);
-    },
-  );
-}
-
 function performEditorialUIActivation(overlay, canvas) {
   if (canvas && !reduceMotion) {
     canvas.classList.add('editorial-blur');
@@ -2303,40 +2140,6 @@ function performEditorialUIActivation(overlay, canvas) {
       backBtn._editorialBound = true;
       backBtn.addEventListener('click', exitEditorialMode);
     }
-  }
-}
-
-function exitEditorialMode() {
-  destroyEditorialHeroParallax();
-  var overlay = document.getElementById('immersive-editorial-overlay');
-  var canvas = document.getElementById(immersiveCanvasId);
-  var triggerEl = immersiveState.lastHotspot;
-
-  var performUIDeactivation = function () {
-    if (overlay) {
-      overlay.classList.remove('is-active');
-      overlay.setAttribute('aria-hidden', 'true');
-    }
-    if (canvas) {
-      canvas.classList.remove('editorial-blur');
-    }
-    immersiveState.mode = 'showroom';
-    immersiveState.editorialRoom = null;
-    editorialOverlayEl = null;
-    editorialMaxScroll = 0;
-    updateCameraForMode();
-    if (triggerEl) {
-      requestAnimationFrame(function () {
-        triggerEl.focus();
-      });
-    }
-  };
-
-  if (document.startViewTransition && triggerEl) {
-    document.startViewTransition(performUIDeactivation);
-  } else {
-    performUIDeactivation();
-    immersiveState.lastHotspot = null;
   }
 }
 
@@ -2487,17 +2290,6 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
       overlayContent.innerHTML =
         '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">The story is temporarily unavailable.</div>';
     });
-}
-
-function closeOverlay(overlay, triggerEl) {
-  if (!overlay) return;
-  overlay.classList.remove('is-active');
-  overlay.setAttribute('aria-hidden', 'true');
-  if (triggerEl && typeof triggerEl.focus === 'function') {
-    requestAnimationFrame(function () {
-      triggerEl.focus();
-    });
-  }
 }
 
 // ---------------------------------------------------------------------------

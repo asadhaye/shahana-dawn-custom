@@ -26,6 +26,7 @@ All new code follows the established architecture: `assets/immersive-store.js` a
 - **shopRoot**: The locale-aware URL root `(window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || '/'` already defined in `immersive-store.js`.
 - **fetchWithCache**: The existing `fetchWithCache(url)` helper in `immersive-store.js` that caches responses by URL and adds `X-Requested-With: XMLHttpRequest`.
 - **bindImmersiveInit**: The existing initialization function in `immersive-store.js` that calls `initImmersiveScene()`, `bindImmersiveNav()`, and `setupImageParallax()` on DOMContentLoaded.
+- **ImmersiveFeatures**: A new file `assets/immersive-features.js` that contains extracted feature-specific functions from `immersive-store.js`, including panel setup functions (`setupVariantButtons`, `setupBuyNowForm`, `setupMediaThumbs`, `setupImageParallax`, `setupShareButton`, `setupDeliveryDates`, `setupVirtualTryOn`), product recommendations (`loadProductRecommendations`), onboarding (`showImmersiveOnboardingIfNeeded`), and other utility functions.
 
 ---
 
@@ -100,3 +101,22 @@ All new code follows the established architecture: `assets/immersive-store.js` a
 1. THE `locales/en.default.json` file SHALL define all new user-facing strings under the `sections.immersive_store` namespace using the `| t` filter in all Liquid templates.
 2. THE `sections/immersive-canvas.liquid` file SHALL use the `| t` filter for every new user-facing string in the OnboardingOverlay, with no hard-coded English text.
 3. THE `sections/glass-product-recommendations.liquid` file SHALL use the `| t` filter for any user-facing strings it renders (e.g. loading state, empty state, or ARIA labels).
+
+---
+
+### Requirement 4: Feature Extraction and Code Organization
+
+**User Story:** As a developer maintaining the immersive store, I want feature-specific functions to be organized into a dedicated `immersive-features.js` file, so that the codebase is more maintainable and easier to understand.
+
+#### Acceptance Criteria
+
+1. THE `assets/immersive-features.js` file SHALL contain all feature-specific functions extracted from `assets/immersive-store.js`.
+2. ALL functions in `immersive-features.js` SHALL maintain the same signatures and behavior as their counterparts in `immersive-store.js`.
+3. NO new dependencies SHALL be introduced in `immersive-features.js` — it SHALL depend only on `immersive-store.js` and standard browser APIs.
+4. WHEN `immersive-features.js` is loaded, ALL functions SHALL be available as global functions on the `window` object.
+5. THE `layout/theme.liquid` file SHALL load `immersive-features.js` AFTER `immersive-store.js` to ensure all dependencies are available.
+6. IF `localStorage` is unavailable (e.g. private browsing with storage blocked), THEN ALL functions in `immersive-features.js` SHALL catch exceptions and handle the error gracefully without throwing.
+7. ALL user-facing strings in `immersive-features.js` SHALL use the `| t` filter in Liquid templates and be defined in `locales/en.default.json`.
+8. ALL `sessionStorage`/`localStorage` calls in `immersive-features.js` SHALL be wrapped in `try/catch` blocks to handle private browsing.
+9. WHEN a function in `immersive-features.js` is called with the same inputs as its counterpart in `immersive-store.js`, THEN the output SHALL be identical.
+10. THE `assets/immersive-features.js` file SHALL include a comment block at the top explaining the purpose of the file and the principles of feature extraction.

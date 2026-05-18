@@ -1486,6 +1486,12 @@
         "label": "Medium connection note",
         "default": "The 3D store works best on a faster connection.",
         "info": "Shown on 3G connections"
+      },
+      {
+        "type": "text",
+        "id": "vton_customer_secret",
+        "label": "Try-On Customer Secret",
+        "info": "HMAC secret used to sign customer tokens for the VTON API"
       }
     ]
   }

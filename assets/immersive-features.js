@@ -1,35 +1,3 @@
-function trackImmersiveEvent(name, params) {
-  params = params || {};
-  var payload = Object.assign(
-    {
-      event_category: 'immersive_store',
-      event_label: name,
-      immersive_surface: 'immersive-3d-store',
-    },
-    params,
-  );
-
-  if (window.dataLayer && Array.isArray(window.dataLayer)) {
-    window.dataLayer.push({ event: 'immersive_' + name, ecommerce: null, immersive: payload });
-  }
-
-  if (typeof window.fbq === 'function') {
-    switch (name) {
-      case 'add_to_cart_checkout':
-        window.fbq('track', 'AddToCart', payload);
-        break;
-      default:
-        var metaName =
-          'Immersive' +
-          name.replace(/_([a-z])/g, function (_, c) {
-            return c.toUpperCase();
-          });
-        metaName = metaName.charAt(0).toUpperCase() + metaName.slice(1);
-        window.fbq('trackCustom', metaName, payload);
-    }
-  }
-}
-
 // ─────────────────────────────────────────────────────────────
 // Skeleton Loaders for Panel Content
 // ─────────────────────────────────────────────────────────────
@@ -123,7 +91,9 @@ function openProductPanel(productHandle, collectionHandle) {
 
   var triggerEl = document.activeElement;
 
-  console.log('Fetching product:', productHandle, 'from collection:', collectionHandle);
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('Fetching product:', productHandle, 'from collection:', collectionHandle);
+  }
 
   // Open panel and show skeleton immediately
   openPanel(panel, triggerEl);
@@ -283,7 +253,9 @@ function openCollectionPanel(collectionHandle) {
 
   var triggerEl = document.activeElement;
 
-  console.log('Fetching collection:', collectionHandle);
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('Fetching collection:', collectionHandle);
+  }
 
   // Open panel and show skeleton immediately
   openPanel(panel, triggerEl);
@@ -386,66 +358,6 @@ function openCollectionPanel(collectionHandle) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Open the glass panel for search results
-// ─────────────────────────────────────────────────────────────
-function openSearchPanel(encodedQuery) {
-  var query = '';
-  try {
-    query = decodeURIComponent(encodedQuery);
-  } catch (e) {
-    query = encodedQuery;
-  }
-  if (!query) return;
-
-  var path = shopRoot + 'search';
-  var extraParams = { q: query };
-
-  console.log('Searching for:', query);
-
-  openGlassPanelWithSection(path, 'immersive-product-grid', extraParams, glassPanelId, function (panel) {
-    // Panel-specific setup
-    setupVariantButtons(panel);
-    setupImageParallax(panel);
-    syncAllWishlistToggles(panel);
-
-    trackImmersiveEvent('search_panel_opened', { query: query });
-
-    // Panel click handler
-    panel.onclick = function (event) {
-      if (event.target === panel) {
-        closePanel(panel);
-        return;
-      }
-      if (event.target.closest('.immersive-store__panel-close')) {
-        closePanel(panel);
-        return;
-      }
-
-      // Empty state action handling
-      var emptyAction = event.target.closest('[data-empty-action]');
-      if (emptyAction) {
-        var action = emptyAction.getAttribute('data-empty-action');
-        if (action) {
-          handleEmptyStateAction(action);
-        }
-        return;
-      }
-
-      // Product card click
-      var card = event.target.closest('.immersive-product-card');
-      if (card) {
-        var handle = card.getAttribute('data-product-handle');
-        if (handle) {
-          event.preventDefault();
-          openProductPanel(handle, null);
-        }
-        return;
-      }
-    };
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
 // Editorial overlay entry point (single, canonical implementation)
 // ─────────────────────────────────────────────────────────────
 function enterEditorialMode(roomKey, triggerEl) {
@@ -523,7 +435,8 @@ function enterEditorialMode(roomKey, triggerEl) {
             var productCollectionHandle = productLink.getAttribute('data-collection-handle');
             if (!productCollectionHandle) {
               var productCollectionRoot = productLink.closest('[data-collection-handle]');
-              productCollectionHandle = productCollectionRoot && productCollectionRoot.getAttribute('data-collection-handle');
+              productCollectionHandle =
+                productCollectionRoot && productCollectionRoot.getAttribute('data-collection-handle');
             }
             if (productHandle) {
               e.preventDefault();
@@ -1185,7 +1098,7 @@ function setupVirtualTryOn(panel) {
         });
       })();
 
-      var uploadRes = await fetch('https://scuk-vton.vercel.app/api/upload', {
+      var uploadRes = await fetch((window.vtonApiUrl || 'https://scuk-vton.vercel.app') + '/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'image/jpeg' },
         body: blob,
@@ -1203,7 +1116,7 @@ function setupVirtualTryOn(panel) {
         if (seconds === 25) setStatus(msgStatusFinalizing);
       }, 1000);
 
-      var tryonRes = await fetch('https://scuk-vton.vercel.app/api/tryon', {
+      var tryonRes = await fetch((window.vtonApiUrl || 'https://scuk-vton.vercel.app') + '/api/tryon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2139,7 +2052,9 @@ function bindCookieBanner() {
   }
 
   function initStoryChapters(container) {
-    var chapters = Array.prototype.slice.call((container || document).querySelectorAll('.immersive-occasions__chapter'));
+    var chapters = Array.prototype.slice.call(
+      (container || document).querySelectorAll('.immersive-occasions__chapter'),
+    );
     if (!chapters.length) return;
     if (!('IntersectionObserver' in window)) {
       chapters[0].classList.add('is-active');
@@ -2241,11 +2156,14 @@ function bindCookieBanner() {
       trigger.getAttribute('data-artifact-title') ||
       trigger.getAttribute('data-designer-label') ||
       (trigger.querySelector('h3, .immersive-featured__item-heading, .immersive-occasions__chapter-heading') &&
-        trigger.querySelector('h3, .immersive-featured__item-heading, .immersive-occasions__chapter-heading').textContent) ||
+        trigger.querySelector('h3, .immersive-featured__item-heading, .immersive-occasions__chapter-heading')
+          .textContent) ||
       '';
     var body =
       trigger.getAttribute('data-artifact-body') ||
-      (trigger.querySelector('.immersive-featured__item-body, .immersive-occasions__chapter-body, .immersive-designers__manifest') &&
+      (trigger.querySelector(
+        '.immersive-featured__item-body, .immersive-occasions__chapter-body, .immersive-designers__manifest',
+      ) &&
         trigger.querySelector(
           '.immersive-featured__item-body, .immersive-occasions__chapter-body, .immersive-designers__manifest',
         ).textContent) ||
@@ -2341,731 +2259,6 @@ function bindCookieBanner() {
 
 // ============================================================
 // ImmersiveSearch — inline header search with Cmd/Ctrl+K
-// ============================================================
-
-var _searchDebounceTimer = null;
-var _searchActiveIndex = -1;
-var _searchResults = [];
-var _searchAbortController = null;
-
-var SWIPE_ROOM_SEQUENCE = ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'];
-
-function initImmersiveSearch() {
-  var container = document.querySelector('[data-immersive-search]');
-  if (!container) return;
-
-  var input = container.querySelector('#immersive-search-input');
-  var dropdown = container.querySelector('#immersive-search-results');
-  if (!input || !dropdown) return;
-
-  var msgNoResults = container.getAttribute('data-msg-no-results') || 'No results';
-  var msgNoResultsHint = container.getAttribute('data-msg-no-results-hint') || '';
-  var msgUnavailable = container.getAttribute('data-msg-unavailable') || 'Search unavailable';
-  var labelProducts = container.getAttribute('data-label-products') || 'Products';
-  var labelCollections = container.getAttribute('data-label-collections') || 'Collections';
-  var labelRooms = container.getAttribute('data-label-rooms') || 'Rooms';
-
-  // Room list for client-side fuzzy match
-  var ROOM_LIST = [
-    { roomKey: 'storefront', label: 'Storefront' },
-    { roomKey: 'lounge', label: 'Lounge' },
-    { roomKey: 'designer_houses', label: 'Designer Houses' },
-    { roomKey: 'occasions', label: 'Occasions' },
-    { roomKey: 'featured_collections', label: 'Featured Collections' },
-  ];
-
-  function focusSearch() {
-    input.focus();
-    input.select();
-  }
-
-  function closeDropdown() {
-    dropdown.hidden = true;
-    dropdown.innerHTML = '';
-    input.setAttribute('aria-expanded', 'false');
-    _searchActiveIndex = -1;
-    _searchResults = [];
-  }
-
-  function fuzzyMatchRooms(term) {
-    var t = term.toLowerCase();
-    return ROOM_LIST.filter(function (r) {
-      return r.label.toLowerCase().indexOf(t) !== -1 || r.roomKey.indexOf(t) !== -1;
-    });
-  }
-
-  function renderResults(apiResults, roomMatches) {
-    dropdown.innerHTML = '';
-    var hasContent = false;
-
-    // Build flat list for keyboard nav
-    _searchResults = [];
-
-    // Products
-    if (apiResults.products && apiResults.products.length) {
-      hasContent = true;
-      var groupLabel = document.createElement('span');
-      groupLabel.className = 'immersive-search__group-label';
-      groupLabel.textContent = labelProducts;
-      dropdown.appendChild(groupLabel);
-      apiResults.products.forEach(function (item) {
-        _searchResults.push({ type: 'product', data: item });
-        dropdown.appendChild(buildResultEl(item, 'product', _searchResults.length - 1));
-      });
-    }
-
-    // Collections
-    if (apiResults.collections && apiResults.collections.length) {
-      hasContent = true;
-      var groupLabel2 = document.createElement('span');
-      groupLabel2.className = 'immersive-search__group-label';
-      groupLabel2.textContent = labelCollections;
-      dropdown.appendChild(groupLabel2);
-      apiResults.collections.forEach(function (item) {
-        _searchResults.push({ type: 'collection', data: item });
-        dropdown.appendChild(buildResultEl(item, 'collection', _searchResults.length - 1));
-      });
-    }
-
-    // Rooms (client-side)
-    if (roomMatches && roomMatches.length) {
-      hasContent = true;
-      var groupLabel3 = document.createElement('span');
-      groupLabel3.className = 'immersive-search__group-label';
-      groupLabel3.textContent = labelRooms;
-      dropdown.appendChild(groupLabel3);
-      roomMatches.forEach(function (room) {
-        _searchResults.push({ type: 'room', data: room });
-        dropdown.appendChild(buildRoomResultEl(room, _searchResults.length - 1));
-      });
-    }
-
-    if (!hasContent) {
-      var noRes = document.createElement('div');
-      noRes.className = 'immersive-search__no-results';
-      noRes.textContent = msgNoResults.replace('{{term}}', input.value);
-      if (msgNoResultsHint) {
-        var hint = document.createElement('span');
-        hint.className = 'immersive-search__no-results-hint';
-        hint.textContent = msgNoResultsHint;
-        noRes.appendChild(hint);
-      }
-      dropdown.appendChild(noRes);
-    }
-
-    dropdown.hidden = false;
-    input.setAttribute('aria-expanded', 'true');
-    _searchActiveIndex = -1;
-  }
-
-  function buildResultEl(item, type, index) {
-    var el = document.createElement('div');
-    el.className = 'immersive-search__result';
-    el.setAttribute('role', 'option');
-    el.setAttribute('id', 'immersive-search-result-' + index);
-    el.setAttribute('aria-selected', 'false');
-
-    // Add icon based on type
-    var iconType = type === 'collection' ? 'collection' : 'product';
-    var iconWrapper = document.createElement('div');
-    iconWrapper.innerHTML = getSearchResultIcon(iconType);
-    var iconEl = iconWrapper.firstChild;
-    if (iconEl) {
-      el.appendChild(iconEl);
-    }
-
-    var info = document.createElement('div');
-    info.className = 'immersive-search__result-info';
-
-    var title = document.createElement('span');
-    title.className = 'immersive-search__result-title';
-    title.textContent = item.title || '';
-    info.appendChild(title);
-
-    if (item.price) {
-      var meta = document.createElement('span');
-      meta.className = 'immersive-search__result-meta';
-      meta.textContent = item.price;
-      info.appendChild(meta);
-    }
-
-    el.appendChild(info);
-
-    el.addEventListener('click', function () {
-      selectResult(index);
-    });
-
-    return el;
-  }
-
-  function buildRoomResultEl(room, index) {
-    var el = document.createElement('div');
-    el.className = 'immersive-search__result';
-    el.setAttribute('role', 'option');
-    el.setAttribute('id', 'immersive-search-result-' + index);
-    el.setAttribute('aria-selected', 'false');
-
-    // Add room icon
-    var iconWrapper = document.createElement('div');
-    iconWrapper.innerHTML = getSearchResultIcon('room');
-    var iconEl = iconWrapper.firstChild;
-    if (iconEl) {
-      el.appendChild(iconEl);
-    }
-
-    var info = document.createElement('div');
-    info.className = 'immersive-search__result-info';
-
-    var title = document.createElement('span');
-    title.className = 'immersive-search__result-title';
-    title.textContent = room.label;
-    info.appendChild(title);
-
-    var meta = document.createElement('span');
-    meta.className = 'immersive-search__result-meta';
-    meta.textContent = 'Room';
-    info.appendChild(meta);
-
-    el.appendChild(info);
-
-    el.addEventListener('click', function () {
-      selectResult(index);
-    });
-
-    return el;
-  }
-
-  function selectResult(index) {
-    var item = _searchResults[index];
-    if (!item) return;
-    closeDropdown();
-    input.value = '';
-
-    if (item.type === 'product') {
-      if (typeof openProductPanel === 'function') openProductPanel(item.data.handle);
-    } else if (item.type === 'collection') {
-      if (typeof openCollectionPanel === 'function') openCollectionPanel(item.data.handle);
-    } else if (item.type === 'room') {
-      if (typeof goToRoom === 'function') goToRoom(item.data.roomKey);
-    }
-  }
-
-  function navigateResults(direction) {
-    if (!_searchResults.length) return;
-    var prev = _searchActiveIndex;
-    if (direction === 'down') {
-      _searchActiveIndex = Math.min(_searchActiveIndex + 1, _searchResults.length - 1);
-    } else {
-      _searchActiveIndex = Math.max(_searchActiveIndex - 1, 0);
-    }
-    // Update aria-selected
-    var allResults = dropdown.querySelectorAll('[role="option"]');
-    allResults.forEach(function (el, i) {
-      el.setAttribute('aria-selected', i === _searchActiveIndex ? 'true' : 'false');
-    });
-    var activeId = 'immersive-search-result-' + _searchActiveIndex;
-    input.setAttribute('aria-activedescendant', activeId);
-  }
-
-  function doSearch(term) {
-    if (!term || term.length < 2) {
-      closeDropdown();
-      return;
-    }
-
-    var roomMatches = fuzzyMatchRooms(term);
-
-    // Cancel previous request
-    if (_searchAbortController) {
-      try {
-        _searchAbortController.abort();
-      } catch (e) {}
-    }
-
-    var timeoutId = setTimeout(function () {
-      // Show unavailable after 3s
-      dropdown.innerHTML = '<div class="immersive-search__unavailable">' + msgUnavailable + '</div>';
-      dropdown.hidden = false;
-      input.setAttribute('aria-expanded', 'true');
-    }, 3000);
-
-    var url =
-      '/search/suggest?q=' + encodeURIComponent(term) + '&resources[type]=product,collection&resources[limit]=5';
-
-    fetch(url, {
-      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    })
-      .then(function (res) {
-        clearTimeout(timeoutId);
-        if (!res.ok) throw new Error('Search failed');
-        return res.json();
-      })
-      .then(function (data) {
-        var resources = (data.resources && data.resources.results) || {};
-        renderResults(
-          {
-            products: resources.products || [],
-            collections: resources.collections || [],
-          },
-          roomMatches,
-        );
-      })
-      .catch(function () {
-        clearTimeout(timeoutId);
-        // Show room results only if API fails
-        if (roomMatches.length) {
-          renderResults({ products: [], collections: [] }, roomMatches);
-        } else {
-          dropdown.innerHTML = '<div class="immersive-search__unavailable">' + msgUnavailable + '</div>';
-          dropdown.hidden = false;
-          input.setAttribute('aria-expanded', 'true');
-        }
-      });
-  }
-
-  // Input handler with debounce
-  input.addEventListener('input', function () {
-    clearTimeout(_searchDebounceTimer);
-    var term = input.value.trim();
-    _searchDebounceTimer = setTimeout(function () {
-      doSearch(term);
-    }, 200);
-  });
-
-  // Keyboard navigation
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      navigateResults('down');
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      navigateResults('up');
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (_searchActiveIndex >= 0) {
-        selectResult(_searchActiveIndex);
-      }
-    } else if (e.key === 'Escape') {
-      closeDropdown();
-      input.blur();
-    }
-  });
-
-  // Close on outside click
-  document.addEventListener('click', function (e) {
-    if (!container.contains(e.target)) {
-      closeDropdown();
-    }
-  });
-
-  // Cmd/Ctrl+K global shortcut
-  document.addEventListener('keydown', function (e) {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-      e.preventDefault();
-      focusSearch();
-    }
-  });
-}
-
-// ============================================================
-// ImmersiveBottomNav — floating bottom navigation bar
-// ============================================================
-
-function initImmersiveBottomNav() {
-  var fab = document.querySelector('[data-immersive-fab]');
-  if (!fab) return;
-
-  var fabTrigger = fab.querySelector('[data-fab-trigger]');
-  var fabActions = fab.querySelector('[data-fab-actions]');
-  var wishlistBtn = fab.querySelector('[data-bottom-nav-wishlist]');
-  var cartBtn = fab.querySelector('[data-bottom-nav-cart]');
-  var twoDBtn = fab.querySelector('[data-bottom-nav-2d]');
-  var wishlistBadge = fab.querySelector('[data-bottom-nav-wishlist-badge]');
-  var cartBadge = fab.querySelector('[data-bottom-nav-cart-badge]');
-
-  var isOpen = false;
-  var isDragging = false;
-  var dragStartX = 0;
-  var dragStartY = 0;
-  var fabStartX = 0;
-  var fabStartY = 0;
-  var hasMoved = false;
-
-  // Load saved position from localStorage
-  function loadFabPosition() {
-    try {
-      var saved = localStorage.getItem('immersive_fab_position');
-      if (saved) {
-        var pos = JSON.parse(saved);
-        fab.style.top = pos.top;
-        fab.style.right = pos.right;
-        fab.style.bottom = pos.bottom;
-        fab.style.left = pos.left;
-        fab.style.transform = pos.transform || 'none';
-      }
-    } catch (e) {
-      console.warn('Could not load FAB position:', e);
-    }
-  }
-
-  // Save position to localStorage
-  function saveFabPosition() {
-    try {
-      var pos = {
-        top: fab.style.top,
-        right: fab.style.right,
-        bottom: fab.style.bottom,
-        left: fab.style.left,
-        transform: fab.style.transform,
-      };
-      localStorage.setItem('immersive_fab_position', JSON.stringify(pos));
-    } catch (e) {
-      console.warn('Could not save FAB position:', e);
-    }
-  }
-
-  // Snap to edge helper
-  function snapToEdge(x, y) {
-    var rect = fab.getBoundingClientRect();
-    var viewportWidth = window.innerWidth;
-    var viewportHeight = window.innerHeight;
-    var fabWidth = rect.width;
-    var fabHeight = rect.height;
-    var snapThreshold = 40; // pixels from edge to snap
-
-    var centerX = x + fabWidth / 2;
-    var centerY = y + fabHeight / 2;
-
-    // Determine which edge is closest
-    var distToLeft = centerX;
-    var distToRight = viewportWidth - centerX;
-    var distToTop = centerY;
-    var distToBottom = viewportHeight - centerY;
-
-    var minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
-
-    // Snap to closest edge if within threshold
-    if (minDist < snapThreshold || minDist === distToLeft || minDist === distToRight) {
-      if (distToLeft < distToRight) {
-        // Snap to left
-        fab.style.left = '1.25rem';
-        fab.style.right = 'auto';
-      } else {
-        // Snap to right
-        fab.style.right = '1.25rem';
-        fab.style.left = 'auto';
-      }
-      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
-      fab.style.bottom = 'auto';
-      fab.style.transform = 'none';
-    } else {
-      // Free position
-      fab.style.left = Math.max(20, Math.min(x, viewportWidth - fabWidth - 20)) + 'px';
-      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
-      fab.style.right = 'auto';
-      fab.style.bottom = 'auto';
-      fab.style.transform = 'none';
-    }
-  }
-
-  // Mouse/Touch drag handlers
-  function onDragStart(e) {
-    if (isOpen) return; // Don't drag when menu is open
-
-    var touch = e.type === 'touchstart' ? e.touches[0] : e;
-    isDragging = true;
-    hasMoved = false;
-    dragStartX = touch.clientX;
-    dragStartY = touch.clientY;
-
-    var rect = fab.getBoundingClientRect();
-    fabStartX = rect.left;
-    fabStartY = rect.top;
-
-    // Don't prevent default here - let click events through
-    // Only prevent default in onDragMove if actually dragging
-  }
-
-  function onDragMove(e) {
-    if (!isDragging) return;
-
-    var touch = e.type === 'touchmove' ? e.touches[0] : e;
-    var deltaX = touch.clientX - dragStartX;
-    var deltaY = touch.clientY - dragStartY;
-
-    // Mark as moved if dragged more than 5px
-    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-      hasMoved = true;
-
-      // Only apply drag styling and prevent default when actually dragging
-      fab.style.transition = 'none';
-      fab.style.cursor = 'grabbing';
-      e.preventDefault();
-    }
-
-    if (hasMoved) {
-      var newX = fabStartX + deltaX;
-      var newY = fabStartY + deltaY;
-
-      fab.style.left = newX + 'px';
-      fab.style.top = newY + 'px';
-      fab.style.right = 'auto';
-      fab.style.bottom = 'auto';
-      fab.style.transform = 'none';
-    }
-  }
-
-  function onDragEnd(e) {
-    if (!isDragging) return;
-    isDragging = false;
-
-    fab.style.transition = '';
-    fab.style.cursor = '';
-
-    if (hasMoved) {
-      var rect = fab.getBoundingClientRect();
-      snapToEdge(rect.left, rect.top);
-      saveFabPosition();
-      e.preventDefault(); // Only prevent default if we actually dragged
-    }
-  }
-
-  // Attach drag listeners to trigger button
-  if (fabTrigger) {
-    fabTrigger.addEventListener('mousedown', onDragStart);
-    fabTrigger.addEventListener('touchstart', onDragStart, { passive: false });
-  }
-
-  document.addEventListener('mousemove', onDragMove);
-  document.addEventListener('touchmove', onDragMove, { passive: false });
-  document.addEventListener('mouseup', onDragEnd);
-  document.addEventListener('touchend', onDragEnd);
-
-  // Load saved position on init
-  loadFabPosition();
-
-  // Toggle FAB menu (only if not dragged)
-  if (fabTrigger && fabActions) {
-    fabTrigger.addEventListener('click', function (e) {
-      if (hasMoved) {
-        hasMoved = false;
-        return; // Don't toggle if we just finished dragging
-      }
-
-      isOpen = !isOpen;
-      fabTrigger.setAttribute('aria-expanded', isOpen);
-      fabActions.hidden = !isOpen;
-
-      // Animate actions in/out
-      if (isOpen) {
-        var actions = fabActions.querySelectorAll('.immersive-fab__action');
-        actions.forEach(function (action, index) {
-          action.style.animation =
-            'fab-action-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ' + index * 0.05 + 's forwards';
-        });
-      }
-    });
-  }
-
-  // Close FAB when clicking outside
-  document.addEventListener('click', function (e) {
-    if (isOpen && !fab.contains(e.target)) {
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-    }
-  });
-
-  // Close FAB on Escape
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && isOpen) {
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-      fabTrigger.focus();
-    }
-  });
-
-  // Wire Wishlist button → directly open wishlist panel
-  if (wishlistBtn) {
-    wishlistBtn.addEventListener('click', function () {
-      exitGuidedMode();
-      // Directly open the wishlist panel
-      var wishlistPanel = document.querySelector('[data-wishlist-panel]');
-      if (wishlistPanel) {
-        openWishlistPanel();
-      }
-      // Close FAB
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-    });
-  }
-
-  // Wire Cart button → directly open cart drawer
-  if (cartBtn) {
-    cartBtn.addEventListener('click', function () {
-      exitGuidedMode();
-      // Directly open the cart drawer
-      var cartDrawer = document.querySelector('cart-drawer');
-      if (cartDrawer && typeof cartDrawer.open === 'function') {
-        cartDrawer.open(cartBtn);
-      }
-      // Close FAB
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-    });
-  }
-
-  // 2D button mirrors data-mode-switch-2d
-  if (twoDBtn) {
-    twoDBtn.addEventListener('click', function (e) {
-      var modeSwitchBtn = document.querySelector('[data-mode-switch-2d]');
-      if (modeSwitchBtn) {
-        e.preventDefault();
-        modeSwitchBtn.click();
-      }
-      // fallback: href="/" on the <a> handles navigation
-    });
-  }
-
-  // Badge sync — called from wishlist/cart update paths
-  window.updateBottomNavBadges = function (wishlistCount, cartCount) {
-    if (wishlistBadge) {
-      wishlistBadge.textContent = wishlistCount;
-      wishlistBadge.hidden = wishlistCount === 0;
-    }
-    if (cartBadge) {
-      cartBadge.textContent = cartCount;
-      cartBadge.hidden = cartCount === 0;
-    }
-  };
-
-  // Hide FAB when glass-panel opens; show when it closes
-  var glassPanel = document.getElementById('glass-panel');
-  if (glassPanel) {
-    var panelObserver = new MutationObserver(function () {
-      var isOpen = !glassPanel.hidden && !glassPanel.classList.contains('hidden');
-      fab.style.display = isOpen ? 'none' : 'flex';
-    });
-    panelObserver.observe(glassPanel, { attributes: true, attributeFilter: ['hidden', 'class'] });
-  }
-}
-
-// ============================================================
-// ImmersiveGestures — swipe navigation for rooms and panels
-// ============================================================
-
-var _gestureLastRoomTransition = 0;
-var _gestureCooldown = 600; // ms
-
-function classifyGesture(deltaX, deltaY) {
-  var absDx = Math.abs(deltaX);
-  var absDy = Math.abs(deltaY);
-  if (absDx < 60 && absDy < 60) return 'none';
-  if (absDy === 0) return absDx >= 60 ? 'horizontal' : 'none';
-  var ratio = absDx / absDy;
-  if (ratio > 2.5) return 'horizontal';
-  if (absDy >= 60) return deltaY > 0 ? 'vertical-down' : 'vertical-up';
-  return 'none';
-}
-
-function initImmersiveGestures() {
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var canvasWrapper = document.getElementById('immersive-canvas') || document.querySelector('.immersive-store');
-  if (!canvasWrapper) return;
-
-  var touchStartX = 0;
-  var touchStartY = 0;
-  var touchStartTime = 0;
-
-  canvasWrapper.addEventListener(
-    'touchstart',
-    function (e) {
-      var touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      touchStartTime = Date.now();
-    },
-    { passive: true },
-  );
-
-  canvasWrapper.addEventListener(
-    'touchmove',
-    function () {
-      // passive — no action needed, just prevent jank
-    },
-    { passive: true },
-  );
-
-  canvasWrapper.addEventListener(
-    'touchend',
-    function (e) {
-      // Ignore gestures starting on interactive elements
-      var target = e.target;
-      if (
-        target &&
-        target.closest('button, a, input, select, textarea, [role="radio"], [role="option"], [data-immersive-search]')
-      )
-        return;
-
-      var touch = e.changedTouches[0];
-      var deltaX = touch.clientX - touchStartX;
-      var deltaY = touch.clientY - touchStartY;
-      var elapsed = Date.now() - touchStartTime;
-
-      // Ignore slow drags (> 600ms — likely a scroll, not a swipe)
-      if (elapsed > 600) return;
-
-      var gesture = classifyGesture(deltaX, deltaY);
-      if (gesture === 'none') return;
-
-      var glassPanel = document.getElementById('glass-panel');
-      var panelOpen = glassPanel && !glassPanel.hidden && !glassPanel.classList.contains('hidden');
-
-      if (gesture === 'horizontal') {
-        // Cooldown guard
-        var now = Date.now();
-        if (now - _gestureLastRoomTransition < _gestureCooldown) return;
-        _gestureLastRoomTransition = now;
-
-        if (panelOpen) return; // Don't change rooms while panel is open
-
-        // Find current room and navigate
-        var currentRoom = (typeof immersiveState !== 'undefined' && immersiveState.currentRoom) || 'storefront';
-        var idx = SWIPE_ROOM_SEQUENCE.indexOf(currentRoom);
-        if (idx === -1) idx = 0;
-
-        var nextIdx;
-        if (deltaX < 0) {
-          // Swipe left → next room
-          nextIdx = (idx + 1) % SWIPE_ROOM_SEQUENCE.length;
-        } else {
-          // Swipe right → previous room
-          nextIdx = (idx - 1 + SWIPE_ROOM_SEQUENCE.length) % SWIPE_ROOM_SEQUENCE.length;
-        }
-
-        if (typeof goToRoom === 'function') {
-          goToRoom(SWIPE_ROOM_SEQUENCE[nextIdx], reduceMotion ? 'instant' : undefined);
-        }
-      } else if (gesture === 'vertical-down' && panelOpen) {
-        // Swipe down → close panel
-        var closeBtn = glassPanel && glassPanel.querySelector('.immersive-store__panel-close');
-        if (closeBtn) closeBtn.click();
-      } else if (gesture === 'vertical-down' && !panelOpen) {
-        // Swipe down + panel closed → scroll-to-reveal editorial
-        _esrOnSwipeDown(deltaX, deltaY);
-      } else if (gesture === 'vertical-up' && !panelOpen) {
-        // Swipe up → open wishlist
-        var wishlistOpenBtn = document.querySelector('[data-wishlist-open]');
-        if (wishlistOpenBtn) wishlistOpenBtn.click();
-      }
-    },
-    { passive: true },
-  );
-}
-
 // ============================================================
 // ImmersiveFilters — smart filters inside collection panels
 // ============================================================
@@ -3400,16 +2593,6 @@ function initImmersiveFilters(panelEl, collectionHandle, roomKey, sectionId) {
 var _nextActionsTimer = null;
 var _nextActionsBar = null;
 
-function initImmersiveNextActions() {
-  // Create singleton bar element
-  _nextActionsBar = document.createElement('div');
-  _nextActionsBar.className = 'immersive-next-actions';
-  _nextActionsBar.setAttribute('role', 'status');
-  _nextActionsBar.setAttribute('aria-live', 'polite');
-  _nextActionsBar.hidden = true;
-  document.body.appendChild(_nextActionsBar);
-}
-
 function showNextActions(chips) {
   if (!_nextActionsBar) return;
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3461,26 +2644,6 @@ function dismissNextActions() {
   }
 }
 
-function showAfterProductView(product) {
-  if (!product) return;
-  showNextActions([
-    {
-      label: 'Continue exploring ' + (product.roomLabel || 'the store'),
-      action: function () {
-        if (product.roomKey && typeof goToRoom === 'function') goToRoom(product.roomKey);
-      },
-    },
-    {
-      label: 'See more from ' + (product.vendor || 'this designer'),
-      action: function () {
-        if (product.collectionHandle && typeof openCollectionPanel === 'function') {
-          openCollectionPanel(product.collectionHandle);
-        }
-      },
-    },
-  ]);
-}
-
 function showAfterAddToCart(product) {
   if (!product) return;
   showNextActions([
@@ -3497,17 +2660,6 @@ function showAfterAddToCart(product) {
       action: function () {
         var cartToggle = document.getElementById('cart-toggle');
         if (cartToggle) cartToggle.click();
-      },
-    },
-  ]);
-}
-
-function showAfterRoomComplete(roomKey) {
-  showNextActions([
-    {
-      label: "Discover what's next",
-      action: function () {
-        if (typeof evaluateRoomRecommendation === 'function') evaluateRoomRecommendation();
       },
     },
   ]);
@@ -3633,281 +2785,6 @@ function showRoomRecommendation(rec) {
   }, 10000);
 }
 
-function initImmersiveRoomRecommender() {
-  // Sync browsing context with wishlist
-  if (typeof _wishlistItems !== 'undefined') {
-    _browsingContext.savedProducts = _wishlistItems.map(function (item) {
-      return item.handle || '';
-    });
-  }
-}
-
-// ============================================================
-// ImmersiveQuickAdd — quick add to cart from product cards
-// ============================================================
-
-var _quickAddModal = null;
-var _quickAddTrigger = null;
-
-function initImmersiveQuickAdd() {
-  // Event delegation on document for all [data-quick-add] buttons
-  document.addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-quick-add]');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    var handle = btn.getAttribute('data-product-handle');
-    if (handle) openQuickAdd(handle, btn);
-  });
-
-  // Close on Escape
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && _quickAddModal && !_quickAddModal.hidden) {
-      closeQuickAdd();
-    }
-  });
-}
-
-function openQuickAdd(handle, triggerEl) {
-  _quickAddTrigger = triggerEl || null;
-  var cacheKey = 'quickadd_' + handle;
-  var loadProductUrl = '/products/' + handle + '.js';
-
-  // Use contentCache if available
-  var cached = contentCache && contentCache[cacheKey];
-  if (cached) {
-    renderQuickAddModal(cached, triggerEl);
-    return;
-  }
-
-  fetch(loadProductUrl, {
-    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-  })
-    .then(function (res) {
-      if (!res.ok) throw new Error('Product fetch failed');
-      return res.json();
-    })
-    .then(function (product) {
-      if (contentCache) contentCache[cacheKey] = product;
-      renderQuickAddModal(product, triggerEl);
-    })
-    .catch(function () {
-      var glassPanel = document.getElementById('glass-panel');
-      var errorMsg =
-        (glassPanel && glassPanel.getAttribute('data-msg-load-product-error')) || 'Unable to load product.';
-      showFeedback(errorMsg, 'error');
-    });
-}
-
-function renderQuickAddModal(product, triggerEl) {
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // Singleton — remove existing modal
-  if (_quickAddModal) _quickAddModal.remove();
-
-  var modal = document.createElement('div');
-  modal.className = 'immersive-quick-add-modal';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-labelledby', 'quick-add-modal-title');
-  if (reduceMotion) modal.classList.add('no-animation');
-
-  var inner = document.createElement('div');
-  inner.className = 'immersive-quick-add-modal__inner';
-
-  // Header
-  var header = document.createElement('div');
-  header.className = 'immersive-quick-add-modal__header';
-  var title = document.createElement('h3');
-  title.id = 'quick-add-modal-title';
-  title.className = 'immersive-quick-add-modal__title';
-  title.textContent = product.title;
-  var closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'immersive-quick-add-modal__close';
-  closeBtn.setAttribute('aria-label', 'Close');
-  closeBtn.innerHTML =
-    '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  closeBtn.addEventListener('click', closeQuickAdd);
-  header.appendChild(title);
-  header.appendChild(closeBtn);
-
-  // Price
-  var price = document.createElement('div');
-  price.className = 'immersive-quick-add-modal__price';
-  price.setAttribute('data-quick-add-price', '');
-  var firstVariant = product.variants && product.variants[0];
-  price.textContent = firstVariant ? formatMoney(firstVariant.price) : '';
-
-  // Variants (if more than one)
-  var selectedVariantId = firstVariant ? firstVariant.id : null;
-  var variantGroup = null;
-
-  if (product.variants && product.variants.length > 1) {
-    variantGroup = document.createElement('div');
-    variantGroup.className = 'immersive-quick-add-modal__variants';
-    variantGroup.setAttribute('role', 'radiogroup');
-    variantGroup.setAttribute('aria-label', 'Select size');
-
-    product.variants.forEach(function (variant, i) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'immersive-quick-add-modal__variant';
-      btn.setAttribute('role', 'radio');
-      btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
-      btn.setAttribute('data-variant-id', variant.id);
-      btn.setAttribute('data-variant-price', variant.price);
-      btn.textContent = variant.title;
-      if (!variant.available) {
-        btn.disabled = true;
-        btn.classList.add('is-unavailable');
-      }
-      if (i === 0) btn.classList.add('is-selected');
-
-      btn.addEventListener('click', function () {
-        if (!variant.available) return;
-        selectedVariantId = variant.id;
-        // Update aria-checked
-        variantGroup.querySelectorAll('[role="radio"]').forEach(function (b) {
-          b.setAttribute('aria-checked', 'false');
-          b.classList.remove('is-selected');
-        });
-        btn.setAttribute('aria-checked', 'true');
-        btn.classList.add('is-selected');
-        // Update price
-        var priceEl = modal.querySelector('[data-quick-add-price]');
-        if (priceEl) priceEl.textContent = formatMoney(variant.price);
-        // Update CTA
-        var cta = modal.querySelector('[data-quick-add-cta]');
-        if (cta) {
-          cta.disabled = false;
-          cta.textContent = 'Add to cart';
-        }
-      });
-
-      variantGroup.appendChild(btn);
-    });
-  }
-
-  // CTA
-  var cta = document.createElement('button');
-  cta.type = 'button';
-  cta.className = 'immersive-quick-add-modal__cta';
-  cta.setAttribute('data-quick-add-cta', '');
-  var firstAvailable =
-    product.variants &&
-    product.variants.find(function (v) {
-      return v.available;
-    });
-  if (!firstAvailable) {
-    cta.disabled = true;
-    cta.textContent = 'Sold out';
-  } else {
-    cta.textContent = 'Add to cart';
-    selectedVariantId = firstAvailable.id;
-  }
-
-  cta.addEventListener('click', function () {
-    if (!selectedVariantId) return;
-    cta.disabled = true;
-    cta.textContent = 'Adding\u2026';
-    addToCartQuickAdd(selectedVariantId, 1, product, cta);
-  });
-
-  inner.appendChild(header);
-  inner.appendChild(price);
-  if (variantGroup) inner.appendChild(variantGroup);
-  inner.appendChild(cta);
-  modal.appendChild(inner);
-  document.body.appendChild(modal);
-  _quickAddModal = modal;
-
-  // Focus trap
-  requestAnimationFrame(function () {
-    closeBtn.focus();
-  });
-
-  // Trap Tab/Shift+Tab
-  modal.addEventListener('keydown', function (e) {
-    if (e.key !== 'Tab') return;
-    var focusable = modal.querySelectorAll('button:not(:disabled), [tabindex="0"]');
-    var first = focusable[0];
-    var last = focusable[focusable.length - 1];
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  });
-}
-
-function addToCartQuickAdd(variantId, quantity, product, ctaBtn) {
-  var glassPanel = document.getElementById('glass-panel');
-  fetch('/cart/add.js', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    body: JSON.stringify({ id: parseInt(variantId, 10), quantity: quantity || 1 }),
-  })
-    .then(function (res) {
-      if (!res.ok) throw new Error('Cart add failed');
-      return res.json();
-    })
-    .then(function () {
-      closeQuickAdd();
-      var successMsg = (glassPanel && glassPanel.getAttribute('data-msg-added-to-cart')) || 'Added to cart!';
-      showFeedback(successMsg, 'success');
-      // Update cart badge
-      fetch('/cart.js', { headers: { Accept: 'application/json' } })
-        .then(function (r) {
-          return r.json();
-        })
-        .then(function (cart) {
-          var badge = document.querySelector('[data-cart-count]');
-          if (badge) badge.textContent = cart.item_count;
-          if (typeof window.updateBottomNavBadges === 'function') {
-            window.updateBottomNavBadges(null, cart.item_count);
-          }
-        })
-        .catch(function () {});
-      // Show next actions
-      if (typeof showAfterAddToCart === 'function') {
-        showAfterAddToCart({ handle: product.handle, vendor: product.vendor });
-      }
-    })
-    .catch(function () {
-      if (ctaBtn) {
-        ctaBtn.disabled = false;
-        ctaBtn.textContent = 'Add to cart';
-      }
-      var errorMsg = (glassPanel && glassPanel.getAttribute('data-msg-error-add-to-cart')) || 'Unable to add to cart.';
-      showFeedback(errorMsg, 'error');
-    });
-}
-
-function closeQuickAdd() {
-  if (_quickAddModal) {
-    _quickAddModal.remove();
-    _quickAddModal = null;
-  }
-  if (_quickAddTrigger) {
-    try {
-      _quickAddTrigger.focus();
-    } catch (e) {}
-    _quickAddTrigger = null;
-  }
-}
-
-function formatMoney(cents) {
-  if (!cents && cents !== 0) return '';
-  return 'PKR ' + (cents / 100).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-
 function trackRoomVisit(roomKey) {
   if (_browsingContext.visitedRooms.indexOf(roomKey) === -1) {
     _browsingContext.visitedRooms.push(roomKey);
@@ -4030,28 +2907,10 @@ function clearLimitedTimeIntervals() {
   _limitedTimeIntervals = [];
 }
 
-function initImmersiveLimitedTime() {
-  // Read threshold from section setting
-  var storeEl = document.querySelector('.immersive-store');
-  if (storeEl) {
-    var threshold = parseInt(storeEl.getAttribute('data-low-stock-threshold'), 10);
-    if (!isNaN(threshold)) _lowStockThreshold = threshold;
-  }
-
-  // Scan existing cards
-  scanLimitedTimeCards();
-
-  // Show flash sale banners
-  showFlashSaleAlert();
-}
-
 // Guard against double-init (theme editor fires section events rapidly)
 // ─────────────────────────────────────────────────────────────
 // Keyboard Navigation for Hotspots - Accessibility Enhancement
 // ─────────────────────────────────────────────────────────────
-
-var _esrCooldown = false;
-var _esrWheelBound = false;
 
 // ── EditorialHeroParallax state ─────────────────────────────
 var _ehpScrollTarget = 0;
@@ -4060,88 +2919,8 @@ var _ehpRafId = null;
 var _ehpOverlay = null;
 var _ehpHeroImg = null;
 
-// ── ProductCardTilt state ───────────────────────────────────
-var _pctRafPending = false;
-var _pctActiveCard = null;
-var _pctPendingNormX = 0;
-var _pctPendingNormY = 0;
-
 // ── VisitedRoomsIndicator ───────────────────────────────────
 var VISITED_ROOMS_EXCLUDE = ['lounge', 'storefront'];
-
-// ============================================================
-// EditorialScrollReveal
-// ============================================================
-
-function _esrEaseOutParallax(durationMs, callback) {
-  var startValue = typeof parallaxStrength !== 'undefined' ? parallaxStrength : 0;
-  var startTime = null;
-  function step(ts) {
-    if (!startTime) startTime = ts;
-    var elapsed = ts - startTime;
-    var t = Math.min(elapsed / durationMs, 1);
-    if (typeof parallaxStrength !== 'undefined') {
-      parallaxStrength = startValue * (1 - t);
-    }
-    if (t < 1) {
-      requestAnimationFrame(step);
-    } else {
-      if (typeof parallaxStrength !== 'undefined') parallaxStrength = 0;
-      if (typeof callback === 'function') callback();
-    }
-  }
-  requestAnimationFrame(step);
-}
-
-function _esrTrigger() {
-  if (!immersiveState || immersiveState.mode !== 'showroom') return;
-  var editorialRooms = ['designer_houses', 'occasions', 'featured_collections'];
-  if (editorialRooms.indexOf(immersiveState.currentRoom) === -1) return;
-
-  var panel = document.getElementById('glass-panel');
-  if (panel && (panel.classList.contains('is-active') || (!panel.hidden && !panel.classList.contains('hidden'))))
-    return;
-
-  if (_esrCooldown) return;
-
-  _esrCooldown = true;
-  setTimeout(function () {
-    _esrCooldown = false;
-  }, 700);
-
-  var roomKey = immersiveState.currentRoom;
-  var reduceMotionESR = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (reduceMotionESR) {
-    enterEditorialMode(roomKey, null);
-  } else {
-    _esrEaseOutParallax(300, function () {
-      enterEditorialMode(roomKey, null);
-    });
-  }
-}
-
-function _esrOnWheel(event) {
-  if (event.deltaY > 0) _esrTrigger();
-}
-
-function initEditorialScrollReveal() {
-  if (_esrWheelBound) return;
-  var canvasWrapper = document.querySelector('.immersive-store__canvas-wrapper');
-  if (!canvasWrapper) return;
-  canvasWrapper.addEventListener('wheel', _esrOnWheel, { passive: true });
-  _esrWheelBound = true;
-}
-
-// Called from ImmersiveGestures swipe-down path (panel not open)
-function _esrOnSwipeDown(deltaX, deltaY) {
-  var absDy = Math.abs(deltaY);
-  var absDx = Math.abs(deltaX);
-  if (absDy < 60) return;
-  if (absDx > 0 && absDy / absDx <= 2.5) return;
-  if (deltaY < 0) return; // must be downward (positive deltaY)
-  _esrTrigger();
-}
 
 // ============================================================
 // EditorialBackToLounge
@@ -4151,33 +2930,6 @@ function updateBackToLoungeVisibility(roomKey) {
   var btn = document.querySelector('[data-editorial-back-to-lounge]');
   if (!btn) return;
   btn.hidden = roomKey === 'lounge';
-}
-
-function initEditorialBackToLounge() {
-  var overlay = document.getElementById('immersive-editorial-overlay');
-  if (!overlay) return;
-
-  var btn = overlay.querySelector('[data-editorial-back-to-lounge]');
-  if (!btn) return;
-
-  // Populate label from data attribute
-  var label = overlay.getAttribute('data-back-to-lounge-label') || 'Back to Lounge';
-  btn.textContent = label;
-
-  if (!btn._btlBound) {
-    btn._btlBound = true;
-    btn.addEventListener('click', function () {
-      exitEditorialMode();
-      goToRoom('lounge');
-    });
-    btn.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        exitEditorialMode();
-        goToRoom('lounge');
-      }
-    });
-  }
 }
 
 // ============================================================
@@ -4277,52 +3029,6 @@ function _pctApplyTilt() {
   _pctRafPending = false;
 }
 
-function _pctOnMouseMove(event) {
-  var card = event.target && event.target.closest && event.target.closest('.immersive-product-card');
-  if (!card) return;
-
-  // Keyboard focus guard
-  if (document.activeElement === card || card.contains(document.activeElement)) return;
-
-  var rect = card.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) return;
-
-  var centerX = rect.left + rect.width / 2;
-  var centerY = rect.top + rect.height / 2;
-  _pctPendingNormX = _pctClamp((event.clientX - centerX) / (rect.width / 2), -1, 1);
-  _pctPendingNormY = _pctClamp((event.clientY - centerY) / (rect.height / 2), -1, 1);
-  _pctActiveCard = card;
-
-  card.classList.remove('tilt-reset');
-
-  if (!_pctRafPending) {
-    _pctRafPending = true;
-    requestAnimationFrame(_pctApplyTilt);
-  }
-}
-
-function _pctOnMouseLeave(event) {
-  var card =
-    (event.target && event.target.closest && event.target.closest('.immersive-product-card')) || _pctActiveCard;
-  if (card) {
-    card.classList.add('tilt-reset');
-    card.style.transform = '';
-  }
-  _pctActiveCard = null;
-}
-
-function initProductCardTilt() {
-  var reduceMotionPCT = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotionPCT) return;
-  if (!window.matchMedia('(pointer: fine)').matches) return;
-
-  var panel = document.getElementById('glass-panel');
-  if (!panel) return;
-
-  panel.addEventListener('mousemove', _pctOnMouseMove);
-  panel.addEventListener('mouseleave', _pctOnMouseLeave);
-}
-
 // ============================================================
 // GUIDED MODE — Concierge sequence
 // Storefront → Lounge → Editorial → Collection → Product
@@ -4338,46 +3044,6 @@ var GUIDED_PROMPT_MS = 3500; // 3.5s before showing soft prompt in lounge
 
 // Steps: 0=lounge, 1=editorial, 2=collection, 3=product
 var GUIDED_STEPS = ['lounge', 'editorial', 'collection', 'product'];
-
-function initGuidedMode() {
-  // Read featured wing from section data attribute
-  var storeEl = document.querySelector('.immersive-store');
-  if (storeEl) {
-    var wing = storeEl.getAttribute('data-guided-featured-wing');
-    if (wing) _guidedFeaturedWing = wing;
-  }
-
-  // Wire prompt CTA and skip buttons
-  var promptCta = document.querySelector('[data-guided-prompt-cta]');
-  var promptSkip = document.querySelector('[data-guided-prompt-skip]');
-
-  if (promptCta) {
-    promptCta.addEventListener('click', function () {
-      hideGuidedPrompt();
-      _guidedAdvance();
-    });
-  }
-  if (promptSkip) {
-    promptSkip.addEventListener('click', function () {
-      exitGuidedMode();
-    });
-  }
-
-  // Exit guided mode on any user intent signals
-  var intentEvents = ['mousedown', 'touchstart', 'keydown', 'wheel'];
-  intentEvents.forEach(function (evt) {
-    document.addEventListener(
-      evt,
-      function () {
-        if (immersiveState.guided) {
-          // Reset idle timer on activity — don't exit, just delay auto-advance
-          _guidedResetIdleTimer();
-        }
-      },
-      { passive: true },
-    );
-  });
-}
 
 function activateGuidedMode() {
   // Don't restart if dismissed this session
