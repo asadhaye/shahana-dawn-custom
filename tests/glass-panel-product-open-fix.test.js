@@ -230,7 +230,7 @@ describe('Bug 1a — Click delegation: preventDefault not called early enough fo
    * confirming the handler structure matches the fixed pattern.
    */
   test('clicking <a class="immersive-product-link"> SHOULD call preventDefault() before closest() check', () => {
-    const jsSource = fs.readFileSync(path.resolve(__dirname, '../assets/immersive-store.js'), 'utf8');
+    const jsSource = fs.readFileSync(path.resolve(__dirname, '../assets/immersive-features.js'), 'utf8');
 
     fc.assert(
       fc.property(fc.constant(null), function () {

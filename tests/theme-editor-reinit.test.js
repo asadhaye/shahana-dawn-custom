@@ -40,11 +40,11 @@ describe('Theme editor re-initialisation compatibility', function () {
   var source;
 
   beforeAll(function () {
-    source = fs.readFileSync(path.join(__dirname, '..', 'assets', 'immersive-store.js'), 'utf8');
+    source = fs.readFileSync(path.join(__dirname, '..', 'assets', 'immersive-init.js'), 'utf8');
   });
 
   describe('shopify:section:load handler', function () {
-    test('immersive-store.js registers a shopify:section:load event listener', function () {
+    test('immersive-init.js registers a shopify:section:load event listener', function () {
       expect(source).toContain("'shopify:section:load'");
     });
 
@@ -69,7 +69,7 @@ describe('Theme editor re-initialisation compatibility', function () {
   });
 
   describe('shopify:section:unload handler', function () {
-    test('immersive-store.js registers a shopify:section:unload event listener', function () {
+    test('immersive-init.js registers a shopify:section:unload event listener', function () {
       expect(source).toContain("'shopify:section:unload'");
     });
 
@@ -90,13 +90,13 @@ describe('Theme editor re-initialisation compatibility', function () {
       expect(block).toContain('initWishlist()');
     });
 
-    test('safeBindImmersiveInit is defined in immersive-store.js', function () {
+    test('safeBindImmersiveInit is defined in immersive-init.js', function () {
       expect(source).toContain('function safeBindImmersiveInit');
     });
   });
 
   describe('module ownership of shopify:section:* listeners', function () {
-    test('immersive-store.js registers shopify:section:select event listener', function () {
+    test('immersive-init.js registers shopify:section:select event listener', function () {
       expect(source).toContain("'shopify:section:select'");
     });
 
@@ -124,17 +124,18 @@ describe('Theme editor re-initialisation compatibility', function () {
   });
 
   describe('wishlist-panel.js exposes window.initWishlist for safeBindImmersiveInit', function () {
-    test('immersive-store.js calls initWishlist() inside safeBindImmersiveInit', function () {
+    test('immersive-init.js calls initWishlist() inside safeBindImmersiveInit', function () {
       var block = extractBlock(source, 'function safeBindImmersiveInit');
       expect(block).toContain('initWishlist()');
     });
 
-    test('safeBindImmersiveInit is defined in immersive-store.js', function () {
+    test('safeBindImmersiveInit is defined in immersive-init.js', function () {
       expect(source).toContain('function safeBindImmersiveInit');
     });
 
-    test('initWishlist is defined in immersive-store.js', function () {
-      expect(source).toContain('function initWishlist');
+    test('initWishlist is defined in immersive-features.js', function () {
+      var featuresSource = fs.readFileSync(path.join(__dirname, '..', 'assets', 'immersive-features.js'), 'utf8');
+      expect(featuresSource).toContain('function initWishlist');
     });
   });
 });

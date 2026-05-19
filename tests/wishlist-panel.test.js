@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const fc = require('fast-check');
 
-const SOURCE_PATH = path.join(__dirname, '..', 'assets', 'immersive-store.js');
+const SOURCE_PATH = path.join(__dirname, '..', 'assets', 'immersive-features.js');
 let source;
 
 beforeAll(() => {
@@ -25,24 +25,24 @@ beforeAll(() => {
 // Static analysis: wishlist function presence
 // ---------------------------------------------------------------------------
 
-describe('immersive-store.js contains wishlist functions', () => {
-  test('immersive-store.js contains addToWishlist function', () => {
+describe('immersive-features.js contains wishlist functions', () => {
+  test('immersive-features.js contains addToWishlist function', () => {
     expect(source).toContain('function addToWishlist');
   });
 
-  test('immersive-store.js contains removeFromWishlist function', () => {
+  test('immersive-features.js contains removeFromWishlist function', () => {
     expect(source).toContain('function removeFromWishlist');
   });
 
-  test('immersive-store.js contains initWishlist function', () => {
+  test('immersive-features.js contains initWishlist function', () => {
     expect(source).toContain('function initWishlist');
   });
 
-  test('immersive-store.js contains openWishlistPanel function', () => {
+  test('immersive-features.js contains openWishlistPanel function', () => {
     expect(source).toContain('function openWishlistPanel');
   });
 
-  test('immersive-store.js contains closeWishlistPanel function', () => {
+  test('immersive-features.js contains closeWishlistPanel function', () => {
     expect(source).toContain('function closeWishlistPanel');
   });
 });

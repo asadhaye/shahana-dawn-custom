@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const fc = require('fast-check');
 
-const SOURCE_PATH = path.join(__dirname, '..', 'assets', 'immersive-store.js');
+const SOURCE_PATH = path.join(__dirname, '..', 'assets', 'immersive-features.js');
 let source;
 
 beforeAll(() => {
@@ -26,12 +26,12 @@ beforeAll(() => {
 // Static analysis: function presence
 // ---------------------------------------------------------------------------
 
-describe('immersive-store.js contains hero parallax functions', () => {
-  test('immersive-store.js contains initEditorialHeroParallax function', () => {
+describe('immersive-features.js contains hero parallax functions', () => {
+  test('immersive-features.js contains initEditorialHeroParallax function', () => {
     expect(source).toContain('function initEditorialHeroParallax');
   });
 
-  test('immersive-store.js contains destroyEditorialHeroParallax function', () => {
+  test('immersive-features.js contains destroyEditorialHeroParallax function', () => {
     expect(source).toContain('function destroyEditorialHeroParallax');
   });
 });
@@ -76,7 +76,7 @@ describe('hero parallax implementation details', () => {
     expect(destroyBlock).toContain("style.transform = ''");
   });
 
-  test('hero parallax private state vars are declared in immersive-store.js', () => {
+  test('hero parallax private state vars are declared in immersive-features.js', () => {
     // These vars live in the monolith (never extracted to a module)
     expect(source).toContain('var _ehpScrollTarget');
     expect(source).toContain('var _ehpScrollCurrent');

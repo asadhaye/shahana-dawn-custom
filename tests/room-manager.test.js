@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 const fc = require('fast-check');
 
-const SOURCE_PATH = path.join(__dirname, '..', 'assets', 'immersive-store.js');
+const SOURCE_PATH = path.join(__dirname, '..', 'assets', 'immersive-core.js');
 let source;
 
 beforeAll(() => {
@@ -25,24 +25,24 @@ beforeAll(() => {
 // Static analysis: function presence
 // ---------------------------------------------------------------------------
 
-describe('immersive-store.js contains room manager functions', () => {
-  test('immersive-store.js contains goToRoom function', () => {
+describe('immersive-core.js contains room manager functions', () => {
+  test('immersive-core.js contains goToRoom function', () => {
     expect(source).toContain('function goToRoom');
   });
 
-  test('immersive-store.js contains renderHotspots function', () => {
+  test('immersive-core.js contains renderHotspots function', () => {
     expect(source).toContain('function renderHotspots');
   });
 
-  test('immersive-store.js contains updateRoomBadge function', () => {
+  test('immersive-core.js contains updateRoomBadge function', () => {
     expect(source).toContain('function updateRoomBadge');
   });
 
-  test('immersive-store.js contains loadRoomTextures function', () => {
+  test('immersive-core.js contains loadRoomTextures function', () => {
     expect(source).toContain('function loadRoomTextures');
   });
 
-  test('immersive-store.js contains updateCameraForMode function', () => {
+  test('immersive-core.js contains updateCameraForMode function', () => {
     expect(source).toContain('function updateCameraForMode');
   });
 });
@@ -52,9 +52,8 @@ describe('immersive-store.js contains room manager functions', () => {
 // ---------------------------------------------------------------------------
 
 describe('STORE_ROOMS definition', () => {
-  test('STORE_ROOMS is defined as const at the top of immersive-store.js', () => {
-    // The file starts with const STORE_ROOMS = {
-    expect(source.trimStart()).toMatch(/^const STORE_ROOMS\s*=/);
+  test('STORE_ROOMS is defined in immersive-core.js', () => {
+    expect(source).toContain('var STORE_ROOMS = {');
   });
 });
 
@@ -82,10 +81,8 @@ describe('no lazy-loader globals defined', () => {
 
 describe('editorial hotspot click calls enterEditorialMode', () => {
   test('renderHotspots calls enterEditorialMode when targetEditorialRoom is set', () => {
-    // Find the renderHotspots function body and confirm enterEditorialMode is called
     var fnIdx = source.indexOf('function renderHotspots');
     expect(fnIdx).toBeGreaterThan(-1);
-    // Scan forward to find the call — it's within the hotspot click handler
     var segment = source.slice(fnIdx, fnIdx + 5000);
     expect(segment).toContain('enterEditorialMode');
     expect(segment).toContain('targetEditorialRoom');
@@ -101,7 +98,7 @@ describe('Property 3: goToRoom navigation stack push invariant', () => {
    * Feature: immersive-store-modular-refactor
    * Property 3: goToRoom navigation stack push invariant
    *
-   * The actual goToRoom in immersive-store.js takes (roomKey, initial) only —
+   * The actual goToRoom in immersive-core.js takes (roomKey, initial) only —
    * there is no fromBack parameter in the monolith. We test the pure push
    * logic extracted inline: when initial=false and startRoom !== targetRoom,
    * the stack should receive startRoom.

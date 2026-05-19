@@ -43,7 +43,7 @@ The immersive experience has a single canonical URL: `/pages/immersive`
 | Do | Don't |
 |---|---|
 | Use `/pages/immersive` for all immersive links | Use `/pages/immersive-store` (legacy, incorrect) |
-| Use `?open_product=`, `?open_collection=`, `?open_search=` for deep-links | Use `?view=immersive` (unnecessary, not canonical) |
+| Use `?open_product=`, `?open_collection=` for deep-links | Use `?view=immersive` (unnecessary, not canonical) |
 | Link to `/pages/immersive?open_collection=handle` | Link to `/pages/immersive-store?view=immersive` |
 
 **Known bugs (fixed, do not reintroduce):**
@@ -58,9 +58,8 @@ Bridge CTAs (`snippets/immersive-bridge-btn.liquid`) connect 2D pages to the 3D 
 |---|---|---|
 | `?open_product={handle}` | Opens product glass panel | `/pages/immersive?open_product=silk-saree` |
 | `?open_collection={handle}` | Opens collection grid panel | `/pages/immersive?open_collection=suffuse` |
-| `?open_search={terms}` | Opens search results panel | `/pages/immersive?open_search=bridal` |
 
-**Priority:** `open_product` > `open_collection` > `open_search`
+**Priority:** `?open_product` takes precedence over `?open_collection` when both are present
 
 **Do:**
 - Use `/pages/immersive` as the base URL
@@ -93,7 +92,7 @@ The preference banner appears on 2D pages when `immersive_preferred_mode = '3d'`
 - `sections/immersive-product-grid.liquid` — collection grid rendered into glass-panel
 - `snippets/immersive-product-card.liquid` — self-contained card with `data-product-handle`
 - `snippets/virtual-tryon.liquid` — VTO widget
-- `assets/immersive-store.js` — Three.js engine, room management, parallax, editorial overlay, wishlist manager, cookie consent, onboarding, URL param handler, preference manager
+- `assets/immersive-store.js` — Three.js engine, room management, parallax, editorial overlay, wishlist manager, cookie consent, onboarding, URL param handler, preference manager, search panel handler (deprecated)
 - `assets/three.min.js` — local Three.js copy
 - `assets/immersive-theme.css` — global immersive styles
 
@@ -105,6 +104,12 @@ When extending `immersive-store.js`:
 - Treat it as the world/motion controller, not a CMS
 - Do not move editorial copy or layout into Three.js
 - You may add state (`mode`, `editorialRoom`), new hotspot behaviors (`targetEditorialRoom`), or subtle camera/parallax tuning per mode
+
+### Deprecated Functions
+
+| Function | Status | Notes |
+|---|---|---|
+| `openSearchPanel(encodedQuery)` | Removed (May 2026) | Was used to open search results panel via Section Rendering API; functionality now handled by `openCollectionPanel()` with search context or direct navigation to `/search` |
 
 ### WebGL vs CSS responsibilities
 
@@ -306,6 +311,14 @@ When adding major features or sections, ask:
 - Heading hierarchy: one `<h1>` per template (configurable via boolean setting), `<h2>` for hero headings, `<h3>` for banner headings
 - Use `richtext` for body settings; render with `{{ block.settings.body }}` (not escaped)
 - Escape headings/labels: `{{ ... | escape }}`
+
+### `sections/immersive-product-grid.liquid`
+
+- Renders product grid content only; rendered into glass-panel via Section Rendering API
+- Used for collection grids and search results
+- Accepts `?q={terms}` query parameter for search results
+- Renders product cards with `data-product-handle` and `data-collection-handle` attributes
+- Includes empty state handling with `[data-empty-action]` buttons
 
 ### `sections/glass-panel.liquid` & `sections/glass-product.liquid`
 

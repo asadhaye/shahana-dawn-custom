@@ -5,7 +5,7 @@
  * Contains:
  *   - Init wrappers that call existing modular functions
  *   - Entirely missing features ported from legacy (search, gestures, quick-add, etc.)
- *   - Full FAB (replaces simplified version in immersive-core.js)
+ *   - Full FAB
  *   - safeBindImmersiveInit() + Shopify theme editor re-init handlers
  */
 
@@ -944,7 +944,7 @@ function initGuidedMode() {
 }
 
 // ---------------------------------------------------------------------------
-// Full FAB (replaces simplified version in immersive-core.js)
+// Full FAB
 // ---------------------------------------------------------------------------
 
 function initImmersiveBottomNav() {

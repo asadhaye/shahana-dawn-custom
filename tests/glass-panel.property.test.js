@@ -1775,8 +1775,8 @@ describe('Property 22: Variant Button Keyboard Navigation', () => {
   // Enter and Space keys on variant buttons.
   // -------------------------------------------------------------------------
   test(// Feature: immersive-store-glass-panel-improvements, Property 22: Variant Button Keyboard Navigation
-  'immersive-store.js has keydown handlers for Enter and Space keys on variant buttons for any variant', function () {
-    var IMMERSIVE_STORE_PATH = path.resolve(__dirname, '../assets/immersive-store.js');
+  'immersive-features.js has keydown handlers for Enter and Space keys on variant buttons for any variant', function () {
+    var IMMERSIVE_STORE_PATH = path.resolve(__dirname, '../assets/immersive-features.js');
     var jsSource = fs.readFileSync(IMMERSIVE_STORE_PATH, 'utf8');
 
     fc.assert(
