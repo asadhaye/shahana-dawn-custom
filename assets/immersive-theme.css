@@ -137,6 +137,12 @@
    Hotspot Affordances — ring pulse and label tooltip
    ============================================================================= */
 
+/* Hotspot proximity scaling via CSS custom property (set per-frame in JS) */
+.immersive-hotspot {
+  transform: translate(-50%, -50%) scale(var(--hotspot-scale, 1));
+  will-change: transform;
+}
+
 /* Pulsing ring */
 .immersive-hotspot__ring {
   position: absolute;

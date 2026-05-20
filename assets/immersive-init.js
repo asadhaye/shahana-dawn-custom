@@ -1183,6 +1183,10 @@ function safeBindImmersiveInit() {
   _immersiveInitBound = true;
 
   if (typeof renderer !== 'undefined' && renderer) {
+    if (typeof animationFrameId !== 'undefined' && animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
     try {
       renderer.dispose();
     } catch (e) {}
@@ -1228,6 +1232,13 @@ function safeBindImmersiveInit() {
     if (typeof initEditorialScrollReveal === 'function') initEditorialScrollReveal();
 
     if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
+
+    if (typeof window.ImmersiveCarousel !== 'undefined' && window.ImmersiveCarousel.init) {
+      window.ImmersiveCarousel.init();
+    }
+    if (typeof window.CodexCollectionsGrid !== 'undefined' && window.CodexCollectionsGrid.init) {
+      window.CodexCollectionsGrid.init();
+    }
 
     setTimeout(function () {
       _immersiveInitBound = false;

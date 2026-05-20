@@ -3,7 +3,9 @@
   class="codex-typo-index"
   aria-label="{{ 'sections.codex_typo_index.aria_section_label' | t }}"
   data-codex-typo-index
+  data-section-type="codex-typo-index"
   data-section-id="{{ section.id }}"
+  hidden
 >
   <div class="codex-typo-index__inner">
     {%- if section.settings.eyebrow != blank or section.settings.heading != blank -%}

@@ -324,60 +324,6 @@
   }
 {% endstylesheet %}
 
-{% javascript %}
-  (function () {
-    var roots = document.querySelectorAll('[data-codex-collections-grid]');
-    if (!roots.length) return;
-
-    roots.forEach(function (section) {
-      var pills = section.querySelectorAll('[data-codex-filter]');
-      var items = section.querySelectorAll('[data-codex-theme]');
-
-      if (!pills.length) return;
-
-      pills.forEach(function (pill) {
-        pill.addEventListener('click', function () {
-          var filter = pill.getAttribute('data-codex-filter');
-
-          pills.forEach(function (p) {
-            var isActive = p === pill;
-            p.classList.toggle('is-active', isActive);
-            p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-          });
-
-          items.forEach(function (item) {
-            var theme = item.getAttribute('data-codex-theme') || '';
-            var visible = filter === 'all' || theme === filter;
-            if (visible) {
-              item.removeAttribute('hidden');
-            } else {
-              item.setAttribute('hidden', '');
-            }
-          });
-        });
-      });
-
-      // Click interception — open glass collection panel if available
-      section.addEventListener('click', function (e) {
-        var link = e.target.closest('[data-immersive-bridge]');
-        if (!link) return;
-
-        // Only intercept clicks within this section's collection cards
-        var card = link.closest('[data-codex-collection-card]');
-        if (!card) return; // Let other bridge clicks (e.g., homepage) proceed normally
-
-        var handle = card.getAttribute('data-collection-handle');
-        if (!handle) return; // No handle, let normal navigation proceed
-
-        if (typeof window.openCollectionPanel === 'function') {
-          e.preventDefault();
-          window.openCollectionPanel(handle);
-        }
-      });
-    });
-  })();
-{% endjavascript %}
-
 {% schema %}
 {
   "name": "t:sections.codex_collections_hub.name",

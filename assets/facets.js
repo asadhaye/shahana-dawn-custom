@@ -38,7 +38,11 @@ class FacetFiltersForm extends HTMLElement {
       '.facets-container .loading__spinner, facet-filters-form .loading__spinner'
     );
     loadingSpinners.forEach((spinner) => spinner.classList.remove('hidden'));
-    document.getElementById('ProductGridContainer').querySelector('.collection').classList.add('loading');
+    const productGridContainer = document.getElementById('ProductGridContainer');
+    if (productGridContainer) {
+      const collection = productGridContainer.querySelector('.collection');
+      if (collection) collection.classList.add('loading');
+    }
     if (countContainer) {
       countContainer.classList.add('loading');
     }
@@ -68,6 +72,21 @@ class FacetFiltersForm extends HTMLElement {
         FacetFiltersForm.renderProductGridContainer(html);
         FacetFiltersForm.renderProductCount(html);
         if (typeof initializeScrollAnimationTrigger === 'function') initializeScrollAnimationTrigger(html.innerHTML);
+      })
+      .catch(() => {
+        const loadingSpinners = document.querySelectorAll(
+          '.facets-container .loading__spinner, facet-filters-form .loading__spinner'
+        );
+        loadingSpinners.forEach((spinner) => spinner.classList.add('hidden'));
+        const productGridContainer = document.getElementById('ProductGridContainer');
+        if (productGridContainer) {
+          const collection = productGridContainer.querySelector('.collection');
+          if (collection) collection.classList.remove('loading');
+        }
+        const countContainer = document.getElementById('ProductCount');
+        const countContainerDesktop = document.getElementById('ProductCountDesktop');
+        if (countContainer) countContainer.classList.remove('loading');
+        if (countContainerDesktop) countContainerDesktop.classList.remove('loading');
       });
   }
 
@@ -80,26 +99,28 @@ class FacetFiltersForm extends HTMLElement {
   }
 
   static renderProductGridContainer(html) {
-    document.getElementById('ProductGridContainer').innerHTML = new DOMParser()
-      .parseFromString(html, 'text/html')
-      .getElementById('ProductGridContainer').innerHTML;
-
-    document
-      .getElementById('ProductGridContainer')
-      .querySelectorAll('.scroll-trigger')
-      .forEach((element) => {
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const fetched = parsed.getElementById('ProductGridContainer');
+    const target = document.getElementById('ProductGridContainer');
+    if (fetched && target) {
+      target.innerHTML = fetched.innerHTML;
+      target.querySelectorAll('.scroll-trigger').forEach((element) => {
         element.classList.add('scroll-trigger--cancel');
       });
+    }
   }
 
   static renderProductCount(html) {
-    const count = new DOMParser().parseFromString(html, 'text/html').getElementById('ProductCount').innerHTML;
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const fetched = parsed.getElementById('ProductCount');
     const container = document.getElementById('ProductCount');
     const containerDesktop = document.getElementById('ProductCountDesktop');
-    container.innerHTML = count;
-    container.classList.remove('loading');
-    if (containerDesktop) {
-      containerDesktop.innerHTML = count;
+    if (fetched && container) {
+      container.innerHTML = fetched.innerHTML;
+      container.classList.remove('loading');
+    }
+    if (fetched && containerDesktop) {
+      containerDesktop.innerHTML = fetched.innerHTML;
       containerDesktop.classList.remove('loading');
     }
     const loadingSpinners = document.querySelectorAll(
@@ -243,9 +264,10 @@ class FacetFiltersForm extends HTMLElement {
   }
 
   static getSections() {
+    const productGrid = document.getElementById('product-grid');
     return [
       {
-        section: document.getElementById('product-grid').dataset.id,
+        section: productGrid ? productGrid.dataset.id : 'main-collection-product-grid',
       },
     ];
   }

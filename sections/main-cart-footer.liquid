@@ -33,7 +33,7 @@
             form="cart"
             id="Cart-note"
             placeholder="{{ 'sections.cart.note' | t }}"
-          >{{ cart.note }}</textarea>
+          >{{ cart.note | escape }}</textarea>
         </cart-note>
       {%- endif -%}
 

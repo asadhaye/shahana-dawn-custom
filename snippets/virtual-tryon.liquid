@@ -16,7 +16,6 @@
     assign vton_customer_id = customer.id | append: ''
 
     # HMAC token: sign customer_id with SHOPIFY_CUSTOMER_TOKEN_SECRET
-    # Use Shopify's hmac_sha256 filter (available in theme liquid)
     assign vton_customer_token = vton_customer_id | hmac_sha256: settings.vton_customer_secret
 
     # Check for a recent purchase (within 45 days)

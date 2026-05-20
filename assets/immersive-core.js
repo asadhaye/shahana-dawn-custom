@@ -6,6 +6,12 @@
  * This file MUST load before immersive-features.js.
  * Both files replace the former monolithic immersive-store.js.
  */
+
+// No-op stub for analytics tracking (may be overridden by external analytics)
+if (typeof window.trackImmersiveEvent === 'undefined') {
+  window.trackImmersiveEvent = function () {};
+}
+
 /* IMMERSIVE_THREE.JS_COMPATIBILITY
  * Shim for backwards compatibility with three.js r150–r170+.
  */
@@ -536,6 +542,7 @@ function getGalleryStageConfig(roomKey) {
 var lastFrameTime = typeof performance !== 'undefined' ? performance.now() : 0;
 var fpsCounter = 0;
 var fpsTimer = typeof performance !== 'undefined' ? performance.now() : 0;
+var animationFrameId = null;
 
 var immersiveCanvasId = 'immersive-canvas';
 var uiLayerId = 'ui-layer';
@@ -544,6 +551,8 @@ var glassPanelId = 'glass-panel';
 var _immersiveInitBound = false;
 
 var contentCache = {};
+var contentCacheOrder = [];
+var MAX_CACHE_ENTRIES = 20;
 
 var immersiveState = {
   currentRoom: 'lounge',
@@ -1344,6 +1353,8 @@ var tiltBeta = 0;
 var tiltGamma = 0;
 var tiltXSmoothed = 0;
 var tiltYSmoothed = 0;
+var tiltNormX = 0;
+var tiltNormY = 0;
 
 function handleDeviceOrientation(event) {
   tiltBeta = event.beta || 0;
@@ -1406,7 +1417,7 @@ function initTiltControlToggle() {
 }
 
 function animate() {
-  requestAnimationFrame(animate);
+  animationFrameId = requestAnimationFrame(animate);
   if (!uniforms) return;
 
   mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
@@ -1429,17 +1440,16 @@ function animate() {
         var proximity = 1.0 - dist / 0.15;
         scale = 1.0 + 0.3 * proximity;
       }
-      h.el.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+      h.el.style.setProperty('--hotspot-scale', scale);
     }
   }
 
   if (tiltControlEnabled && immersiveState.mode === 'showroom' && !reduceMotion) {
     if (typeof tiltBeta === 'undefined' || typeof tiltGamma === 'undefined') {
-      // Device doesn't support orientation
       disableTiltControl();
     } else {
-      var tiltNormX = Math.max(-1, Math.min(1, (tiltGamma || 0) / 45));
-      var tiltNormY = Math.max(-1, Math.min(1, ((tiltBeta || 0) - 45) / 45));
+      tiltNormX = Math.max(-1, Math.min(1, (tiltGamma || 0) / 45));
+      tiltNormY = Math.max(-1, Math.min(1, ((tiltBeta || 0) - 45) / 45));
     }
   }
   tiltXSmoothed += (tiltNormX - tiltXSmoothed) * 0.1;
@@ -1449,74 +1459,73 @@ function animate() {
     uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
     uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
   }
-}
-if (!tiltControlEnabled && (tiltXSmoothed !== 0 || tiltYSmoothed !== 0)) {
-  tiltXSmoothed *= 0.85;
-  tiltYSmoothed *= 0.85;
-  if (Math.abs(tiltXSmoothed) < 0.001) tiltXSmoothed = 0;
-  if (Math.abs(tiltYSmoothed) < 0.001) tiltYSmoothed = 0;
-  if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
-    uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
-    uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
-  }
-}
 
-if (immersiveState.mode === 'editorial') {
-  if (!editorialOverlayEl) cacheEditorialOverlay();
-  if (editorialOverlayEl && editorialMaxScroll > 0) {
-    var targetProgress = editorialOverlayEl.scrollTop / editorialMaxScroll;
-    editorialScrollProgress += (targetProgress - editorialScrollProgress) * 0.1;
-    uniforms.uScrollOffset.value = editorialScrollProgress;
-    if (!reduceMotion) {
-      uniforms.uScrollVignette.value += (editorialScrollProgress - uniforms.uScrollVignette.value) * 0.06;
-      uniforms.uScrollChroma.value += (editorialScrollProgress - uniforms.uScrollChroma.value) * 0.06;
-      if (immersiveState.editorialRoom === 'featured_collections') {
-        atmosphericMoodProgress += (editorialScrollProgress - atmosphericMoodProgress) * 0.04;
-        uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
-      }
+  if (!tiltControlEnabled && (tiltXSmoothed !== 0 || tiltYSmoothed !== 0)) {
+    tiltXSmoothed *= 0.85;
+    tiltYSmoothed *= 0.85;
+    if (Math.abs(tiltXSmoothed) < 0.001) tiltXSmoothed = 0;
+    if (Math.abs(tiltYSmoothed) < 0.001) tiltYSmoothed = 0;
+    if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
+      uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
+      uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
     }
   }
-} else if (editorialScrollProgress > 0.001) {
-  editorialScrollProgress *= 0.85;
-  uniforms.uScrollOffset.value = editorialScrollProgress;
-  if (!reduceMotion) {
-    uniforms.uScrollVignette.value *= 0.85;
-    uniforms.uScrollChroma.value *= 0.85;
-    atmosphericMoodProgress *= 0.85;
-    uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+
+  if (immersiveState.mode === 'editorial') {
+    if (!editorialOverlayEl) cacheEditorialOverlay();
+    if (editorialOverlayEl && editorialMaxScroll > 0) {
+      var targetProgress = editorialOverlayEl.scrollTop / editorialMaxScroll;
+      editorialScrollProgress += (targetProgress - editorialScrollProgress) * 0.1;
+      uniforms.uScrollOffset.value = editorialScrollProgress;
+      if (!reduceMotion) {
+        uniforms.uScrollVignette.value += (editorialScrollProgress - uniforms.uScrollVignette.value) * 0.06;
+        uniforms.uScrollChroma.value += (editorialScrollProgress - uniforms.uScrollChroma.value) * 0.06;
+        if (immersiveState.editorialRoom === 'featured_collections') {
+          atmosphericMoodProgress += (editorialScrollProgress - atmosphericMoodProgress) * 0.04;
+          uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+        }
+      }
+    }
+  } else if (editorialScrollProgress > 0.001) {
+    editorialScrollProgress *= 0.85;
+    uniforms.uScrollOffset.value = editorialScrollProgress;
+    if (!reduceMotion) {
+      uniforms.uScrollVignette.value *= 0.85;
+      uniforms.uScrollChroma.value *= 0.85;
+      atmosphericMoodProgress *= 0.85;
+      uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+    }
+  } else {
+    editorialScrollProgress = 0;
+    atmosphericMoodProgress = 0;
+    uniforms.uScrollOffset.value = 0;
+    uniforms.uScrollVignette.value = 0;
+    uniforms.uScrollChroma.value = 0;
+    uniforms.uAtmosphericMood.value = 0;
   }
-} else {
-  editorialScrollProgress = 0;
-  atmosphericMoodProgress = 0;
-  uniforms.uScrollOffset.value = 0;
-  uniforms.uScrollVignette.value = 0;
-  uniforms.uScrollChroma.value = 0;
-  uniforms.uAtmosphericMood.value = 0;
-}
 
-var now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-var lastNow = window._immersiveLastFrameTime || now;
-var deltaSec = (now - lastNow) / 1000;
-window._immersiveLastFrameTime = now;
-applyRoomVisualProfile(currentRoomKey, currentRoomSubMode, deltaSec);
+  var frameNow = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  var lastNow = window._immersiveLastFrameTime || frameNow;
+  var deltaSec = (frameNow - lastNow) / 1000;
+  window._immersiveLastFrameTime = frameNow;
+  applyRoomVisualProfile(currentRoomKey, currentRoomSubMode, deltaSec);
 
-if (renderer && scene && camera) {
-  renderer.render(scene, camera);
-}
-
-if (typeof performance !== 'undefined' && window.__IMMERSIVE_DEV__) {
-  var now = performance.now();
-  var frameTime = now - lastFrameTime;
-  lastFrameTime = now;
-  fpsCounter++;
-  if (now - fpsTimer > 1000) {
-    var fps = Math.round((fpsCounter * 1000) / (now - fpsTimer));
-    // FPS tracked silently
-    fpsCounter = 0;
-    fpsTimer = now;
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
   }
-  if (frameTime > 16.67) {
-    // Frame budget exceeded - tracked silently
+
+  if (typeof performance !== 'undefined' && window.__IMMERSIVE_DEV__) {
+    var frameTime = frameNow - lastFrameTime;
+    lastFrameTime = frameNow;
+    fpsCounter++;
+    if (frameNow - fpsTimer > 1000) {
+      var fps = Math.round((fpsCounter * 1000) / (frameNow - fpsTimer));
+      fpsCounter = 0;
+      fpsTimer = frameNow;
+    }
+    if (frameTime > 16.67) {
+      console.warn('[Immersive] Frame budget exceeded', frameTime);
+    }
   }
 }
 
@@ -1857,7 +1866,6 @@ function renderHotspots(roomKey) {
       }
       button.style.left = posX + '%';
       button.style.top = posY + '%';
-      button.style.transform = 'translate(-50%, -50%)';
 
       activeHotspots.push({
         el: button,
@@ -2000,6 +2008,9 @@ function setPanelRoomLabel(panel) {
 
 function fetchWithCache(url) {
   if (contentCache[url]) {
+    var idx = contentCacheOrder.indexOf(url);
+    if (idx > -1) contentCacheOrder.splice(idx, 1);
+    contentCacheOrder.push(url);
     return Promise.resolve(contentCache[url]);
   }
   return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -2008,7 +2019,12 @@ function fetchWithCache(url) {
       return response.text();
     })
     .then(function (html) {
+      if (contentCacheOrder.length >= MAX_CACHE_ENTRIES) {
+        var oldest = contentCacheOrder.shift();
+        delete contentCache[oldest];
+      }
       contentCache[url] = html;
+      contentCacheOrder.push(url);
       return html;
     });
 }
@@ -2217,6 +2233,29 @@ function updateBackToLoungeVisibility(roomKey) {
   if (!btn) return;
   btn.hidden = roomKey === 'lounge';
 }
+
+function readGalleryConfig() {
+  var root = document.querySelector('[data-immersive-webgl-gallery-config]');
+  if (!root) return [];
+
+  var items = root.querySelectorAll('[data-gallery-index]');
+  var result = [];
+
+  items.forEach(function (item) {
+    result.push({
+      roomKey: root.getAttribute('data-room-key') || null,
+      index: parseInt(item.getAttribute('data-gallery-index') || '0', 10),
+      title: item.getAttribute('data-gallery-title') || '',
+      subtitle: item.getAttribute('data-gallery-subtitle') || '',
+      productHandle: item.getAttribute('data-gallery-product-handle') || '',
+      collectionHandle: item.getAttribute('data-gallery-collection-handle') || '',
+    });
+  });
+
+  return result;
+}
+
+window.readGalleryConfig = readGalleryConfig;
 
 function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
   var overlay = document.getElementById(overlayId);

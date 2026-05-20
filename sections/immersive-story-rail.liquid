@@ -3,7 +3,9 @@
   class="immersive-story-rail"
   aria-label="{{ 'sections.immersive_story.aria_section_label' | t }}"
   data-immersive-story-rail
+  data-section-type="immersive-story-rail"
   data-section-id="{{ section.id }}"
+  hidden
 >
   <div class="immersive-story-rail__inner">
     {%- if section.settings.show_hero -%}

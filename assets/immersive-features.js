@@ -376,7 +376,9 @@ function enterEditorialMode(roomKey, triggerEl) {
   cacheEditorialOverlay();
   updateCameraForMode();
 
-  trackImmersiveEvent('editorial_entered', { room: roomKey });
+  try {
+    trackImmersiveEvent && trackImmersiveEvent('editorial_entered', { room: roomKey });
+  } catch (e) {}
 
   var overlay = document.getElementById('immersive-editorial-overlay');
   var overlayContent = document.getElementById('immersive-editorial-overlay-content');
@@ -412,6 +414,14 @@ function enterEditorialMode(roomKey, triggerEl) {
 
       if (window.ImmersiveEditorial && window.ImmersiveEditorial.init) {
         window.ImmersiveEditorial.init(overlayContent);
+      }
+
+      if (window.ImmersiveCarousel && window.ImmersiveCarousel.init) {
+        window.ImmersiveCarousel.init(overlayContent);
+      }
+
+      if (window.CodexCollectionsGrid && window.CodexCollectionsGrid.init) {
+        window.CodexCollectionsGrid.init(overlayContent);
       }
 
       // Back to Lounge visibility + hero parallax
@@ -552,6 +562,89 @@ function exitEditorialMode() {
     immersiveState.lastHotspot = null;
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Generic overlay for non-editorial sections (story rail, typo index)
+// ─────────────────────────────────────────────────────────────
+function openImmersiveOverlay(sectionType, title) {
+  var overlay = document.getElementById('immersive-editorial-overlay');
+  var overlayContent = document.getElementById('immersive-editorial-overlay-content');
+  var canvas = document.getElementById(immersiveCanvasId);
+
+  if (!overlay || !overlayContent) return;
+
+  var sectionEl = document.querySelector('[data-section-type="' + sectionType + '"]');
+  if (!sectionEl) return;
+
+  overlayContent.innerHTML = '';
+  var clone = sectionEl.cloneNode(true);
+  clone.removeAttribute('hidden');
+  clone.style.display = '';
+  overlayContent.appendChild(clone);
+
+  activateGenericOverlay(overlay, canvas, title);
+}
+
+function activateGenericOverlay(overlay, canvas, title) {
+  if (canvas && !reduceMotion) {
+    canvas.classList.add('editorial-blur');
+  }
+  overlay.removeAttribute('aria-hidden');
+  overlay.classList.add('is-active');
+  overlay.scrollTop = 0;
+
+  var backBtn = document.getElementById('immersive-editorial-back');
+  if (backBtn) {
+    if (!reduceMotion) {
+      overlay.classList.add('immersive-editorial-overlay--entering');
+      setTimeout(function () {
+        overlay.classList.remove('immersive-editorial-overlay--entering');
+        backBtn.focus();
+      }, 350);
+    } else {
+      requestAnimationFrame(function () {
+        backBtn.focus();
+      });
+    }
+    if (!backBtn._overlayBound) {
+      backBtn._overlayBound = true;
+      backBtn.addEventListener('click', exitEditorialMode);
+    }
+  }
+
+  if (!overlay._onEscape) {
+    overlay._onEscape = function (e) {
+      if (e.key === 'Escape') exitEditorialMode();
+    };
+    overlay.addEventListener('keydown', overlay._onEscape);
+  }
+}
+
+// Global trigger delegation for [data-immersive-overlay]
+(function () {
+  var _overlayBound = false;
+  function bindOverlayTriggers() {
+    if (_overlayBound) return;
+    _overlayBound = true;
+
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest('[data-immersive-overlay]');
+      if (!trigger) return;
+
+      var sectionType = trigger.getAttribute('data-immersive-overlay');
+      var title = trigger.getAttribute('data-overlay-title') || '';
+      if (!sectionType) return;
+
+      e.preventDefault();
+      openImmersiveOverlay(sectionType, title);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', bindOverlayTriggers);
+  if (typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
+    document.addEventListener('shopify:section:load', bindOverlayTriggers);
+  }
+})();
 
 function setupVariantButtons(panel) {
   var buttons = panel.querySelectorAll('.immersive-variant-button, .glass-product-section__variant-button');
@@ -978,6 +1071,7 @@ function setupVirtualTryOn(panel) {
 
   var customerId = container.getAttribute('data-customer-id') || '';
   var customerToken = container.getAttribute('data-customer-token') || '';
+  var vtonApiUrl = container.getAttribute('data-api-url');
   var isRecentPurchaser = container.getAttribute('data-is-recent-purchaser') === 'true';
   var quotaMax = parseInt(container.getAttribute('data-quota-max') || '1', 10);
 
@@ -1098,10 +1192,11 @@ function setupVirtualTryOn(panel) {
         });
       })();
 
-      var uploadRes = await fetch((window.vtonApiUrl || 'https://scuk-vton.vercel.app') + '/api/upload', {
+      var uploadRes = await fetch(vtonApiUrl + '/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'image/jpeg' },
         body: blob,
+        signal: AbortSignal.timeout(15000),
       });
       var uploadData = await uploadRes.json();
       if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || 'Upload failed');
@@ -1116,7 +1211,7 @@ function setupVirtualTryOn(panel) {
         if (seconds === 25) setStatus(msgStatusFinalizing);
       }, 1000);
 
-      var tryonRes = await fetch((window.vtonApiUrl || 'https://scuk-vton.vercel.app') + '/api/tryon', {
+      var tryonRes = await fetch(vtonApiUrl + '/api/tryon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1128,6 +1223,7 @@ function setupVirtualTryOn(panel) {
           customer_token: customerToken,
           is_recent_purchaser: isRecentPurchaser,
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!tryonRes.ok) {
@@ -1147,6 +1243,7 @@ function setupVirtualTryOn(panel) {
       // Step 3: Result streamed as image/jpeg
       var imgBlob = await tryonRes.blob();
       var objectUrl = URL.createObjectURL(imgBlob);
+      var objectUrlReused = false;
 
       // Update quota badge
       var quotaUsed = parseInt(tryonRes.headers.get('X-Quota-Used') || '1', 10);
@@ -1164,10 +1261,12 @@ function setupVirtualTryOn(panel) {
         resultImg._objectUrl = objectUrl;
         resultImg.src = objectUrl;
         resultImg.hidden = false;
+        objectUrlReused = true;
       }
       if (resultContainer) resultContainer.style.display = 'block';
       trackTryOn('tryon_completed', { quota_remaining: remaining });
     } catch (error) {
+      if (!objectUrlReused && objectUrl) URL.revokeObjectURL(objectUrl);
       console.error('Try-on error:', error);
       showError(error.message);
       trackTryOn('tryon_failed', { error_message: error && error.message ? error.message : 'Unknown error' });
@@ -2255,6 +2354,221 @@ function bindCookieBanner() {
   }
 
   window.ImmersiveEditorial = { init: init };
+})();
+
+// ============================================================
+// ImmersiveExclusiveCarousel — 3D CSS ring carousel with drag/snap
+// ============================================================
+(function () {
+  var _carouselInstances = [];
+
+  function initCarousel(section) {
+    if (!section || section._carouselBound) return;
+    if (window.innerWidth < 768) return;
+
+    var stage = section.querySelector('[data-carousel-stage]');
+    var ring = section.querySelector('[data-carousel-ring]');
+    var panels = section.querySelectorAll('[data-carousel-panel]');
+    var hint = section.querySelector('[data-carousel-hint]');
+
+    if (!ring || !panels.length) return;
+
+    var prefersReducedMotion =
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var radius = parseInt(section.getAttribute('data-ring-radius') || '420', 10);
+    var friction = parseFloat(section.getAttribute('data-drag-friction') || '0.88');
+    var snapStrength = parseFloat(section.getAttribute('data-snap-strength') || '0.12');
+
+    var count = panels.length;
+    var angleStep = 360 / count;
+
+    panels.forEach(function (panel, i) {
+      var angle = angleStep * i;
+      panel.style.transform = 'rotateY(' + angle + 'deg) translateZ(' + radius + 'px)';
+    });
+
+    var currentAngle = 0;
+    var targetAngle = 0;
+    var velocity = 0;
+    var isDragging = false;
+    var lastX = 0;
+    var rafId = null;
+
+    var snapToNearest = function () {
+      var nearest = Math.round(targetAngle / angleStep) * angleStep;
+      targetAngle = nearest;
+    };
+
+    var animate = function () {
+      rafId = null;
+
+      if (!isDragging) {
+        velocity *= friction;
+        targetAngle += velocity;
+        currentAngle += (targetAngle - currentAngle) * snapStrength;
+      } else {
+        currentAngle += (targetAngle - currentAngle) * 0.3;
+      }
+
+      ring.style.transform = 'rotateY(' + -currentAngle + 'deg)';
+
+      panels.forEach(function (panel, i) {
+        var panelAngle = (angleStep * i - currentAngle) % 360;
+        while (panelAngle > 180) panelAngle -= 360;
+        while (panelAngle < -180) panelAngle += 360;
+
+        var absAngle = Math.abs(panelAngle);
+        var opacity = absAngle > 90 ? 0 : 1 - (absAngle / 90) * 0.4;
+        panel.style.opacity = opacity;
+      });
+
+      if (Math.abs(velocity) > 0.05 || Math.abs(targetAngle - currentAngle) > 0.05) {
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+
+    var startRaf = function () {
+      if (rafId === null) {
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+
+    if (!prefersReducedMotion) {
+      stage.addEventListener('pointerdown', function (e) {
+        isDragging = true;
+        lastX = e.clientX;
+        velocity = 0;
+        stage.setPointerCapture(e.pointerId);
+        if (hint) hint.setAttribute('hidden', '');
+        startRaf();
+      });
+
+      stage.addEventListener('pointermove', function (e) {
+        if (!isDragging) return;
+        var dx = e.clientX - lastX;
+        lastX = e.clientX;
+        velocity = dx * 0.4;
+        targetAngle += dx * 0.25;
+        startRaf();
+      });
+
+      stage.addEventListener('pointerup', function () {
+        isDragging = false;
+        snapToNearest();
+        startRaf();
+      });
+
+      stage.addEventListener('pointercancel', function () {
+        isDragging = false;
+        snapToNearest();
+        startRaf();
+      });
+
+      targetAngle = angleStep * 0.5;
+      startRaf();
+    } else {
+      ring.style.transform = 'rotateY(0deg)';
+      panels.forEach(function (panel) {
+        panel.style.opacity = '1';
+      });
+    }
+
+    section.addEventListener('click', function (e) {
+      if (Math.abs(velocity) > 2) return;
+
+      var card = e.target.closest('[data-carousel-panel]');
+      if (!card) return;
+
+      var handle = card.getAttribute('data-product-handle');
+      if (!handle) return;
+
+      if (typeof window.openProductPanel === 'function') {
+        e.preventDefault();
+        window.openProductPanel(handle);
+      }
+    });
+
+    section._carouselBound = true;
+    _carouselInstances.push({ section: section, rafId: rafId, stop: function () { if (rafId) cancelAnimationFrame(rafId); } });
+  }
+
+  function initAll(container) {
+    var roots = (container || document).querySelectorAll('[data-immersive-exclusive-carousel]');
+    for (var i = 0; i < roots.length; i++) {
+      initCarousel(roots[i]);
+    }
+  }
+
+  function destroyAll() {
+    _carouselInstances.forEach(function (inst) { inst.stop(); });
+    _carouselInstances = [];
+  }
+
+  window.ImmersiveCarousel = { init: initAll, initCarousel: initCarousel, destroy: destroyAll };
+})();
+
+// ============================================================
+// CodexCollectionsGrid — filterable collection card grid
+// ============================================================
+(function () {
+  function initCodexGrid(section) {
+    if (!section || section._codexGridBound) return;
+
+    var pills = section.querySelectorAll('[data-codex-filter]');
+    var items = section.querySelectorAll('[data-codex-theme]');
+
+    if (!pills.length) return;
+
+    pills.forEach(function (pill) {
+      pill.addEventListener('click', function () {
+        var filter = pill.getAttribute('data-codex-filter');
+
+        pills.forEach(function (p) {
+          var isActive = p === pill;
+          p.classList.toggle('is-active', isActive);
+          p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        items.forEach(function (item) {
+          var theme = item.getAttribute('data-codex-theme') || '';
+          var visible = filter === 'all' || theme === filter;
+          if (visible) {
+            item.removeAttribute('hidden');
+          } else {
+            item.setAttribute('hidden', '');
+          }
+        });
+      });
+    });
+
+    section.addEventListener('click', function (e) {
+      var link = e.target.closest('[data-immersive-bridge]');
+      if (!link) return;
+
+      var card = link.closest('[data-codex-collection-card]');
+      if (!card) return;
+
+      var handle = card.getAttribute('data-collection-handle');
+      if (!handle) return;
+
+      if (typeof window.openCollectionPanel === 'function') {
+        e.preventDefault();
+        window.openCollectionPanel(handle);
+      }
+    });
+
+    section._codexGridBound = true;
+  }
+
+  function initAll(container) {
+    var roots = (container || document).querySelectorAll('[data-codex-collections-grid]');
+    for (var i = 0; i < roots.length; i++) {
+      initCodexGrid(roots[i]);
+    }
+  }
+
+  window.CodexCollectionsGrid = { init: initAll, initCodexGrid: initCodexGrid };
 })();
 
 // ============================================================
