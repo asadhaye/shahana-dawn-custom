@@ -1,0 +1,7836 @@
+/**
+ * immersive-core.js — Shahana Dawn Immersive Store
+ * Core module: WebGL rendering, room navigation, state management,
+ * panel system, product/collection panels, wishlist, and event tracking.
+ *
+ * This file MUST load before immersive-features.js.
+ * Both files replace the former monolithic immersive-store.js.
+ */
+
+// No-op stub for analytics tracking (may be overridden by external analytics)
+if (typeof window.trackImmersiveEvent === 'undefined') {
+  window.trackImmersiveEvent = function () {};
+}
+
+/* IMMERSIVE_THREE.JS_COMPATIBILITY
+ * Shim for backwards compatibility with three.js r150–r170+.
+ */
+(function () {
+  if (typeof THREE === 'undefined') return;
+
+  // Encoding shims - sRGBEncoding was renamed to SRGBColorSpace in r152+
+  if (!THREE.SRGBColorSpace && THREE.sRGBEncoding) {
+    THREE.SRGBColorSpace = THREE.sRGBEncoding;
+  }
+
+  // LinearEncoding was renamed in later versions
+  if (!THREE.LinearEncoding) {
+    THREE.LinearEncoding = 3001;
+  }
+
+  // LinearFilter should always exist, but just in case
+  if (!THREE.LinearFilter) {
+    THREE.LinearFilter = 9728;
+  }
+
+  // MathUtils.degToRad was moved in r155+
+  if (!THREE.MathUtils) {
+    THREE.MathUtils = {
+      degToRad: function (degrees) {
+        return (degrees * Math.PI) / 180;
+      },
+    };
+  }
+
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] three.js compatibility shims applied');
+  }
+})();
+
+var STORE_ROOMS = {
+  storefront: {
+    baseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-d-base.webp?v=1774971846&width=1600&quality=75',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-m-base.webp?v=1774971846&width=900&quality=75',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-d-depth.webp?v=1774971845&width=1600&quality=60',
+    mobileDepthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-m-depth.webp?v=1774971846&width=900&quality=60',
+    hotspots: [
+      {
+        x: 50,
+        y: 68,
+        label: 'Start Experience',
+        targetRoom: 'lounge',
+        mobileX: 55,
+        mobileY: 63,
+        startExperience: true,
+      },
+    ],
+  },
+
+  lounge: {
+    baseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/Lounge-Base-flow.jpg?v=1775054500&width=1600&quality=75',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-base.jpg?v=1775054009&width=900&quality=75',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-depthmap-Grayscale.png?v=1775054498&width=1600&quality=60',
+    mobileDepthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-depth-greyscale.png?v=1775054007&width=900&quality=60',
+    hotspots: [
+      { x: 20, y: 35, label: 'Designer Houses', targetRoom: 'designer_houses', mobileX: 15, mobileY: 80 },
+      { x: 50, y: 35, label: 'Occasions', targetRoom: 'occasions', mobileX: 50, mobileY: 80 },
+      { x: 80, y: 35, label: 'Featured Collections', targetRoom: 'featured_collections', mobileX: 85, mobileY: 80 },
+      { x: 40, y: 45, label: 'Story', targetRoom: 'featured_collections', targetStory: true, mobileX: 40, mobileY: 45 },
+      { x: 65, y: 55, label: 'Codex', targetCodex: true, mobileX: 65, mobileY: 50 },
+    ],
+  },
+
+  designer_houses: {
+    baseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-base.jpg?v=1775510548&width=1600',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126&width=900',
+    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548&width=1600',
+    mobileDepthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.png?v=1775516123&width=900',
+    hotspots: [
+      { x: 50, y: 15, label: 'Explore Designers', targetEditorialRoom: 'designer_houses' },
+      { x: 13, y: 40, label: 'Suffuse', targetCollection: 'suffuse' },
+      { x: 50, y: 45, label: 'Soraya', targetCollection: 'soraya' },
+      { x: 87, y: 40, label: 'Saad Bin Shahzad', targetCollection: 'saad-bin-shahzad' },
+      { x: 50, y: 90, label: 'Back to lounge', targetRoom: 'lounge' },
+    ],
+  },
+
+  occasions: {
+    baseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah.png?v=1775312813&width=1600&quality=75',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah.png?v=1775312813&width=900&quality=75',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933',
+    mobileDepthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933',
+    hotspots: [
+      { x: 25, y: 40, label: 'Eid Collection', targetCollection: 'eid-collection' },
+      { x: 42, y: 50, label: 'Bridal & Mehndi', targetCollection: 'bridal-mehndi' },
+      { x: 58, y: 40, label: 'Luxury Formals', targetCollection: 'luxury-formals' },
+      { x: 75, y: 50, label: 'Casual Pret', targetCollection: 'casual-pret' },
+      { x: 50, y: 85, label: 'Back to lounge', targetRoom: 'lounge' },
+      { x: 50, y: 15, label: 'Our Occasions', targetEditorialRoom: 'occasions' },
+    ],
+  },
+
+  featured_collections: {
+    baseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=1600&quality=75',
+    mobileBaseTextureUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=900&quality=75',
+    depthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
+    mobileDepthMapUrl:
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=900&quality=60',
+    hotspots: [
+      { x: 25, y: 40, label: 'SS5 Summer Pret 26', targetCollection: 'summer-pret-26-eid-edit-saad-bin-shahzad' },
+      { x: 50, y: 40, label: 'Suffuse Luxury Pret', targetCollection: 'luxury-pret-suffuse' },
+      { x: 75, y: 40, label: 'Soraya Eid Pret', targetCollection: 'lumene-festive-25-26-soraya-official' },
+      { x: 50, y: 85, label: 'Back to lounge', targetRoom: 'lounge' },
+      { x: 50, y: 15, label: 'Featured Stories', targetEditorialRoom: 'featured_collections' },
+    ],
+  },
+};
+
+var CODEX_THEME_TO_ROOM = {
+  Eid: 'occasions',
+  Bridal: 'designer_houses',
+  Heritage: 'designer_houses',
+  Formals: 'occasions',
+  Everyday: 'occasions',
+};
+
+function getRoomForCollectionHandleFromCodex(handle) {
+  if (!handle || !window.codexCollectionThemes) return null;
+  var theme = window.codexCollectionThemes[handle];
+  if (!theme) return null;
+  var roomKey = CODEX_THEME_TO_ROOM[theme];
+  if (!roomKey) return null;
+  var room = getRoomData(roomKey);
+  if (!room) return null;
+  return roomKey;
+}
+
+var ROOM_VISUAL_PROFILES = {
+  default: {
+    uAtmosphericMood: 0.25,
+    uScrollVignette: 0.1,
+    uScrollChroma: 0.05,
+  },
+  featured_collections: {
+    uAtmosphericMood: 0.5,
+    uScrollVignette: 0.18,
+    uScrollChroma: 0.09,
+  },
+  'featured_collections:story': {
+    uAtmosphericMood: 0.8,
+    uScrollVignette: 0.32,
+    uScrollChroma: 0.16,
+  },
+};
+
+function getRoomVisualProfile(roomKey, mode) {
+  var key = mode ? roomKey + ':' + mode : roomKey;
+  var profile = ROOM_VISUAL_PROFILES[key] || ROOM_VISUAL_PROFILES[roomKey] || null;
+
+  if (!profile) {
+    if (window.__IMMERSIVE_DEV__) {
+      console.warn(
+        '[Immersive] No visual profile defined for room "' +
+          roomKey +
+          '"' +
+          (mode ? ' (mode: "' + mode + '")' : '') +
+          '. Falling back to default profile. Add a profile to ROOM_VISUAL_PROFILES to fix.',
+      );
+    }
+    profile = ROOM_VISUAL_PROFILES.default;
+  }
+
+  return profile;
+}
+
+function applyRoomVisualProfile(roomKey, mode, deltaTimeSec) {
+  if (!uniforms) return;
+  var profile = getRoomVisualProfile(roomKey, mode);
+  var dt = typeof deltaTimeSec === 'number' ? deltaTimeSec : 0.016;
+  var speed = 2;
+
+  function lerp(current, target, dtLocal) {
+    return current + (target - current) * Math.min(1, dtLocal * speed);
+  }
+
+  if (uniforms.uAtmosphericMood && typeof uniforms.uAtmosphericMood.value === 'number') {
+    uniforms.uAtmosphericMood.value = lerp(uniforms.uAtmosphericMood.value, profile.uAtmosphericMood, dt);
+  }
+  if (uniforms.uScrollVignette && typeof uniforms.uScrollVignette.value === 'number') {
+    uniforms.uScrollVignette.value = lerp(uniforms.uScrollVignette.value, profile.uScrollVignette, dt);
+  }
+  if (uniforms.uScrollChroma && typeof uniforms.uScrollChroma.value === 'number') {
+    uniforms.uScrollChroma.value = lerp(uniforms.uScrollChroma.value, profile.uScrollChroma, dt);
+  }
+}
+
+// Dispose gallery stage resources to prevent GPU memory leaks
+function disposeGalleryStage(roomKey) {
+  var state = galleryStageRegistry[roomKey];
+  if (!state) return;
+
+  if (state.group) {
+    state.group.traverse(function (obj) {
+      if (obj.isMesh) {
+        if (obj.geometry) {
+          obj.geometry.dispose();
+        }
+        if (obj.material) {
+          if (obj.material.map) obj.material.map.dispose();
+          obj.material.dispose();
+        }
+      }
+    });
+    scene.remove(state.group);
+  }
+
+  if (state.textures) {
+    state.textures.forEach(function (tex) {
+      if (tex) {
+        try {
+          tex.dispose();
+        } catch (e) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Texture disposal failed:', tex, e);
+          }
+        }
+      }
+    });
+  }
+
+  delete galleryStageRegistry[roomKey];
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] Disposed gallery stage for room:', roomKey);
+  }
+}
+
+function buildGalleryStageForRoom(roomKey, scene, options) {
+  // Dispose old gallery stage before creating new one
+  if (currentRoomKey && galleryStageRegistry[currentRoomKey]) {
+    disposeGalleryStage(currentRoomKey);
+  }
+
+  var items = getGalleryStageConfig(roomKey);
+  if (!items.length) return null;
+  if (!window.THREE) return null;
+  var THREE = window.THREE;
+
+  options = options || {};
+  var radius = options.radius || 7;
+  var arcDegrees = options.arcDegrees || 140;
+  var verticalOffset = options.verticalOffset || 0.2;
+  var tiltDegrees = options.tiltDegrees || -4;
+
+  var group = new THREE.Group();
+  group.position.set(0, 0, 0);
+  var textureLoader = new THREE.TextureLoader();
+  var planes = [];
+  var textures = [];
+
+  var count = items.length;
+  var step = count > 1 ? arcDegrees / (count - 1) : 0;
+  var startAngle = -arcDegrees / 2;
+
+  items.forEach(function (item, index) {
+    if (!item.imageSrc) return;
+
+    var tex = textureLoader.load(
+      item.imageSrc,
+      function (texture) {
+        // Success callback
+        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        texture.anisotropy = 8;
+      },
+      undefined,
+      function (err) {
+        // Error callback - texture failed to load
+        if (window.__IMMERSIVE_DEV__) {
+          console.warn('[Immersive] Gallery texture load error:', err);
+        }
+      },
+    );
+    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+    tex.anisotropy = 8;
+    textures.push(tex);
+
+    var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
+    var h = 2.0;
+    var w = h * aspect;
+
+    var geom = new THREE.PlaneGeometry(w, h, 1, 1);
+    var mat = new THREE.MeshStandardMaterial({
+      map: tex,
+      roughness: 0.85,
+      metalness: 0.15,
+      transparent: true,
+      opacity: 0.95,
+    });
+
+    var mesh = new THREE.Mesh(geom, mat);
+    var angleDeg = startAngle + step * index;
+    var rad = (angleDeg * Math.PI) / 180;
+    var x = Math.sin(rad) * radius;
+    var z = Math.cos(rad) * radius * -1;
+
+    mesh.position.set(x, verticalOffset, z);
+    mesh.lookAt(new THREE.Vector3(0, verticalOffset, 0));
+    mesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+
+    mesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: item.index,
+      title: item.title || '',
+      productHandle: item.productHandle || null,
+      collectionHandle: item.collectionHandle || null,
+    };
+
+    group.add(mesh);
+    planes.push(mesh);
+  });
+
+  scene.add(group);
+
+  galleryStageRegistry[roomKey] = {
+    group: group,
+    planes: planes,
+    textures: textures,
+    currentAngle: 0,
+    targetAngle: 0,
+    radius: radius,
+  };
+
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] Gallery stage built for room:', roomKey, 'items:', items.length);
+  }
+  return galleryStageRegistry[roomKey];
+}
+
+// Gallery carousel interaction - drag to rotate like Indrajaal
+var galleryDragState = {
+  isDragging: false,
+  startX: 0,
+  lastX: 0,
+  velocity: 0,
+};
+
+function initGalleryCarousel(canvas) {
+  if (!canvas) return;
+  var startHandler = function (e) {
+    if (!galleryStageRegistry[currentRoomKey]) return;
+    galleryDragState.isDragging = true;
+    galleryDragState.startX = e.clientX || e.touches?.[0]?.clientX || 0;
+    galleryDragState.lastX = galleryDragState.startX;
+    canvas.style.cursor = 'grabbing';
+  };
+  var moveHandler = function (e) {
+    if (!galleryDragState.isDragging) return;
+    var x = e.clientX || e.touches?.[0]?.clientX || 0;
+    var delta = (x - galleryDragState.lastX) * 0.008;
+    var state = galleryStageRegistry[currentRoomKey];
+    if (state) {
+      state.targetAngle += delta;
+    }
+    galleryDragState.lastX = x;
+    galleryDragState.velocity = delta;
+  };
+  var endHandler = function () {
+    galleryDragState.isDragging = false;
+    canvas.style.cursor = 'grab';
+  };
+  var wheelHandler = function (e) {
+    if (!galleryStageRegistry[currentRoomKey]) return;
+    e.preventDefault();
+    var state = galleryStageRegistry[currentRoomKey];
+    if (state) {
+      state.targetAngle += e.deltaY * 0.002;
+    }
+  };
+  canvas.style.cursor = 'grab';
+  canvas.addEventListener('mousedown', startHandler);
+  // Issue 23: touchstart must be non-passive so the browser knows we may
+  // call preventDefault on touchmove (needed for drag-to-rotate gallery).
+  canvas.addEventListener('touchstart', startHandler, { passive: false });
+  document.addEventListener('mousemove', moveHandler);
+  document.addEventListener('touchmove', moveHandler, { passive: false });
+  document.addEventListener('mouseup', endHandler);
+  document.addEventListener('touchend', endHandler);
+  canvas.addEventListener('wheel', wheelHandler, { passive: false });
+}
+
+function animateGalleryCarousel() {
+  var state = galleryStageRegistry[currentRoomKey];
+  if (!state || !state.group) return;
+  // Apply inertia when not dragging
+  if (!galleryDragState.isDragging && Math.abs(galleryDragState.velocity) > 0.0001) {
+    state.targetAngle += galleryDragState.velocity;
+    galleryDragState.velocity *= 0.95;
+  }
+  // Smooth rotation
+  state.currentAngle += (state.targetAngle - state.currentAngle) * 0.08;
+  var count = state.planes.length;
+  if (count < 2) return;
+  var arcDegrees = 140;
+  var radius = state.radius || 7;
+  var step = arcDegrees / (count - 1);
+  var startAngle = -arcDegrees / 2;
+  state.planes.forEach(function (plane, index) {
+    var baseAngle = startAngle + step * index;
+    var angleDeg = baseAngle + state.currentAngle * (180 / Math.PI);
+    var rad = (angleDeg * Math.PI) / 180;
+    var x = Math.sin(rad) * radius;
+    var z = Math.cos(rad) * radius * -1;
+    plane.position.x = x;
+    plane.position.z = z;
+  });
+}
+
+var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function () {})();
+var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function () {})();
+
+function handleGalleryStageClick(event, camera, canvas) {
+  // Issue 9: Don't process gallery clicks if user clicked a hotspot or UI element
+  if (event.target && event.target.closest('[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner')) return;
+  if (!currentRoomKey || !galleryStageRegistry[currentRoomKey]) return;
+  if (!window.THREE) return;
+
+  var state = galleryStageRegistry[currentRoomKey];
+  if (!state.planes || !state.planes.length) return;
+
+  var rect = canvas.getBoundingClientRect();
+  var x = (event.clientX - rect.left) / rect.width;
+  var y = (event.clientY - rect.top) / rect.height;
+  galleryMouse.x = x * 2 - 1;
+  galleryMouse.y = -(y * 2 - 1);
+
+  galleryRaycaster.setFromCamera(galleryMouse, camera);
+  var intersects = galleryRaycaster.intersectObjects(state.planes, true);
+  if (!intersects.length) return;
+  var mesh = intersects[0].object;
+  var data = mesh.userData || {};
+
+  if (data.productHandle && typeof window.openProductPanel === 'function') {
+    window.openProductPanel(data.productHandle);
+  } else if (data.collectionHandle && typeof window.openCollectionPanel === 'function') {
+    window.openCollectionPanel(data.collectionHandle);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// HOTSPOT CONFIGURATION
+// ---------------------------------------------------------------------------
+
+function getLiquidRoomConfig() {
+  var configEl = document.getElementById('immersive-rooms-config');
+  if (!configEl) return null;
+  try {
+    return JSON.parse(configEl.textContent);
+  } catch (e) {
+    // Silently fail for production
+    return null;
+  }
+}
+
+function getRoomConfigWithLiquidOverride(roomKey) {
+  var jsConfig = STORE_ROOMS[roomKey];
+  if (!jsConfig) return null;
+
+  var liquidConfig = getLiquidRoomConfig();
+  if (!liquidConfig || !liquidConfig[roomKey]) return jsConfig;
+
+  var liquid = liquidConfig[roomKey];
+  var merged = {};
+
+  Object.keys(jsConfig).forEach(function (key) {
+    merged[key] = jsConfig[key];
+  });
+
+  ['baseTextureUrl', 'mobileBaseTextureUrl', 'depthMapUrl', 'mobileDepthMapUrl', 'hotspots'].forEach(function (key) {
+    if (liquid[key] != null) {
+      merged[key] = liquid[key];
+    }
+  });
+
+  return merged;
+}
+
+function getRoomData(roomKey) {
+  var room =
+    typeof getRoomConfigWithLiquidOverride === 'function'
+      ? getRoomConfigWithLiquidOverride(roomKey)
+      : STORE_ROOMS[roomKey];
+
+  if (!room) {
+    // Room config missing - silently skip
+    return null;
+  }
+
+  return room;
+}
+
+var renderer;
+var scene;
+var camera;
+var planeMesh;
+var uniforms;
+var currentRoomKey = null;
+var currentRoomSubMode = null;
+var transitioning = false;
+var currentImageAspect = 16 / 9;
+
+var textureCache = [];
+var MAX_CACHED_TEXTURES = 5;
+var galleryStageRegistry = {};
+
+function getGalleryStageConfig(roomKey) {
+  if (!window.immersiveWebglGalleryConfigs) return [];
+  return window.immersiveWebglGalleryConfigs[roomKey] || [];
+}
+
+var lastFrameTime = typeof performance !== 'undefined' ? performance.now() : 0;
+var fpsCounter = 0;
+var fpsTimer = typeof performance !== 'undefined' ? performance.now() : 0;
+var animationFrameId = null;
+
+var immersiveCanvasId = 'immersive-canvas';
+var uiLayerId = 'ui-layer';
+var glassPanelId = 'glass-panel';
+
+var _immersiveInitBound = false;
+
+var contentCache = {};
+var contentCacheOrder = [];
+var MAX_CACHE_ENTRIES = 20;
+
+var immersiveState = {
+  currentRoom: 'lounge',
+  mode: 'showroom',
+  editorialRoom: null,
+  lastHotspot: null,
+  guided: false,
+};
+
+var shopRoot = (window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || '/';
+if (shopRoot.slice(-1) !== '/') shopRoot += '/';
+
+var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var isMobile = null;
+var isTablet = null;
+var usesMobileImg = null;
+var canvasRect = null;
+
+function evaluateDeviceFlags() {
+  isMobile = window.innerWidth < 768;
+  isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+
+  var connectionQuality = 1.0;
+  if ('connection' in navigator && navigator.connection) {
+    var effType = navigator.connection.effectiveType;
+    var qualityMap = {
+      'slow-2g': 0.5,
+      '2g': 0.5,
+      '3g': 0.75,
+      '4g': 1.0,
+    };
+    connectionQuality = qualityMap[effType] || 1.0;
+
+    if (navigator.connection.saveData) {
+      connectionQuality = Math.min(connectionQuality, 0.5);
+    }
+
+    // Connection quality tracked silently
+  }
+
+  usesMobileImg = window.innerWidth < 1024 || connectionQuality < 0.75;
+  textureWidth = usesMobileImg ? Math.floor(1200 * connectionQuality) : Math.floor(1920 * connectionQuality);
+}
+
+function updateCanvasRect() {
+  if (renderer && renderer.domElement) {
+    canvasRect = renderer.domElement.getBoundingClientRect();
+  }
+}
+
+evaluateDeviceFlags();
+
+var textureWidth = usesMobileImg ? 1200 : 1920;
+var parallaxStrength = usesMobileImg ? 0.03 : 0.08;
+
+var STATE_KEY = 'immersive_state';
+var ONBOARDING_KEY = 'immersive_onboarding_seen';
+var WISHLIST_KEY = 'immersive_wishlist';
+var PREFERRED_MODE_KEY = 'immersive_preferred_mode';
+var NAVIGATION_HISTORY_KEY = 'immersive_nav_history';
+
+var wishlistItems = [];
+var _wishlistProductCache = {};
+var wishlistPanelTrigger = null;
+var activeHotspots = [];
+var navigationHistory = [];
+
+function saveState(patch) {
+  try {
+    var current = JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
+    sessionStorage.setItem(STATE_KEY, JSON.stringify(Object.assign(current, patch)));
+  } catch (e) {
+    if (window.__IMMERSIVE_DEV__) {
+      console.warn('[Immersive] saveState failed:', e);
+    }
+  }
+}
+
+function loadState() {
+  try {
+    return JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
+  } catch (e) {
+    if (window.__IMMERSIVE_DEV__) {
+      console.warn('[Immersive] loadState failed:', e);
+    }
+    return {};
+  }
+}
+
+function clearState() {
+  try {
+    sessionStorage.removeItem(STATE_KEY);
+  } catch (e) {}
+}
+
+function writeImmersivePreference(storage) {
+  try {
+    (storage || localStorage).setItem(PREFERRED_MODE_KEY, '3d');
+  } catch (e) {}
+}
+
+function clearImmersivePreference(storage) {
+  try {
+    (storage || localStorage).removeItem(PREFERRED_MODE_KEY);
+  } catch (e) {}
+}
+
+function readImmersivePreference(storage) {
+  try {
+    return (storage || localStorage).getItem(PREFERRED_MODE_KEY) === '3d';
+  } catch (e) {
+    return false;
+  }
+}
+
+var _navigationHistory = [];
+
+function pushNavigationHistory(roomKey) {
+  if (!roomKey) return;
+  if (_navigationHistory.length > 0 && _navigationHistory[_navigationHistory.length - 1] === roomKey) {
+    return;
+  }
+  _navigationHistory.push(roomKey);
+  if (_navigationHistory.length > 20) {
+    _navigationHistory.shift();
+  }
+  saveNavigationHistory();
+  updateBackButton();
+}
+
+function popNavigationHistory() {
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] popNavigationHistory - before:', JSON.stringify(_navigationHistory));
+  }
+  if (_navigationHistory.length > 1) {
+    _navigationHistory.pop();
+    saveNavigationHistory();
+    updateBackButton();
+    var previousRoom = _navigationHistory[_navigationHistory.length - 1];
+    if (window.__IMMERSIVE_DEV__) {
+      console.log(
+        '[Immersive] popNavigationHistory - after:',
+        JSON.stringify(_navigationHistory),
+        'returning:',
+        previousRoom,
+      );
+    }
+    return previousRoom;
+  }
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] popNavigationHistory - no history to pop');
+  }
+  return null;
+}
+
+function initWishlist() {
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] initWishlist called');
+  }
+  try {
+    var saved = localStorage.getItem(WISHLIST_KEY);
+    if (saved) {
+      wishlistItems = JSON.parse(saved);
+      if (window.__IMMERSIVE_DEV__) {
+        console.log('[Immersive] loaded wishlist:', wishlistItems.length, 'items');
+      }
+    }
+  } catch (e) {
+    wishlistItems = [];
+  }
+  wishlistPanelTrigger =
+    document.querySelector('[data-wishlist-trigger]') || document.getElementById('wishlist-panel-trigger');
+  if (wishlistPanelTrigger) {
+    wishlistPanelTrigger.addEventListener('click', function () {
+      // Wishlist trigger clicked
+    });
+  }
+}
+
+function saveNavigationHistory() {
+  try {
+    sessionStorage.setItem(NAVIGATION_HISTORY_KEY, JSON.stringify(_navigationHistory));
+  } catch (e) {}
+}
+
+function loadNavigationHistory() {
+  try {
+    var stored = sessionStorage.getItem(NAVIGATION_HISTORY_KEY);
+    _navigationHistory = stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    _navigationHistory = [];
+  }
+}
+
+function updateBackButton() {
+  var backBtn = document.querySelector('[data-immersive-back]');
+  if (!backBtn) return;
+  if (_navigationHistory.length > 1) {
+    backBtn.hidden = false;
+    backBtn.disabled = false;
+  } else {
+    backBtn.hidden = true;
+    backBtn.disabled = true;
+  }
+}
+
+function initBackButton() {
+  var backBtn = document.querySelector('[data-immersive-back]');
+  if (!backBtn) return;
+  loadNavigationHistory();
+  updateBackButton();
+  backBtn.addEventListener('click', function () {
+    if (window.__IMMERSIVE_DEV__) {
+      console.log('[Back] Clicked, mode:', immersiveState.mode, 'history length:', _navigationHistory.length);
+    }
+    if (immersiveState.mode === 'editorial') {
+      // Exiting editorial mode
+      exitEditorialMode();
+      return;
+    }
+    var panel = document.getElementById(glassPanelId);
+    if (panel && !panel.hasAttribute('hidden')) {
+      closePanel(panel);
+    }
+    var previousRoom = popNavigationHistory();
+    if (previousRoom && typeof goToRoom === 'function') {
+      goToRoom(previousRoom, false, true);
+    }
+  });
+}
+
+function initFab() {
+  var fab = document.querySelector('[data-immersive-fab]');
+  var trigger = fab && fab.querySelector('[data-fab-trigger]');
+  var actionsContainer = fab && fab.querySelector('[data-fab-actions]');
+  if (!fab || !trigger || !actionsContainer) return;
+
+  var isOpen = false;
+  // Issue 7: Shared drag state between mousedown/mousemove/mouseup
+  var isDragging = false;
+  var hasMoved = false;
+  var dragStartX = 0;
+  var dragStartY = 0;
+
+  trigger.addEventListener('click', function (e) {
+    // Issue 7: If user was dragging (not just clicking), suppress toggle
+    if (hasMoved) {
+      hasMoved = false;
+      isDragging = false;
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    isOpen = !isOpen;
+    trigger.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      actionsContainer.removeAttribute('hidden');
+      fab.classList.add('immersive-fab--open');
+    } else {
+      actionsContainer.setAttribute('hidden', '');
+      fab.classList.remove('immersive-fab--open');
+    }
+  });
+
+  var startY, startTopPct, startRight;
+
+  fab.addEventListener('mousedown', function (e) {
+    isDragging = true;
+    hasMoved = false;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    startY = e.clientY;
+    var style = window.getComputedStyle(fab);
+    var topMatch = style.top.match(/([\d.]+)%/);
+    startTopPct = topMatch ? parseFloat(topMatch[1]) : 50;
+    var rightMatch = style.right.match(/([\d.]+)px/);
+    startRight = rightMatch ? parseFloat(rightMatch[1]) : 20;
+    fab.style.transition = 'none';
+    fab.style.transform = 'none';
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!isDragging) return;
+    var dx = Math.abs(e.clientX - dragStartX);
+    var dy = Math.abs(e.clientY - dragStartY);
+    // Only count as "moved" after 5px threshold
+    if (dx > 5 || dy > 5) {
+      hasMoved = true;
+    }
+    var deltaY = startY - e.clientY;
+    var windowH = window.innerHeight;
+    var newTopPct = startTopPct + (deltaY / windowH) * 100;
+    fab.style.top = newTopPct + '%';
+    fab.style.right = startRight + 'px';
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (isDragging) {
+      isDragging = false;
+      fab.style.transition = '';
+      fab.style.transform = 'translateY(-50%)';
+    }
+  });
+
+  fab.addEventListener('click', function (e) {
+    // Issue 2: Wishlist FAB button should open the wishlist panel, not click
+    // an arbitrary [data-wishlist-toggle] on the page (which could be a
+    // product card toggle inside an open collection panel).
+    var action = e.target.closest('[data-bottom-nav-wishlist]');
+    if (action) {
+      var wishlistPanel = document.getElementById('immersive-wishlist-panel');
+      if (wishlistPanel) {
+        // Toggle the wishlist panel visibility
+        if (wishlistPanel.hasAttribute('hidden')) {
+          wishlistPanel.removeAttribute('hidden');
+          var closeBtn = wishlistPanel.querySelector('[data-wishlist-close]');
+          if (closeBtn) closeBtn.focus();
+        } else {
+          wishlistPanel.setAttribute('hidden', '');
+        }
+      }
+      return;
+    }
+    action = e.target.closest('[data-bottom-nav-cart]');
+    if (action) {
+      // Issue 2 (cart): Use Dawn's cart-drawer instead of [data-cart-toggle]
+      var cartDrawer = document.querySelector('cart-drawer');
+      if (cartDrawer && typeof cartDrawer.open === 'function') {
+        cartDrawer.open();
+      }
+      return;
+    }
+    action = e.target.closest('[data-bottom-nav-2d]');
+    if (action) {
+      window.location.href = '/';
+    }
+  });
+
+  fab.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen) {
+      isOpen = false;
+      trigger.setAttribute('aria-expanded', 'false');
+      actionsContainer.setAttribute('hidden', '');
+      fab.classList.remove('immersive-fab--open');
+    }
+  });
+}
+
+function initStoryModeListener() {
+  window.addEventListener('immersive:story-mode-change', function (event) {
+    var detail = event && event.detail ? event.detail : {};
+    var active = !!detail.active;
+    if (currentRoomKey === 'featured_collections') {
+      currentRoomSubMode = active ? 'story' : null;
+    } else {
+      currentRoomSubMode = null;
+    }
+    if (window.__IMMERSIVE_DEV__) {
+      console.log('[Immersive] Story mode:', currentRoomSubMode);
+    }
+  });
+}
+
+var vertexShaderSource = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+var fragmentShaderSource = `
+  precision highp float;
+  varying vec2 vUv;
+  uniform sampler2D uTexture1;
+  uniform sampler2D uDepth1;
+  uniform sampler2D uTexture2;
+  uniform sampler2D uDepth2;
+  uniform float uTransitionProgress;
+  uniform vec2 uMouse;
+  uniform float uTiltOffsetX;
+  uniform float uTiltOffsetY;
+  uniform float uParallaxStrength;
+  uniform float uScrollOffset;
+  uniform float uScrollVignette;
+  uniform float uScrollChroma;
+  uniform float uAtmosphericMood;
+  uniform float uTime;
+
+  float noise(vec2 co) {
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+  }
+
+  vec2 parallaxUv(vec2 uv, sampler2D depthTex, vec2 mouse) {
+    vec3 depthSample = texture2D(depthTex, uv).rgb;
+    float depth = dot(depthSample, vec3(0.299, 0.587, 0.114));
+    float d = depth - 0.5;
+    vec2 centeredMouse = mouse - 0.5;
+
+    vec2 tiltOffset = vec2(uTiltOffsetX, uTiltOffsetY);
+    vec2 offset = (centeredMouse + tiltOffset) * uParallaxStrength * d;
+
+    float scrollWeight = d + 0.5;
+    float backCounterShift = (1.0 - scrollWeight) * -0.08;
+    float foreSinkingShift = scrollWeight * 0.25;
+    float totalVerticalShift = (foreSinkingShift + backCounterShift) * uScrollOffset;
+
+    return uv + offset + vec2(0.0, totalVerticalShift);
+  }
+
+  void main() {
+    vec2 uv1 = parallaxUv(vUv, uDepth1, uMouse);
+    vec2 uv2 = parallaxUv(vUv, uDepth2, uMouse);
+
+    float chroma = uScrollChroma * 0.008;
+    vec4 color1, color2;
+    if (chroma > 0.0001) {
+      vec2 rOffset = vec2(chroma, 0.0);
+      vec2 bOffset = vec2(-chroma, 0.0);
+      color1 = vec4(
+        texture2D(uTexture1, uv1 + rOffset).r,
+        texture2D(uTexture1, uv1).g,
+        texture2D(uTexture1, uv1 + bOffset).b,
+        1.0
+      );
+      color2 = vec4(
+        texture2D(uTexture2, uv2 + rOffset).r,
+        texture2D(uTexture2, uv2).g,
+        texture2D(uTexture2, uv2 + bOffset).b,
+        1.0
+      );
+    } else {
+      color1 = texture2D(uTexture1, uv1);
+      color2 = texture2D(uTexture2, uv2);
+    }
+
+    float t = clamp(uTransitionProgress, 0.0, 1.0);
+    vec4 color = mix(color1, color2, t);
+
+    float breathing = sin(uTime * 0.8) * 0.015 + 0.985;
+    color.rgb *= breathing;
+
+    float n = noise(vUv + fract(uTime));
+    color.rgb += (n - 0.5) * 0.012;
+
+    vec2 vigUv = vUv * 2.0 - 1.0;
+    float vignette = 1.0 - dot(vigUv * vec2(0.6, 0.8), vigUv * vec2(0.6, 0.8));
+    vignette = clamp(vignette, 0.0, 1.0);
+    float vigStrength = 0.18 + uScrollVignette * 0.32;
+    color.rgb *= mix(1.0 - vigStrength, 1.0, pow(vignette, 1.4));
+
+    vec3 moodColor = vec3(1.1, 1.05, 0.9);
+    color.rgb = mix(color.rgb, color.rgb * moodColor, uAtmosphericMood);
+
+    gl_FragColor = color;
+  }
+`;
+
+function getRoomTextureUrls(roomKey) {
+  var room = getRoomData(roomKey);
+  if (!room) {
+    // Room definition not found - silently skip
+    return null;
+  }
+
+  var mobile = usesMobileImg;
+  var baseUrl = mobile && room.mobileBaseTextureUrl ? room.mobileBaseTextureUrl : room.baseTextureUrl;
+  var depthUrl = mobile && room.mobileDepthMapUrl ? room.mobileDepthMapUrl : room.depthMapUrl;
+
+  if (!baseUrl || !depthUrl) {
+    // Missing texture URLs - silently skip
+    return null;
+  }
+
+  return { roomKey: roomKey, baseTextureUrl: baseUrl, depthMapUrl: depthUrl, hotspots: room.hotspots };
+}
+
+function preloadAdjacentRoomTextures(currentRoomKey) {
+  var room = getRoomData(currentRoomKey);
+  if (!room || !room.hotspots || !room.hotspots.length) return;
+
+  var neighborKeys = new Set();
+
+  room.hotspots.forEach(function (hotspot) {
+    if (hotspot.targetRoom) {
+      neighborKeys.add(hotspot.targetRoom);
+    }
+  });
+
+  if (!neighborKeys.size) return;
+
+  var preloadFn = function () {
+    neighborKeys.forEach(function (roomKey) {
+      var neighborData = getRoomTextureUrls(roomKey);
+      if (!neighborData) return;
+      loadRoomTextures(neighborData, function () {});
+    });
+  };
+
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(preloadFn, { timeout: 1000 });
+  } else {
+    setTimeout(preloadFn, 250);
+  }
+}
+
+function preloadRoom(roomKey) {
+  var roomData = getRoomTextureUrls(roomKey);
+  if (!roomData) return;
+  var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
+
+  var isCached = textureCache.some(function (entry) {
+    return entry.key === cacheKey;
+  });
+
+  if (isCached) return;
+  loadRoomTextures(roomData, function () {});
+}
+
+function showWelcomeToast() {
+  try {
+    if (localStorage.getItem(ONBOARDING_KEY)) return;
+  } catch (e) {}
+  // Issue 25: If onboarding overlay is present and enabled, skip welcome toast (redundant)
+  var _ob = document.getElementById('immersive-onboarding');
+  if (_ob && !_ob.hasAttribute('hidden') && _ob.getAttribute('data-show-once') !== 'false') return;
+  var section = document.querySelector('[data-msg-welcome-toast]');
+  var msg = section && section.getAttribute('data-msg-welcome-toast');
+  if (!msg) return;
+  var wrapper = document.querySelector('.immersive-store__canvas-wrapper');
+  if (!wrapper) return;
+  var toast = document.createElement('div');
+  toast.className = 'immersive-welcome-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  if (!reduceMotion) toast.classList.add('immersive-welcome-toast--animate-in');
+  toast.innerHTML =
+    '<span class="immersive-welcome-toast__text">' +
+    msg +
+    '</span>' +
+    '<button type="button" class="immersive-welcome-toast__close" aria-label="Close">×</button>';
+  wrapper.appendChild(toast);
+  var timer = setTimeout(function () {
+    _dismissWelcomeToast(toast);
+  }, 5000);
+  toast.querySelector('.immersive-welcome-toast__close').addEventListener('click', function () {
+    clearTimeout(timer);
+    _dismissWelcomeToast(toast);
+  });
+}
+
+function _dismissWelcomeToast(toast) {
+  if (!toast || !toast.parentNode) return;
+  if (reduceMotion) {
+    toast.remove();
+    return;
+  }
+  toast.classList.remove('immersive-welcome-toast--animate-in');
+  toast.classList.add('immersive-welcome-toast--animate-out');
+  setTimeout(function () {
+    if (toast.parentNode) toast.remove();
+  }, 300);
+}
+
+function initImmersiveScene() {
+  var canvas = document.getElementById(immersiveCanvasId);
+  var uiLayer = document.getElementById(uiLayerId);
+  if (!canvas || !uiLayer) return;
+
+  if (!window.THREE || !isWebGLSupported()) {
+    showWebGLFallback(canvas);
+    return;
+  }
+
+  showLoader();
+
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+
+  var initWidth = canvas.clientWidth || canvas.offsetWidth || window.innerWidth;
+  var initHeight = canvas.clientHeight || canvas.offsetHeight || window.innerHeight;
+  renderer.setSize(initWidth, initHeight, false);
+
+  scene = new THREE.Scene();
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 2);
+  camera.position.z = 1;
+
+  var geometry = new THREE.PlaneGeometry(2, 2);
+  var textureLoader = new THREE.TextureLoader();
+
+  var placeholderData = new Uint8Array([0, 0, 0, 255]);
+  var placeholder = new THREE.DataTexture(placeholderData, 1, 1);
+  placeholder.minFilter = THREE.LinearFilter;
+  placeholder.magFilter = THREE.LinearFilter;
+  placeholder.needsUpdate = true;
+
+  uniforms = {
+    uTexture1: { value: placeholder },
+    uDepth1: { value: placeholder },
+    uTexture2: { value: placeholder },
+    uDepth2: { value: placeholder },
+    uTransitionProgress: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+    uTiltOffsetX: { value: 0 },
+    uTiltOffsetY: { value: 0 },
+    uParallaxStrength: { value: parallaxStrength },
+    uScrollOffset: { value: 0 },
+    uScrollVignette: { value: 0 },
+    uScrollChroma: { value: 0 },
+    uAtmosphericMood: { value: 0 },
+  };
+
+  var material = new THREE.ShaderMaterial({
+    vertexShader: vertexShaderSource,
+    fragmentShader: fragmentShaderSource,
+    uniforms: uniforms,
+    transparent: false,
+  });
+
+  planeMesh = new THREE.Mesh(geometry, material);
+  scene.add(planeMesh);
+
+  updateCanvasRect();
+  window.addEventListener('mousemove', handleMouseMove);
+
+  bindResizeHandling();
+  handleResize();
+  animate();
+
+  var canvasEl = renderer.domElement;
+  canvasEl.addEventListener('click', function (event) {
+    handleGalleryStageClick(event, camera, canvasEl);
+  });
+
+  var state = loadState();
+  var hasOpenPanel = (state.panel === 'product' && state.product) || (state.panel === 'collection' && state.collection);
+  var startRoom = hasOpenPanel && state.room && getRoomData(state.room) ? state.room : 'storefront';
+
+  if (!hasOpenPanel) clearState();
+
+  goToRoom(startRoom, true);
+  pushNavigationHistory(startRoom);
+  writeImmersivePreference();
+
+  if (state.panel === 'product' && state.product) {
+    setTimeout(function () {
+      openProductPanel(state.product, state.collection);
+    }, 400);
+  } else if (state.panel === 'collection' && state.collection) {
+    setTimeout(function () {
+      openCollectionPanel(state.collection);
+    }, 400);
+  }
+}
+
+function isWebGLSupported() {
+  try {
+    var testCanvas = document.createElement('canvas');
+    return !!(testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl'));
+  } catch (e) {
+    return false;
+  }
+}
+
+function showWebGLFallback(canvas) {
+  var room = getRoomData('lounge');
+  if (!room) return;
+  var wrapper = canvas.parentElement;
+  if (!wrapper) return;
+  var img = document.createElement('img');
+  img.src = room.baseTextureUrl;
+  img.alt = '';
+  img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+  wrapper.appendChild(img);
+  canvas.style.display = 'none';
+  renderHotspots('lounge');
+}
+
+function showLoader() {
+  var wrapper = document.querySelector('.immersive-store__canvas-wrapper');
+  if (!wrapper) return;
+  var loader = document.createElement('div');
+  loader.id = 'immersive-loader';
+  loader.innerHTML = '<div class="immersive-loader__ring"></div>';
+  loader.style.cssText =
+    'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;pointer-events:none;';
+  loader.querySelector('.immersive-loader__ring').style.cssText =
+    'width:48px;height:48px;border:3px solid rgba(212,175,55,0.2);border-top-color:#d4af37;border-radius:50%;animation:immersive-spin 0.8s linear infinite;';
+  if (!document.getElementById('immersive-loader-style')) {
+    var style = document.createElement('style');
+    style.id = 'immersive-loader-style';
+    style.textContent = '@keyframes immersive-spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+  }
+  wrapper.appendChild(loader);
+}
+
+function hideLoader() {
+  var loader = document.getElementById('immersive-loader');
+  if (!loader) return;
+  loader.style.transition = 'opacity 0.4s ease';
+  loader.style.opacity = '0';
+  setTimeout(function () {
+    loader.remove();
+  }, 400);
+}
+
+var mouseTarget = { x: 0.5, y: 0.5 };
+var mouseCurrent = { x: 0.5, y: 0.5 };
+var lerpFactor = 0.08;
+
+function handleMouseMove(event) {
+  if (!canvasRect) updateCanvasRect();
+  if (!canvasRect) return;
+  var rect = canvasRect;
+  mouseTarget.x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  mouseTarget.y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+  if (Math.abs(mouseTarget.x - 0.5) > 0.01 || Math.abs(mouseTarget.y - 0.5) > 0.01) {
+    // Mouse position tracked silently
+  }
+}
+
+var resizeRaf = null;
+var lastMobile = isMobile;
+var lastOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
+
+function onWindowResize() {
+  if (resizeRaf !== null) return;
+  resizeRaf = requestAnimationFrame(function () {
+    resizeRaf = null;
+    evaluateDeviceFlags();
+    updateCanvasRect();
+    handleResize();
+
+    var currentOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
+    if (isMobile !== lastMobile || currentOrientation !== lastOrientation) {
+      lastMobile = isMobile;
+      lastOrientation = currentOrientation;
+      if (currentRoomKey) renderHotspots(currentRoomKey);
+    }
+  });
+}
+
+var resizeObserver = null;
+var orientationMediaQuery = null;
+var orientationListener = null;
+
+function bindResizeHandling() {
+  if (!renderer || !renderer.domElement) {
+    window.addEventListener('resize', onWindowResize);
+    return;
+  }
+
+  var canvas = renderer.domElement;
+  window.addEventListener('resize', onWindowResize);
+
+  if ('ResizeObserver' in window) {
+    resizeObserver = new ResizeObserver(function () {
+      onWindowResize();
+    });
+    resizeObserver.observe(canvas);
+  }
+  // Issue 13: Removed separate orientation matchMedia listener.
+  // Orientation changes always fire a resize event too, and our RAF
+  // debounce in onWindowResize already deduplicates. The extra listener
+  // caused triple-fires (resize + observer + orientation) leading to
+  // incorrect device flag evaluation on some mobile browsers.
+}
+
+function unbindResizeHandling() {
+  window.removeEventListener('resize', onWindowResize);
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+  if (orientationMediaQuery && orientationListener) {
+    orientationMediaQuery.removeEventListener('change', orientationListener);
+    orientationMediaQuery = null;
+    orientationListener = null;
+  }
+}
+
+function handleResize(roomKeyOverride) {
+  if (!renderer || !camera) return;
+  evaluateDeviceFlags();
+  var canvas = renderer.domElement;
+  var width = canvas.clientWidth || window.innerWidth;
+  var height = canvas.clientHeight || window.innerHeight;
+  if (width === 0 || height === 0) return;
+  renderer.setSize(width, height, false);
+  if (planeMesh) {
+    var resolvedRoomKey = roomKeyOverride || currentRoomKey;
+    var room = resolvedRoomKey && getRoomData(resolvedRoomKey);
+    var hasDedicatedMobileImage = usesMobileImg && room && room.mobileBaseTextureUrl;
+    if (hasDedicatedMobileImage && isMobile) {
+      planeMesh.scale.set(1, 1, 1);
+    } else if (hasDedicatedMobileImage && isTablet) {
+      var canvasAspect = width / height;
+      var imageAspect = currentImageAspect;
+      if (canvasAspect > imageAspect) {
+        planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
+      } else {
+        planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
+      }
+    } else {
+      var canvasAspect = width / height;
+      var imageAspect = currentImageAspect;
+      if (canvasAspect > imageAspect) {
+        planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
+      } else {
+        planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
+      }
+    }
+    planeMesh.position.set(0, 0, 0);
+  }
+  if (immersiveState.mode === 'editorial') cacheEditorialOverlay();
+}
+
+var editorialScrollProgress = 0;
+var editorialOverlayEl = null;
+var editorialMaxScroll = 0;
+var atmosphericMoodProgress = 0;
+
+function cacheEditorialOverlay() {
+  editorialOverlayEl = document.getElementById('immersive-editorial-overlay') || null;
+  editorialMaxScroll = editorialOverlayEl ? editorialOverlayEl.scrollHeight - editorialOverlayEl.clientHeight : 0;
+}
+
+var tiltControlEnabled = false;
+var tiltBeta = 0;
+var tiltGamma = 0;
+var tiltXSmoothed = 0;
+var tiltYSmoothed = 0;
+var tiltNormX = 0;
+var tiltNormY = 0;
+
+function handleDeviceOrientation(event) {
+  tiltBeta = event.beta || 0;
+  tiltGamma = event.gamma || 0;
+}
+
+function enableTiltControl() {
+  if (tiltControlEnabled) return;
+  if (!isMobile) return;
+  if (reduceMotion) return;
+  if (!window.DeviceOrientationEvent) return;
+
+  function startListening() {
+    tiltControlEnabled = true;
+    window.addEventListener('deviceorientation', handleDeviceOrientation, true);
+  }
+
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(function (state) {
+        if (state === 'granted') {
+          startListening();
+        } else {
+          tiltControlEnabled = false;
+        }
+      })
+      .catch(function () {
+        tiltControlEnabled = false;
+      });
+  } else {
+    startListening();
+  }
+}
+
+function disableTiltControl() {
+  if (!tiltControlEnabled) return;
+  tiltControlEnabled = false;
+  window.removeEventListener('deviceorientation', handleDeviceOrientation, true);
+  tiltBeta = 0;
+  tiltGamma = 0;
+  tiltXSmoothed = 0;
+  tiltYSmoothed = 0;
+}
+
+function initTiltControlToggle() {
+  var toggleBtn = document.querySelector('[data-immersive-tilt-toggle]');
+  if (!toggleBtn) return;
+
+  toggleBtn.addEventListener('click', function () {
+    if (tiltControlEnabled) {
+      disableTiltControl();
+      toggleBtn.setAttribute('aria-pressed', 'false');
+    } else {
+      enableTiltControl();
+      if (tiltControlEnabled) {
+        toggleBtn.setAttribute('aria-pressed', 'true');
+      }
+    }
+  });
+}
+
+function animate() {
+  animationFrameId = requestAnimationFrame(animate);
+  if (!uniforms) return;
+
+  mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
+  mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
+  uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
+
+  // Animate gallery carousel rotation
+  if (galleryStageRegistry[currentRoomKey]) {
+    animateGalleryCarousel();
+  }
+
+  if (!reduceMotion && activeHotspots.length > 0) {
+    for (var i = 0; i < activeHotspots.length; i++) {
+      var h = activeHotspots[i];
+      var dx = mouseCurrent.x - h.x;
+      var dy = mouseCurrent.y - h.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      var scale = 1.0;
+      if (dist < 0.15) {
+        var proximity = 1.0 - dist / 0.15;
+        scale = 1.0 + 0.3 * proximity;
+      }
+      h.el.style.setProperty('--hotspot-scale', scale);
+    }
+  }
+
+  if (tiltControlEnabled && immersiveState.mode === 'showroom' && !reduceMotion) {
+    if (typeof tiltBeta === 'undefined' || typeof tiltGamma === 'undefined') {
+      disableTiltControl();
+    } else {
+      tiltNormX = Math.max(-1, Math.min(1, (tiltGamma || 0) / 45));
+      tiltNormY = Math.max(-1, Math.min(1, ((tiltBeta || 0) - 45) / 45));
+    }
+  }
+  tiltXSmoothed += (tiltNormX - tiltXSmoothed) * 0.1;
+  tiltYSmoothed += (tiltNormY - tiltYSmoothed) * 0.1;
+
+  if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
+    uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
+    uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
+  }
+
+  if (!tiltControlEnabled && (tiltXSmoothed !== 0 || tiltYSmoothed !== 0)) {
+    tiltXSmoothed *= 0.85;
+    tiltYSmoothed *= 0.85;
+    if (Math.abs(tiltXSmoothed) < 0.001) tiltXSmoothed = 0;
+    if (Math.abs(tiltYSmoothed) < 0.001) tiltYSmoothed = 0;
+    if (uniforms.uTiltOffsetX && uniforms.uTiltOffsetY) {
+      uniforms.uTiltOffsetX.value = tiltXSmoothed * 0.05;
+      uniforms.uTiltOffsetY.value = tiltYSmoothed * 0.05;
+    }
+  }
+
+  if (immersiveState.mode === 'editorial') {
+    if (!editorialOverlayEl) cacheEditorialOverlay();
+    if (editorialOverlayEl && editorialMaxScroll > 0) {
+      var targetProgress = editorialOverlayEl.scrollTop / editorialMaxScroll;
+      editorialScrollProgress += (targetProgress - editorialScrollProgress) * 0.1;
+      uniforms.uScrollOffset.value = editorialScrollProgress;
+      if (!reduceMotion) {
+        uniforms.uScrollVignette.value += (editorialScrollProgress - uniforms.uScrollVignette.value) * 0.06;
+        uniforms.uScrollChroma.value += (editorialScrollProgress - uniforms.uScrollChroma.value) * 0.06;
+        if (immersiveState.editorialRoom === 'featured_collections') {
+          atmosphericMoodProgress += (editorialScrollProgress - atmosphericMoodProgress) * 0.04;
+          uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+        }
+      }
+    }
+  } else if (editorialScrollProgress > 0.001) {
+    editorialScrollProgress *= 0.85;
+    uniforms.uScrollOffset.value = editorialScrollProgress;
+    if (!reduceMotion) {
+      uniforms.uScrollVignette.value *= 0.85;
+      uniforms.uScrollChroma.value *= 0.85;
+      atmosphericMoodProgress *= 0.85;
+      uniforms.uAtmosphericMood.value = atmosphericMoodProgress;
+    }
+  } else {
+    editorialScrollProgress = 0;
+    atmosphericMoodProgress = 0;
+    uniforms.uScrollOffset.value = 0;
+    uniforms.uScrollVignette.value = 0;
+    uniforms.uScrollChroma.value = 0;
+    uniforms.uAtmosphericMood.value = 0;
+  }
+
+  var frameNow = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  var lastNow = window._immersiveLastFrameTime || frameNow;
+  var deltaSec = (frameNow - lastNow) / 1000;
+  window._immersiveLastFrameTime = frameNow;
+  applyRoomVisualProfile(currentRoomKey, currentRoomSubMode, deltaSec);
+
+  if (renderer && scene && camera) {
+    renderer.render(scene, camera);
+  }
+
+  if (typeof performance !== 'undefined' && window.__IMMERSIVE_DEV__) {
+    var frameTime = frameNow - lastFrameTime;
+    lastFrameTime = frameNow;
+    fpsCounter++;
+    if (frameNow - fpsTimer > 1000) {
+      var fps = Math.round((fpsCounter * 1000) / (frameNow - fpsTimer));
+      fpsCounter = 0;
+      fpsTimer = frameNow;
+    }
+    if (frameTime > 16.67) {
+      console.warn('[Immersive] Frame budget exceeded', frameTime);
+    }
+  }
+}
+
+function updateRoomBadge(roomKey) {
+  var badge = document.getElementById('immersive-room-badge');
+  if (!badge) return;
+  var nameEl = badge.querySelector('[data-room-badge-name]');
+  var guidanceEl = badge.querySelector('[data-room-badge-guidance]');
+  var name = badge.getAttribute('data-room-name-' + roomKey) || roomKey;
+  var guidance = badge.getAttribute('data-room-guidance-' + roomKey) || '';
+  if (nameEl) nameEl.textContent = name;
+  if (guidanceEl) guidanceEl.textContent = guidance;
+}
+
+function goToRoom(roomKey, initial, skipHistory) {
+  if (transitioning && !initial) return;
+  var roomData = getRoomTextureUrls(roomKey);
+  if (!roomData) return;
+
+  saveState({ room: roomKey, panel: null, product: null, collection: null });
+  immersiveState.currentRoom = roomKey;
+  immersiveState.mode = 'showroom';
+  immersiveState.editorialRoom = null;
+
+  if (!initial && !skipHistory) {
+    pushNavigationHistory(roomKey);
+  }
+
+  if (typeof trackRoomVisit === 'function') trackRoomVisit(roomKey);
+  if (typeof clearLimitedTimeIntervals === 'function') clearLimitedTimeIntervals();
+
+  var uiLayer = document.getElementById(uiLayerId);
+  if (!uiLayer) return;
+
+  if (!initial) {
+    transitioning = true;
+    if (reduceMotion) {
+      uiLayer.style.transition = '';
+      uiLayer.style.opacity = '0';
+      _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+    } else {
+      uiLayer.style.transition = 'opacity 0.25s ease-in-out';
+      uiLayer.style.opacity = '0';
+      setTimeout(function () {
+        _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+      }, 250);
+    }
+  } else {
+    _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+  }
+}
+
+function focusCodexSection() {
+  var codex =
+    document.querySelector('[data-codex-typo-index]') || document.querySelector('[data-codex-collections-grid]');
+  if (!codex) return;
+  try {
+    codex.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    var rect = codex.getBoundingClientRect();
+    var top = rect.top + window.pageYOffset - 80;
+    window.scrollTo(0, top);
+  }
+}
+
+function focusStoryRailSection() {
+  var story = document.querySelector('[data-immersive-story-rail]');
+  if (!story) return;
+  try {
+    story.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    var rect = story.getBoundingClientRect();
+    var top = rect.top + window.pageYOffset - 80;
+    window.scrollTo(0, top);
+  }
+}
+
+function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
+  loadRoomTextures(roomData, function (baseTexture, depthTexture) {
+    if (initial || currentRoomKey === null) {
+      uniforms.uTexture1.value = baseTexture;
+      uniforms.uDepth1.value = depthTexture;
+      uniforms.uTexture2.value = baseTexture;
+      uniforms.uDepth2.value = depthTexture;
+      currentRoomKey = roomKey;
+      uiLayer.style.transition = '';
+      uiLayer.style.opacity = '1';
+      renderHotspots(roomKey);
+      updateRoomBadge(roomKey);
+      preloadAdjacentRoomTextures(roomKey);
+      var tagline = document.getElementById('immersive-tagline');
+      if (tagline) tagline.classList.remove('is-visible');
+      hideLoader();
+      showWelcomeToast();
+      trackImmersiveEvent('room_viewed', { room_key: roomKey });
+      return;
+    }
+
+    var oldBase = uniforms.uTexture1.value;
+    var oldDepth = uniforms.uDepth1.value;
+
+    uniforms.uTexture2.value = baseTexture;
+    uniforms.uDepth2.value = depthTexture;
+
+    var duration = reduceMotion ? 0 : 800;
+    var start = performance.now();
+    var startProgress = uniforms.uTransitionProgress.value;
+
+    function step(now) {
+      var elapsed = now - start;
+      var t = Math.min(elapsed / duration, 1);
+      var eased = t * t * (3 - 2 * t);
+      uniforms.uTransitionProgress.value = startProgress + (1 - startProgress) * eased;
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        if (oldBase && !isCachedTexture(oldBase)) oldBase.dispose();
+        if (oldDepth && !isCachedTexture(oldDepth)) oldDepth.dispose();
+
+        uniforms.uTexture1.value = uniforms.uTexture2.value;
+        uniforms.uDepth1.value = uniforms.uDepth2.value;
+        uniforms.uTransitionProgress.value = 0;
+        currentRoomKey = roomKey;
+
+        if (getGalleryStageConfig(roomKey).length) {
+          buildGalleryStageForRoom(roomKey, scene, {
+            radius: 7,
+            arcDegrees: 140,
+            verticalOffset: 0.3,
+            tiltDegrees: -4,
+          });
+          initGalleryCarousel(renderer.domElement);
+        }
+
+        renderHotspots(roomKey);
+        updateRoomBadge(roomKey);
+        preloadAdjacentRoomTextures(roomKey);
+        var tagline = document.getElementById('immersive-tagline');
+        if (tagline) tagline.classList.remove('is-visible');
+        trackImmersiveEvent('room_viewed', { room_key: roomKey });
+
+        if (reduceMotion) {
+          uiLayer.style.transition = '';
+          uiLayer.style.opacity = '1';
+          transitioning = false;
+        } else {
+          uiLayer.style.transition = 'opacity 0.25s ease-in-out';
+          uiLayer.style.opacity = '1';
+          setTimeout(function () {
+            transitioning = false;
+          }, 250);
+        }
+      }
+    }
+
+    requestAnimationFrame(step);
+  });
+}
+
+function loadRoomTextures(roomData, callback) {
+  var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
+
+  var cachedIndex = textureCache.findIndex(function (entry) {
+    return entry.key === cacheKey;
+  });
+
+  if (cachedIndex !== -1) {
+    var cached = textureCache.splice(cachedIndex, 1)[0];
+    textureCache.unshift(cached);
+    callback(cached.base, cached.depth);
+    return;
+  }
+
+  var loader = new THREE.TextureLoader();
+  var loaded = { base: null, depth: null };
+  var failed = false;
+  var retryAttempts = 0;
+
+  var timeoutId = setTimeout(function () {
+    if (!loaded.base || !loaded.depth) {
+      onError('timeout');
+    }
+  }, 15000);
+
+  function onBothLoaded() {
+    if (!loaded.base || !loaded.depth) return;
+    clearTimeout(timeoutId);
+
+    if (loaded.base.image && loaded.depth.image) {
+      textureCache.unshift({ key: cacheKey, base: loaded.base, depth: loaded.depth });
+      if (textureCache.length > MAX_CACHED_TEXTURES) {
+        var oldest = textureCache.pop();
+        // Issue 14: Only dispose if texture is not currently active in the shader
+        var isActive = (uniforms && uniforms.uTexture1 && uniforms.uDepth1) &&
+                       (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
+        if (!isActive) {
+          try {
+            if (oldest.base) oldest.base.dispose();
+            if (oldest.depth) oldest.depth.dispose();
+          } catch (e) {}
+        }
+      }
+    }
+
+    callback(loaded.base, loaded.depth);
+  }
+
+  function onError(which) {
+    if (failed) return;
+    failed = true;
+    clearTimeout(timeoutId);
+    // Failed to load texture - tracked silently
+
+    if (!retryAttempts || retryAttempts < 1) {
+      retryAttempts = (retryAttempts || 0) + 1;
+      // Retrying texture load
+      setTimeout(function () {
+        loadRoomTextures(roomData, callback);
+      }, 1000);
+      return;
+    }
+
+    hideLoader();
+    if (!currentRoomKey) {
+      var canvas = document.getElementById(immersiveCanvasId);
+      if (canvas) showWebGLFallback(canvas);
+    }
+    // Issue 4: Mid-session texture failure -- show user-facing error and let them retry
+    if (typeof showFeedback === 'function') {
+      showFeedback('Unable to load scene. Please check your connection and try again.', 'error');
+    }
+    transitioning = false;
+  }
+
+  loader.load(
+    roomData.baseTextureUrl,
+    function (tex) {
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      if (tex.image && tex.image.width && tex.image.height) {
+        currentImageAspect = tex.image.width / tex.image.height;
+        var loadingRoomKey = roomData.roomKey;
+        requestAnimationFrame(function () {
+          handleResize(loadingRoomKey);
+        });
+      }
+      loaded.base = tex;
+      onBothLoaded();
+    },
+    undefined,
+    function () {
+      onError('base');
+    },
+  );
+
+  loader.load(
+    roomData.depthMapUrl,
+    function (tex) {
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      loaded.depth = tex;
+      if (window.__IMMERSIVE_DEV__) {
+        console.log(
+          '[Immersive] Depth texture loaded for',
+          roomData.roomKey,
+          'size:',
+          tex.image?.width + 'x' + tex.image?.height,
+        );
+      }
+      onBothLoaded();
+    },
+    undefined,
+    function () {
+      onError('depth');
+    },
+  );
+}
+
+function isCachedTexture(texture) {
+  return textureCache.some(function (entry) {
+    return entry.base === texture || entry.depth === texture;
+  });
+}
+
+function renderHotspots(roomKey) {
+  var room = getRoomData(roomKey);
+  var uiLayer = document.getElementById(uiLayerId);
+  if (!room || !uiLayer) return;
+
+  function getEditorialSafeMinYPercent() {
+    var header = document.querySelector('.immersive-header');
+    if (!header) return null;
+    var headerRect = header.getBoundingClientRect();
+    var layerRect = uiLayer.getBoundingClientRect();
+    if (!layerRect || !layerRect.height) return null;
+    var safeTopPx = headerRect.bottom + 8;
+    var safeTopRelativePx = safeTopPx - layerRect.top;
+    var minY = (safeTopRelativePx / layerRect.height) * 100;
+    return Math.max(0, Math.min(95, minY));
+  }
+
+  function render() {
+    uiLayer.innerHTML = '';
+    activeHotspots = [];
+    var editorialMinYPercent = getEditorialSafeMinYPercent();
+
+    var sortedHotspots = room.hotspots.slice().sort(function (a, b) {
+      var ay = usesMobileImg && a.mobileY != null ? a.mobileY : a.y;
+      var by = usesMobileImg && b.mobileY != null ? b.mobileY : b.y;
+      var ax = usesMobileImg && a.mobileX != null ? a.mobileX : a.x;
+      var bx = usesMobileImg && b.mobileX != null ? b.mobileX : b.x;
+      if (Math.abs(ay - by) >= 10) return ay - by;
+      return ax - bx;
+    });
+
+    sortedHotspots.forEach(function (hotspot) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'immersive-hotspot';
+      button.setAttribute('tabindex', '0');
+      button.setAttribute('aria-label', hotspot.label);
+      button.setAttribute('data-hotspot-btn', '');
+      var srSpan = document.createElement('span');
+      srSpan.className = 'visually-hidden';
+      srSpan.textContent = hotspot.label;
+      button.appendChild(srSpan);
+
+      var ringSpan = document.createElement('span');
+      ringSpan.className = 'immersive-hotspot__ring';
+      ringSpan.setAttribute('aria-hidden', 'true');
+      button.appendChild(ringSpan);
+
+      if (hotspot.label && hotspot.label.trim()) {
+        var labelSpan = document.createElement('span');
+        labelSpan.className = 'immersive-hotspot__label';
+        labelSpan.setAttribute('aria-hidden', 'true');
+        labelSpan.textContent = hotspot.label;
+        button.appendChild(labelSpan);
+      }
+
+      button.style.position = 'absolute';
+      var posX = usesMobileImg && hotspot.mobileX != null ? hotspot.mobileX : hotspot.x;
+      var posY = usesMobileImg && hotspot.mobileY != null ? hotspot.mobileY : hotspot.y;
+      if (hotspot.targetEditorialRoom && editorialMinYPercent !== null && posY < editorialMinYPercent) {
+        posY = editorialMinYPercent;
+      }
+      button.style.left = posX + '%';
+      button.style.top = posY + '%';
+
+      activeHotspots.push({
+        el: button,
+        x: posX / 100,
+        y: posY / 100,
+      });
+
+      button.addEventListener('click', function () {
+        if (window.__IMMERSIVE_DEV__) {
+          console.log('[Immersive] Hotspot clicked:', JSON.stringify(hotspot));
+        }
+
+        if (!hotspot.startExperience) {
+          exitGuidedMode();
+        }
+
+        if (hotspot.targetEditorialRoom) {
+          enterEditorialMode(hotspot.targetEditorialRoom, button);
+        } else if (hotspot.targetRoom) {
+          if (hotspot.startExperience) {
+            activateGuidedMode();
+          }
+          goToRoom(hotspot.targetRoom);
+        } else if (hotspot.targetStory) {
+          goToRoom(hotspot.target || 'featured_collections');
+          currentRoomSubMode = 'story';
+          setTimeout(focusStoryRailSection, 300);
+        } else if (hotspot.targetCodex) {
+          goToRoom('featured_collections');
+          setTimeout(focusCodexSection, 300);
+        } else if (hotspot.targetCollection) {
+          openCollectionPanel(hotspot.targetCollection);
+        }
+      });
+
+      if (hotspot.targetRoom || hotspot.targetEditorialRoom) {
+        button.addEventListener(
+          'mouseenter',
+          function () {
+            if (hotspot.targetRoom) {
+              preloadRoom(hotspot.targetRoom);
+            }
+          },
+          { once: true },
+        );
+      }
+
+      uiLayer.appendChild(button);
+    });
+  }
+
+  if (document.startViewTransition) {
+    document.startViewTransition(render);
+  } else {
+    render();
+  }
+}
+
+function openDialogFocus(panel, triggerEl) {
+  if (!panel) return;
+  panel._panelTrigger = triggerEl || null;
+  var closeBtn = panel.querySelector('.immersive-store__panel-close');
+  var firstFocusable =
+    closeBtn ||
+    panel.querySelector(
+      'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+  if (firstFocusable) {
+    requestAnimationFrame(function () {
+      firstFocusable.focus();
+    });
+  }
+  if (!panel._onEscapeKey) {
+    panel._onEscapeKey = function (e) {
+      if (e.key === 'Escape') closePanel(panel);
+    };
+    panel.addEventListener('keydown', panel._onEscapeKey);
+  }
+}
+
+function closeDialogFocus(panel, triggerEl) {
+  if (!panel) return;
+  if (panel._onEscapeKey) {
+    panel.removeEventListener('keydown', panel._onEscapeKey);
+    panel._onEscapeKey = null;
+  }
+  var target = triggerEl || panel._panelTrigger;
+  panel._panelTrigger = null;
+  if (target && typeof target.focus === 'function') {
+    requestAnimationFrame(function () {
+      target.focus();
+    });
+  }
+}
+
+function openPanel(panel, triggerEl) {
+  if (!panel) return null;
+  var closeBtn = panel.querySelector('.immersive-store__panel-close');
+  if (closeBtn && !closeBtn._clickBound) {
+    closeBtn._clickBound = true;
+    closeBtn.addEventListener('click', function () {
+      closePanel(panel);
+    });
+  }
+  panel.classList.remove('hidden');
+  panel.removeAttribute('hidden');
+  panel.setAttribute('data-open', 'true');
+  var enteringClass =
+    panel.id === 'glass-panel' ? 'immersive-store__panel--entering' : 'immersive-editorial-overlay--entering';
+  if (!reduceMotion) {
+    panel.classList.add(enteringClass);
+    setTimeout(function () {
+      panel.classList.remove(enteringClass);
+      openDialogFocus(panel, triggerEl);
+    }, 350);
+  } else {
+    openDialogFocus(panel, triggerEl);
+  }
+  return triggerEl;
+}
+
+function closePanel(panel) {
+  if (!panel) return;
+  panel.removeAttribute('data-open');
+  closeDialogFocus(panel, panel._panelTrigger);
+  panel._panelTrigger = null;
+  // Issue 5: Clear panel state from sessionStorage on close so a page
+  // refresh doesn't reopen the panel with potentially stale data.
+  if (typeof clearState === 'function') clearState();
+  setTimeout(function () {
+    panel.classList.add('hidden');
+    panel.setAttribute('hidden', '');
+  }, 400);
+}
+
+function setPanelRoomLabel(panel) {
+  var labelEl = panel && panel.querySelector('[data-panel-room-label]');
+  if (!labelEl) return;
+  var badge = document.getElementById('immersive-room-badge');
+  var roomName = badge ? badge.getAttribute('data-room-name-' + immersiveState.currentRoom) || '' : '';
+  labelEl.textContent = roomName;
+}
+
+function fetchWithCache(url) {
+  if (contentCache[url]) {
+    var idx = contentCacheOrder.indexOf(url);
+    if (idx > -1) contentCacheOrder.splice(idx, 1);
+    contentCacheOrder.push(url);
+    return Promise.resolve(contentCache[url]);
+  }
+  return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(function (response) {
+      if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
+      return response.text();
+    })
+    .then(function (html) {
+      if (contentCacheOrder.length >= MAX_CACHE_ENTRIES) {
+        var oldest = contentCacheOrder.shift();
+        delete contentCache[oldest];
+      }
+      contentCache[url] = html;
+      contentCacheOrder.push(url);
+      return html;
+    });
+}
+
+function fetchSectionHtml(path, sectionId, extraParams) {
+  var url = path;
+  var separator = url.indexOf('?') >= 0 ? '&' : '?';
+  url += separator + 'sections=' + encodeURIComponent(sectionId);
+
+  if (extraParams && typeof extraParams === 'object') {
+    Object.keys(extraParams).forEach(function (key) {
+      if (extraParams[key] != null) {
+        url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(extraParams[key]);
+      }
+    });
+  }
+
+  return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(function (response) {
+      if (!response.ok) return null;
+      return response.json();
+    })
+    .then(function (json) {
+      if (!json || typeof json !== 'object') return null;
+      var html = json[sectionId];
+      if (!html) return null;
+      return html;
+    })
+    .catch(function (err) {
+      // Section Rendering error - tracked silently
+      return null;
+    });
+}
+
+function recordBrowsingSignal(roomKey) {
+  if (!roomKey) return;
+  try {
+    var raw = localStorage.getItem('immersive_browsing_signals');
+    var signals = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(signals)) signals = [];
+    signals.push(roomKey);
+    if (signals.length > 50) signals = signals.slice(signals.length - 50);
+    localStorage.setItem('immersive_browsing_signals', JSON.stringify(signals));
+  } catch (e) {}
+}
+
+function trackRoomVisit(roomKey) {
+  if (_browsingContext && _browsingContext.visitedRooms.indexOf(roomKey) === -1) {
+    _browsingContext.visitedRooms.push(roomKey);
+  }
+  evaluateRoomRecommendation();
+}
+
+var _browsingContext = { visitedRooms: [], savedProducts: [], viewedCollections: [], cartCollections: [] };
+
+var BRIDAL_KEYWORDS = ['bridal', 'bride', 'wedding', 'mehndi', 'nikah', 'walima', 'barat'];
+var DESIGNER_HOUSE_COLLECTIONS = ['suffuse', 'soraya', 'saad-bin-shahzad'];
+
+function getRecommendation(context) {
+  var visited = context.visitedRooms || [];
+  var saved = context.savedProducts || [];
+  var cart = context.cartCollections || [];
+
+  var hasBridal = saved.concat(cart).some(function (h) {
+    return BRIDAL_KEYWORDS.some(function (kw) {
+      return h.indexOf(kw) !== -1;
+    });
+  });
+  if (hasBridal && visited.indexOf('occasions') === -1) {
+    return { roomKey: 'occasions', label: 'Occasions', reason: 'Based on your saves' };
+  }
+
+  var hasDesigner = saved.some(function (h) {
+    return DESIGNER_HOUSE_COLLECTIONS.some(function (d) {
+      return h.indexOf(d) !== -1;
+    });
+  });
+  if (hasDesigner && visited.indexOf('designer_houses') === -1) {
+    return { roomKey: 'designer_houses', label: 'Designer Houses', reason: 'Based on your saves' };
+  }
+
+  if (visited.indexOf('designer_houses') !== -1 && visited.indexOf('occasions') === -1) {
+    return { roomKey: 'occasions', label: 'Occasions', reason: 'Based on your browsing' };
+  }
+
+  if (visited.indexOf('occasions') !== -1 && visited.indexOf('featured_collections') === -1) {
+    return { roomKey: 'featured_collections', label: 'Featured Collections', reason: 'Based on your browsing' };
+  }
+
+  return { roomKey: 'lounge', label: 'Lounge', reason: 'Continue exploring' };
+}
+
+function evaluateRoomRecommendation() {
+  if (!_browsingContext.visitedRooms.length) return;
+  var rec = getRecommendation(_browsingContext);
+  if (!rec) return;
+  try {
+    if (sessionStorage.getItem('immersive_rec_dismissed_' + rec.roomKey)) return;
+  } catch (e) {}
+}
+
+function showRoomRecommendation(rec) {
+  var existing = document.querySelector('.immersive-rec-chip');
+  if (existing) existing.remove();
+}
+
+function performEditorialUIActivation(overlay, canvas) {
+  if (canvas && !reduceMotion) {
+    canvas.classList.add('editorial-blur');
+  }
+  overlay.removeAttribute('aria-hidden');
+  overlay.classList.add('is-active');
+  overlay.scrollTop = 0;
+
+  var backBtn = document.getElementById('immersive-editorial-back');
+  if (backBtn) {
+    if (!reduceMotion) {
+      overlay.classList.add('immersive-editorial-overlay--entering');
+      setTimeout(function () {
+        overlay.classList.remove('immersive-editorial-overlay--entering');
+        backBtn.focus();
+      }, 350);
+    } else {
+      requestAnimationFrame(function () {
+        backBtn.focus();
+      });
+    }
+    if (!backBtn._editorialBound) {
+      backBtn._editorialBound = true;
+      backBtn.addEventListener('click', exitEditorialMode);
+    }
+  }
+}
+
+function exitGuidedMode() {
+  if (!immersiveState || !immersiveState.guided) return;
+
+  immersiveState.guided = false;
+
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (prompt) {
+    prompt.style.display = 'none';
+    prompt.setAttribute('aria-hidden', 'true');
+  }
+
+  var progress = document.getElementById('immersive-guided-progress');
+  if (progress) {
+    progress.style.display = 'none';
+    progress.setAttribute('aria-hidden', 'true');
+  }
+
+  if (window.__immersiveGuidedTimeout) {
+    clearTimeout(window.__immersiveGuidedTimeout);
+    window.__immersiveGuidedTimeout = null;
+  }
+
+  try {
+    trackImmersiveEvent &&
+      trackImmersiveEvent('guided_mode_exited', {
+        room: immersiveState.currentRoom || null,
+      });
+  } catch (e) {}
+}
+
+function activateGuidedMode() {
+  if (!immersiveState) return;
+
+  immersiveState.guided = true;
+
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (prompt) {
+    prompt.style.display = 'block';
+    prompt.removeAttribute('aria-hidden');
+  }
+
+  var progress = document.getElementById('immersive-guided-progress');
+  if (progress) {
+    progress.style.display = 'flex';
+    progress.removeAttribute('aria-hidden');
+  }
+
+  var progressDots = progress ? progress.querySelectorAll('.immersive-guided-progress__dot') : [];
+  progressDots.forEach(function (dot, index) {
+    dot.classList.remove('is-active', 'is-done');
+    if (index === 0) dot.classList.add('is-active');
+  });
+
+  try {
+    trackImmersiveEvent &&
+      trackImmersiveEvent('guided_mode_entered', {
+        room: immersiveState.currentRoom || null,
+      });
+  } catch (e) {}
+}
+
+function updateCameraForMode() {
+  if (!camera) return;
+  var strength = isMobile ? 0.03 : 0.08;
+  if (uniforms && uniforms.uParallaxStrength) {
+    uniforms.uParallaxStrength.value = strength;
+  }
+}
+
+function updateBackToLoungeVisibility(roomKey) {
+  var btn = document.querySelector('[data-editorial-back-to-lounge]');
+  if (!btn) return;
+  btn.hidden = roomKey === 'lounge';
+}
+
+function readGalleryConfig() {
+  var root = document.querySelector('[data-immersive-webgl-gallery-config]');
+  if (!root) return [];
+
+  var items = root.querySelectorAll('[data-gallery-index]');
+  var result = [];
+
+  items.forEach(function (item) {
+    result.push({
+      roomKey: root.getAttribute('data-room-key') || null,
+      index: parseInt(item.getAttribute('data-gallery-index') || '0', 10),
+      title: item.getAttribute('data-gallery-title') || '',
+      subtitle: item.getAttribute('data-gallery-subtitle') || '',
+      productHandle: item.getAttribute('data-gallery-product-handle') || '',
+      collectionHandle: item.getAttribute('data-gallery-collection-handle') || '',
+    });
+  });
+
+  return result;
+}
+
+window.readGalleryConfig = readGalleryConfig;
+
+function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
+  var overlay = document.getElementById(overlayId);
+  var overlayContent = document.getElementById(overlayContentId);
+
+  if (!overlay || !overlayContent) return;
+
+  // Clear previous room content to prevent flash of old content when switching rooms
+  overlayContent.innerHTML = '';
+
+  if (!contentCache[fetchUrl]) {
+    overlayContent.innerHTML = '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
+  }
+
+  var performUIActivation = function () {
+    overlay.removeAttribute('aria-hidden');
+    overlay.classList.add('is-active');
+    overlay.scrollTop = 0;
+    if (typeof onOpenCallback === 'function') {
+      onOpenCallback(overlay, overlayContent);
+    }
+  };
+
+  if (document.startViewTransition) {
+    document.startViewTransition(performUIActivation);
+  } else {
+    performUIActivation();
+  }
+
+  fetchWithCache(fetchUrl)
+    .then(function (response) {
+      // Handle Section Rendering API JSON response
+      var html = response;
+      try {
+        var json = JSON.parse(response);
+        // Extract HTML from first section key if JSON
+        var sectionKeys = Object.keys(json);
+        if (sectionKeys.length > 0 && typeof json[sectionKeys[0]] === 'string') {
+          html = json[sectionKeys[0]];
+        }
+      } catch (e) {
+        // Not JSON, use response as-is (plain HTML)
+      }
+      var temp = document.createElement('div');
+      temp.innerHTML = html;
+      var images = temp.querySelectorAll('img:not([loading])');
+      for (var i = 0; i < images.length; i++) {
+        images[i].setAttribute('loading', 'lazy');
+      }
+      overlayContent.innerHTML = temp.innerHTML;
+
+      // Fix: Find the specific layout container and ensure it is visible inside the overlay
+      var editorialSection = overlayContent.querySelector('.immersive-editorial');
+      if (editorialSection) {
+        editorialSection.style.setProperty('display', 'block', 'important');
+      }
+
+      // Initialize editorial layout-specific JS
+      if (typeof initDesignersEditorial === 'function') initDesignersEditorial(overlayContent);
+      if (typeof initOccasionsEditorial === 'function') initOccasionsEditorial(overlayContent);
+      if (typeof initFeaturedCollectionsEditorial === 'function') initFeaturedCollectionsEditorial(overlayContent);
+      if (typeof initCoverflow === 'function') initCoverflow(overlayContent);
+      if (typeof initStacked === 'function') initStacked(overlayContent);
+      if (typeof initPerspective === 'function') initPerspective(overlayContent);
+
+      // Initialize quick view buttons on any product cards in the overlay
+      var cards = overlayContent.querySelectorAll('.immersive-product-card');
+      cards.forEach(function (card) {
+        initQuickViewButtons(card);
+      });
+    })
+    .catch(function (err) {
+      console.error('[Immersive] Overlay fetch failed:', err);
+      // Fallback: use the source section's innerHTML which is already in the DOM
+      var fallbackSection = document.querySelector('.immersive-editorial[data-room-key="' + (window.immersiveState && window.immersiveState.editorialRoom || '') + '"]');
+      if (fallbackSection) {
+        overlayContent.innerHTML = fallbackSection.innerHTML;
+        var editorialSection = overlayContent.querySelector('.immersive-editorial');
+        if (editorialSection) {
+          editorialSection.style.setProperty('display', 'block', 'important');
+        }
+        if (typeof initDesignersEditorial === 'function') initDesignersEditorial(overlayContent);
+        if (typeof initOccasionsEditorial === 'function') initOccasionsEditorial(overlayContent);
+        if (typeof initFeaturedCollectionsEditorial === 'function') initFeaturedCollectionsEditorial(overlayContent);
+      } else {
+        overlayContent.innerHTML =
+          '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;padding:2rem;text-align:center;">' +
+          '<p>The story is temporarily unavailable.</p>' +
+          '<p style="font-size:0.8rem;color:rgba(212,175,55,0.6);margin-top:1rem;">Please check your connection and try again.</p>' +
+          '</div>';
+      }
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Shared editorial data layer -- cross-room state for the immersive overlay
+// ---------------------------------------------------------------------------
+var editorialData = {
+  currentRoom: null,
+  previousRoom: null,
+  viewedProducts: [],      // product handles seen across rooms
+  viewedCollections: [],   // collection handles seen across rooms
+  navigationHistory: [],   // room keys visited in this editorial session
+  wishlistHandles: null,   // cache of wishlist handles (synced from global wishlistItems)
+
+  enterRoom: function(roomKey) {
+    if (this.currentRoom) {
+      this.previousRoom = this.currentRoom;
+    }
+    this.currentRoom = roomKey;
+    this.navigationHistory.push(roomKey);
+    this.refreshWishlist();
+  },
+
+  exitRoom: function() {
+    this.previousRoom = this.currentRoom;
+    this.currentRoom = null;
+  },
+
+  getViewedProducts: function() {
+    return this.viewedProducts.slice();
+  },
+
+  addViewedProduct: function(handle) {
+    if (handle && this.viewedProducts.indexOf(handle) === -1) {
+      this.viewedProducts.push(handle);
+    }
+  },
+
+  addViewedCollection: function(handle) {
+    if (handle && this.viewedCollections.indexOf(handle) === -1) {
+      this.viewedCollections.push(handle);
+    }
+  },
+
+  refreshWishlist: function() {
+    if (typeof wishlistItems !== 'undefined') {
+      this.wishlistHandles = wishlistItems.map(function(item) {
+        return typeof item === 'string' ? item : item.handle;
+      });
+    }
+  },
+
+  isInWishlist: function(productHandle) {
+    if (!this.wishlistHandles) this.refreshWishlist();
+    return this.wishlistHandles && this.wishlistHandles.indexOf(productHandle) !== -1;
+  },
+
+  getNavigationHistory: function() {
+    return this.navigationHistory.slice();
+  },
+
+  hasVisitedRoom: function(roomKey) {
+    return this.navigationHistory.indexOf(roomKey) !== -1;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Editorial layout initializers
+// ---------------------------------------------------------------------------
+
+function initDesignersEditorial(root) {
+  if (!root) return;
+  var designersEl = root.querySelector('.immersive-designers');
+  if (!designersEl) return;
+
+  var markers = designersEl.querySelectorAll('.immersive-designers__marker');
+  var heroStates = designersEl.querySelectorAll('.immersive-designers__hero-state');
+  var productsContainer = designersEl.querySelector('.immersive-designers__products');
+  if (!markers.length || !heroStates.length) return;
+
+  function switchDesigner(index) {
+    heroStates.forEach(function (state, i) {
+      state.classList.toggle('is-active', i === index);
+    });
+    markers.forEach(function (marker, i) {
+      marker.classList.toggle('is-active', i === index);
+    });
+  }
+
+  markers.forEach(function (marker) {
+    marker.addEventListener('click', function () {
+      var idx = parseInt(marker.getAttribute('data-index'), 10);
+      if (isNaN(idx)) return;
+      switchDesigner(idx);
+
+      // Load products for this designer's collection
+      var collectionHandle = marker.getAttribute('data-collection-handle');
+      if (collectionHandle && productsContainer) {
+        if (typeof editorialData !== 'undefined') {
+          editorialData.addViewedCollection(collectionHandle);
+        }
+        productsContainer.innerHTML = '<div class="immersive-editorial__loading">Loading...</div>';
+        var fetchUrl = shopRoot + 'collections/' + collectionHandle + '?sections=immersive-product-grid';
+        fetchWithCache(fetchUrl)
+          .then(function (html) {
+            if (html) {
+              productsContainer.innerHTML = html;
+              // Track viewed products
+              var productHandles = productsContainer.querySelectorAll('[data-product-handle]');
+              productHandles.forEach(function (el) {
+                if (typeof editorialData !== 'undefined') {
+                  editorialData.addViewedProduct(el.getAttribute('data-product-handle'));
+                }
+              });
+              // Init product card clicks within editorial
+              productHandles.forEach(function (card) {
+                card.addEventListener('click', function (e) {
+                  e.preventDefault();
+                  var handle = card.getAttribute('data-product-handle');
+                  if (handle) {
+                    if (typeof editorialData !== 'undefined') {
+                      editorialData.addViewedProduct(handle);
+                    }
+                    exitEditorialMode();
+                    setTimeout(function () {
+                      openProductPanel(handle, collectionHandle);
+                    }, 120);
+                  }
+                });
+              });
+            } else {
+              productsContainer.innerHTML = '<p class="immersive-editorial__empty">No products found.</p>';
+            }
+          })
+          .catch(function () {
+            productsContainer.innerHTML = '<p class="immersive-editorial__empty">Unable to load products.</p>';
+          });
+      }
+    });
+  });
+}
+
+function initOccasionsEditorial(root) {
+  if (!root) return;
+  // Occasions are primarily content-driven; collection links handled by overlay delegation
+  // Add any occasion-specific JS here (e.g., scroll-triggered chapter reveals)
+}
+
+function initFeaturedCollectionsEditorial(root) {
+  if (!root) return;
+  // Featured collection items use data-collection, handled by overlay delegation
+  // Add any codex-specific JS here (e.g., grid animation on scroll)
+}
+// All top-level `var` and `function` declarations are already on `window`,
+// but we expose these explicitly for clarity and robustness.
+// ---------------------------------------------------------------------------
+window.STORE_ROOMS = STORE_ROOMS;
+window.immersiveState = immersiveState;
+window.contentCache = contentCache;
+window.shopRoot = shopRoot;
+window.reduceMotion = reduceMotion;
+window.immersiveCanvasId = immersiveCanvasId;
+window.uiLayerId = uiLayerId;
+window.glassPanelId = glassPanelId;
+window.currentRoomKey = currentRoomKey;
+// ─────────────────────────────────────────────────────────────
+// Skeleton Loaders for Panel Content
+// ─────────────────────────────────────────────────────────────
+
+function renderSkeletonGrid(count) {
+  count = count || 6;
+  var cards = '';
+  for (var i = 0; i < count; i++) {
+    cards +=
+      '<div class="immersive-skeleton-card">' +
+      '<div class="immersive-skeleton-card__image"></div>' +
+      '<div class="immersive-skeleton-card__content">' +
+      '<div class="immersive-skeleton-card__line immersive-skeleton-card__line--short"></div>' +
+      '<div class="immersive-skeleton-card__line immersive-skeleton-card__line--medium"></div>' +
+      '<div class="immersive-skeleton-card__line immersive-skeleton-card__line--long"></div>' +
+      '</div>' +
+      '</div>';
+  }
+  return '<div class="immersive-skeleton-grid">' + cards + '</div>';
+}
+
+function renderSkeletonProduct() {
+  return (
+    '<div class="immersive-skeleton-product">' +
+    '<div class="immersive-skeleton-product__media"></div>' +
+    '<div class="immersive-skeleton-product__details">' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--title"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--price"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--description"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--description"></div>' +
+    '<div class="immersive-skeleton-product__line immersive-skeleton-product__line--description"></div>' +
+    '<div class="immersive-skeleton-product__cta"></div>' +
+    '</div>' +
+    '</div>'
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Content Transition Helpers
+// ─────────────────────────────────────────────────────────────
+
+function fadeInContent(container, html) {
+  if (!container) return;
+  if (reduceMotion) {
+    container.innerHTML = html;
+    return;
+  }
+  container.style.transition = 'opacity 150ms ease-in-out';
+  container.style.opacity = '0';
+  setTimeout(function () {
+    container.innerHTML = html;
+    container.style.opacity = '1';
+  }, 150);
+}
+
+function transitionPanelContent(panel, renderCallback) {
+  if (!panel) return;
+  if (document.startViewTransition) {
+    document.startViewTransition(renderCallback);
+  } else {
+    renderCallback();
+  }
+}
+
+function openProductPanel(productHandle, collectionHandle) {
+  exitGuidedMode();
+  recordBrowsingSignal(immersiveState.currentRoom);
+  saveState({ panel: 'product', product: productHandle, collection: collectionHandle || null });
+
+  var path = shopRoot + 'products/' + productHandle;
+  var extraParams = collectionHandle ? { collection_handle: collectionHandle } : null;
+  var panel = document.getElementById(glassPanelId);
+  if (!panel) return;
+
+  var triggerEl = document.activeElement;
+
+  if (window.__IMMERSIVE_DEV__) console.log('Fetching product:', productHandle, 'from collection:', collectionHandle);
+
+  // Open panel and show skeleton immediately
+  openPanel(panel, triggerEl);
+
+  var contentArea = panel.querySelector('.immersive-store__panel-content');
+  if (contentArea) {
+    contentArea.innerHTML = renderSkeletonProduct();
+    contentArea.style.opacity = '1';
+  }
+
+  // Fetch real content
+  fetchSectionHtml(path, 'glass-product', extraParams)
+    .then(function (html) {
+      if (!html) {
+        var errMsg = panel.getAttribute('data-msg-load-product-error') || 'Unable to load product. Please try again.';
+        showErrorFeedback(panel, errMsg);
+        closePanel(panel);
+        return;
+      }
+
+      function render() {
+        if (contentArea) {
+          fadeInContent(contentArea, html);
+        } else {
+          panel.innerHTML = html;
+        }
+
+        // Panel-specific setup
+        setPanelRoomLabel(panel);
+        setupVariantButtons(panel);
+        setupBuyNowForm(panel);
+        setupMediaThumbs(panel);
+        setupImageParallax(panel);
+        setupShareButton(panel);
+        setupDeliveryDates(panel);
+        setupVirtualTryOn(panel);
+        loadProductRecommendations(panel);
+        cacheWishlistProduct(productHandle, panel);
+        syncAllWishlistToggles(panel);
+
+        trackImmersiveEvent('panel_opened', {
+          panel_type: 'product',
+          product_handle: productHandle,
+          collection_handle: collectionHandle || null,
+        });
+
+        // Panel click handler
+        panel.onclick = function (event) {
+          if (event.target === panel) {
+            closePanel(panel);
+            return;
+          }
+          if (event.target.closest('.immersive-store__panel-close')) {
+            closePanel(panel);
+            return;
+          }
+
+          // Back button (PDP -> Collection)
+          var backButton = event.target.closest('.glass-product-section__back');
+          if (backButton) {
+            var backHandle = backButton.getAttribute('data-collection-handle');
+            if (backHandle) {
+              event.preventDefault();
+              openCollectionPanel(backHandle);
+            }
+            return;
+          }
+
+          // Breadcrumb navigation -- <a href> links with progressive enhancement.
+          // preventDefault() stops the browser navigation so we can do smooth
+          // in-scene transitions. The href still works without JS (Dawn pattern).
+          var breadcrumbBtn = event.target.closest('[data-breadcrumb-action]');
+          if (breadcrumbBtn) {
+            event.preventDefault();
+            var action = breadcrumbBtn.getAttribute('data-breadcrumb-action');
+            if (action === 'go-home') {
+              closePanel(panel);
+              if (typeof goToRoom === 'function') goToRoom('storefront');
+            } else if (action === 'close-panel') {
+              closePanel(panel);
+            } else if (action === 'open-collection') {
+              var colHandle = breadcrumbBtn.getAttribute('data-collection-handle');
+              if (colHandle) openCollectionPanel(colHandle);
+            }
+            return;
+          }
+
+          // Vendor name → open vendor collection panel
+          var vendorBtn = event.target.closest('[data-vendor-collection]');
+          if (vendorBtn) {
+            var vendorHandle = vendorBtn.getAttribute('data-vendor-collection');
+            if (vendorHandle) openCollectionPanel(vendorHandle);
+            return;
+          }
+
+          // Prev/next product navigation
+          var navBtn = event.target.closest('.glass-product-section__product-nav-btn[data-product-handle]');
+          if (navBtn) {
+            var navHandle = navBtn.getAttribute('data-product-handle');
+            var navColHandle = navBtn.getAttribute('data-collection-handle');
+            if (navHandle) openProductPanel(navHandle, navColHandle || collectionHandle);
+            return;
+          }
+
+          // Related product click
+          var relatedItem = event.target.closest('.glass-product-section__related-item');
+          if (relatedItem) {
+            var relatedHandle = relatedItem.getAttribute('data-product-handle');
+            if (relatedHandle) {
+              event.preventDefault();
+              openProductPanel(relatedHandle, collectionHandle);
+            }
+            return;
+          }
+
+          // Any product link
+          var productLink = event.target.closest('a[data-product-handle]');
+          if (productLink) {
+            var linkHandle = productLink.getAttribute('data-product-handle');
+            if (linkHandle) {
+              event.preventDefault();
+              openProductPanel(linkHandle, collectionHandle);
+            }
+            return;
+          }
+
+          // Recommendation card links
+          var recLink = event.target.closest('[data-related-root] a[href*="/products/"]');
+          if (recLink) {
+            var href = recLink.getAttribute('href') || '';
+            var match = href.match(/\/products\/([^/?#]+)/);
+            if (match) {
+              event.preventDefault();
+              openProductPanel(match[1], collectionHandle);
+            }
+            return;
+          }
+        };
+      }
+
+      transitionPanelContent(panel, render);
+    })
+    .catch(function (error) {
+      console.error('[Immersive] Panel fetch failed:', error);
+      var errMsg =
+        panel.getAttribute('data-msg-load-product-error') || 'Unable to load product. Please check your connection.';
+      showErrorFeedback(panel, errMsg);
+      closePanel(panel);
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Browsing signals — personalized room suggestions (Feature 6)
+// ─────────────────────────────────────────────────────────────
+function openCollectionPanel(collectionHandle) {
+  exitGuidedMode();
+  recordBrowsingSignal(immersiveState.currentRoom);
+  saveState({ panel: 'collection', collection: collectionHandle, product: null });
+
+  var path = shopRoot + 'collections/' + collectionHandle;
+  var panel = document.getElementById(glassPanelId);
+  if (!panel) return;
+
+  var triggerEl = document.activeElement;
+
+  if (window.__IMMERSIVE_DEV__) {
+    if (window.__IMMERSIVE_DEV__) console.log('Fetching collection:', collectionHandle);
+  }
+
+  // Open panel and show skeleton immediately
+  openPanel(panel, triggerEl);
+
+  var contentArea = panel.querySelector('.immersive-store__panel-content');
+  if (contentArea) {
+    contentArea.innerHTML = renderSkeletonGrid(6);
+    contentArea.style.opacity = '1';
+  }
+
+  // Fetch real content
+  fetchSectionHtml(path, 'glass-panel', null)
+    .then(function (html) {
+      if (!html) {
+        var errMsg = panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please try again.';
+        showErrorFeedback(panel, errMsg);
+        closePanel(panel);
+        return;
+      }
+
+      function render() {
+        if (contentArea) {
+          fadeInContent(contentArea, html);
+        } else {
+          panel.innerHTML = html;
+        }
+
+        // Panel-specific setup
+        setPanelRoomLabel(panel);
+        setupVariantButtons(panel);
+        setupBuyNowForm(panel);
+        setupImageParallax(panel);
+        setupVirtualTryOn(panel);
+        syncAllWishlistToggles(panel);
+
+        trackImmersiveEvent('panel_opened', {
+          panel_type: 'collection',
+          collection_handle: collectionHandle,
+        });
+
+        // Init filters after collection content loads
+        var gridWrapper = panel.querySelector('.immersive-product-grid-wrapper');
+        if (gridWrapper) {
+          var collHandle = gridWrapper.closest('[data-collection-handle]')
+            ? gridWrapper.closest('[data-collection-handle]').getAttribute('data-collection-handle')
+            : collectionHandle;
+          var currentRoomForFilters = (typeof immersiveState !== 'undefined' && immersiveState.currentRoom) || 'lounge';
+          initImmersiveFilters(panel, collHandle || collectionHandle, currentRoomForFilters, 'glass-panel');
+        }
+
+        // Panel click handler
+        panel.onclick = function (event) {
+          if (event.target === panel) {
+            closePanel(panel);
+            return;
+          }
+          if (event.target.closest('.immersive-store__panel-close')) {
+            closePanel(panel);
+            return;
+          }
+
+          // Breadcrumb navigation -- <a href> with progressive enhancement.
+          var breadcrumbBtn = event.target.closest('[data-breadcrumb-action]');
+          if (breadcrumbBtn) {
+            event.preventDefault();
+            var bAction = breadcrumbBtn.getAttribute('data-breadcrumb-action');
+            if (bAction === 'go-home') {
+              closePanel(panel);
+              if (typeof goToRoom === 'function') goToRoom('storefront');
+            } else if (bAction === 'close-panel') {
+              closePanel(panel);
+            } else if (bAction === 'open-collection') {
+              var colHandle = breadcrumbBtn.getAttribute('data-collection-handle');
+              if (colHandle) openCollectionPanel(colHandle);
+            }
+            return;
+          }
+
+          // Empty state action handling
+          var emptyAction = event.target.closest('[data-empty-action]');
+          if (emptyAction) {
+            var action = emptyAction.getAttribute('data-empty-action');
+            if (action) {
+              handleEmptyStateAction(action);
+            }
+            return;
+          }
+
+          // Product card click — intercept clicks on the article OR any child
+          // element with data-product-handle (e.g. inner <a> links).
+          // event.preventDefault() is called IMMEDIATELY before any other logic
+          // so browser navigation on <a href> elements is cancelled synchronously.
+          var cardOrLink = event.target.closest('.immersive-product-card, [data-product-handle]');
+          if (cardOrLink) {
+            event.preventDefault();
+            var handle = cardOrLink.getAttribute('data-product-handle');
+            if (!handle) {
+              var parentCard = cardOrLink.closest('.immersive-product-card');
+              handle = parentCard && parentCard.getAttribute('data-product-handle');
+            }
+            if (handle) {
+              openProductPanel(handle, collectionHandle);
+            }
+            return;
+          }
+        };
+      }
+
+      transitionPanelContent(panel, render);
+    })
+    .catch(function (error) {
+      console.error('[Immersive] Panel fetch failed:', error);
+      var errMsg = panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please check your connection.';
+      showErrorFeedback(panel, errMsg);
+      closePanel(panel);
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Editorial overlay entry point (single, canonical implementation)
+// ─────────────────────────────────────────────────────────────
+function enterEditorialMode(roomKey, triggerEl) {
+  if (window.__IMMERSIVE_DEV__) console.log('[Immersive] enterEditorialMode called with roomKey:', roomKey, 'triggerEl:', triggerEl);
+  immersiveState.mode = 'editorial';
+  immersiveState.editorialRoom = roomKey;
+  immersiveState.lastHotspot = triggerEl || null;
+
+  // Track in shared editorial data layer
+  if (typeof editorialData !== 'undefined') {
+    editorialData.enterRoom(roomKey);
+  }
+
+  // Reset scroll-linked state
+  editorialScrollProgress = 0;
+  if (uniforms && uniforms.uScrollOffset) {
+    uniforms.uScrollOffset.value = 0;
+    uniforms.uScrollVignette.value = 0;
+    uniforms.uScrollChroma.value = 0;
+    uniforms.uAtmosphericMood.value = 0;
+  }
+  cacheEditorialOverlay();
+  updateCameraForMode();
+
+  try {
+    trackImmersiveEvent && trackImmersiveEvent('editorial_entered', { room: roomKey });
+  } catch (e) {}
+
+  var overlay = document.getElementById('immersive-editorial-overlay');
+  var overlayContent = document.getElementById('immersive-editorial-overlay-content');
+  var canvas = document.getElementById(immersiveCanvasId);
+
+  if (!overlay || !overlayContent) {
+    console.warn('[Immersive] Editorial overlay not found');
+    return;
+  }
+
+  // Get section instance ID
+  var sourceSection = document.querySelector('.immersive-editorial[data-room-key="' + roomKey + '"]');
+  var sectionInstanceId = sourceSection && sourceSection.getAttribute('data-section-id');
+
+  if (!sectionInstanceId) {
+    console.warn('[Immersive] No immersive-editorial section instance found on page for room:', roomKey);
+    if (sourceSection) {
+      overlayContent.innerHTML = sourceSection.innerHTML;
+      performEditorialUIActivation(overlay, canvas);
+    }
+    return;
+  }
+
+  var fetchUrl = window.location.pathname + '?sections=' + encodeURIComponent(sectionInstanceId);
+  if (window.__IMMERSIVE_DEV__) console.log('[Immersive] Editorial fetch URL:', fetchUrl, 'roomKey:', roomKey, 'sectionInstanceId:', sectionInstanceId);
+
+  // Open overlay with callback for post-content setup
+  openOverlay(
+    'immersive-editorial-overlay',
+    'immersive-editorial-overlay-content',
+    fetchUrl,
+    function (overlay, overlayContent) {
+      performEditorialUIActivation(overlay, canvas);
+
+      if (window.ImmersiveEditorial && window.ImmersiveEditorial.init) {
+        window.ImmersiveEditorial.init(overlayContent);
+      }
+
+      if (window.ImmersiveCarousel && window.ImmersiveCarousel.init) {
+        window.ImmersiveCarousel.init(overlayContent);
+      }
+
+      if (window.CodexCollectionsGrid && window.CodexCollectionsGrid.init) {
+        window.CodexCollectionsGrid.init(overlayContent);
+      }
+
+      // Back to Lounge visibility + hero parallax
+      updateBackToLoungeVisibility(roomKey);
+      initEditorialHeroParallax();
+
+      // Setup escape handler
+      if (!overlay._onEscape) {
+        overlay._onEscape = function (e) {
+          if (e.key === 'Escape') exitEditorialMode();
+        };
+        overlay.addEventListener('keydown', overlay._onEscape);
+      }
+
+      // Setup collection click delegation
+      if (!overlay._onClick) {
+        overlay._onClick = function (e) {
+          // Catch-all: prevent any <a> with href inside editorial overlay from navigating to 2D store
+          var linkEl = e.target.closest('a[href]');
+          if (linkEl && linkEl.closest('.immersive-editorial')) {
+            // If it has a collection or product handle, handle it properly below
+            var hasHandle = linkEl.hasAttribute('data-collection')
+              || linkEl.hasAttribute('data-collection-handle')
+              || linkEl.hasAttribute('data-product-handle');
+            if (!hasHandle && !linkEl.getAttribute('href')?.startsWith('#')) {
+              // External link (e.g. /pages/privacy-policy) -- allow it in a new tab
+              if (linkEl.getAttribute('href')?.startsWith('http')) {
+                linkEl.setAttribute('target', '_blank');
+                linkEl.setAttribute('rel', 'noopener');
+                return; // let it open in new tab
+              }
+              // Internal link without data handler -- prevent navigation
+              e.preventDefault();
+              return;
+            }
+          }
+
+          var productLink = e.target.closest('[data-product-handle]');
+          if (productLink) {
+            var productHandle = productLink.getAttribute('data-product-handle');
+            var productCollectionHandle = productLink.getAttribute('data-collection-handle');
+            if (!productCollectionHandle) {
+              var productCollectionRoot = productLink.closest('[data-collection-handle]');
+              productCollectionHandle =
+                productCollectionRoot && productCollectionRoot.getAttribute('data-collection-handle');
+            }
+            if (productHandle) {
+              e.preventDefault();
+              if (typeof editorialData !== 'undefined') {
+                editorialData.addViewedProduct(productHandle);
+                if (productCollectionHandle) editorialData.addViewedCollection(productCollectionHandle);
+              }
+              openProductPanel(productHandle, productCollectionHandle || null);
+              return;
+            }
+          }
+          var studyTrigger = e.target.closest('[data-artifact-open]');
+          if (studyTrigger && studyTrigger.closest('.immersive-editorial')) {
+            var hasCollectionRoute =
+              studyTrigger.hasAttribute('data-collection') ||
+              studyTrigger.hasAttribute('data-collection-handle');
+            if (!hasCollectionRoute) {
+              e.preventDefault();
+              return;
+            }
+          }
+          var card = e.target.closest('[data-collection], [data-collection-handle]');
+          if (!card) return;
+          var handle = card.getAttribute('data-collection') || card.getAttribute('data-collection-handle');
+          if (!handle) return;
+          e.preventDefault();
+          if (typeof editorialData !== 'undefined') {
+            editorialData.addViewedCollection(handle);
+          }
+          exitEditorialMode();
+          setTimeout(function () {
+            openCollectionPanel(handle);
+          }, 120);
+        };
+        overlay.addEventListener('click', overlay._onClick);
+      }
+    },
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Helper: Perform editorial overlay UI activation
+// ─────────────────────────────────────────────────────────────
+function performEditorialUIActivation(overlay, canvas) {
+  document.documentElement.classList.add('immersive-overlay-open');
+  document.body.classList.add('immersive-overlay-open');
+
+  if (canvas && !reduceMotion) {
+    canvas.classList.add('editorial-blur');
+  }
+  overlay.removeAttribute('aria-hidden');
+  overlay.classList.add('is-active');
+  overlay.scrollTop = 0;
+
+  var backBtn = document.getElementById('immersive-editorial-back');
+  if (backBtn) {
+    if (!reduceMotion) {
+      overlay.classList.add('immersive-editorial-overlay--entering');
+      setTimeout(function () {
+        overlay.classList.remove('immersive-editorial-overlay--entering');
+        backBtn.focus();
+      }, 350);
+    } else {
+      requestAnimationFrame(function () {
+        backBtn.focus();
+      });
+    }
+    if (!backBtn._editorialBound) {
+      backBtn._editorialBound = true;
+      backBtn.addEventListener('click', exitEditorialMode);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Editorial overlay exit point (paired with enterEditorialMode)
+// ─────────────────────────────────────────────────────────────
+function exitEditorialMode() {
+  destroyEditorialHeroParallax();
+  var overlay = document.getElementById('immersive-editorial-overlay');
+  var canvas = document.getElementById(immersiveCanvasId);
+  var triggerEl = immersiveState.lastHotspot;
+
+  var performUIDeactivation = function () {
+    document.documentElement.classList.remove('immersive-overlay-open');
+    document.body.classList.remove('immersive-overlay-open');
+
+    if (overlay) {
+      overlay.classList.remove('is-active');
+      overlay.setAttribute('aria-hidden', 'true');
+      if (overlay._onEscape) {
+        overlay.removeEventListener('keydown', overlay._onEscape);
+        overlay._onEscape = null;
+      }
+      if (overlay._onClick) {
+        overlay.removeEventListener('click', overlay._onClick);
+        overlay._onClick = null;
+      }
+    }
+
+    if (canvas) {
+      canvas.classList.remove('editorial-blur');
+    }
+
+    immersiveState.mode = 'showroom';
+    immersiveState.editorialRoom = null;
+    editorialOverlayEl = null;
+    editorialMaxScroll = 0;
+    updateCameraForMode();
+
+    if (triggerEl) {
+      requestAnimationFrame(function () {
+        triggerEl.focus();
+      });
+    }
+  };
+
+  if (document.startViewTransition && triggerEl) {
+    // Clear any existing transition names first to avoid "duplicate" errors
+    overlay.style.viewTransitionName = '';
+    triggerEl.style.viewTransitionName = '';
+    // Force reflow so the clear takes effect before we set the new name
+    void overlay.offsetHeight;
+    overlay.style.viewTransitionName = 'editorial-morph';
+    triggerEl.style.viewTransitionName = 'editorial-morph';
+
+    try {
+      var transition = document.startViewTransition(performUIDeactivation);
+      transition.finished.finally(function () {
+        overlay.style.viewTransitionName = '';
+        triggerEl.style.viewTransitionName = '';
+        immersiveState.lastHotspot = null;
+      });
+    } catch (e) {
+      // If view transition fails (e.g., invalid state), fall back to direct deactivation
+      performUIDeactivation();
+      immersiveState.lastHotspot = null;
+    }
+  } else {
+    performUIDeactivation();
+    immersiveState.lastHotspot = null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Close generic overlay (story rail, typo index) — does NOT
+// touch immersiveState.mode unlike exitEditorialMode().
+// Follows Dawn's CartNotification.close() pattern: remove
+// overlay, restore focus, clean up listeners.
+// ─────────────────────────────────────────────────────────────
+function closeGenericOverlay() {
+  var overlay = document.getElementById('immersive-editorial-overlay');
+  var canvas = document.getElementById(immersiveCanvasId);
+
+  if (overlay) {
+    overlay.classList.remove('is-active');
+    overlay.setAttribute('aria-hidden', 'true');
+    if (overlay._onEscape) {
+      overlay.removeEventListener('keydown', overlay._onEscape);
+      overlay._onEscape = null;
+    }
+    if (overlay._onClick) {
+      overlay.removeEventListener('click', overlay._onClick);
+      overlay._onClick = null;
+    }
+    // Unbind the back button's overlay-specific handler
+    var backBtn = document.getElementById('immersive-editorial-back');
+    if (backBtn && backBtn._overlayBound) {
+      backBtn.removeEventListener('click', closeGenericOverlay);
+      backBtn._overlayBound = false;
+    }
+    if (canvas) {
+      canvas.classList.remove('editorial-blur');
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Generic overlay for non-editorial sections (story rail, typo index)
+// ─────────────────────────────────────────────────────────────
+function openImmersiveOverlay(sectionType, title) {
+  var overlay = document.getElementById('immersive-editorial-overlay');
+  var overlayContent = document.getElementById('immersive-editorial-overlay-content');
+  var canvas = document.getElementById(immersiveCanvasId);
+
+  if (!overlay || !overlayContent) return;
+
+  // Clean up previous overlay instances before injecting new content
+  if (window.ImmersiveStoryRail && window.ImmersiveStoryRail.destroy) {
+    window.ImmersiveStoryRail.destroy();
+  }
+  if (window.CodexTypoIndex && window.CodexTypoIndex.destroy) {
+    window.CodexTypoIndex.destroy();
+  }
+
+  var sectionEl = document.querySelector('[data-section-type="' + sectionType + '"]');
+  if (!sectionEl) return;
+
+  overlayContent.innerHTML = '';
+  var clone = sectionEl.cloneNode(true);
+  clone.removeAttribute('hidden');
+  clone.style.display = '';
+  overlayContent.appendChild(clone);
+
+  if (window.ImmersiveStoryRail && window.ImmersiveStoryRail.init) {
+    window.ImmersiveStoryRail.init(overlayContent);
+  }
+
+  if (window.CodexTypoIndex && window.CodexTypoIndex.init) {
+    window.CodexTypoIndex.init(overlayContent);
+  }
+
+  activateGenericOverlay(overlay, canvas, title);
+}
+
+function activateGenericOverlay(overlay, canvas, title) {
+  if (canvas && !reduceMotion) {
+    canvas.classList.add('editorial-blur');
+  }
+  overlay.removeAttribute('aria-hidden');
+  overlay.classList.add('is-active');
+  overlay.scrollTop = 0;
+
+  var backBtn = document.getElementById('immersive-editorial-back');
+  if (backBtn) {
+    if (!reduceMotion) {
+      overlay.classList.add('immersive-editorial-overlay--entering');
+      setTimeout(function () {
+        overlay.classList.remove('immersive-editorial-overlay--entering');
+        backBtn.focus();
+      }, 350);
+    } else {
+      requestAnimationFrame(function () {
+        backBtn.focus();
+      });
+    }
+    if (!backBtn._overlayBound) {
+      backBtn._overlayBound = true;
+      backBtn.addEventListener('click', closeGenericOverlay);
+    }
+  }
+
+  if (!overlay._onEscape) {
+    overlay._onEscape = function (e) {
+      if (e.key === 'Escape') closeGenericOverlay();
+    };
+    overlay.addEventListener('keydown', overlay._onEscape);
+  }
+}
+
+// Global trigger delegation for [data-immersive-overlay]
+(function () {
+  var _overlayBound = false;
+  function bindOverlayTriggers() {
+    if (_overlayBound) return;
+    _overlayBound = true;
+
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest('[data-immersive-overlay]');
+      if (!trigger) return;
+
+      var sectionType = trigger.getAttribute('data-immersive-overlay');
+      var title = trigger.getAttribute('data-overlay-title') || '';
+      if (!sectionType) return;
+
+      e.preventDefault();
+      openImmersiveOverlay(sectionType, title);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', bindOverlayTriggers);
+  if (typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
+    document.addEventListener('shopify:section:load', bindOverlayTriggers);
+  }
+})();
+
+function setupVariantButtons(panel) {
+  var buttons = panel.querySelectorAll('.immersive-variant-button, .glass-product-section__variant-button');
+  var hiddenInput = panel.querySelector('.immersive-variant-input, .glass-product-section__variant-input');
+
+  if (buttons.length === 0) return;
+
+  buttons.forEach(function (button, index) {
+    button.addEventListener('click', function () {
+      if (button.disabled) return;
+
+      // Remove active state from all buttons
+      buttons.forEach(function (btn) {
+        btn.classList.remove('active');
+      });
+
+      // Add active state to clicked button
+      button.classList.add('active');
+
+      // Update hidden input
+      var variantId = button.getAttribute('data-variant-id');
+      if (hiddenInput && variantId) {
+        hiddenInput.value = variantId;
+      }
+    });
+
+    // Add keyboard navigation
+    button.addEventListener('keydown', function (event) {
+      if (button.disabled) return;
+
+      // Enter or Space to activate
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        button.click();
+      }
+
+      // Arrow key navigation
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        var nextIndex = index + 1;
+        while (nextIndex < buttons.length) {
+          if (!buttons[nextIndex].disabled) {
+            buttons[nextIndex].focus();
+            break;
+          }
+          nextIndex++;
+        }
+      }
+
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        var prevIndex = index - 1;
+        while (prevIndex >= 0) {
+          if (!buttons[prevIndex].disabled) {
+            buttons[prevIndex].focus();
+            break;
+          }
+          prevIndex--;
+        }
+      }
+    });
+  });
+
+  // Set first available variant as active
+  var firstAvailable = panel.querySelector(
+    '.immersive-variant-button:not([disabled]), .glass-product-section__variant-button:not([disabled])',
+  );
+  if (firstAvailable) {
+    firstAvailable.click();
+  }
+}
+
+function setupBuyNowForm(panel) {
+  var forms = panel.querySelectorAll('form[data-product-form], .glass-product-section__form');
+  var container = panel.querySelector('.glass-product-section');
+  var msgSelectVariant = (container && container.getAttribute('data-error-select-variant')) || 'Please select a size';
+  var msgAddToCart =
+    (container && container.getAttribute('data-error-add-to-cart')) || 'Unable to add to cart. Please try again.';
+
+  forms.forEach(function (form) {
+    // Track which submit button was clicked so we can distinguish
+    // add-to-cart (name="add") from payment_button accelerated checkout buttons
+    var lastClickedSubmit = null;
+    form.addEventListener(
+      'click',
+      function (e) {
+        var btn = e.target.closest('[type="submit"], button[name]');
+        if (btn) lastClickedSubmit = btn;
+      },
+      true,
+    );
+
+    form.addEventListener('submit', function (event) {
+      // If the clicked button is NOT the add-to-cart button (e.g. it's a
+      // payment_button / Buy Now), let Shopify handle it natively
+      var isAddToCart =
+        !lastClickedSubmit ||
+        lastClickedSubmit.getAttribute('name') === 'add' ||
+        lastClickedSubmit.classList.contains('glass-product-section__add-to-cart');
+
+      if (!isAddToCart) {
+        // Let the native form submit proceed for accelerated checkout buttons
+        lastClickedSubmit = null;
+        return;
+      }
+
+      event.preventDefault();
+      lastClickedSubmit = null;
+
+      // Validate variant selection
+      var variantInput = form.querySelector(
+        '.immersive-variant-input, .glass-product-section__variant-input, input[name="id"]',
+      );
+      if (!variantInput || !variantInput.value) {
+        showErrorFeedback(panel, msgSelectVariant);
+        return;
+      }
+
+      var formData = new FormData(form);
+      // Ensure sections param is set for cart drawer to update correctly
+      formData.set('sections', 'cart-drawer,cart-icon-bubble');
+      formData.set('sections_url', window.location.pathname);
+
+      fetch(shopRoot + 'cart/add.js', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData,
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            return response.json().then(function (error) {
+              throw new Error(error.description || msgAddToCart);
+            });
+          }
+          return response.json();
+        })
+        .then(function () {
+          showCartFeedback(panel);
+
+          try {
+            var productHandleEl = panel.querySelector('[data-product-handle]');
+            var productHandle = productHandleEl ? productHandleEl.getAttribute('data-product-handle') : null;
+            trackImmersiveEvent('add_to_cart_checkout', { product_handle: productHandle });
+          } catch (e) {}
+
+          // Show next actions after add-to-cart
+          try {
+            var productCtx = panel.querySelector('[data-product-handle]');
+            var productHandleForNext = productCtx ? productCtx.getAttribute('data-product-handle') : null;
+            var vendorEl = panel.querySelector('[data-product-vendor]');
+            var vendorForNext = vendorEl ? vendorEl.getAttribute('data-product-vendor') : null;
+            if (typeof showAfterAddToCart === 'function' && productHandleForNext) {
+              showAfterAddToCart({
+                handle: productHandleForNext,
+                vendor: vendorForNext || '',
+                collectionHandle: null,
+                roomKey: (immersiveState && immersiveState.currentRoom) || 'lounge',
+              });
+            }
+          } catch (e) {}
+
+          // Open Dawn's cart drawer if available, otherwise navigate to cart
+          var cartDrawer = document.querySelector('cart-drawer');
+          if (cartDrawer && typeof cartDrawer.open === 'function') {
+            // Refresh cart drawer contents then open it
+            fetch(shopRoot + '?section_id=cart-drawer', {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+              .then(function (r) {
+                return r.text();
+              })
+              .then(function (html) {
+                var temp = document.createElement('div');
+                temp.innerHTML = html;
+                var newDrawer = temp.querySelector('cart-drawer');
+                if (newDrawer) {
+                  cartDrawer.innerHTML = newDrawer.innerHTML;
+                }
+                cartDrawer.open();
+              })
+              .catch(function () {
+                cartDrawer.open();
+              });
+          } else {
+            window.location.href = shopRoot + 'cart';
+          }
+
+          // Sync FAB cart badge using Dawn's section rendering pattern
+          fetch(shopRoot + '?section_id=cart-icon-bubble', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          })
+            .then(function (r) {
+              return r.text();
+            })
+            .then(function (html) {
+              var temp = document.createElement('div');
+              temp.innerHTML = html;
+              var newBubble = temp.querySelector('.cart-count-bubble');
+              var fabBadge = document.querySelector('[data-bottom-nav-cart-badge]');
+              if (fabBadge && newBubble) {
+                var countSpan = newBubble.querySelector('[aria-hidden]');
+                var count = countSpan ? parseInt(countSpan.textContent, 10) : 0;
+                fabBadge.textContent = count;
+                fabBadge.hidden = count === 0;
+              }
+            })
+            .catch(function () {});
+
+          // Publish cart-update event so Dawn's own CartItems can react
+          if (typeof publish === 'function') {
+            publish('cart-update', { source: 'immersive-store' });
+          }
+        })
+        .catch(function (error) {
+          console.error('Error adding to cart:', error);
+          showErrorFeedback(panel, error.message || msgAddToCart);
+        });
+    });
+  });
+}
+
+function setupMediaThumbs(panel) {
+  var mainContainer = panel.querySelector('[data-parallax-main]');
+  if (!mainContainer) return;
+
+  var thumbs = panel.querySelectorAll('.glass-product-section__thumb');
+  if (!thumbs.length) return;
+
+  thumbs.forEach(function (thumb) {
+    thumb.addEventListener('click', function () {
+      var idx = parseInt(thumb.getAttribute('data-media-index'), 10);
+
+      // Use the high-res data attributes for the main image
+      var fullSrc = thumb.getAttribute('data-full-src');
+      var fullSrcset = thumb.getAttribute('data-full-srcset') || '';
+      var fullAlt = thumb.getAttribute('data-full-alt') || '';
+
+      // Swap the main image src
+      var mainImg = mainContainer.querySelector('[data-parallax-image]');
+      if (mainImg && fullSrc) {
+        mainImg.setAttribute('src', fullSrc);
+        if (fullSrcset) mainImg.setAttribute('srcset', fullSrcset);
+        mainImg.setAttribute('alt', fullAlt);
+
+        // Reset parallax transform
+        mainImg.style.transform = 'scale(1.06) translate(0px, 0px)';
+      }
+
+      // Active state on thumbs
+      thumbs.forEach(function (t) {
+        t.classList.remove('is-active');
+      });
+      thumb.classList.add('is-active');
+    });
+  });
+}
+
+function setupImageParallax(panel) {
+  // Delegate to the global data-attribute-driven implementation
+  // which is called once on init and re-called after panel content loads
+  var root = panel || document;
+  var containers = root.querySelectorAll('[data-parallax-container]');
+  if (!containers.length || reduceMotion) return;
+
+  containers.forEach(function (container) {
+    if (container._parallaxBound) return; // avoid double-binding
+    container._parallaxBound = true;
+
+    var images = container.querySelectorAll('[data-parallax-image]');
+    if (!images.length) return;
+
+    var intensity = parseFloat(container.getAttribute('data-parallax-intensity') || '12');
+    var rafPending = false;
+    var lastX = 0;
+    var lastY = 0;
+
+    function applyParallax(x, y) {
+      var rect = container.getBoundingClientRect();
+      var cx = Math.max(-1, Math.min(1, ((x - rect.left) / rect.width - 0.5) * 2));
+      var cy = Math.max(-1, Math.min(1, ((y - rect.top) / rect.height - 0.5) * 2));
+      images.forEach(function (img) {
+        img.style.transform = 'scale(1.06) translate(' + cx * intensity + 'px, ' + cy * intensity + 'px)';
+      });
+    }
+
+    function resetParallax() {
+      images.forEach(function (img) {
+        img.style.transform = 'scale(1.06) translate(0px, 0px)';
+      });
+    }
+
+    container.addEventListener('mousemove', function (e) {
+      lastX = e.clientX;
+      lastY = e.clientY;
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(function () {
+        applyParallax(lastX, lastY);
+        rafPending = false;
+      });
+    });
+    container.addEventListener('mouseleave', function () {
+      rafPending = false;
+      resetParallax();
+    });
+    container.addEventListener(
+      'touchmove',
+      function (e) {
+        var t = e.touches[0];
+        lastX = t.clientX;
+        lastY = t.clientY;
+        if (rafPending) return;
+        rafPending = true;
+        requestAnimationFrame(function () {
+          applyParallax(lastX, lastY);
+          rafPending = false;
+        });
+      },
+      { passive: true },
+    );
+    container.addEventListener('touchend', resetParallax);
+  });
+}
+
+function setupDeliveryDates(panel) {
+  var fromEl = panel.querySelector('.delivery-from');
+  var toEl = panel.querySelector('.delivery-to');
+  if (!fromEl || !toEl) return;
+
+  function addDays(date, days) {
+    var d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+  function skipWeekend(date) {
+    var day = date.getDay();
+    if (day === 0) date.setDate(date.getDate() + 1);
+    else if (day === 6) date.setDate(date.getDate() + 2);
+    return date;
+  }
+  function fmt(date) {
+    var lang = document.documentElement.lang || 'en-GB';
+    try {
+      return date.toLocaleDateString(lang, { weekday: 'long', month: 'long', day: 'numeric' });
+    } catch (e) {
+      return date.toLocaleDateString('en-GB', { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+  }
+
+  var today = new Date();
+  var fromDate = fmt(skipWeekend(addDays(today, 14)));
+  var toDate = fmt(skipWeekend(addDays(today, 24)));
+
+  // Use the localized template if available, otherwise fall back to direct span injection
+  var templateEl = panel.querySelector('[data-delivery-template]');
+  if (templateEl) {
+    var tpl = templateEl.getAttribute('data-delivery-template') || '';
+    templateEl.innerHTML = tpl
+      .replace('[[from]]', '<strong>' + fromDate + '</strong>')
+      .replace('[[to]]', '<strong>' + toDate + '</strong>');
+  } else {
+    fromEl.textContent = fromDate;
+    toEl.textContent = toDate;
+  }
+}
+
+function setupShareButton(panel) {
+  var buttons = panel.querySelectorAll('.glass-product-section__share-btn');
+  if (!buttons.length) return;
+
+  var shareContainer = panel.querySelector('.glass-product-section__share-buttons');
+  var copiedMsg = (shareContainer && shareContainer.getAttribute('data-copied-success')) || '\u2713 Copied!';
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var url = encodeURIComponent(btn.getAttribute('data-product-url') || window.location.href);
+      var title = encodeURIComponent(btn.getAttribute('data-product-title') || document.title);
+      var platform = btn.getAttribute('data-platform');
+      var shareUrl;
+
+      switch (platform) {
+        case 'whatsapp':
+          shareUrl = 'https://wa.me/?text=' + title + '%20' + url;
+          break;
+        case 'facebook':
+          shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + url;
+          break;
+        case 'instagram':
+          // Instagram has no direct web share URL — copy link instead
+          navigator.clipboard.writeText(decodeURIComponent(url)).then(function () {
+            btn.textContent = copiedMsg;
+            setTimeout(function () {
+              btn.innerHTML =
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg> Instagram';
+            }, 2500);
+          });
+          return;
+        case 'tiktok':
+          // TikTok has no direct web share — copy link
+          navigator.clipboard.writeText(decodeURIComponent(url)).then(function () {
+            btn.textContent = copiedMsg;
+            setTimeout(function () {
+              btn.innerHTML =
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg> TikTok';
+            }, 2500);
+          });
+          return;
+        default:
+          return;
+      }
+
+      window.open(shareUrl, '_blank', 'noopener,width=600,height=500');
+    });
+  });
+}
+
+function setupVirtualTryOn(panel) {
+  var container = panel.querySelector('#virtual-tryon-container');
+  if (!container) return;
+
+  // If not signed in, the gate UI is shown — no JS needed
+  if (container.getAttribute('data-signed-in') !== 'true') return;
+
+  var userPhotoInput = container.querySelector('#virtual-tryon-user-photo');
+  var tryOnBtn = container.querySelector('#virtual-tryon-btn');
+  var resultImg = container.querySelector('#virtual-tryon-result-img');
+  var resultContainer = container.querySelector('#virtual-tryon-result');
+  var loadingSpinner = container.querySelector('#virtual-tryon-loading');
+  var quotaBadge = container.querySelector('#vtryon-quota-badge');
+
+  if (!userPhotoInput || !tryOnBtn) return;
+
+  var productTitle = container.getAttribute('data-product-title') || '';
+  var productImageUrlRaw = container.getAttribute('data-product-image-url') || '';
+  var productImageUrl = productImageUrlRaw.startsWith('//')
+    ? 'https:' + productImageUrlRaw
+    : productImageUrlRaw.startsWith('/')
+      ? window.location.origin + productImageUrlRaw
+      : productImageUrlRaw;
+
+  var customerId = container.getAttribute('data-customer-id') || '';
+  var customerToken = container.getAttribute('data-customer-token') || '';
+  var vtonApiUrl = container.getAttribute('data-api-url');
+  var isRecentPurchaser = container.getAttribute('data-is-recent-purchaser') === 'true';
+  var quotaMax = parseInt(container.getAttribute('data-quota-max') || '1', 10);
+
+  // Localized strings from data-* attributes
+  var msgErrorPhotoRead =
+    container.getAttribute('data-error-photo-read') || 'Could not read your photo. Please try a different image.';
+  var msgErrorQuotaExceeded = container.getAttribute('data-error-quota-exceeded') || 'You have used all your try-ons.';
+  var msgErrorAuthRequired =
+    container.getAttribute('data-error-auth-required') || 'Please sign in to use Virtual Try-On.';
+  var msgStatusUploading = container.getAttribute('data-status-uploading') || 'Uploading your photo\u2026';
+  var msgStatusProcessing =
+    container.getAttribute('data-status-processing') || 'Processing embroidery & texture details\u2026';
+  var msgStatusDraping = container.getAttribute('data-status-draping') || 'Generating realistic drapes\u2026';
+  var msgStatusFinalizing =
+    container.getAttribute('data-status-finalizing') || 'Finalizing your look\u2026 almost there!';
+  var msgStatusSuccess = container.getAttribute('data-status-success') || 'Looking great!';
+
+  // Show quota badge
+  if (quotaBadge) {
+    var quotaAvailableTpl = container.getAttribute('data-quota-available') || '{{ count }} try-ons available';
+    quotaBadge.textContent = quotaAvailableTpl.replace('{{ count }}', quotaMax);
+  }
+
+  function trackTryOn(name, extra) {
+    trackImmersiveEvent(
+      name,
+      Object.assign(
+        {
+          product_title: productTitle,
+          customer_id_present: !!customerId,
+        },
+        extra || {},
+      ),
+    );
+  }
+
+  var userImageDataUrl = null;
+
+  userPhotoInput.addEventListener('change', function (event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) {
+      tryOnBtn.disabled = true;
+      return;
+    }
+
+    var uploadText = container.querySelector('.vtryon__upload-text');
+    var uploadIcon = container.querySelector('.vtryon__upload-icon');
+    var preview = container.querySelector('.vtryon__preview');
+    if (uploadText) uploadText.textContent = file.name;
+
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      if (preview && uploadIcon) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        uploadIcon.style.display = 'none';
+      }
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = 768;
+        canvas.height = 1024;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 768, 1024);
+        var scale = Math.min(768 / img.width, 1024 / img.height);
+        var x = (768 - img.width * scale) / 2;
+        var y = (1024 - img.height * scale) / 2;
+        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        userImageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        tryOnBtn.disabled = false;
+      };
+      img.onerror = function () {
+        showError(msgErrorPhotoRead);
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function () {
+      showError(msgErrorPhotoRead);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  tryOnBtn.addEventListener('click', async function () {
+    if (!userImageDataUrl) return;
+
+    var statusText = container.querySelector('.vtryon__status');
+    var errorBox = container.querySelector('.vtryon__error');
+    var seconds = 0;
+    var timer = null;
+
+    function setStatus(msg) {
+      if (statusText) statusText.textContent = msg;
+    }
+    function showError(msg) {
+      if (errorBox) {
+        errorBox.textContent = msg;
+        // Do NOT toggle display — keep the live region in the accessibility tree
+        // so screen readers announce the injected text. CSS hides it when empty.
+      }
+      setStatus('');
+    }
+
+    try {
+      tryOnBtn.disabled = true;
+      if (resultContainer) resultContainer.style.display = 'none';
+      if (errorBox) errorBox.textContent = ''; // clear previous error without hiding the live region
+      if (loadingSpinner) loadingSpinner.style.display = 'block';
+      trackTryOn('tryon_started', {});
+      setStatus(msgStatusUploading);
+      var blob = await (function () {
+        return new Promise(function (resolve, reject) {
+          var byteString = atob(userImageDataUrl.split(',')[1]);
+          var ab = new ArrayBuffer(byteString.length);
+          var ia = new Uint8Array(ab);
+          for (var i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+          resolve(new Blob([ab], { type: 'image/jpeg' }));
+        });
+      })();
+
+      var uploadRes = await fetch(vtonApiUrl + '/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob,
+        signal: AbortSignal.timeout(15000),
+      });
+      var uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.url) throw new Error(uploadData.error || 'Upload failed');
+
+      var userImageUrl = uploadData.url;
+
+      // Step 2: Call /api/tryon with customer auth + quota fields
+      setStatus(msgStatusProcessing);
+      timer = setInterval(function () {
+        seconds++;
+        if (seconds === 10) setStatus(msgStatusDraping);
+        if (seconds === 25) setStatus(msgStatusFinalizing);
+      }, 1000);
+
+      var tryonRes = await fetch(vtonApiUrl + '/api/tryon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_image_url: userImageUrl,
+          product_image_url: productImageUrl,
+          garment_description: productTitle || 'Luxury Pakistani ethnic wear',
+          full_body: true,
+          customer_id: customerId,
+          customer_token: customerToken,
+          is_recent_purchaser: isRecentPurchaser,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!tryonRes.ok) {
+        var errData = await tryonRes.json().catch(function () {
+          return {};
+        });
+        // Handle quota exceeded with a friendly message
+        if (errData.code === 'quota_exceeded') {
+          throw new Error(errData.error || msgErrorQuotaExceeded);
+        }
+        if (errData.code === 'auth_required') {
+          throw new Error(msgErrorAuthRequired);
+        }
+        throw new Error(errData.error || 'Try-on failed');
+      }
+
+      // Step 3: Result streamed as image/jpeg
+      var imgBlob = await tryonRes.blob();
+      var objectUrl = URL.createObjectURL(imgBlob);
+      var objectUrlReused = false;
+
+      // Update quota badge
+      var quotaUsed = parseInt(tryonRes.headers.get('X-Quota-Used') || '1', 10);
+      var quotaMaxHeader = parseInt(tryonRes.headers.get('X-Quota-Max') || String(quotaMax), 10);
+      var remaining = quotaMaxHeader - quotaUsed;
+      if (quotaBadge) {
+        var quotaRemainingTpl = container.getAttribute('data-quota-remaining') || '{{ count }} try-ons remaining';
+        quotaBadge.textContent = quotaRemainingTpl.replace('{{ count }}', remaining);
+        if (remaining === 0) quotaBadge.style.color = 'rgba(252,165,165,0.8)';
+      }
+
+      setStatus(msgStatusSuccess);
+      if (resultImg) {
+        if (resultImg._objectUrl) URL.revokeObjectURL(resultImg._objectUrl);
+        resultImg._objectUrl = objectUrl;
+        resultImg.src = objectUrl;
+        resultImg.hidden = false;
+        objectUrlReused = true;
+      }
+      if (resultContainer) resultContainer.style.display = 'block';
+      trackTryOn('tryon_completed', { quota_remaining: remaining });
+    } catch (error) {
+      if (!objectUrlReused && objectUrl) URL.revokeObjectURL(objectUrl);
+      console.error('Try-on error:', error);
+      showError(error.message);
+      trackTryOn('tryon_failed', { error_message: error && error.message ? error.message : 'Unknown error' });
+    } finally {
+      clearInterval(timer);
+      tryOnBtn.disabled = false;
+      if (loadingSpinner) loadingSpinner.style.display = 'none';
+    }
+  });
+}
+
+function showCartFeedback(panel) {
+  var glassPanel = document.getElementById(glassPanelId);
+  var msg = (glassPanel && glassPanel.getAttribute('data-msg-added-to-cart')) || 'Added to cart!';
+  var feedback = document.createElement('div');
+  feedback.className = 'immersive-cart-feedback';
+  feedback.textContent = msg;
+  feedback.setAttribute('role', 'status');
+  feedback.setAttribute('aria-live', 'polite');
+  // Issue 19: Append to document.documentElement to avoid parent transform issues
+  feedback.style.cssText =
+    'position:fixed;top:20px;right:20px;background:rgba(212,175,55,0.95);color:#000;padding:1rem 1.5rem;border-radius:8px;z-index:99999;font-weight:600;pointer-events:none;';
+  document.documentElement.appendChild(feedback);
+
+  setTimeout(function () {
+    feedback.style.opacity = '0';
+    feedback.style.transition = 'opacity 0.3s ease';
+    setTimeout(function () {
+      if (feedback.parentNode) {
+        feedback.parentNode.removeChild(feedback);
+      }
+    }, 300);
+  }, 2000);
+}
+
+function showImmersiveOnboardingIfNeeded() {
+  var overlay = document.getElementById('immersive-onboarding');
+  if (!overlay) return;
+
+  // Respect the "show once" setting — if data-show-once="true", skip if already seen
+  var showOnce = overlay.getAttribute('data-show-once') !== 'false';
+  if (showOnce) {
+    var seen = false;
+    try {
+      seen = !!localStorage.getItem(ONBOARDING_KEY);
+    } catch (e) {
+      // localStorage blocked (private browsing) — treat as unseen
+    }
+    if (seen) return;
+  }
+
+  var previousFocus = document.activeElement;
+  overlay.removeAttribute('hidden');
+
+  // Announce to screen readers that a modal dialog has opened.
+  // Follows Dawn's CartDrawer pattern: aria-live region + focus management.
+  var onboardingAnnouncer = document.getElementById('immersive-hotspot-announcer');
+  if (onboardingAnnouncer) {
+    var titleEl = overlay.querySelector('#immersive-onboarding-title');
+    var descEl = overlay.querySelector('.immersive-onboarding__description');
+    var titleText = titleEl ? titleEl.textContent.trim() : '';
+    var descText = descEl ? descEl.textContent.trim() : '';
+    onboardingAnnouncer.textContent = 'Dialog opened: ' + titleText + '. ' + descText;
+  }
+
+  var dismissBtn = overlay.querySelector('[data-onboarding-dismiss]');
+  if (dismissBtn) {
+    // Use Dawn's trapFocus() for proper focus confinement within the modal
+    trapFocus(overlay, dismissBtn);
+
+    function onEscape(e) {
+      if (e.key === 'Escape') dismissBtn.click();
+    }
+    overlay.addEventListener('keydown', onEscape);
+
+    dismissBtn.addEventListener('click', function onDismiss() {
+      dismissBtn.removeEventListener('click', onDismiss);
+      overlay.removeEventListener('keydown', onEscape);
+      if (showOnce) {
+        try {
+          localStorage.setItem(ONBOARDING_KEY, '1');
+        } catch (e) {}
+      }
+      overlay.setAttribute('hidden', '');
+      // Use Dawn's removeTrapFocus to restore focus properly
+      if (previousFocus && typeof previousFocus.focus === 'function') {
+        removeTrapFocus(previousFocus);
+      }
+      // Clear the live region so the announcement doesn't repeat
+      if (onboardingAnnouncer) {
+        onboardingAnnouncer.textContent = '';
+      }
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Wishlist Manager
+// ─────────────────────────────────────────────────────────────
+
+function getWishlist() {
+  return _wishlistItems.slice();
+}
+
+function _persistWishlist() {
+  try {
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify(_wishlistItems));
+  } catch (e) {}
+}
+
+function updateWishlistBadge() {
+  var badge = document.querySelector('[data-wishlist-badge]');
+  if (!badge) return;
+  badge.textContent = _wishlistItems.length;
+  badge.hidden = _wishlistItems.length === 0;
+  if (typeof window.updateBottomNavBadges === 'function') {
+    window.updateBottomNavBadges(_wishlistItems.length, null);
+  }
+}
+
+function syncAllWishlistToggles(root) {
+  var toggles = root.querySelectorAll('[data-wishlist-toggle]');
+  for (var i = 0; i < toggles.length; i++) {
+    var toggle = toggles[i];
+    var handle = toggle.getAttribute('data-product-handle');
+    var isSaved =
+      handle &&
+      _wishlistItems.some(function (item) {
+        return (typeof item === 'string' ? item : item.handle) === handle;
+      });
+    toggle.setAttribute('aria-pressed', isSaved ? 'true' : 'false');
+    toggle.classList.toggle('is-saved', !!isSaved);
+    var labelSave = toggle.getAttribute('data-label-save');
+    var labelSaved = toggle.getAttribute('data-label-saved');
+    if (labelSave && labelSaved) {
+      toggle.setAttribute('aria-label', isSaved ? labelSaved : labelSave);
+    }
+  }
+}
+
+function _triggerHeartPulse() {
+  if (reduceMotion) return;
+  var btn = document.querySelector('[data-wishlist-open]');
+  if (!btn) return;
+  btn.classList.remove('immersive-wishlist-btn--pulse');
+  void btn.offsetWidth; // force reflow
+  btn.classList.add('immersive-wishlist-btn--pulse');
+  setTimeout(function () {
+    btn.classList.remove('immersive-wishlist-btn--pulse');
+  }, 600);
+}
+
+function _flyToWishlist(sourceEl) {
+  if (reduceMotion || !sourceEl) return;
+  var btn = document.querySelector('[data-wishlist-open]');
+  if (!btn) return;
+  var srcRect = sourceEl.getBoundingClientRect();
+  var btnRect = btn.getBoundingClientRect();
+  var token = document.createElement('div');
+  token.className = 'immersive-fly-token';
+  token.setAttribute('aria-hidden', 'true');
+  token.style.left = srcRect.left + srcRect.width / 2 - 8 + 'px';
+  token.style.top = srcRect.top + srcRect.height / 2 - 8 + 'px';
+  document.body.appendChild(token);
+  requestAnimationFrame(function () {
+    var dx = btnRect.left + btnRect.width / 2 - 8 - (srcRect.left + srcRect.width / 2 - 8);
+    var dy = btnRect.top + btnRect.height / 2 - 8 - (srcRect.top + srcRect.height / 2 - 8);
+    token.style.transition = 'transform 0.55s cubic-bezier(0.4,0,0.2,1), opacity 0.55s ease';
+    token.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(0.3)';
+    token.style.opacity = '0';
+  });
+  setTimeout(function () {
+    if (token.parentNode) token.parentNode.removeChild(token);
+  }, 550);
+}
+
+function addToWishlist(handle, source, sourceEl) {
+  if (!handle) return;
+  // Check for existing entry (handle may be string or object)
+  var alreadySaved = _wishlistItems.some(function (item) {
+    return (typeof item === 'string' ? item : item.handle) === handle;
+  });
+  if (alreadySaved) return;
+  _wishlistItems.push({ handle: handle, discoveryRoom: immersiveState.currentRoom || null });
+  _persistWishlist();
+  updateWishlistBadge();
+  syncAllWishlistToggles(document);
+  _triggerHeartPulse();
+  _flyToWishlist(sourceEl);
+  if (typeof recordBrowsingSignal === 'function') recordBrowsingSignal(immersiveState.currentRoom);
+  trackImmersiveEvent('wishlist_add', { product_handle: handle, source: source || 'unknown' });
+}
+
+function removeFromWishlist(handle, source) {
+  if (!handle) return;
+  _wishlistItems = _wishlistItems.filter(function (item) {
+    return (typeof item === 'string' ? item : item.handle) !== handle;
+  });
+  _persistWishlist();
+  updateWishlistBadge();
+  syncAllWishlistToggles(document);
+  trackImmersiveEvent('wishlist_remove', { product_handle: handle, source: source || 'unknown' });
+}
+
+function toggleWishlistItem(handle, source, sourceEl) {
+  var isSaved = _wishlistItems.some(function (item) {
+    return (typeof item === 'string' ? item : item.handle) === handle;
+  });
+  if (isSaved) {
+    removeFromWishlist(handle, source);
+  } else {
+    addToWishlist(handle, source, sourceEl);
+  }
+}
+
+function cacheWishlistProduct(handle, panelEl) {
+  if (!handle || !panelEl) return;
+  var titleEl = panelEl.querySelector('.glass-product-section__title');
+  var priceEl = panelEl.querySelector('.glass-product-section__price');
+  var imgEl = panelEl.querySelector('.glass-product-section__media-main img');
+  if (!titleEl) return;
+  // Issue 15: Add timestamp so stale cache entries can be detected
+  _wishlistProductCache[handle] = {
+    title: titleEl.textContent.trim(),
+    price: priceEl ? priceEl.textContent.trim() : '',
+    imageSrc: imgEl ? imgEl.getAttribute('src') : '',
+    _cachedAt: Date.now(),
+  };
+}
+
+// Issue 15: Check if a cached product entry is stale (older than 30 minutes)
+function isWishlistCacheStale(handle) {
+  var cached = _wishlistProductCache[handle];
+  if (!cached) return true;
+  if (!cached._cachedAt) return true; // No timestamp = treat as stale
+  return (Date.now() - cached._cachedAt) > 30 * 60 * 1000; // 30 minutes
+}
+
+function renderWishlistPanel() {
+  var body = document.querySelector('[data-wishlist-body]');
+  var panelEl = document.getElementById('immersive-wishlist-panel');
+  if (!body || !panelEl) return;
+
+  var emptyMsg =
+    panelEl.getAttribute('data-msg-empty-encouragement') ||
+    panelEl.getAttribute('data-msg-empty') ||
+    "You haven't saved any products yet.";
+  var viewMsg = panelEl.getAttribute('data-msg-view') || 'View product';
+  var removeMsg = panelEl.getAttribute('data-msg-remove') || 'Remove from wishlist';
+
+  if (_wishlistItems.length === 0) {
+    body.innerHTML = renderEmptyState('wishlist');
+    return;
+  }
+
+  // Group items by discoveryRoom
+  var groups = {};
+  var groupOrder = [];
+  for (var i = 0; i < _wishlistItems.length; i++) {
+    var item = _wishlistItems[i];
+    var handle = typeof item === 'string' ? item : item.handle;
+    var room = (typeof item === 'string' ? null : item.discoveryRoom) || null;
+    var groupKey = room || '__saved__';
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+      groupOrder.push(groupKey);
+    }
+    groups[groupKey].push(handle);
+  }
+
+  var roomBadgeEl = document.getElementById('immersive-room-badge');
+  var html = '';
+
+  for (var g = 0; g < groupOrder.length; g++) {
+    var groupKey = groupOrder[g];
+    var handles = groups[groupKey];
+
+    // Resolve room label
+    var roomLabel;
+    if (groupKey === '__saved__') {
+      roomLabel = 'Saved';
+    } else {
+      roomLabel = (roomBadgeEl && roomBadgeEl.getAttribute('data-room-name-' + groupKey)) || groupKey;
+    }
+
+    html += '<h3 class="immersive-wishlist__room-label">Found in: ' + roomLabel + '</h3>';
+
+    for (var j = 0; j < handles.length; j++) {
+      var handle = handles[j];
+      var cached = _wishlistProductCache[handle] || {};
+      var title = cached.title || handle;
+      var price = cached.price || '';
+      var imgSrc = cached.imageSrc || '';
+      var imgHtml = imgSrc
+        ? '<img src="' +
+          imgSrc +
+          '" alt="' +
+          title.replace(/"/g, '&quot;') +
+          '" loading="lazy" width="80" height="107">'
+        : '<div style="width:80px;height:107px;background:rgba(255,255,255,0.05);border-radius:0.25rem;"></div>';
+
+      html +=
+        '<article class="immersive-wishlist-card" data-wishlist-card data-product-handle="' +
+        handle +
+        '">' +
+        imgHtml +
+        '<div class="immersive-wishlist-card__info">' +
+        '<p class="immersive-wishlist-card__title">' +
+        title +
+        '</p>' +
+        '<p class="immersive-wishlist-card__price">' +
+        price +
+        '</p>' +
+        '</div>' +
+        '<div class="immersive-wishlist-card__actions">' +
+        '<button type="button" data-wishlist-view data-product-handle="' +
+        handle +
+        '" aria-label="' +
+        viewMsg +
+        ' ' +
+        title.replace(/"/g, '&quot;') +
+        '">' +
+        viewMsg +
+        '</button>' +
+        '<button type="button" data-wishlist-remove data-product-handle="' +
+        handle +
+        '" aria-label="' +
+        removeMsg +
+        '">' +
+        removeMsg +
+        '</button>' +
+        '</div>' +
+        '</article>';
+    }
+  }
+
+  body.innerHTML = html;
+}
+
+function openWishlistPanel() {
+  var panel = document.getElementById('immersive-wishlist-panel');
+  if (!panel) return;
+  _wishlistPanelTrigger = document.activeElement;
+  renderWishlistPanel();
+  panel.removeAttribute('hidden');
+  var closeBtn = panel.querySelector('[data-wishlist-close]');
+  if (closeBtn) {
+    requestAnimationFrame(function () {
+      closeBtn.focus();
+    });
+  }
+  // Wire focus trap and Escape via a lightweight inline handler
+  function trapFocus(e) {
+    if (e.key !== 'Tab') return;
+    var focusable = getFocusableElements(panel);
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+  function onEscape(e) {
+    if (e.key === 'Escape') closeWishlistPanel();
+  }
+  panel._wlTrapFocus = trapFocus;
+  panel._wlEscape = onEscape;
+  panel.addEventListener('keydown', trapFocus);
+  panel.addEventListener('keydown', onEscape);
+
+  // Add click handler for empty state actions
+  function handleWishlistClick(e) {
+    var emptyAction = e.target.closest('[data-empty-action]');
+    if (emptyAction) {
+      var action = emptyAction.getAttribute('data-empty-action');
+      if (action) {
+        handleEmptyStateAction(action);
+      }
+      return;
+    }
+  }
+  panel._wlClickHandler = handleWishlistClick;
+  panel.addEventListener('click', handleWishlistClick);
+
+  trackImmersiveEvent('wishlist_panel_opened', { item_count: _wishlistItems.length });
+}
+
+function closeWishlistPanel() {
+  var panel = document.getElementById('immersive-wishlist-panel');
+  if (!panel) return;
+  if (panel._wlTrapFocus) panel.removeEventListener('keydown', panel._wlTrapFocus);
+  if (panel._wlEscape) panel.removeEventListener('keydown', panel._wlEscape);
+  if (panel._wlClickHandler) panel.removeEventListener('click', panel._wlClickHandler);
+  panel.setAttribute('hidden', '');
+  if (_wishlistPanelTrigger && typeof _wishlistPanelTrigger.focus === 'function') {
+    requestAnimationFrame(function () {
+      _wishlistPanelTrigger.focus();
+    });
+  }
+  _wishlistPanelTrigger = null;
+}
+
+function initWishlist() {
+  try {
+    var stored = JSON.parse(localStorage.getItem(WISHLIST_KEY) || '[]');
+    var raw = Array.isArray(stored) ? stored : [];
+    // Migrate old string-format items to object format
+    _wishlistItems = raw.map(function (item) {
+      if (typeof item === 'string') return { handle: item, discoveryRoom: null };
+      return item;
+    });
+  } catch (e) {
+    _wishlistItems = [];
+  }
+  updateWishlistBadge();
+  syncAllWishlistToggles(document);
+
+  // Single delegated listener for all wishlist interactions
+  document.addEventListener('click', function (e) {
+    // Open panel
+    if (e.target.closest('[data-wishlist-open]')) {
+      openWishlistPanel();
+      return;
+    }
+    // Close panel
+    if (e.target.closest('[data-wishlist-close]')) {
+      closeWishlistPanel();
+      return;
+    }
+    // Toggle (card or product panel)
+    var toggle = e.target.closest('[data-wishlist-toggle]');
+    if (toggle) {
+      var handle = toggle.getAttribute('data-product-handle');
+      var source = toggle.closest('#glass-panel') ? 'product_panel' : 'product_card';
+      if (handle) toggleWishlistItem(handle, source, toggle);
+      return;
+    }
+    // Remove from wishlist panel
+    var removeBtn = e.target.closest('[data-wishlist-remove]');
+    if (removeBtn) {
+      var rHandle = removeBtn.getAttribute('data-product-handle');
+      if (rHandle) {
+        removeFromWishlist(rHandle, 'wishlist_panel');
+        var card = removeBtn.closest('[data-wishlist-card]');
+        if (card) card.parentNode.removeChild(card);
+        // Show empty state if no cards remain
+        var body = document.querySelector('[data-wishlist-body]');
+        if (body && !body.querySelector('[data-wishlist-card]')) {
+          renderWishlistPanel();
+        }
+      }
+      return;
+    }
+    // View product from wishlist panel
+    var viewBtn = e.target.closest('[data-wishlist-view]');
+    if (viewBtn) {
+      var vHandle = viewBtn.getAttribute('data-product-handle');
+      if (vHandle) {
+        trackImmersiveEvent('wishlist_view_product', { product_handle: vHandle });
+        closeWishlistPanel();
+        openProductPanel(vHandle, null);
+      }
+      return;
+    }
+  });
+}
+
+function loadProductRecommendations(panel) {
+  var sectionEl = panel.querySelector('.glass-product-section');
+  var relatedRoot = panel.querySelector('[data-related-root]');
+  if (!sectionEl || !relatedRoot) return;
+
+  var productId = sectionEl.getAttribute('data-product-id');
+  if (!productId) return;
+
+  // Use the existing Dawn related-products section for rendering
+  var url =
+    shopRoot +
+    'recommendations/products?product_id=' +
+    encodeURIComponent(productId) +
+    '&limit=4&intent=related' +
+    '&section_id=glass-product-recommendations';
+
+  fetchWithCache(url)
+    .then(function (html) {
+      if (html && html.trim()) relatedRoot.innerHTML = html;
+    })
+    .catch(function () {
+      // Silent failure — leave relatedRoot empty, panel remains usable
+    });
+}
+
+function bindImmersiveNav() {
+  // 1. Wire cart toggle to Dawn's cart-drawer web component
+  var cartToggle = document.getElementById('cart-toggle');
+  if (cartToggle) {
+    cartToggle.addEventListener('click', function () {
+      var cartDrawer = document.querySelector('cart-drawer');
+      if (cartDrawer && typeof cartDrawer.open === 'function') {
+        cartDrawer.open(cartToggle);
+      } else {
+        window.location.href = shopRoot + 'cart';
+      }
+    });
+  }
+
+  // 1b. Wire 3D→2D mode switch — clears the 3D preference so the
+  //     preference banner won't nudge the user back to 3D immediately.
+  var modeSwitchBtn = document.querySelector('[data-mode-switch-2d]');
+  if (modeSwitchBtn) {
+    modeSwitchBtn.addEventListener('click', function () {
+      clearImmersivePreference();
+    });
+  }
+
+  // 2. Intercept menu-drawer link clicks so collection/product links open
+  //    inside the glass panel instead of navigating away.
+  var menuDrawerEl = document.getElementById('menu-drawer');
+  if (menuDrawerEl) {
+    menuDrawerEl.addEventListener('click', function (e) {
+      var link = e.target.closest('a[href]');
+      if (!link) return;
+
+      var href = link.getAttribute('href') || '';
+
+      // Match /collections/{handle} — open collection panel
+      var collectionMatch = href.match(/\/collections\/([^/?#]+)/);
+      if (collectionMatch) {
+        e.preventDefault();
+        closeMenuDrawer();
+        openCollectionPanel(collectionMatch[1]);
+        return;
+      }
+
+      // Match /products/{handle} — open product panel
+      var productMatch = href.match(/\/products\/([^/?#]+)/);
+      if (productMatch) {
+        e.preventDefault();
+        closeMenuDrawer();
+        openProductPanel(productMatch[1], null);
+        return;
+      }
+
+      // All other links (pages, external, etc.) navigate normally —
+      // just close the drawer first so it doesn't stay open mid-navigation
+      closeMenuDrawer();
+    });
+  }
+}
+
+function closeMenuDrawer() {
+  var details = document.getElementById('Details-menu-drawer-container');
+  if (details) details.removeAttribute('open');
+}
+
+function bindCookieBanner() {
+  var banner = document.getElementById('immersive-cookie-banner');
+  if (!banner) return;
+
+  var COOKIE_KEY = 'immersive_cookie_notice';
+  try {
+    if (localStorage.getItem(COOKIE_KEY)) return; // already dismissed
+  } catch (e) {}
+
+  // Show the banner
+  banner.removeAttribute('hidden');
+
+  function dismiss() {
+    banner.setAttribute('hidden', '');
+    try {
+      localStorage.setItem(COOKIE_KEY, '1');
+    } catch (e) {}
+  }
+
+  var acceptBtn = document.getElementById('immersive-cookie-accept');
+  var declineBtn = document.getElementById('immersive-cookie-decline');
+  if (acceptBtn) acceptBtn.addEventListener('click', dismiss);
+  if (declineBtn) declineBtn.addEventListener('click', dismiss);
+}
+
+// ---------------------------------------------------------------------------
+// ImmersiveEditorial — reusable timeline + dynamic product loader
+
+// ---------------------------------------------------------------------------
+// ImmersiveEditorial — reusable timeline + dynamic product loader
+// Exposed on window.ImmersiveEditorial so enterEditorialMode can call
+// ImmersiveEditorial.init(overlayContent) after injecting section HTML.
+// Supports any editorial room that uses the .immersive-designers pattern.
+// ---------------------------------------------------------------------------
+(function () {
+  // Section ID used with the Section Rendering API to fetch product grids.
+  // Matches sections/immersive-designer-grid.liquid.
+  var PRODUCTS_SECTION_ID = 'immersive-designer-grid';
+
+  // Minimum px movement before a drag is committed (avoids accidental drags on click)
+  var DRAG_THRESHOLD = 4;
+
+  function clamp(val, min, max) {
+    if (val < min) return min;
+    if (val > max) return max;
+    return val;
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatMoneyFromCents(cents) {
+    var amount = Number(cents || 0) / 100;
+    if (window.Shopify && typeof window.Shopify.formatMoney === 'function') {
+      try {
+        return window.Shopify.formatMoney(cents);
+      } catch (e) {}
+    }
+    return '$' + amount.toFixed(2);
+  }
+
+  function renderTimelineProductsFallback(productsContainer, products) {
+    if (!productsContainer) return;
+    if (!Array.isArray(products) || !products.length) {
+      productsContainer.innerHTML = '';
+      return;
+    }
+    var cards = products
+      .map(function (product) {
+        var title = escapeHtml(product.title || '');
+        var handle = escapeHtml(product.handle || '');
+        var productUrl = shopRoot + 'products/' + handle;
+        var imgSrc = '';
+        if (product.image && product.image.src) {
+          imgSrc = product.image.src;
+        } else if (Array.isArray(product.images) && product.images.length) {
+          imgSrc = product.images[0];
+        }
+        var media = imgSrc
+          ? '<a href="' +
+            productUrl +
+            '" class="immersive-product-link" data-product-handle="' +
+            handle +
+            '">' +
+            '<img class="immersive-product-image" src="' +
+            escapeHtml(imgSrc) +
+            '" alt="' +
+            title +
+            '" loading="lazy">' +
+            '</a>'
+          : '<div class="immersive-product-image immersive-product-image-placeholder">No image</div>';
+        return (
+          '<article class="immersive-product-card" data-product-handle="' +
+          handle +
+          '">' +
+          media +
+          '<div class="immersive-product-info">' +
+          '<h3 class="immersive-product-title"><a href="' +
+          productUrl +
+          '" class="immersive-product-title-link" data-product-handle="' +
+          handle +
+          '">' +
+          title +
+          '</a></h3>' +
+          '<div class="immersive-product-price"><span>' +
+          formatMoneyFromCents(product.price_min || product.price || 0) +
+          '</span></div>' +
+          '</div>' +
+          '</article>'
+        );
+      })
+      .join('');
+    productsContainer.innerHTML = '<div class="immersive-designer-grid">' + cards + '</div>';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Product loading via Section Rendering API
+  // ---------------------------------------------------------------------------
+  function loadTimelineCollection(markerEl, productsContainer, options) {
+    if (!markerEl || !productsContainer) return;
+    // Read canonical data-collection first; fall back to legacy data-collection-handle
+    var handle =
+      markerEl.getAttribute('data-collection') ||
+      markerEl.getAttribute('data-collection-handle') ||
+      '';
+    if (!handle) {
+      productsContainer.innerHTML = '';
+      return;
+    }
+    var sectionId = (options && options.productsSectionId) || PRODUCTS_SECTION_ID;
+    var url = '/collections/' + encodeURIComponent(handle) + '?sections=' + encodeURIComponent(sectionId);
+
+    productsContainer.innerHTML =
+      '<div class="immersive-designers__products-loading" aria-live="polite" role="status">' +
+      (options && options.loadingText ? options.loadingText : 'Loading\u2026') +
+      '</div>';
+
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (response) {
+        if (!response.ok) throw new Error('Network error ' + response.status);
+        return response.json();
+      })
+      .then(function (json) {
+        var html = json[sectionId];
+        if (!html) {
+          return fetch(shopRoot + 'collections/' + encodeURIComponent(handle) + '/products.json?limit=12', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          })
+            .then(function (res) {
+              if (!res.ok) throw new Error('Products API error ' + res.status);
+              return res.json();
+            })
+            .then(function (productsJson) {
+              renderTimelineProductsFallback(productsContainer, productsJson && productsJson.products);
+            });
+        }
+        productsContainer.innerHTML = html;
+      })
+      .catch(function (err) {
+        console.warn('[ImmersiveEditorial] Product load failed:', err);
+        productsContainer.innerHTML = '';
+      });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Timeline thumb positioning
+  // ---------------------------------------------------------------------------
+  function positionThumb(thumb, activeMarker, rail) {
+    if (!thumb || !activeMarker || !rail) return;
+    var railRect = rail.getBoundingClientRect();
+    var markerRect = activeMarker.getBoundingClientRect();
+    var left = markerRect.left - railRect.left;
+    var width = markerRect.width;
+    // Offset thumb to sit behind the rail's own padding
+    thumb.style.left = left + 'px';
+    thumb.style.width = width + 'px';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Activate a marker: update ARIA/classes, move thumb, load products
+  // ---------------------------------------------------------------------------
+  function activateMarker(markers, thumb, rail, productsContainer, index, options, root) {
+    var target = markers[index];
+    if (!target) return;
+
+    for (var i = 0; i < markers.length; i++) {
+      markers[i].classList.remove('is-active');
+      markers[i].setAttribute('aria-pressed', 'false');
+    }
+    target.classList.add('is-active');
+    target.setAttribute('aria-pressed', 'true');
+
+    positionThumb(thumb, target, rail);
+    loadTimelineCollection(target, productsContainer, options);
+
+    // Kinetic Hero Transition
+    var heroStates = root.querySelectorAll('.immersive-designers__hero-state');
+    heroStates.forEach(function (state) {
+      state.classList.remove('is-active');
+      if (parseInt(state.getAttribute('data-hero-index'), 10) === index) {
+        state.classList.add('is-active');
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Snap to nearest marker based on pointer X position over the rail
+  // ---------------------------------------------------------------------------
+  function snapToNearest(markers, pointerX, railRect) {
+    var best = 0;
+    var bestDist = Infinity;
+    for (var i = 0; i < markers.length; i++) {
+      var rect = markers[i].getBoundingClientRect();
+      var center = rect.left + rect.width / 2;
+      var dist = Math.abs(pointerX - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Wire up a single .immersive-designers container
+  // ---------------------------------------------------------------------------
+  function initDesignersTimeline(root, options) {
+    if (root._designersTimelineInitialized) return;
+    root._designersTimelineInitialized = true;
+
+    var rail = root.querySelector('.immersive-designers__rail');
+    var thumb = root.querySelector('.immersive-designers__thumb');
+    var roomKey = root.getAttribute('data-room-key') || 'designers';
+    var productsContainer = root.querySelector('.immersive-designers__products');
+
+    if (!rail || !thumb || !productsContainer) return;
+
+    var markers = Array.prototype.slice.call(rail.querySelectorAll('.immersive-designers__marker'));
+    if (!markers.length) return;
+
+    var activeIndex = 0;
+    var dragging = false;
+    var dragStartX = 0;
+    var dragMoved = false;
+
+    // Activate first marker on init (after layout is painted)
+    requestAnimationFrame(function () {
+      activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
+    });
+
+    // Click on a marker
+    markers.forEach(function (marker, i) {
+      marker.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+      marker.addEventListener('click', function (event) {
+        if (dragMoved) return; // swallow click that ended a drag
+        event.preventDefault();
+        event.stopPropagation();
+        activeIndex = i;
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
+      });
+    });
+
+    // Keyboard: arrow keys move between markers
+    rail.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = clamp(activeIndex + 1, 0, markers.length - 1);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
+        markers[activeIndex].focus();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = clamp(activeIndex - 1, 0, markers.length - 1);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
+        markers[activeIndex].focus();
+      }
+    });
+
+    // Drag: pointer events on the rail for smooth scrubbing
+    rail.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      dragMoved = false;
+      dragStartX = e.clientX;
+      rail.setPointerCapture(e.pointerId);
+    });
+
+    rail.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      if (Math.abs(e.clientX - dragStartX) > DRAG_THRESHOLD) {
+        dragMoved = true;
+      }
+      if (!dragMoved) return;
+      var railRect = rail.getBoundingClientRect();
+      var nearest = snapToNearest(markers, e.clientX, railRect);
+      if (nearest !== activeIndex) {
+        activeIndex = nearest;
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
+      }
+    });
+
+    rail.addEventListener('pointerup', function (e) {
+      if (dragging && dragMoved) {
+        var railRect = rail.getBoundingClientRect();
+        activeIndex = snapToNearest(markers, e.clientX, railRect);
+        activateMarker(markers, thumb, rail, productsContainer, activeIndex, options, root);
+      }
+      dragging = false;
+    });
+
+    rail.addEventListener('pointercancel', function () {
+      dragging = false;
+    });
+
+    // Re-position thumb on resize (font/layout changes can shift markers)
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        var active = markers[activeIndex];
+        if (active) positionThumb(thumb, active, rail);
+      }, 120);
+    });
+  }
+
+  function initStoryChapters(container) {
+    var chapters = Array.prototype.slice.call(
+      (container || document).querySelectorAll('.immersive-occasions__chapter'),
+    );
+    if (!chapters.length) return;
+    if (!('IntersectionObserver' in window)) {
+      chapters[0].classList.add('is-active');
+      return;
+    }
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          chapters.forEach(function (chapter) {
+            chapter.classList.remove('is-active');
+          });
+          entry.target.classList.add('is-active');
+        });
+      },
+      { root: document.getElementById('immersive-editorial-overlay') || null, threshold: 0.45 },
+    );
+    chapters.forEach(function (chapter, index) {
+      if (index === 0) chapter.classList.add('is-active');
+      observer.observe(chapter);
+    });
+  }
+
+  function initGalleryDrag(container) {
+    var scrollers = Array.prototype.slice.call((container || document).querySelectorAll('.immersive-featured__grid'));
+    scrollers.forEach(function (scroller) {
+      if (scroller._immersiveGalleryBound) return;
+      scroller._immersiveGalleryBound = true;
+      var down = false;
+      var startX = 0;
+      var startScroll = 0;
+
+      scroller.addEventListener(
+        'wheel',
+        function (event) {
+          if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+          event.preventDefault();
+          scroller.scrollLeft += event.deltaY;
+        },
+        { passive: false },
+      );
+
+      scroller.addEventListener('pointerdown', function (event) {
+        down = true;
+        startX = event.clientX;
+        startScroll = scroller.scrollLeft;
+        scroller.classList.add('is-dragging');
+        scroller.setPointerCapture(event.pointerId);
+      });
+
+      scroller.addEventListener('pointermove', function (event) {
+        if (!down) return;
+        scroller.scrollLeft = startScroll - (event.clientX - startX);
+      });
+
+      function endDrag() {
+        down = false;
+        scroller.classList.remove('is-dragging');
+      }
+
+      scroller.addEventListener('pointerup', endDrag);
+      scroller.addEventListener('pointercancel', endDrag);
+      scroller.addEventListener('pointerleave', endDrag);
+    });
+  }
+
+  function createMuseumChrome(root) {
+    if (!root || root._museumChromeReady) return;
+    root._museumChromeReady = true;
+    root.setAttribute('data-museum-mode', 'codex');
+
+    var nav = document.createElement('div');
+    nav.className = 'immersive-museum-nav';
+    nav.innerHTML =
+      '<div class="immersive-museum-nav__title">INDEX</div>' +
+      '<button type="button" class="immersive-museum-nav__mode is-active" data-museum-mode-btn="codex">CODEX</button>' +
+      '<button type="button" class="immersive-museum-nav__mode" data-museum-mode-btn="story">STORY</button>' +
+      '<div class="immersive-museum-nav__hint">DRAG/SCROLL TO EXPLORE | CLICK TO STUDY ARTIFACT</div>';
+    root.insertBefore(nav, root.firstChild);
+
+    nav.addEventListener('click', function (event) {
+      var btn = event.target.closest('[data-museum-mode-btn]');
+      if (!btn) return;
+      var mode = btn.getAttribute('data-museum-mode-btn');
+      root.setAttribute('data-museum-mode', mode);
+      nav.querySelectorAll('[data-museum-mode-btn]').forEach(function (item) {
+        item.classList.toggle('is-active', item === btn);
+      });
+    });
+  }
+
+  function getArtifactData(trigger) {
+    if (!trigger) return null;
+    var image =
+      trigger.getAttribute('data-artifact-image') ||
+      (trigger.querySelector('img') && trigger.querySelector('img').getAttribute('src')) ||
+      '';
+    var title =
+      trigger.getAttribute('data-artifact-title') ||
+      trigger.getAttribute('data-designer-label') ||
+      (trigger.querySelector('h3, .immersive-featured__item-heading, .immersive-occasions__chapter-heading') &&
+        trigger.querySelector('h3, .immersive-featured__item-heading, .immersive-occasions__chapter-heading')
+          .textContent) ||
+      '';
+    var body =
+      trigger.getAttribute('data-artifact-body') ||
+      (trigger.querySelector(
+        '.immersive-featured__item-body, .immersive-occasions__chapter-body, .immersive-designers__manifest',
+      ) &&
+        trigger.querySelector(
+          '.immersive-featured__item-body, .immersive-occasions__chapter-body, .immersive-designers__manifest',
+        ).textContent) ||
+      '';
+    var collection = trigger.getAttribute('data-collection') || trigger.getAttribute('data-collection-handle') || '';
+    return { image: image, title: title.trim(), body: body.trim(), collection: collection };
+  }
+
+  function openArtifactStudy(root, trigger) {
+    var data = getArtifactData(trigger);
+    if (!data || !data.title) return;
+    var study = root.querySelector('.immersive-artifact-study');
+    if (!study) {
+      study = document.createElement('aside');
+      study.className = 'immersive-artifact-study';
+      study.setAttribute('aria-live', 'polite');
+      root.appendChild(study);
+    }
+    study.innerHTML =
+      '<button type="button" class="immersive-artifact-study__close" data-artifact-close>Close</button>' +
+      (data.image ? '<img class="immersive-artifact-study__image" src="' + data.image + '" alt="">' : '') +
+      '<div class="immersive-artifact-study__meta">Artifact study</div>' +
+      '<h3 class="immersive-artifact-study__title">' +
+      data.title +
+      '</h3>' +
+      (data.body ? '<p class="immersive-artifact-study__body">' + data.body + '</p>' : '') +
+      (data.collection
+        ? '<button type="button" class="immersive-artifact-study__cta" data-artifact-collection="' +
+          data.collection +
+          '">View collection</button>'
+        : '');
+    root.classList.add('is-studying-artifact');
+    study.removeAttribute('hidden');
+    var closeBtn = study.querySelector('[data-artifact-close]');
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function initArtifactStudy(container) {
+    var roots = Array.prototype.slice.call(
+      (container || document).querySelectorAll(
+        '.immersive-editorial--layout-designers, .immersive-editorial--layout-occasions, .immersive-editorial--layout-featured_collections',
+      ),
+    );
+    roots.forEach(function (root) {
+      createMuseumChrome(root);
+      if (root._artifactStudyBound) return;
+      root._artifactStudyBound = true;
+      root.addEventListener(
+        'click',
+        function (event) {
+          var close = event.target.closest('[data-artifact-close]');
+          if (close) {
+            var study = root.querySelector('.immersive-artifact-study');
+            if (study) study.setAttribute('hidden', '');
+            root.classList.remove('is-studying-artifact');
+            return;
+          }
+          var collectionBtn = event.target.closest('[data-artifact-collection]');
+          if (collectionBtn) {
+            var handle = collectionBtn.getAttribute('data-artifact-collection');
+            if (handle) {
+              event.preventDefault();
+              exitEditorialMode();
+              setTimeout(function () {
+                openCollectionPanel(handle);
+              }, 120);
+            }
+            return;
+          }
+          var trigger = event.target.closest('[data-artifact-open]');
+          if (!trigger || !root.contains(trigger)) return;
+
+          // ── Collection routing takes priority over artifact study ──
+          //
+          // Key principle: if the user deliberately clicked an element that
+          // itself has data-artifact-open (e.g. a study badge), honor that
+          // intent. Only promote collection routing when the artifact-open
+          // attribute lives on a container ancestor and the actual click
+          // target carries a collection route.
+          //
+          // Check in this order:
+          //   1. If event.target IS the artifact-open element → only route
+          //      to collection if the target itself has data-collection.
+          //   2. If event.target is INSIDE an artifact-open container →
+          //      check if the target (or its closest wrapper) has
+          //      data-collection → route to collection.
+          //   3. Otherwise → open artifact study.
+
+          var targetIsArtifactOpen = event.target.hasAttribute('data-artifact-open');
+          var collectionHandle = '';
+
+          if (targetIsArtifactOpen) {
+            // Case 1: user clicked directly on an artifact-open element.
+            // Only promote to collection routing if this element itself
+            // carries a collection handle.
+            collectionHandle =
+              event.target.getAttribute('data-collection') ||
+              event.target.getAttribute('data-collection-handle') ||
+              '';
+          } else {
+            // Case 2: user clicked inside an artifact-open container.
+            // Check the actual click target for a collection route first.
+            collectionHandle =
+              event.target.getAttribute('data-collection') ||
+              event.target.getAttribute('data-collection-handle') ||
+              '';
+
+            // Also check if the target is wrapped in a collection element
+            // (e.g. an <a> with data-collection inside an <article>).
+            if (!collectionHandle) {
+              var targetCollectionWrapper = event.target.closest('[data-collection], [data-collection-handle]');
+              if (targetCollectionWrapper && root.contains(targetCollectionWrapper)) {
+                collectionHandle =
+                  targetCollectionWrapper.getAttribute('data-collection') ||
+                  targetCollectionWrapper.getAttribute('data-collection-handle') ||
+                  '';
+              }
+            }
+          }
+
+          if (collectionHandle) {
+            // Do NOT intercept — let the bubbling overlay handler route to
+            // openCollectionPanel(). No preventDefault / stopPropagation.
+            return;
+          }
+
+          // No collection route — safe to open artifact study
+          event.preventDefault();
+          event.stopPropagation();
+          openArtifactStudy(root, trigger);
+        },
+        true,
+      );
+    });
+  }
+
+  function init(container, options) {
+    var roots = (container || document).querySelectorAll('.immersive-designers');
+    for (var i = 0; i < roots.length; i++) {
+      initDesignersTimeline(roots[i], options || {});
+    }
+    initStoryChapters(container);
+    initGalleryDrag(container);
+    initArtifactStudy(container);
+  }
+
+  window.ImmersiveEditorial = { init: init };
+})();
+
+// ============================================================
+// ImmersiveExclusiveCarousel — 3D CSS ring carousel with drag/snap
+// ============================================================
+(function () {
+  var _carouselInstances = [];
+
+  function initCarousel(section) {
+    if (!section || section._carouselBound) return;
+    if (window.innerWidth < 768) return;
+
+    var stage = section.querySelector('[data-carousel-stage]');
+    var ring = section.querySelector('[data-carousel-ring]');
+    var panels = section.querySelectorAll('[data-carousel-panel]');
+    var hint = section.querySelector('[data-carousel-hint]');
+
+    if (!ring || !panels.length) return;
+
+    var prefersReducedMotion =
+      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var radius = parseInt(section.getAttribute('data-ring-radius') || '420', 10);
+    var friction = parseFloat(section.getAttribute('data-drag-friction') || '0.88');
+    var snapStrength = parseFloat(section.getAttribute('data-snap-strength') || '0.12');
+
+    var count = panels.length;
+    var angleStep = 360 / count;
+
+    panels.forEach(function (panel, i) {
+      var angle = angleStep * i;
+      panel.style.transform = 'rotateY(' + angle + 'deg) translateZ(' + radius + 'px)';
+    });
+
+    var currentAngle = 0;
+    var targetAngle = 0;
+    var velocity = 0;
+    var isDragging = false;
+    var lastX = 0;
+    var rafId = null;
+
+    var snapToNearest = function () {
+      var nearest = Math.round(targetAngle / angleStep) * angleStep;
+      targetAngle = nearest;
+    };
+
+    var animate = function () {
+      rafId = null;
+
+      if (!isDragging) {
+        velocity *= friction;
+        targetAngle += velocity;
+        currentAngle += (targetAngle - currentAngle) * snapStrength;
+      } else {
+        currentAngle += (targetAngle - currentAngle) * 0.3;
+      }
+
+      ring.style.transform = 'rotateY(' + -currentAngle + 'deg)';
+
+      panels.forEach(function (panel, i) {
+        var panelAngle = (angleStep * i - currentAngle) % 360;
+        while (panelAngle > 180) panelAngle -= 360;
+        while (panelAngle < -180) panelAngle += 360;
+
+        var absAngle = Math.abs(panelAngle);
+        var opacity = absAngle > 90 ? 0 : 1 - (absAngle / 90) * 0.4;
+        panel.style.opacity = opacity;
+      });
+
+      if (Math.abs(velocity) > 0.05 || Math.abs(targetAngle - currentAngle) > 0.05) {
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+
+    var startRaf = function () {
+      if (rafId === null) {
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+
+    if (!prefersReducedMotion) {
+      stage.addEventListener('pointerdown', function (e) {
+        isDragging = true;
+        lastX = e.clientX;
+        velocity = 0;
+        stage.setPointerCapture(e.pointerId);
+        if (hint) hint.setAttribute('hidden', '');
+        startRaf();
+      });
+
+      stage.addEventListener('pointermove', function (e) {
+        if (!isDragging) return;
+        var dx = e.clientX - lastX;
+        lastX = e.clientX;
+        velocity = dx * 0.4;
+        targetAngle += dx * 0.25;
+        startRaf();
+      });
+
+      stage.addEventListener('pointerup', function () {
+        isDragging = false;
+        snapToNearest();
+        startRaf();
+      });
+
+      stage.addEventListener('pointercancel', function () {
+        isDragging = false;
+        snapToNearest();
+        startRaf();
+      });
+
+      targetAngle = angleStep * 0.5;
+      startRaf();
+    } else {
+      ring.style.transform = 'rotateY(0deg)';
+      panels.forEach(function (panel) {
+        panel.style.opacity = '1';
+      });
+    }
+
+    section.addEventListener('click', function (e) {
+      if (Math.abs(velocity) > 2) return;
+
+      var card = e.target.closest('[data-carousel-panel]');
+      if (!card) return;
+
+      var handle = card.getAttribute('data-product-handle');
+      if (!handle) return;
+
+      if (typeof window.openProductPanel === 'function') {
+        e.preventDefault();
+        window.openProductPanel(handle);
+      }
+    });
+
+    section._carouselBound = true;
+    _carouselInstances.push({ section: section, rafId: rafId, stop: function () { if (rafId) cancelAnimationFrame(rafId); } });
+  }
+
+  function initAll(container) {
+    var roots = (container || document).querySelectorAll('[data-immersive-exclusive-carousel]');
+    for (var i = 0; i < roots.length; i++) {
+      initCarousel(roots[i]);
+    }
+  }
+
+  function destroyAll() {
+    _carouselInstances.forEach(function (inst) { inst.stop(); });
+    _carouselInstances = [];
+  }
+
+  window.ImmersiveCarousel = { init: initAll, initCarousel: initCarousel, destroy: destroyAll };
+})();
+
+// ============================================================
+// CodexCollectionsGrid — filterable collection card grid
+// ============================================================
+(function () {
+  function initCodexGrid(section) {
+    if (!section || section._codexGridBound) return;
+
+    var pills = section.querySelectorAll('[data-codex-filter]');
+    var items = section.querySelectorAll('[data-codex-theme]');
+
+    if (!pills.length) return;
+
+    pills.forEach(function (pill) {
+      pill.addEventListener('click', function () {
+        var filter = pill.getAttribute('data-codex-filter');
+
+        pills.forEach(function (p) {
+          var isActive = p === pill;
+          p.classList.toggle('is-active', isActive);
+          p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        items.forEach(function (item) {
+          var theme = item.getAttribute('data-codex-theme') || '';
+          var visible = filter === 'all' || theme === filter;
+          if (visible) {
+            item.removeAttribute('hidden');
+          } else {
+            item.setAttribute('hidden', '');
+          }
+        });
+      });
+    });
+
+    section.addEventListener('click', function (e) {
+      var link = e.target.closest('[data-immersive-bridge]');
+      if (!link) return;
+
+      var card = link.closest('[data-codex-collection-card]');
+      if (!card) return;
+
+      var handle = card.getAttribute('data-collection-handle');
+      if (!handle) return;
+
+      if (typeof window.openCollectionPanel === 'function') {
+        e.preventDefault();
+        window.openCollectionPanel(handle);
+      }
+    });
+
+    section._codexGridBound = true;
+  }
+
+  function initAll(container) {
+    var roots = (container || document).querySelectorAll('[data-codex-collections-grid]');
+    for (var i = 0; i < roots.length; i++) {
+      initCodexGrid(roots[i]);
+    }
+  }
+
+  window.CodexCollectionsGrid = { init: initAll, initCodexGrid: initCodexGrid };
+})();
+
+// ============================================================
+// ImmersiveStoryRail — chapter reveal animations + marquee
+// ============================================================
+(function () {
+  var _sectionObservers = [];
+
+  function initStoryRail(section) {
+    if (!section || section._storyRailBound) return;
+
+    var chapters = section.querySelectorAll('[data-story-chapter]');
+    if (!chapters.length) return;
+
+    var sectionId = section.getAttribute('data-section-id') || null;
+    var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function dispatchStoryMode(active) {
+      try {
+        window.dispatchEvent(
+          new CustomEvent('immersive:story-mode-change', {
+            detail: { active: active },
+            bubbles: false
+          })
+        );
+      } catch (e) {}
+    }
+
+    if (prefersReducedMotion) {
+      chapters.forEach(function (ch) { ch.classList.add('is-visible'); });
+      return;
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      chapters.forEach(function (ch) { ch.classList.add('is-visible'); });
+      return;
+    }
+
+    var chapterObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            chapterObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }
+    );
+
+    chapters.forEach(function (ch) { chapterObserver.observe(ch); });
+    _sectionObservers.push(chapterObserver);
+
+    var sectionObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) { dispatchStoryMode(entry.isIntersecting); });
+      },
+      { threshold: 0.4 }
+    );
+    sectionObserver.observe(section);
+    _sectionObservers.push(sectionObserver);
+
+    if (sectionId && typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
+      document.addEventListener('shopify:section:select', function (e) {
+        if (!e.detail || e.detail.sectionId !== sectionId) return;
+        chapters.forEach(function (ch) { ch.classList.add('is-visible'); });
+        dispatchStoryMode(true);
+      });
+
+      document.addEventListener('shopify:section:deselect', function (e) {
+        if (!e.detail || e.detail.sectionId !== sectionId) return;
+        dispatchStoryMode(false);
+      });
+    }
+
+    section._storyRailBound = true;
+  }
+
+  function initAll(container) {
+    var roots = (container || document).querySelectorAll('[data-immersive-story-rail]');
+    for (var i = 0; i < roots.length; i++) {
+      initStoryRail(roots[i]);
+    }
+  }
+
+  function destroyAll() {
+    _sectionObservers.forEach(function (obs) { obs.disconnect(); });
+    _sectionObservers = [];
+  }
+
+  window.ImmersiveStoryRail = { init: initAll, initStoryRail: initStoryRail, destroy: destroyAll };
+
+  if (typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
+    document.addEventListener('shopify:section:load', function (e) {
+      var section = e.target && e.target.querySelector('[data-immersive-story-rail]');
+      if (section) initStoryRail(section);
+    });
+  }
+})();
+
+// ============================================================
+// CodexTypoIndex — scroll parallax + collection bridge + theme registry
+// ============================================================
+(function () {
+  var _scrollCleanups = [];
+
+  function initTypoIndex(section) {
+    if (!section || section._typoIndexBound) return;
+
+    var rows = section.querySelectorAll('[data-codex-typo-row]');
+    if (!rows.length) return;
+
+    var prefersReducedMotion = false;
+    try {
+      if (window.matchMedia) {
+        prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      }
+    } catch (e) {}
+
+    if (!prefersReducedMotion) {
+      var scrollTarget = 0;
+      var scrollCurrent = 0;
+      var rafId = null;
+
+      function onScroll() {
+        scrollTarget = window.scrollY || window.pageYOffset;
+        if (rafId === null) {
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+
+      function tick() {
+        rafId = null;
+        scrollCurrent += (scrollTarget - scrollCurrent) * 0.08;
+
+        rows.forEach(function (row, i) {
+          var direction = i % 2 === 0 ? 1 : -1;
+          var offset = scrollCurrent * 0.012 * direction;
+          if (offset > 24) offset = 24;
+          if (offset < -24) offset = -24;
+          row.style.transform = 'translateX(' + offset + 'px)';
+        });
+
+        if (Math.abs(scrollTarget - scrollCurrent) > 0.5) {
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      var cleanup = function () {
+        window.removeEventListener('scroll', onScroll);
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+      };
+      _scrollCleanups.push(cleanup);
+    }
+
+    section.addEventListener('click', function (e) {
+      var link = e.target.closest('[data-immersive-bridge]');
+      if (!link) return;
+
+      var row = link.closest('[data-codex-typo-row]');
+      if (!row) return;
+
+      var handle = row.getAttribute('data-collection-handle');
+      if (!handle) return;
+
+      if (typeof window.openCollectionPanel === 'function') {
+        e.preventDefault();
+        window.openCollectionPanel(handle);
+      }
+    });
+
+    if (!window.codexCollectionThemes) {
+      window.codexCollectionThemes = {};
+    }
+    rows.forEach(function (row) {
+      var handle = row.getAttribute('data-collection-handle');
+      var theme = row.getAttribute('data-codex-theme');
+      if (handle && theme) {
+        window.codexCollectionThemes[handle] = theme;
+      }
+    });
+
+    section._typoIndexBound = true;
+  }
+
+  function initAll(container) {
+    var roots = (container || document).querySelectorAll('[data-codex-typo-index]');
+    for (var i = 0; i < roots.length; i++) {
+      initTypoIndex(roots[i]);
+    }
+  }
+
+  function destroyAll() {
+    _scrollCleanups.forEach(function (fn) { fn(); });
+    _scrollCleanups = [];
+  }
+
+  window.CodexTypoIndex = { init: initAll, initTypoIndex: initTypoIndex, destroy: destroyAll };
+
+  if (typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
+    document.addEventListener('shopify:section:load', function (e) {
+      var section = e.target && e.target.querySelector('[data-codex-typo-index]');
+      if (section) initTypoIndex(section);
+    });
+  }
+})();
+
+// ============================================================
+// ImmersiveSearch — inline header search with Cmd/Ctrl+K
+// ============================================================
+// ImmersiveFilters — smart filters inside collection panels
+// ============================================================
+
+var FILTER_ALLOWED_PARAMS = ['filter.p.m.custom.color[]', 'filter.v.price.gte', 'filter.v.price.lte', 'sort_by'];
+
+function saveFilters(roomKey, state) {
+  try {
+    sessionStorage.setItem('immersive_filters_' + roomKey, JSON.stringify(state));
+  } catch (e) {}
+}
+
+function loadFilters(roomKey) {
+  try {
+    var raw = sessionStorage.getItem('immersive_filters_' + roomKey);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function buildFilterUrl(baseUrl, state) {
+  var url = new URL(baseUrl, window.location.origin);
+  // Remove any existing filter params
+  FILTER_ALLOWED_PARAMS.forEach(function (key) {
+    url.searchParams.delete(key);
+  });
+  // Also remove array-style color params
+  var toDelete = [];
+  url.searchParams.forEach(function (val, key) {
+    if (key.indexOf('filter.') === 0) toDelete.push(key);
+  });
+  toDelete.forEach(function (k) {
+    url.searchParams.delete(k);
+  });
+
+  // Apply new state — only allowlisted keys
+  if (state.colors && state.colors.length) {
+    state.colors.forEach(function (c) {
+      url.searchParams.append('filter.p.m.custom.color[]', c);
+    });
+  }
+  if (state.priceMin !== null && state.priceMin !== undefined && state.priceMin !== '') {
+    url.searchParams.set('filter.v.price.gte', state.priceMin);
+  }
+  if (state.priceMax !== null && state.priceMax !== undefined && state.priceMax !== '') {
+    url.searchParams.set('filter.v.price.lte', state.priceMax);
+  }
+  if (state.sortBy && state.sortBy !== 'manual') {
+    url.searchParams.set('sort_by', state.sortBy);
+  }
+  return url.pathname + url.search;
+}
+
+function initImmersiveFilters(panelEl, collectionHandle, roomKey, sectionId) {
+  if (!panelEl || !collectionHandle) return;
+
+  var contentEl = panelEl.querySelector('.immersive-store__panel-content');
+  if (!contentEl) return;
+
+  var currentState = loadFilters(roomKey) || {
+    colors: [],
+    priceMin: null,
+    priceMax: null,
+    designers: [],
+    sortBy: 'manual',
+  };
+
+  var baseUrl = '/collections/' + collectionHandle + '?section_id=' + (sectionId || 'immersive-product-grid');
+
+  function applyFilters(state) {
+    currentState = state;
+    saveFilters(roomKey, state);
+
+    // Update filter chips
+    var chipsContainer = contentEl.querySelector('[data-filter-chips-container]');
+    if (chipsContainer) {
+      var hasActiveFilters =
+        state.colors.length > 0 ||
+        state.priceMin !== null ||
+        state.priceMax !== null ||
+        state.designers.length > 0 ||
+        (state.sortBy && state.sortBy !== 'manual');
+
+      if (hasActiveFilters) {
+        chipsContainer.innerHTML = renderActiveFilterChips(state);
+        chipsContainer.hidden = false;
+
+        // Wire up chip removal handlers
+        chipsContainer.querySelectorAll('[data-remove-filter]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var filterKey = btn.getAttribute('data-remove-filter');
+            removeFilterChip(filterKey, currentState, applyFilters);
+          });
+        });
+
+        // Wire up "Clear All" button
+        var clearAllBtn = chipsContainer.querySelector('[data-clear-all-filters]');
+        if (clearAllBtn) {
+          clearAllBtn.addEventListener('click', function () {
+            clearFilters();
+          });
+        }
+      } else {
+        chipsContainer.hidden = true;
+        chipsContainer.innerHTML = '';
+      }
+    }
+
+    var url = buildFilterUrl(baseUrl, state);
+    fetchWithCache(url)
+      .then(function (html) {
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var newGrid = tmp.querySelector('.immersive-product-grid-wrapper');
+        var existingGrid = contentEl.querySelector('.immersive-product-grid-wrapper');
+        if (newGrid && existingGrid) {
+          existingGrid.replaceWith(newGrid);
+        } else if (newGrid) {
+          contentEl.appendChild(newGrid);
+        }
+        // Re-scan for limited-time indicators on new cards
+        if (typeof scanLimitedTimeCards === 'function') scanLimitedTimeCards(contentEl);
+      })
+      .catch(function () {
+        var errorMsg = panelEl.getAttribute('data-msg-load-collection-error') || 'Unable to load collection.';
+        showFeedback(errorMsg, 'error');
+      });
+  }
+
+  function clearFilters() {
+    currentState = { colors: [], priceMin: null, priceMax: null, designers: [], sortBy: 'manual' };
+    saveFilters(roomKey, currentState);
+
+    // Hide filter chips
+    var chipsContainer = contentEl.querySelector('[data-filter-chips-container]');
+    if (chipsContainer) {
+      chipsContainer.hidden = true;
+      chipsContainer.innerHTML = '';
+    }
+
+    applyFilters(currentState);
+    // Reset toolbar UI
+    var toolbar = contentEl.querySelector('.immersive-filters');
+    if (toolbar) {
+      toolbar.querySelectorAll('.immersive-filters__color-swatch').forEach(function (s) {
+        s.setAttribute('aria-pressed', 'false');
+        s.classList.remove('is-active');
+      });
+      toolbar.querySelectorAll('.immersive-filters__designer-chip').forEach(function (c) {
+        c.setAttribute('aria-pressed', 'false');
+        c.classList.remove('is-active');
+      });
+      var minInput = toolbar.querySelector('[data-filter-price-min]');
+      var maxInput = toolbar.querySelector('[data-filter-price-max]');
+      if (minInput) minInput.value = '';
+      if (maxInput) maxInput.value = '';
+      var sortSelect = toolbar.querySelector('[data-filter-sort]');
+      if (sortSelect) sortSelect.value = 'manual';
+    }
+  }
+
+  function buildToolbar() {
+    // Extract colors and designers from rendered product cards
+    var colors = [];
+    var designers = [];
+    contentEl.querySelectorAll('[data-product-handle]').forEach(function (card) {
+      var color = card.getAttribute('data-product-color');
+      var vendor = card.getAttribute('data-product-vendor');
+      if (color && colors.indexOf(color) === -1) colors.push(color);
+      if (vendor && designers.indexOf(vendor) === -1) designers.push(vendor);
+    });
+
+    var toolbar = document.createElement('div');
+    toolbar.className = 'immersive-filters';
+    toolbar.setAttribute('data-immersive-filters', '');
+
+    // Sort
+    var sortRow = document.createElement('div');
+    sortRow.className = 'immersive-filters__row';
+    var sortSelect = document.createElement('select');
+    sortSelect.className = 'immersive-filters__sort';
+    sortSelect.setAttribute('data-filter-sort', '');
+    sortSelect.setAttribute('aria-label', 'Sort by');
+    [
+      { value: 'manual', label: 'Featured' },
+      { value: 'price-ascending', label: 'Price: Low to High' },
+      { value: 'price-descending', label: 'Price: High to Low' },
+      { value: 'title-ascending', label: 'A–Z' },
+    ].forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      if (currentState.sortBy === opt.value) o.selected = true;
+      sortSelect.appendChild(o);
+    });
+    sortSelect.addEventListener('change', function () {
+      currentState.sortBy = sortSelect.value;
+      applyFilters(currentState);
+    });
+    sortRow.appendChild(sortSelect);
+
+    // Price range
+    var priceRow = document.createElement('div');
+    priceRow.className = 'immersive-filters__row immersive-filters__price-row';
+    var minInput = document.createElement('input');
+    minInput.type = 'number';
+    minInput.className = 'immersive-filters__price-input';
+    minInput.setAttribute('data-filter-price-min', '');
+    minInput.placeholder = 'Min PKR';
+    minInput.value = currentState.priceMin || '';
+    var maxInput = document.createElement('input');
+    maxInput.type = 'number';
+    maxInput.className = 'immersive-filters__price-input';
+    maxInput.setAttribute('data-filter-price-max', '');
+    maxInput.placeholder = 'Max PKR';
+    maxInput.value = currentState.priceMax || '';
+    var priceApply = document.createElement('button');
+    priceApply.type = 'button';
+    priceApply.className = 'immersive-filters__price-apply';
+    priceApply.textContent = 'Apply';
+    priceApply.addEventListener('click', function () {
+      currentState.priceMin = minInput.value ? Number(minInput.value) : null;
+      currentState.priceMax = maxInput.value ? Number(maxInput.value) : null;
+      applyFilters(currentState);
+    });
+    priceRow.appendChild(minInput);
+    priceRow.appendChild(maxInput);
+    priceRow.appendChild(priceApply);
+
+    // Colors
+    if (colors.length) {
+      var colorRow = document.createElement('div');
+      colorRow.className = 'immersive-filters__row immersive-filters__color-row';
+      colors.forEach(function (color) {
+        var swatch = document.createElement('button');
+        swatch.type = 'button';
+        swatch.className = 'immersive-filters__color-swatch';
+        swatch.setAttribute('aria-pressed', currentState.colors.indexOf(color) !== -1 ? 'true' : 'false');
+        swatch.setAttribute('aria-label', color);
+        swatch.setAttribute('title', color);
+        swatch.style.background = color.toLowerCase();
+        if (currentState.colors.indexOf(color) !== -1) swatch.classList.add('is-active');
+        swatch.addEventListener('click', function () {
+          var idx = currentState.colors.indexOf(color);
+          if (idx === -1) {
+            currentState.colors.push(color);
+            swatch.setAttribute('aria-pressed', 'true');
+            swatch.classList.add('is-active');
+          } else {
+            currentState.colors.splice(idx, 1);
+            swatch.setAttribute('aria-pressed', 'false');
+            swatch.classList.remove('is-active');
+          }
+          applyFilters(currentState);
+        });
+        colorRow.appendChild(swatch);
+      });
+      toolbar.appendChild(colorRow);
+    }
+
+    // Designers
+    if (designers.length) {
+      var designerRow = document.createElement('div');
+      designerRow.className = 'immersive-filters__row immersive-filters__designer-row';
+      designers.forEach(function (vendor) {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'immersive-filters__designer-chip immersive-chip';
+        chip.setAttribute('aria-pressed', currentState.designers.indexOf(vendor) !== -1 ? 'true' : 'false');
+        chip.textContent = vendor;
+        if (currentState.designers.indexOf(vendor) !== -1) chip.classList.add('is-active');
+        chip.addEventListener('click', function () {
+          var idx = currentState.designers.indexOf(vendor);
+          if (idx === -1) {
+            currentState.designers.push(vendor);
+            chip.setAttribute('aria-pressed', 'true');
+            chip.classList.add('is-active');
+          } else {
+            currentState.designers.splice(idx, 1);
+            chip.setAttribute('aria-pressed', 'false');
+            chip.classList.remove('is-active');
+          }
+          applyFilters(currentState);
+        });
+        designerRow.appendChild(chip);
+      });
+      toolbar.appendChild(designerRow);
+    }
+
+    toolbar.appendChild(sortRow);
+    toolbar.appendChild(priceRow);
+
+    // Clear all
+    var clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'immersive-filters__clear';
+    clearBtn.textContent = 'Clear all';
+    clearBtn.addEventListener('click', clearFilters);
+    toolbar.appendChild(clearBtn);
+
+    return toolbar;
+  }
+
+  // Inject toolbar before the product grid
+  var existingToolbar = contentEl.querySelector('[data-immersive-filters]');
+  if (!existingToolbar) {
+    var grid = contentEl.querySelector('.immersive-product-grid-wrapper');
+    if (grid) {
+      var toolbar = buildToolbar();
+      contentEl.insertBefore(toolbar, grid);
+    }
+  }
+
+  // Apply saved filters on init if any are active
+  var hasSavedFilters =
+    currentState.colors.length ||
+    currentState.priceMin ||
+    currentState.priceMax ||
+    currentState.designers.length ||
+    (currentState.sortBy && currentState.sortBy !== 'manual');
+  if (hasSavedFilters) {
+    applyFilters(currentState);
+  }
+}
+
+// ============================================================
+// ImmersiveNextActions — contextual action chips after key events
+// ============================================================
+
+var _nextActionsTimer = null;
+var _nextActionsBar = null;
+
+function showNextActions(chips) {
+  if (!_nextActionsBar) return;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Clear existing
+  clearTimeout(_nextActionsTimer);
+  _nextActionsBar.innerHTML = '';
+
+  // Build chips
+  var inner = document.createElement('div');
+  inner.className = 'immersive-next-actions__inner';
+
+  chips.forEach(function (chip) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'immersive-next-actions__chip immersive-chip';
+    btn.textContent = chip.label;
+    btn.addEventListener('click', function () {
+      dismissNextActions();
+      if (typeof chip.action === 'function') chip.action();
+    });
+    inner.appendChild(btn);
+  });
+
+  // Close button
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'immersive-next-actions__close';
+  closeBtn.setAttribute('aria-label', 'Dismiss');
+  closeBtn.innerHTML =
+    '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  closeBtn.addEventListener('click', dismissNextActions);
+  inner.appendChild(closeBtn);
+
+  _nextActionsBar.appendChild(inner);
+  _nextActionsBar.hidden = false;
+  if (!reduceMotion) _nextActionsBar.classList.add('is-visible');
+
+  // Auto-dismiss after 6s
+  _nextActionsTimer = setTimeout(dismissNextActions, 6000);
+}
+
+function dismissNextActions() {
+  clearTimeout(_nextActionsTimer);
+  if (_nextActionsBar) {
+    _nextActionsBar.classList.remove('is-visible');
+    _nextActionsBar.hidden = true;
+    _nextActionsBar.innerHTML = '';
+  }
+}
+
+function showAfterAddToCart(product) {
+  if (!product) return;
+  showNextActions([
+    {
+      label: 'Complete the look',
+      action: function () {
+        if (product.handle && typeof openProductPanel === 'function') {
+          openProductPanel(product.handle);
+        }
+      },
+    },
+    {
+      label: 'View cart',
+      action: function () {
+        var cartToggle = document.getElementById('cart-toggle');
+        if (cartToggle) cartToggle.click();
+      },
+    },
+  ]);
+}
+
+// ============================================================
+// ImmersiveRoomRecommender — rule-based room suggestions
+// ============================================================
+
+var _browsingContext = {
+  visitedRooms: [],
+  savedProducts: [],
+  viewedCollections: [],
+  cartCollections: [],
+};
+
+var BRIDAL_KEYWORDS = ['bridal', 'bride', 'wedding', 'mehndi', 'nikah', 'walima', 'barat'];
+var DESIGNER_HOUSE_COLLECTIONS = ['suffuse', 'soraya', 'saad-bin-shahzad'];
+
+function getRecommendation(context) {
+  // Override hook for ML-driven scoring
+  if (typeof window.ImmersiveRecommenderOverride === 'function') {
+    try {
+      var override = window.ImmersiveRecommenderOverride(context);
+      if (override && override.roomKey) return override;
+    } catch (e) {}
+  }
+
+  var visited = context.visitedRooms || [];
+  var saved = context.savedProducts || [];
+  var cart = context.cartCollections || [];
+
+  // Rule 1: wishlist/cart contains bridal/mehndi → occasions
+  var hasBridal = saved.concat(cart).some(function (h) {
+    return BRIDAL_KEYWORDS.some(function (kw) {
+      return h.indexOf(kw) !== -1;
+    });
+  });
+  if (hasBridal && visited.indexOf('occasions') === -1) {
+    return { roomKey: 'occasions', label: 'Occasions', reason: 'Based on your saves' };
+  }
+
+  // Rule 2: wishlist contains designer-house products → designer_houses
+  var hasDesigner = saved.some(function (h) {
+    return DESIGNER_HOUSE_COLLECTIONS.some(function (d) {
+      return h.indexOf(d) !== -1;
+    });
+  });
+  if (hasDesigner && visited.indexOf('designer_houses') === -1) {
+    return { roomKey: 'designer_houses', label: 'Designer Houses', reason: 'Based on your saves' };
+  }
+
+  // Rule 3: visited designer_houses but not occasions
+  if (visited.indexOf('designer_houses') !== -1 && visited.indexOf('occasions') === -1) {
+    return { roomKey: 'occasions', label: 'Occasions', reason: 'Based on your browsing' };
+  }
+
+  // Rule 4: visited occasions but not featured_collections
+  if (visited.indexOf('occasions') !== -1 && visited.indexOf('featured_collections') === -1) {
+    return { roomKey: 'featured_collections', label: 'Featured Collections', reason: 'Based on your browsing' };
+  }
+
+  // Default fallback
+  return { roomKey: 'lounge', label: 'Lounge', reason: 'Continue exploring' };
+}
+
+function evaluateRoomRecommendation() {
+  if (!_browsingContext.visitedRooms.length) return;
+  var rec = getRecommendation(_browsingContext);
+  if (!rec) return;
+
+  // Check if already dismissed this session
+  try {
+    if (sessionStorage.getItem('immersive_rec_dismissed_' + rec.roomKey)) return;
+  } catch (e) {}
+
+  showRoomRecommendation(rec);
+}
+
+function showRoomRecommendation(rec) {
+  // Remove existing chip
+  var existing = document.querySelector('.immersive-rec-chip');
+  if (existing) existing.remove();
+
+  var chip = document.createElement('div');
+  chip.className = 'immersive-rec-chip';
+  chip.setAttribute('role', 'complementary');
+  chip.setAttribute('aria-label', rec.reason + ': ' + rec.label);
+
+  var reason = document.createElement('span');
+  reason.className = 'immersive-rec-chip__reason';
+  reason.textContent = rec.reason;
+
+  var label = document.createElement('button');
+  label.type = 'button';
+  label.className = 'immersive-rec-chip__label';
+  label.textContent = rec.label + ' →';
+  label.addEventListener('click', function () {
+    chip.remove();
+    if (typeof goToRoom === 'function') goToRoom(rec.roomKey);
+  });
+
+  var dismiss = document.createElement('button');
+  dismiss.type = 'button';
+  dismiss.className = 'immersive-rec-chip__dismiss';
+  dismiss.setAttribute('aria-label', 'Dismiss suggestion');
+  dismiss.innerHTML = '×';
+  dismiss.addEventListener('click', function () {
+    try {
+      sessionStorage.setItem('immersive_rec_dismissed_' + rec.roomKey, '1');
+    } catch (e) {}
+    chip.remove();
+  });
+
+  chip.appendChild(reason);
+  chip.appendChild(label);
+  chip.appendChild(dismiss);
+  document.body.appendChild(chip);
+
+  // Auto-dismiss after 10s
+  setTimeout(function () {
+    if (chip.parentNode) chip.remove();
+  }, 10000);
+}
+
+function trackRoomVisit(roomKey) {
+  if (_browsingContext.visitedRooms.indexOf(roomKey) === -1) {
+    _browsingContext.visitedRooms.push(roomKey);
+  }
+  evaluateRoomRecommendation();
+  syncVisitedRooms();
+}
+
+// ============================================================
+// ImmersiveLimitedTime — countdown timers, low-stock badges, flash sale
+// ============================================================
+
+var _limitedTimeIntervals = [];
+var _lowStockThreshold = 5;
+
+function computeCountdown(endTime) {
+  var now = Date.now();
+  var end = endTime instanceof Date ? endTime.getTime() : new Date(endTime).getTime();
+  if (isNaN(end) || end <= now) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+  }
+  var diff = Math.floor((end - now) / 1000);
+  var days = Math.floor(diff / 86400);
+  var hours = Math.floor((diff % 86400) / 3600);
+  var minutes = Math.floor((diff % 3600) / 60);
+  var seconds = diff % 60;
+  return { days: days, hours: hours, minutes: minutes, seconds: seconds, expired: false };
+}
+
+function renderCountdown(endTime, containerEl) {
+  if (!containerEl) return;
+  var reduceMotionLT = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var endDate = new Date(endTime);
+  if (isNaN(endDate.getTime())) return; // silently skip invalid dates
+
+  function update() {
+    var state = computeCountdown(endDate);
+    if (state.expired) {
+      containerEl.innerHTML = '';
+      return;
+    }
+    var parts = [];
+    if (state.days > 0) parts.push(state.days + 'd');
+    parts.push(pad(state.hours) + 'h');
+    parts.push(pad(state.minutes) + 'm');
+    parts.push(pad(state.seconds) + 's');
+    containerEl.textContent = parts.join(' ');
+    if (!reduceMotionLT) containerEl.classList.add('is-ticking');
+  }
+
+  update();
+  var intervalId = setInterval(update, 1000);
+  _limitedTimeIntervals.push(intervalId);
+}
+
+function pad(n) {
+  return n < 10 ? '0' + n : '' + n;
+}
+
+function renderLowStockBadge(quantity, containerEl) {
+  if (!containerEl || quantity === null || quantity === undefined || isNaN(quantity)) return;
+  if (quantity > _lowStockThreshold) return;
+  var badge = document.createElement('span');
+  badge.className = 'immersive-low-stock-badge immersive-badge';
+  badge.textContent = 'Only ' + quantity + ' left';
+  containerEl.appendChild(badge);
+}
+
+function scanLimitedTimeCards(scopeEl) {
+  var scope = scopeEl || document;
+  scope.querySelectorAll('[data-sale-end-date]').forEach(function (card) {
+    var endDate = card.getAttribute('data-sale-end-date');
+    var qty = parseInt(card.getAttribute('data-inventory-quantity'), 10);
+    var urgency = card.querySelector('[data-urgency-container]');
+    if (!urgency) return;
+    urgency.innerHTML = '';
+    if (endDate) {
+      var countdownEl = document.createElement('span');
+      countdownEl.className = 'immersive-countdown';
+      urgency.appendChild(countdownEl);
+      renderCountdown(endDate, countdownEl);
+    }
+    if (!isNaN(qty)) {
+      renderLowStockBadge(qty, urgency);
+    }
+  });
+}
+
+function showFlashSaleAlert() {
+  var banners = document.querySelectorAll('[data-flash-sale-banner]');
+  banners.forEach(function (banner) {
+    var dismissKey = 'immersive_flash_dismissed';
+    try {
+      if (sessionStorage.getItem(dismissKey)) return;
+    } catch (e) {}
+
+    banner.hidden = false;
+
+    var endDate = banner.getAttribute('data-sale-end-date');
+    var countdownEl = banner.querySelector('[data-flash-countdown]');
+    if (endDate && countdownEl) renderCountdown(endDate, countdownEl);
+
+    var dismissBtn = banner.querySelector('[data-flash-dismiss]');
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', function () {
+        banner.hidden = true;
+        try {
+          sessionStorage.setItem(dismissKey, '1');
+        } catch (e) {}
+      });
+    }
+  });
+}
+
+function clearLimitedTimeIntervals() {
+  _limitedTimeIntervals.forEach(function (id) {
+    clearInterval(id);
+  });
+  _limitedTimeIntervals = [];
+}
+
+// Guard against double-init (theme editor fires section events rapidly)
+// ─────────────────────────────────────────────────────────────
+// Keyboard Navigation for Hotspots - Accessibility Enhancement
+// ─────────────────────────────────────────────────────────────
+
+// ── EditorialHeroParallax state ─────────────────────────────
+var _ehpScrollTarget = 0;
+var _ehpScrollCurrent = 0;
+var _ehpRafId = null;
+var _ehpOverlay = null;
+var _ehpHeroImg = null;
+
+// ── VisitedRoomsIndicator ───────────────────────────────────
+var VISITED_ROOMS_EXCLUDE = ['lounge', 'storefront'];
+
+// ============================================================
+// EditorialBackToLounge
+// ============================================================
+
+function updateBackToLoungeVisibility(roomKey) {
+  var btn = document.querySelector('[data-editorial-back-to-lounge]');
+  if (!btn) return;
+  btn.hidden = roomKey === 'lounge';
+}
+
+// ============================================================
+// VisitedRoomsIndicator
+// ============================================================
+
+function syncVisitedRooms() {
+  var picker = document.querySelector('[data-bottom-nav-room-picker]');
+  if (!picker) return;
+
+  var visitedLabel = picker.getAttribute('data-room-visited-label') || 'Visited';
+  var visited = (_browsingContext && _browsingContext.visitedRooms) || [];
+  var buttons = picker.querySelectorAll('[data-room-key]');
+
+  for (var i = 0; i < buttons.length; i++) {
+    var btn = buttons[i];
+    var key = btn.getAttribute('data-room-key');
+    var isVisited = visited.indexOf(key) !== -1 && VISITED_ROOMS_EXCLUDE.indexOf(key) === -1;
+    if (isVisited) {
+      btn.classList.add('is-visited');
+      btn.setAttribute('aria-description', visitedLabel);
+    } else {
+      btn.classList.remove('is-visited');
+      btn.removeAttribute('aria-description');
+    }
+  }
+}
+
+// ============================================================
+// EditorialHeroParallax
+// ============================================================
+
+function _ehpOnScroll() {
+  if (!_ehpOverlay) return;
+  _ehpScrollTarget = Math.min(Math.max(_ehpOverlay.scrollTop * 0.3, 0), 60);
+}
+
+function _ehpLoop() {
+  _ehpScrollCurrent += (_ehpScrollTarget - _ehpScrollCurrent) * 0.08;
+  if (_ehpHeroImg) {
+    _ehpHeroImg.style.transform = 'translateY(' + _ehpScrollCurrent + 'px)';
+  }
+  _ehpRafId = requestAnimationFrame(_ehpLoop);
+}
+
+function initEditorialHeroParallax() {
+  var reduceMotionEHP = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotionEHP) return;
+
+  _ehpOverlay = document.getElementById('immersive-editorial-overlay');
+  if (!_ehpOverlay) return;
+
+  _ehpHeroImg = _ehpOverlay.querySelector('.immersive-editorial__hero-bg');
+  if (!_ehpHeroImg) {
+    destroyEditorialHeroParallax();
+    return;
+  }
+
+  _ehpScrollTarget = 0;
+  _ehpScrollCurrent = 0;
+
+  _ehpOverlay.addEventListener('scroll', _ehpOnScroll, { passive: true });
+  _ehpRafId = requestAnimationFrame(_ehpLoop);
+}
+
+function destroyEditorialHeroParallax() {
+  if (_ehpOverlay) _ehpOverlay.removeEventListener('scroll', _ehpOnScroll);
+  if (_ehpRafId !== null) {
+    cancelAnimationFrame(_ehpRafId);
+    _ehpRafId = null;
+  }
+  if (_ehpHeroImg) {
+    _ehpHeroImg.style.transform = '';
+  }
+  _ehpOverlay = null;
+  _ehpHeroImg = null;
+  _ehpScrollTarget = 0;
+  _ehpScrollCurrent = 0;
+}
+
+// ============================================================
+// ProductCardTilt
+// ============================================================
+
+function _pctClamp(val, min, max) {
+  return Math.min(Math.max(val, min), max);
+}
+
+function _pctApplyTilt() {
+  if (!_pctActiveCard) {
+    _pctRafPending = false;
+    return;
+  }
+  var rotateY = _pctPendingNormX * 8;
+  var rotateX = -_pctPendingNormY * 8;
+  _pctActiveCard.style.transform = 'perspective(600px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
+  _pctRafPending = false;
+}
+
+// ============================================================
+// GUIDED MODE — Concierge sequence
+// Storefront → Lounge → Editorial → Collection → Product
+// ============================================================
+
+var _guidedIdleTimer = null;
+var _guidedPromptTimer = null;
+var _guidedStep = 0; // 0=lounge, 1=editorial, 2=collection, 3=product
+var _guidedFeaturedWing = 'designer_houses'; // overridden from section setting on init
+
+var GUIDED_IDLE_MS = 10000; // 10s before auto-advance
+var GUIDED_PROMPT_MS = 3500; // 3.5s before showing soft prompt in lounge
+
+// Steps: 0=lounge, 1=editorial, 2=collection, 3=product
+var GUIDED_STEPS = ['lounge', 'editorial', 'collection', 'product'];
+
+function activateGuidedMode() {
+  // Don't restart if dismissed this session
+  try {
+    if (sessionStorage.getItem('immersive_guided_dismissed')) return;
+  } catch (e) {}
+
+  immersiveState.guided = true;
+  _guidedStep = 0;
+  _updateGuidedDots(0);
+  _showGuidedProgress();
+  _guidedStartIdleTimer();
+}
+
+function exitGuidedMode() {
+  if (!immersiveState.guided) return;
+  immersiveState.guided = false;
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+  _guidedIdleTimer = null;
+  _guidedPromptTimer = null;
+  hideGuidedPrompt();
+  _hideGuidedProgress();
+  try {
+    sessionStorage.setItem('immersive_guided_dismissed', '1');
+  } catch (e) {}
+}
+
+function _guidedStartIdleTimer() {
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+
+  if (!immersiveState.guided) return;
+
+  // Show soft prompt after 3.5s
+  _guidedPromptTimer = setTimeout(function () {
+    if (immersiveState.guided) showGuidedPrompt();
+  }, GUIDED_PROMPT_MS);
+
+  // Auto-advance after 10s
+  _guidedIdleTimer = setTimeout(function () {
+    if (immersiveState.guided) {
+      hideGuidedPrompt();
+      _guidedAdvance();
+    }
+  }, GUIDED_IDLE_MS);
+}
+
+function _guidedResetIdleTimer() {
+  if (!immersiveState.guided) return;
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+  hideGuidedPrompt();
+  _guidedStartIdleTimer();
+}
+
+function _guidedAdvance() {
+  if (!immersiveState.guided) return;
+
+  _guidedStep++;
+  _updateGuidedDots(_guidedStep);
+
+  if (_guidedStep === 1) {
+    // Step 1: Enter editorial of featured wing
+    enterEditorialMode(_guidedFeaturedWing, null);
+    // After editorial, guided mode waits for user to scroll/interact
+    // Auto-advance to collection after idle
+    _guidedStartIdleTimer();
+  } else if (_guidedStep === 2) {
+    // Step 2: Open the first collection from the featured wing
+    exitEditorialMode();
+    var firstCollection = _guidedGetFirstCollection(_guidedFeaturedWing);
+    if (firstCollection) {
+      setTimeout(function () {
+        openCollectionPanel(firstCollection);
+      }, 200);
+    } else {
+      // No collection configured — exit guided mode gracefully
+      exitGuidedMode();
+    }
+  } else if (_guidedStep >= 3) {
+    // Step 3+: Guided sequence complete — exit
+    exitGuidedMode();
+  }
+}
+
+function _guidedGetFirstCollection(wingKey) {
+  var room = STORE_ROOMS[wingKey];
+  if (!room || !room.hotspots) return null;
+  for (var i = 0; i < room.hotspots.length; i++) {
+    if (room.hotspots[i].targetCollection) return room.hotspots[i].targetCollection;
+  }
+  return null;
+}
+
+function showGuidedPrompt() {
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (!prompt) return;
+  prompt.hidden = false;
+  requestAnimationFrame(function () {
+    prompt.classList.add('is-visible');
+  });
+}
+
+function hideGuidedPrompt() {
+  var prompt = document.getElementById('immersive-guided-prompt');
+  if (!prompt) return;
+  prompt.classList.remove('is-visible');
+  // Hide after transition
+  setTimeout(function () {
+    if (!prompt.classList.contains('is-visible')) prompt.hidden = true;
+  }, 500);
+}
+
+function _showGuidedProgress() {
+  var el = document.getElementById('immersive-guided-progress');
+  if (!el) return;
+  el.hidden = false;
+  requestAnimationFrame(function () {
+    el.classList.add('is-visible');
+  });
+}
+
+function _hideGuidedProgress() {
+  var el = document.getElementById('immersive-guided-progress');
+  if (!el) return;
+  el.classList.remove('is-visible');
+  setTimeout(function () {
+    if (!el.classList.contains('is-visible')) el.hidden = true;
+  }, 400);
+}
+
+function _updateGuidedDots(activeStep) {
+  var dots = document.querySelectorAll('[data-guided-step]');
+  for (var i = 0; i < dots.length; i++) {
+    var step = parseInt(dots[i].getAttribute('data-guided-step'), 10);
+    dots[i].classList.remove('is-active', 'is-done');
+    if (step === activeStep) {
+      dots[i].classList.add('is-active');
+    } else if (step < activeStep) {
+      dots[i].classList.add('is-done');
+    }
+  }
+}
+window.enterEditorialMode = enterEditorialMode;
+/**
+ * Immersive Init — coordination layer for the 3D store.
+ *
+ * Loads after immersive-core.js and immersive-features.js.
+ * Contains:
+ *   - Init wrappers that call existing modular functions
+ *   - Entirely missing features ported from legacy (search, gestures, quick-add, etc.)
+ *   - Full FAB
+ *   - safeBindImmersiveInit() + Shopify theme editor re-init handlers
+ */
+
+// ---------------------------------------------------------------------------
+// State Variables
+// ---------------------------------------------------------------------------
+
+var _immersiveInitBound = false;
+var _searchActiveIndex = -1;
+var _searchResults = [];
+var _searchDebounceTimer = null;
+var _searchAbortController = null;
+var _gestureLastRoomTransition = 0;
+var _gestureCooldown = 600;
+var SWIPE_ROOM_SEQUENCE = ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'];
+var _quickAddModal = null;
+var _quickAddTrigger = null;
+var _hotspotElements = [];
+var _focusedHotspotIndex = -1;
+var _esrCooldown = false;
+var _esrWheelBound = false;
+var _pctRafPending = false;
+var _pctActiveCard = null;
+var _pctPendingNormX = 0;
+var _pctPendingNormY = 0;
+var parallaxStrength = 0;
+
+// ---------------------------------------------------------------------------
+// Helper Functions
+// ---------------------------------------------------------------------------
+
+function getSearchResultIcon(type) {
+  var icons = {
+    product:
+      '<path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM10 5h4v2h-4V5z"/>',
+    collection:
+      '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+    room: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  };
+  var path = icons[type] || icons.product;
+  return (
+    '<svg class="immersive-search-result__icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+    path +
+    '</svg>'
+  );
+}
+
+function formatMoney(cents) {
+  if (!cents && cents !== 0) return '';
+  return 'PKR ' + (cents / 100).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function showFeedback(message, type) {
+  var existing = document.querySelector('.immersive-feedback-toast');
+  if (existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.className = 'immersive-feedback-toast immersive-feedback-toast--' + (type || 'info');
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  toast.textContent = message;
+  toast.style.cssText =
+    'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:0.75rem 1.5rem;border-radius:8px;font-size:0.875rem;z-index:10000;max-width:90vw;text-align:center;';
+  if (type === 'error') {
+    toast.style.background = 'rgba(220,38,38,0.9)';
+    toast.style.color = '#fff';
+  } else if (type === 'success') {
+    toast.style.background = 'rgba(34,197,94,0.9)';
+    toast.style.color = '#fff';
+  } else {
+    toast.style.background = 'rgba(15,23,42,0.9)';
+    toast.style.color = '#d4af37';
+  }
+  document.body.appendChild(toast);
+  setTimeout(function () {
+    if (toast.parentNode) toast.remove();
+  }, 3000);
+}
+
+function _esrEaseOutParallax(durationMs, callback) {
+  var startValue = typeof parallaxStrength !== 'undefined' ? parallaxStrength : 0;
+  var startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+    var t = Math.min(elapsed / durationMs, 1);
+    if (typeof parallaxStrength !== 'undefined') {
+      parallaxStrength = startValue * (1 - t);
+    }
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      if (typeof parallaxStrength !== 'undefined') parallaxStrength = 0;
+      if (typeof callback === 'function') callback();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function _esrTrigger() {
+  if (!immersiveState || immersiveState.mode !== 'showroom') return;
+  var editorialRooms = ['designer_houses', 'occasions', 'featured_collections'];
+  if (editorialRooms.indexOf(immersiveState.currentRoom) === -1) return;
+  var panel = document.getElementById('glass-panel');
+  if (panel && (panel.classList.contains('is-active') || (!panel.hidden && !panel.classList.contains('hidden'))))
+    return;
+  if (_esrCooldown) return;
+  _esrCooldown = true;
+  setTimeout(function () {
+    _esrCooldown = false;
+  }, 700);
+  var roomKey = immersiveState.currentRoom;
+  var reduceMotionESR = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotionESR) {
+    if (typeof enterEditorialMode === 'function') enterEditorialMode(roomKey, null);
+  } else {
+    _esrEaseOutParallax(300, function () {
+      if (typeof enterEditorialMode === 'function') enterEditorialMode(roomKey, null);
+    });
+  }
+}
+
+function _esrOnWheel(event) {
+  if (event.deltaY > 0) _esrTrigger();
+}
+
+function _esrOnSwipeDown(deltaX, deltaY) {
+  var absDy = Math.abs(deltaY);
+  var absDx = Math.abs(deltaX);
+  if (absDy < 60) return;
+  if (absDx > 0 && absDy / absDx <= 2.5) return;
+  if (deltaY < 0) return;
+  _esrTrigger();
+}
+
+function _pctOnMouseMove(event) {
+  var card = event.target && event.target.closest && event.target.closest('.immersive-product-card');
+  if (!card) return;
+  if (document.activeElement === card || card.contains(document.activeElement)) return;
+  var rect = card.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+  var centerX = rect.left + rect.width / 2;
+  var centerY = rect.top + rect.height / 2;
+  if (typeof _pctClamp === 'function') {
+    _pctPendingNormX = _pctClamp((event.clientX - centerX) / (rect.width / 2), -1, 1);
+    _pctPendingNormY = _pctClamp((event.clientY - centerY) / (rect.height / 2), -1, 1);
+  }
+  _pctActiveCard = card;
+  card.classList.remove('tilt-reset');
+  if (!_pctRafPending && typeof _pctApplyTilt === 'function') {
+    _pctRafPending = true;
+    requestAnimationFrame(_pctApplyTilt);
+  }
+}
+
+function _pctOnMouseLeave(event) {
+  var card =
+    (event.target && event.target.closest && event.target.closest('.immersive-product-card')) || _pctActiveCard;
+  if (card) {
+    card.classList.add('tilt-reset');
+    card.style.transform = '';
+  }
+  _pctActiveCard = null;
+}
+
+// ---------------------------------------------------------------------------
+// Immersive Search
+// ---------------------------------------------------------------------------
+
+function initImmersiveSearch() {
+  var container = document.querySelector('[data-immersive-search]');
+  if (!container) return;
+  var input = container.querySelector('#immersive-search-input');
+  var dropdown = container.querySelector('#immersive-search-results');
+  if (!input || !dropdown) return;
+
+  var msgNoResults = container.getAttribute('data-msg-no-results') || 'No results';
+  var msgNoResultsHint = container.getAttribute('data-msg-no-results-hint') || '';
+  var msgUnavailable = container.getAttribute('data-msg-unavailable') || 'Search unavailable';
+  var labelProducts = container.getAttribute('data-label-products') || 'Products';
+  var labelCollections = container.getAttribute('data-label-collections') || 'Collections';
+  var labelRooms = container.getAttribute('data-label-rooms') || 'Rooms';
+
+  var ROOM_LIST = [
+    { roomKey: 'storefront', label: 'Storefront' },
+    { roomKey: 'lounge', label: 'Lounge' },
+    { roomKey: 'designer_houses', label: 'Designer Houses' },
+    { roomKey: 'occasions', label: 'Occasions' },
+    { roomKey: 'featured_collections', label: 'Featured Collections' },
+  ];
+
+  function focusSearch() {
+    input.focus();
+    input.select();
+  }
+
+  function closeDropdown() {
+    dropdown.hidden = true;
+    dropdown.innerHTML = '';
+    input.setAttribute('aria-expanded', 'false');
+    _searchActiveIndex = -1;
+    _searchResults = [];
+  }
+
+  function fuzzyMatchRooms(term) {
+    var t = term.toLowerCase();
+    return ROOM_LIST.filter(function (r) {
+      return r.label.toLowerCase().indexOf(t) !== -1 || r.roomKey.indexOf(t) !== -1;
+    });
+  }
+
+  function buildResultEl(item, type, index) {
+    var el = document.createElement('div');
+    el.className = 'immersive-search__result';
+    el.setAttribute('role', 'option');
+    el.setAttribute('id', 'immersive-search-result-' + index);
+    el.setAttribute('aria-selected', 'false');
+    var iconType = type === 'collection' ? 'collection' : 'product';
+    var iconWrapper = document.createElement('div');
+    iconWrapper.innerHTML = getSearchResultIcon(iconType);
+    var iconEl = iconWrapper.firstChild;
+    if (iconEl) el.appendChild(iconEl);
+    var info = document.createElement('div');
+    info.className = 'immersive-search__result-info';
+    var title = document.createElement('span');
+    title.className = 'immersive-search__result-title';
+    title.textContent = item.title || '';
+    info.appendChild(title);
+    // Issue 8: Show metadata for both products and collections
+    var metaText = '';
+    if (type === 'product' && item.price) {
+      metaText = item.price;
+    } else if (type === 'collection') {
+      // Shopify suggest API returns products_count for collections
+      if (item.products_count !== undefined && item.products_count !== null) {
+        metaText = item.products_count + ' product' + (item.products_count !== 1 ? 's' : '');
+      }
+    }
+    if (metaText) {
+      var meta = document.createElement('span');
+      meta.className = 'immersive-search__result-meta';
+      meta.textContent = metaText;
+      info.appendChild(meta);
+    }
+    el.appendChild(info);
+    el.addEventListener('click', function () {
+      selectResult(index);
+    });
+    return el;
+  }
+
+  function buildRoomResultEl(room, index) {
+    var el = document.createElement('div');
+    el.className = 'immersive-search__result';
+    el.setAttribute('role', 'option');
+    el.setAttribute('id', 'immersive-search-result-' + index);
+    el.setAttribute('aria-selected', 'false');
+    var iconWrapper = document.createElement('div');
+    iconWrapper.innerHTML = getSearchResultIcon('room');
+    var iconEl = iconWrapper.firstChild;
+    if (iconEl) el.appendChild(iconEl);
+    var info = document.createElement('div');
+    info.className = 'immersive-search__result-info';
+    var title = document.createElement('span');
+    title.className = 'immersive-search__result-title';
+    title.textContent = room.label;
+    info.appendChild(title);
+    var meta = document.createElement('span');
+    meta.className = 'immersive-search__result-meta';
+    meta.textContent = 'Room';
+    info.appendChild(meta);
+    el.appendChild(info);
+    el.addEventListener('click', function () {
+      selectResult(index);
+    });
+    return el;
+  }
+
+  function renderResults(apiResults, roomMatches) {
+    dropdown.innerHTML = '';
+    var hasContent = false;
+    _searchResults = [];
+    if (apiResults.products && apiResults.products.length) {
+      hasContent = true;
+      var groupLabel = document.createElement('span');
+      groupLabel.className = 'immersive-search__group-label';
+      groupLabel.textContent = labelProducts;
+      dropdown.appendChild(groupLabel);
+      apiResults.products.forEach(function (item) {
+        _searchResults.push({ type: 'product', data: item });
+        dropdown.appendChild(buildResultEl(item, 'product', _searchResults.length - 1));
+      });
+    }
+    if (apiResults.collections && apiResults.collections.length) {
+      hasContent = true;
+      var groupLabel2 = document.createElement('span');
+      groupLabel2.className = 'immersive-search__group-label';
+      groupLabel2.textContent = labelCollections;
+      dropdown.appendChild(groupLabel2);
+      apiResults.collections.forEach(function (item) {
+        _searchResults.push({ type: 'collection', data: item });
+        dropdown.appendChild(buildResultEl(item, 'collection', _searchResults.length - 1));
+      });
+    }
+    if (roomMatches && roomMatches.length) {
+      hasContent = true;
+      var groupLabel3 = document.createElement('span');
+      groupLabel3.className = 'immersive-search__group-label';
+      groupLabel3.textContent = labelRooms;
+      dropdown.appendChild(groupLabel3);
+      roomMatches.forEach(function (room) {
+        _searchResults.push({ type: 'room', data: room });
+        dropdown.appendChild(buildRoomResultEl(room, _searchResults.length - 1));
+      });
+    }
+    if (!hasContent) {
+      var noRes = document.createElement('div');
+      noRes.className = 'immersive-search__no-results';
+      noRes.textContent = msgNoResults.replace('{{term}}', input.value);
+      if (msgNoResultsHint) {
+        var hint = document.createElement('span');
+        hint.className = 'immersive-search__no-results-hint';
+        hint.textContent = msgNoResultsHint;
+        noRes.appendChild(hint);
+      }
+      dropdown.appendChild(noRes);
+    }
+    dropdown.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    _searchActiveIndex = -1;
+  }
+
+  function selectResult(index) {
+    var item = _searchResults[index];
+    if (!item) return;
+    closeDropdown();
+    input.value = '';
+    if (item.type === 'product') {
+      if (typeof openProductPanel === 'function') openProductPanel(item.data.handle);
+    } else if (item.type === 'collection') {
+      if (typeof openCollectionPanel === 'function') openCollectionPanel(item.data.handle);
+    } else if (item.type === 'room') {
+      if (typeof goToRoom === 'function') goToRoom(item.data.roomKey);
+    }
+  }
+
+  function navigateResults(direction) {
+    if (!_searchResults.length) return;
+    if (direction === 'down') {
+      _searchActiveIndex = Math.min(_searchActiveIndex + 1, _searchResults.length - 1);
+    } else {
+      _searchActiveIndex = Math.max(_searchActiveIndex - 1, 0);
+    }
+    var allResults = dropdown.querySelectorAll('[role="option"]');
+    allResults.forEach(function (el, i) {
+      el.setAttribute('aria-selected', i === _searchActiveIndex ? 'true' : 'false');
+    });
+    var activeId = 'immersive-search-result-' + _searchActiveIndex;
+    input.setAttribute('aria-activedescendant', activeId);
+  }
+
+  function doSearch(term) {
+    if (!term || term.length < 2) {
+      closeDropdown();
+      return;
+    }
+    var roomMatches = fuzzyMatchRooms(term);
+    if (_searchAbortController) {
+      try {
+        _searchAbortController.abort();
+      } catch (e) {}
+    }
+    var timeoutId = setTimeout(function () {
+      dropdown.innerHTML = '<div class="immersive-search__unavailable">' + msgUnavailable + '</div>';
+      dropdown.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+    }, 3000);
+    var url =
+      '/search/suggest?q=' + encodeURIComponent(term) + '&resources[type]=product,collection&resources[limit]=5';
+    fetch(url, {
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+      .then(function (res) {
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error('Search failed');
+        return res.json();
+      })
+      .then(function (data) {
+        var resources = (data.resources && data.resources.results) || {};
+        renderResults(
+          {
+            products: resources.products || [],
+            collections: resources.collections || [],
+          },
+          roomMatches,
+        );
+      })
+      .catch(function () {
+        clearTimeout(timeoutId);
+        if (roomMatches.length) {
+          renderResults({ products: [], collections: [] }, roomMatches);
+        } else {
+          dropdown.innerHTML = '<div class="immersive-search__unavailable">' + msgUnavailable + '</div>';
+          dropdown.hidden = false;
+          input.setAttribute('aria-expanded', 'true');
+        }
+      });
+  }
+
+  input.addEventListener('input', function () {
+    clearTimeout(_searchDebounceTimer);
+    var term = input.value.trim();
+    _searchDebounceTimer = setTimeout(function () {
+      doSearch(term);
+    }, 200);
+  });
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      navigateResults('down');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      navigateResults('up');
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (_searchActiveIndex >= 0) {
+        selectResult(_searchActiveIndex);
+      }
+    } else if (e.key === 'Escape') {
+      closeDropdown();
+      input.blur();
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!container.contains(e.target)) {
+      closeDropdown();
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      focusSearch();
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Immersive Gestures
+// ---------------------------------------------------------------------------
+
+function classifyGesture(deltaX, deltaY) {
+  var absDx = Math.abs(deltaX);
+  var absDy = Math.abs(deltaY);
+  if (absDx < 60 && absDy < 60) return 'none';
+  if (absDy === 0) return absDx >= 60 ? 'horizontal' : 'none';
+  var ratio = absDx / absDy;
+  if (ratio > 2.5) return 'horizontal';
+  if (absDy >= 60) return deltaY > 0 ? 'vertical-down' : 'vertical-up';
+  return 'none';
+}
+
+function initImmersiveGestures() {
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var canvasWrapper = document.getElementById('immersive-canvas') || document.querySelector('.immersive-store');
+  if (!canvasWrapper) return;
+
+  var touchStartX = 0;
+  var touchStartY = 0;
+  var touchStartTime = 0;
+
+  canvasWrapper.addEventListener(
+    'touchstart',
+    function (e) {
+      var touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchStartTime = Date.now();
+    },
+    { passive: true },
+  );
+
+  canvasWrapper.addEventListener('touchmove', function () {}, { passive: true });
+
+  canvasWrapper.addEventListener(
+    'touchend',
+    function (e) {
+      var target = e.target;
+      if (
+        target &&
+        target.closest('button, a, input, select, textarea, [role="radio"], [role="option"], [data-immersive-search]')
+      )
+        return;
+      var touch = e.changedTouches[0];
+      var deltaX = touch.clientX - touchStartX;
+      var deltaY = touch.clientY - touchStartY;
+      var elapsed = Date.now() - touchStartTime;
+      if (elapsed > 600) return;
+      var gesture = classifyGesture(deltaX, deltaY);
+      if (gesture === 'none') return;
+      var glassPanel = document.getElementById('glass-panel');
+      var panelOpen = glassPanel && !glassPanel.hidden && !glassPanel.classList.contains('hidden');
+      if (gesture === 'horizontal') {
+        var now = Date.now();
+        // Issue 12: Reset cooldown after room transition completes so rapid
+        // swipes don't queue up and fire all at once when cooldown expires.
+        if (now - _gestureLastRoomTransition < _gestureCooldown) return;
+        _gestureLastRoomTransition = now;
+        if (panelOpen) return;
+        var currentRoom = (typeof immersiveState !== 'undefined' && immersiveState.currentRoom) || 'storefront';
+        var idx = SWIPE_ROOM_SEQUENCE.indexOf(currentRoom);
+        if (idx === -1) idx = 0;
+        var nextIdx;
+        if (deltaX < 0) {
+          nextIdx = (idx + 1) % SWIPE_ROOM_SEQUENCE.length;
+        } else {
+          nextIdx = (idx - 1 + SWIPE_ROOM_SEQUENCE.length) % SWIPE_ROOM_SEQUENCE.length;
+        }
+        if (typeof goToRoom === 'function') {
+          goToRoom(SWIPE_ROOM_SEQUENCE[nextIdx], reduceMotion ? 'instant' : undefined);
+        }
+      } else if (gesture === 'vertical-down' && panelOpen) {
+        var closeBtn = glassPanel && glassPanel.querySelector('.immersive-store__panel-close');
+        if (closeBtn) closeBtn.click();
+      } else if (gesture === 'vertical-down' && !panelOpen) {
+        _esrOnSwipeDown(deltaX, deltaY);
+      } else if (gesture === 'vertical-up' && !panelOpen) {
+        var wishlistOpenBtn = document.querySelector('[data-wishlist-open]');
+        if (wishlistOpenBtn) wishlistOpenBtn.click();
+      }
+    },
+    { passive: true },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Next Actions
+// ---------------------------------------------------------------------------
+
+function initImmersiveNextActions() {
+  _nextActionsBar = document.createElement('div');
+  _nextActionsBar.className = 'immersive-next-actions';
+  _nextActionsBar.setAttribute('role', 'status');
+  _nextActionsBar.setAttribute('aria-live', 'polite');
+  _nextActionsBar.hidden = true;
+  document.body.appendChild(_nextActionsBar);
+}
+
+function showNextActions(chips) {
+  if (!_nextActionsBar) return;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  clearTimeout(_nextActionsTimer);
+  _nextActionsBar.innerHTML = '';
+  var inner = document.createElement('div');
+  inner.className = 'immersive-next-actions__inner';
+  chips.forEach(function (chip) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'immersive-next-actions__chip immersive-chip';
+    btn.textContent = chip.label;
+    btn.addEventListener('click', function () {
+      dismissNextActions();
+      if (typeof chip.action === 'function') chip.action();
+    });
+    inner.appendChild(btn);
+  });
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'immersive-next-actions__close';
+  closeBtn.setAttribute('aria-label', 'Dismiss');
+  closeBtn.innerHTML =
+    '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  closeBtn.addEventListener('click', dismissNextActions);
+  inner.appendChild(closeBtn);
+  _nextActionsBar.appendChild(inner);
+  _nextActionsBar.hidden = false;
+  if (!reduceMotion) _nextActionsBar.classList.add('is-visible');
+  _nextActionsTimer = setTimeout(dismissNextActions, 6000);
+}
+
+function dismissNextActions() {
+  clearTimeout(_nextActionsTimer);
+  if (_nextActionsBar) {
+    _nextActionsBar.classList.remove('is-visible');
+    _nextActionsBar.hidden = true;
+    _nextActionsBar.innerHTML = '';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Quick Add
+// ---------------------------------------------------------------------------
+
+function closeQuickAdd() {
+  if (_quickAddModal) {
+    _quickAddModal.remove();
+    _quickAddModal = null;
+  }
+  if (_quickAddTrigger) {
+    _quickAddTrigger.focus();
+    _quickAddTrigger = null;
+  }
+}
+
+function renderQuickAddModal(product, triggerEl) {
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (_quickAddModal) _quickAddModal.remove();
+  var modal = document.createElement('div');
+  modal.className = 'immersive-quick-add-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'quick-add-modal-title');
+  if (reduceMotion) modal.classList.add('no-animation');
+  var inner = document.createElement('div');
+  inner.className = 'immersive-quick-add-modal__inner';
+  var header = document.createElement('div');
+  header.className = 'immersive-quick-add-modal__header';
+  var title = document.createElement('h3');
+  title.id = 'quick-add-modal-title';
+  title.className = 'immersive-quick-add-modal__title';
+  title.textContent = product.title;
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'immersive-quick-add-modal__close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.innerHTML =
+    '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  closeBtn.addEventListener('click', closeQuickAdd);
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  var price = document.createElement('div');
+  price.className = 'immersive-quick-add-modal__price';
+  price.setAttribute('data-quick-add-price', '');
+  var firstVariant = product.variants && product.variants[0];
+  price.textContent = firstVariant ? formatMoney(firstVariant.price) : '';
+  var selectedVariantId = firstVariant ? firstVariant.id : null;
+  var variantGroup = null;
+  if (product.variants && product.variants.length > 1) {
+    variantGroup = document.createElement('div');
+    variantGroup.className = 'immersive-quick-add-modal__variants';
+    variantGroup.setAttribute('role', 'radiogroup');
+    variantGroup.setAttribute('aria-label', 'Select size');
+    product.variants.forEach(function (variant, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'immersive-quick-add-modal__variant';
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+      btn.setAttribute('data-variant-id', variant.id);
+      btn.setAttribute('data-variant-price', variant.price);
+      btn.textContent = variant.title;
+      if (!variant.available) {
+        btn.disabled = true;
+        btn.classList.add('is-unavailable');
+      }
+      if (i === 0) btn.classList.add('is-selected');
+      btn.addEventListener('click', function () {
+        if (!variant.available) return;
+        selectedVariantId = variant.id;
+        variantGroup.querySelectorAll('[role="radio"]').forEach(function (b) {
+          b.setAttribute('aria-checked', 'false');
+          b.classList.remove('is-selected');
+        });
+        btn.setAttribute('aria-checked', 'true');
+        btn.classList.add('is-selected');
+        var priceEl = modal.querySelector('[data-quick-add-price]');
+        if (priceEl) priceEl.textContent = formatMoney(variant.price);
+        var cta = modal.querySelector('[data-quick-add-cta]');
+        if (cta) {
+          cta.disabled = false;
+          cta.textContent = 'Add to cart';
+        }
+      });
+      variantGroup.appendChild(btn);
+    });
+  }
+  var cta = document.createElement('button');
+  cta.type = 'button';
+  cta.className = 'immersive-quick-add-modal__cta';
+  cta.setAttribute('data-quick-add-cta', '');
+  cta.setAttribute('data-variant-id', selectedVariantId);
+  cta.textContent = 'Add to cart';
+  if (firstVariant && !firstVariant.available) {
+    cta.disabled = true;
+    cta.textContent = 'Sold out';
+  }
+  cta.addEventListener('click', function () {
+    if (!selectedVariantId) return;
+    cta.disabled = true;
+    cta.textContent = 'Adding...';
+    fetch(window.routes.cart_add_url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ id: selectedVariantId, quantity: 1 }),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('Add to cart failed');
+        return res.json();
+      })
+      .then(function () {
+        closeQuickAdd();
+        if (typeof showFeedback === 'function') {
+          showFeedback('Added to cart', 'success');
+        }
+        if (typeof showNextActions === 'function') {
+          showNextActions([
+            {
+              label: 'View cart',
+              action: function () {
+                var cartDrawer = document.querySelector('cart-drawer');
+                if (cartDrawer && typeof cartDrawer.open === 'function') cartDrawer.open();
+              },
+            },
+          ]);
+        }
+      })
+      .catch(function () {
+        cta.disabled = false;
+        cta.textContent = 'Add to cart';
+        if (typeof showFeedback === 'function') {
+          showFeedback('Unable to add to cart', 'error');
+        }
+      });
+  });
+  inner.appendChild(header);
+  inner.appendChild(price);
+  if (variantGroup) inner.appendChild(variantGroup);
+  inner.appendChild(cta);
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+  _quickAddModal = modal;
+  setTimeout(function () {
+    closeBtn.focus();
+  }, 50);
+}
+
+function openQuickAdd(handle, triggerEl) {
+  _quickAddTrigger = triggerEl || null;
+  var cacheKey = 'quickadd_' + handle;
+  var loadProductUrl = '/products/' + handle + '.js';
+  var cached = contentCache && contentCache[cacheKey];
+  if (cached) {
+    renderQuickAddModal(cached, triggerEl);
+    return;
+  }
+  fetch(loadProductUrl, {
+    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+  })
+    .then(function (res) {
+      if (!res.ok) throw new Error('Product fetch failed');
+      return res.json();
+    })
+    .then(function (product) {
+      if (contentCache) contentCache[cacheKey] = product;
+      renderQuickAddModal(product, triggerEl);
+    })
+    .catch(function () {
+      var glassPanel = document.getElementById('glass-panel');
+      // Issue 22: Try both attribute names for consistent error messaging
+      var errorMsg =
+        (glassPanel && (glassPanel.getAttribute('data-msg-load-product-error') || glassPanel.getAttribute('data-msg-load-error'))) || 'Unable to load product.';
+      if (typeof showFeedback === 'function') {
+        showFeedback(errorMsg, 'error');
+      }
+    });
+}
+
+function initImmersiveQuickAdd() {
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-quick-add]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var handle = btn.getAttribute('data-product-handle');
+    if (handle) openQuickAdd(handle, btn);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && _quickAddModal && !_quickAddModal.hidden) {
+      closeQuickAdd();
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Hotspot Keyboard Navigation
+// ---------------------------------------------------------------------------
+
+function updateHotspotElements() {
+  _hotspotElements = Array.from(document.querySelectorAll('[data-hotspot-btn]'));
+  // Give each hotspot its own tabindex so screen readers can enumerate them.
+  // Follows Dawn's getFocusableElements() pattern for discoverable controls.
+  _hotspotElements.forEach(function (el, i) {
+    if (!el.hasAttribute('tabindex')) {
+      el.setAttribute('tabindex', '0');
+    }
+  });
+  _focusedHotspotIndex = -1;
+}
+
+function focusNextHotspot(direction) {
+  if (_hotspotElements.length === 0) return;
+  _focusedHotspotIndex += direction;
+  if (_focusedHotspotIndex >= _hotspotElements.length) {
+    _focusedHotspotIndex = 0;
+  } else if (_focusedHotspotIndex < 0) {
+    _focusedHotspotIndex = _hotspotElements.length - 1;
+  }
+  var hotspot = _hotspotElements[_focusedHotspotIndex];
+  if (hotspot) {
+    hotspot.focus();
+    var label = hotspot.getAttribute('aria-label') || 'Hotspot';
+    announceHotspot(label);
+  }
+}
+
+function announceHotspot(label) {
+  var announcer = document.getElementById('immersive-hotspot-announcer');
+  if (announcer) {
+    announcer.textContent = label;
+  }
+}
+
+function initHotspotKeyboardNav() {
+  var canvas = document.getElementById('immersive-canvas');
+  if (!canvas) return;
+
+  // Make canvas a focusable group label; individual hotspots get their own
+  // tabindex via updateHotspotElements().  Follows Dawn's CartDrawer focus
+  // trap pattern: TAB cycles only within focusable elements of the active
+  // container, Shift+TAB reverses, Escape exits to the canvas.
+  canvas.setAttribute('tabindex', '-1');
+  canvas.setAttribute('role', 'group');
+  canvas.setAttribute('aria-label', 'Immersive 3D store hotspots. Use Tab to move between hotspots, Enter to activate, Escape to leave.');
+
+  // Global keydown on the UI layer container, so it works even when focus
+  // is on the canvas wrapper (which sits behind hotspot buttons).
+  var uiLayer = document.getElementById('ui-layer');
+  var keyTarget = uiLayer || canvas;
+
+  keyTarget.addEventListener('keydown', function (e) {
+    if (e.key === 'Tab') {
+      // If there are no hotspots, do nothing
+      if (_hotspotElements.length === 0) return;
+
+      // Find which hotspot (if any) is currently focussed
+      var currentIndex = -1;
+      for (var hi = 0; hi < _hotspotElements.length; hi++) {
+        if (_hotspotElements[hi] === document.activeElement) {
+          currentIndex = hi;
+          break;
+        }
+      }
+
+      // If focus is on a hotspot, move to the next/prev one
+      if (currentIndex !== -1) {
+        e.preventDefault();
+        var nextIndex = currentIndex + (e.shiftKey ? -1 : 1);
+        if (nextIndex >= _hotspotElements.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = _hotspotElements.length - 1;
+        _hotspotElements[nextIndex].focus();
+        _focusedHotspotIndex = nextIndex;
+        announceHotspot(_hotspotElements[nextIndex].getAttribute('aria-label') || 'Hotspot');
+        return;
+      }
+
+      // If focus is on the canvas wrapper / UI layer, move to first/last
+      e.preventDefault();
+      var targetIdx = e.shiftKey ? _hotspotElements.length - 1 : 0;
+      _hotspotElements[targetIdx].focus();
+      _focusedHotspotIndex = targetIdx;
+      announceHotspot(_hotspotElements[targetIdx].getAttribute('aria-label') || 'Hotspot');
+      return;
+    }
+
+    // Escape returns focus to canvas and leaves hotspot ring
+    if (e.key === 'Escape') {
+      _focusedHotspotIndex = -1;
+      canvas.focus();
+      return;
+    }
+
+    // Enter / Space activates the focussed hotspot
+    if ((e.key === 'Enter' || e.key === ' ') && _focusedHotspotIndex >= 0) {
+      e.preventDefault();
+      var focusedHotspot = _hotspotElements[_focusedHotspotIndex];
+      if (focusedHotspot) {
+        focusedHotspot.click();
+      }
+    }
+  });
+
+  // Use Dawn's getFocusableElements() to set tabindex on each hotspot so
+  // they are individually reachable (screen readers can enumerate them).
+  var hotspotObserver = new MutationObserver(function () {
+    updateHotspotElements();
+  });
+  hotspotObserver.observe(canvas, { childList: true, subtree: true });
+  updateHotspotElements();
+}
+
+// ---------------------------------------------------------------------------
+// Editorial Scroll Reveal
+// ---------------------------------------------------------------------------
+
+function initEditorialScrollReveal() {
+  if (_esrWheelBound) return;
+  var canvasWrapper = document.querySelector('.immersive-store__canvas-wrapper');
+  if (!canvasWrapper) return;
+  canvasWrapper.addEventListener('wheel', _esrOnWheel, { passive: true });
+  _esrWheelBound = true;
+}
+
+// ---------------------------------------------------------------------------
+// Init Wrappers (call existing modular functions)
+// ---------------------------------------------------------------------------
+
+function initImmersiveRoomRecommender() {
+  if (typeof _wishlistItems !== 'undefined') {
+    var bc = typeof _browsingContext !== 'undefined' ? _browsingContext : null;
+    if (bc) {
+      bc.savedProducts = _wishlistItems.map(function (item) {
+        return item.handle || '';
+      });
+    }
+  }
+}
+
+function initImmersiveLimitedTime() {
+  var storeEl = document.querySelector('.immersive-store');
+  if (storeEl) {
+    var threshold = parseInt(storeEl.getAttribute('data-low-stock-threshold'), 10);
+    if (!isNaN(threshold)) {
+      if (typeof _lowStockThreshold !== 'undefined') {
+        _lowStockThreshold = threshold;
+      }
+    }
+  }
+  if (typeof scanLimitedTimeCards === 'function') scanLimitedTimeCards();
+  if (typeof showFlashSaleAlert === 'function') showFlashSaleAlert();
+}
+
+function initEditorialBackToLounge() {
+  var overlay = document.getElementById('immersive-editorial-overlay');
+  if (!overlay) return;
+  var btn = overlay.querySelector('[data-editorial-back-to-lounge]');
+  if (!btn) return;
+  var label = overlay.getAttribute('data-back-to-lounge-label') || 'Back to Lounge';
+  btn.textContent = label;
+  if (!btn._btlBound) {
+    btn._btlBound = true;
+    btn.addEventListener('click', function () {
+      if (typeof exitEditorialMode === 'function') exitEditorialMode();
+      if (typeof goToRoom === 'function') goToRoom('lounge');
+    });
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (typeof exitEditorialMode === 'function') exitEditorialMode();
+        if (typeof goToRoom === 'function') goToRoom('lounge');
+      }
+    });
+  }
+}
+
+function initProductCardTilt() {
+  var reduceMotionPCT = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotionPCT) return;
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+  var panel = document.getElementById('glass-panel');
+  if (!panel) return;
+  panel.addEventListener('mousemove', _pctOnMouseMove);
+  panel.addEventListener('mouseleave', _pctOnMouseLeave);
+}
+
+function initGuidedMode() {
+  var storeEl = document.querySelector('.immersive-store');
+  if (storeEl) {
+    var wing = storeEl.getAttribute('data-guided-featured-wing');
+    if (wing && typeof _guidedFeaturedWing !== 'undefined') _guidedFeaturedWing = wing;
+  }
+  var promptCta = document.querySelector('[data-guided-prompt-cta]');
+  var promptSkip = document.querySelector('[data-guided-prompt-skip]');
+  if (promptCta) {
+    promptCta.addEventListener('click', function () {
+      if (typeof hideGuidedPrompt === 'function') hideGuidedPrompt();
+      if (typeof _guidedAdvance === 'function') _guidedAdvance();
+    });
+  }
+  if (promptSkip) {
+    promptSkip.addEventListener('click', function () {
+      if (typeof exitGuidedMode === 'function') exitGuidedMode();
+    });
+  }
+  var intentEvents = ['mousedown', 'touchstart', 'keydown', 'wheel'];
+  intentEvents.forEach(function (evt) {
+    document.addEventListener(
+      evt,
+      function () {
+        if (immersiveState && immersiveState.guided) {
+          if (typeof _guidedResetIdleTimer === 'function') _guidedResetIdleTimer();
+        }
+      },
+      { passive: true },
+    );
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Full FAB
+// ---------------------------------------------------------------------------
+
+function initImmersiveBottomNav() {
+  var fab = document.querySelector('[data-immersive-fab]');
+  if (!fab) return;
+  var fabTrigger = fab.querySelector('[data-fab-trigger]');
+  var fabActions = fab.querySelector('[data-fab-actions]');
+  var wishlistBtn = fab.querySelector('[data-bottom-nav-wishlist]');
+  var cartBtn = fab.querySelector('[data-bottom-nav-cart]');
+  var twoDBtn = fab.querySelector('[data-bottom-nav-2d]');
+  var wishlistBadge = fab.querySelector('[data-bottom-nav-wishlist-badge]');
+  var cartBadge = fab.querySelector('[data-bottom-nav-cart-badge]');
+  var isOpen = false;
+  var isDragging = false;
+  var dragStartX = 0;
+  var dragStartY = 0;
+  var fabStartX = 0;
+  var fabStartY = 0;
+  var hasMoved = false;
+
+  function loadFabPosition() {
+    try {
+      var saved = localStorage.getItem('immersive_fab_position');
+      if (saved) {
+        var pos = JSON.parse(saved);
+        // Issue 18: Use CSS custom properties instead of inline styles to
+        // avoid flash on first load. Applied atomically via cssText.
+        var css = '';
+        if (pos.top) css += 'top:' + pos.top + ';';
+        if (pos.right && pos.right !== 'auto') css += 'right:' + pos.right + ';left:auto;';
+        if (pos.left && pos.left !== 'auto') css += 'left:' + pos.left + ';right:auto;';
+        if (pos.transform && pos.transform !== 'none') css += 'transform:' + pos.transform + ';';
+        if (css) fab.style.cssText = css;
+      }
+    } catch (e) {}
+  }
+
+  function saveFabPosition() {
+    try {
+      // Issue 18: Only save meaningful position values, not the full
+      // inline style set. This prevents CSS conflicts on restore.
+      var pos = {
+        top: fab.style.top || '',
+        right: fab.style.right || '',
+        left: fab.style.left || '',
+        transform: fab.style.transform || '',
+      };
+      localStorage.setItem('immersive_fab_position', JSON.stringify(pos));
+    } catch (e) {}
+  }
+
+  function snapToEdge(x, y) {
+    var rect = fab.getBoundingClientRect();
+    var viewportWidth = window.innerWidth;
+    var viewportHeight = window.innerHeight;
+    var fabWidth = rect.width;
+    var fabHeight = rect.height;
+    var snapThreshold = 40;
+    var centerX = x + fabWidth / 2;
+    var centerY = y + fabHeight / 2;
+    var distToLeft = centerX;
+    var distToRight = viewportWidth - centerX;
+    var distToTop = centerY;
+    var distToBottom = viewportHeight - centerY;
+    var minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+    if (minDist < snapThreshold || minDist === distToLeft || minDist === distToRight) {
+      if (distToLeft < distToRight) {
+        fab.style.left = '1.25rem';
+        fab.style.right = 'auto';
+      } else {
+        fab.style.right = '1.25rem';
+        fab.style.left = 'auto';
+      }
+      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
+      fab.style.bottom = 'auto';
+      fab.style.transform = 'none';
+    } else {
+      fab.style.left = Math.max(20, Math.min(x, viewportWidth - fabWidth - 20)) + 'px';
+      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      fab.style.transform = 'none';
+    }
+  }
+
+  function onDragStart(e) {
+    if (isOpen) return;
+    var touch = e.type === 'touchstart' ? e.touches[0] : e;
+    isDragging = true;
+    hasMoved = false;
+    dragStartX = touch.clientX;
+    dragStartY = touch.clientY;
+    var rect = fab.getBoundingClientRect();
+    fabStartX = rect.left;
+    fabStartY = rect.top;
+  }
+
+  function onDragMove(e) {
+    if (!isDragging) return;
+    var touch = e.type === 'touchmove' ? e.touches[0] : e;
+    var deltaX = touch.clientX - dragStartX;
+    var deltaY = touch.clientY - dragStartY;
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      hasMoved = true;
+      fab.style.transition = 'none';
+      fab.style.cursor = 'grabbing';
+      e.preventDefault();
+    }
+    if (hasMoved) {
+      var newX = fabStartX + deltaX;
+      var newY = fabStartY + deltaY;
+      fab.style.left = newX + 'px';
+      fab.style.top = newY + 'px';
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      fab.style.transform = 'none';
+    }
+  }
+
+  function onDragEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    fab.style.transition = '';
+    fab.style.cursor = '';
+    if (hasMoved) {
+      var rect = fab.getBoundingClientRect();
+      snapToEdge(rect.left, rect.top);
+      saveFabPosition();
+      e.preventDefault();
+    }
+  }
+
+  if (fabTrigger) {
+    fabTrigger.addEventListener('mousedown', onDragStart);
+    fabTrigger.addEventListener('touchstart', onDragStart, { passive: false });
+  }
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('touchmove', onDragMove, { passive: false });
+  document.addEventListener('mouseup', onDragEnd);
+  document.addEventListener('touchend', onDragEnd);
+  loadFabPosition();
+
+  if (fabTrigger && fabActions) {
+    fabTrigger.addEventListener('click', function (e) {
+      if (hasMoved) {
+        hasMoved = false;
+        return;
+      }
+      isOpen = !isOpen;
+      fabTrigger.setAttribute('aria-expanded', isOpen);
+      fabActions.hidden = !isOpen;
+      if (isOpen) {
+        var actions = fabActions.querySelectorAll('.immersive-fab__action');
+        actions.forEach(function (action, index) {
+          action.style.animation =
+            'fab-action-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ' + index * 0.05 + 's forwards';
+        });
+      }
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    if (isOpen && !fab.contains(e.target)) {
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen) {
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
+      fabTrigger.focus();
+    }
+  });
+
+  if (wishlistBtn) {
+    wishlistBtn.addEventListener('click', function () {
+      if (typeof exitGuidedMode === 'function') exitGuidedMode();
+      if (typeof openWishlistPanel === 'function') openWishlistPanel();
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
+    });
+  }
+
+  if (cartBtn) {
+    cartBtn.addEventListener('click', function () {
+      if (typeof exitGuidedMode === 'function') exitGuidedMode();
+      var cartDrawer = document.querySelector('cart-drawer');
+      if (cartDrawer && typeof cartDrawer.open === 'function') {
+        cartDrawer.open(cartBtn);
+      }
+      isOpen = false;
+      fabTrigger.setAttribute('aria-expanded', 'false');
+      fabActions.hidden = true;
+    });
+  }
+
+  if (twoDBtn) {
+    twoDBtn.addEventListener('click', function (e) {
+      var modeSwitchBtn = document.querySelector('[data-mode-switch-2d]');
+      if (modeSwitchBtn) {
+        e.preventDefault();
+        modeSwitchBtn.click();
+      }
+    });
+  }
+
+  window.updateBottomNavBadges = function (wishlistCount, cartCount) {
+    if (wishlistBadge) {
+      wishlistBadge.textContent = wishlistCount;
+      wishlistBadge.hidden = wishlistCount === 0;
+    }
+    if (cartBadge) {
+      cartBadge.textContent = cartCount;
+      cartBadge.hidden = cartCount === 0;
+    }
+  };
+
+  var glassPanel = document.getElementById('glass-panel');
+  if (glassPanel) {
+    var panelObserver = new MutationObserver(function () {
+      var panelIsOpen = !glassPanel.hidden && !glassPanel.classList.contains('hidden');
+      fab.style.display = panelIsOpen ? 'none' : 'flex';
+    });
+    panelObserver.observe(glassPanel, { attributes: true, attributeFilter: ['hidden', 'class'] });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Master Init + Section Handlers
+// ---------------------------------------------------------------------------
+
+function safeBindImmersiveInit() {
+  if (_immersiveInitBound) return;
+  if (!document.getElementById('immersive-canvas')) return;
+  _immersiveInitBound = true;
+
+  if (typeof renderer !== 'undefined' && renderer) {
+    if (typeof animationFrameId !== 'undefined' && animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+    try {
+      renderer.dispose();
+    } catch (e) {}
+    renderer = null;
+    scene = null;
+    camera = null;
+    planeMesh = null;
+    uniforms = null;
+    if (typeof currentRoomKey !== 'undefined') currentRoomKey = null;
+    if (typeof transitioning !== 'undefined') transitioning = false;
+    if (typeof textureCache !== 'undefined') {
+      textureCache.forEach(function (entry) {
+        try {
+          if (entry.base) entry.base.dispose();
+          if (entry.depth) entry.depth.dispose();
+        } catch (e) {}
+      });
+      textureCache = [];
+    }
+    if (typeof contentCache !== 'undefined') contentCache = {};
+  }
+
+  requestAnimationFrame(function () {
+    if (typeof initImmersiveScene === 'function') initImmersiveScene();
+    if (typeof bindImmersiveNav === 'function') bindImmersiveNav();
+    if (typeof setupImageParallax === 'function') setupImageParallax();
+    if (typeof showImmersiveOnboardingIfNeeded === 'function') showImmersiveOnboardingIfNeeded();
+    if (typeof initWishlist === 'function') initWishlist();
+    if (typeof initBackButton === 'function') initBackButton();
+    if (typeof bindCookieBanner === 'function') bindCookieBanner();
+    if (typeof initTiltControlToggle === 'function') initTiltControlToggle();
+
+    if (typeof initImmersiveRoomRecommender === 'function') initImmersiveRoomRecommender();
+    if (typeof initImmersiveLimitedTime === 'function') initImmersiveLimitedTime();
+    if (typeof initEditorialBackToLounge === 'function') initEditorialBackToLounge();
+    if (typeof initProductCardTilt === 'function') initProductCardTilt();
+    if (typeof initGuidedMode === 'function') initGuidedMode();
+
+    if (typeof initImmersiveSearch === 'function') initImmersiveSearch();
+    if (typeof initImmersiveGestures === 'function') initImmersiveGestures();
+    if (typeof initImmersiveNextActions === 'function') initImmersiveNextActions();
+    if (typeof initImmersiveQuickAdd === 'function') initImmersiveQuickAdd();
+    if (typeof initHotspotKeyboardNav === 'function') initHotspotKeyboardNav();
+    if (typeof initEditorialScrollReveal === 'function') initEditorialScrollReveal();
+
+    if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
+
+    if (typeof window.ImmersiveCarousel !== 'undefined' && window.ImmersiveCarousel.init) {
+      window.ImmersiveCarousel.init();
+    }
+    if (typeof window.CodexCollectionsGrid !== 'undefined' && window.CodexCollectionsGrid.init) {
+      window.CodexCollectionsGrid.init();
+    }
+
+    setTimeout(function () {
+      _immersiveInitBound = false;
+    }, 500);
+  });
+}
+
+function scheduleImmersiveInit() {
+  if (typeof window === 'undefined') return;
+  function run() {
+    try {
+      safeBindImmersiveInit();
+    } catch (e) {
+      if (typeof console !== 'undefined' && console.error) console.error('[Immersive] Init failed:', e);
+    }
+  }
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(run, { timeout: 1000 });
+  } else {
+    setTimeout(run, 300);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', scheduleImmersiveInit);
+} else {
+  scheduleImmersiveInit();
+}
+
+document.addEventListener('shopify:section:load', function (e) {
+  if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
+    _immersiveInitBound = false;
+    safeBindImmersiveInit();
+    if (typeof initImmersiveSearch === 'function') initImmersiveSearch();
+    if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
+    if (typeof initImmersiveLimitedTime === 'function') initImmersiveLimitedTime();
+  }
+});
+
+document.addEventListener('shopify:section:select', function (e) {
+  if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
+    safeBindImmersiveInit();
+  }
+});
+
+document.addEventListener('shopify:section:unload', function (e) {
+  if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
+    _immersiveInitBound = false;
+  }
+});

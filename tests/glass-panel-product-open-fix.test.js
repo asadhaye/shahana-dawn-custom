@@ -377,23 +377,13 @@ describe('Bug 3 — Editorial collection links missing data-collection attribute
    * The overlay click handler looks for [data-collection] — without it, clicks
    * cause full-page navigation instead of opening the glass panel.
    */
-  test('.immersive-editorial__collection-link SHOULD have data-collection attribute', () => {
+  test('occasion chapter CTAs and featured collection cards use data-collection-handle', () => {
     const liquidSource = fs.readFileSync(path.resolve(__dirname, '../sections/immersive-editorial.liquid'), 'utf8');
 
-    fc.assert(
-      fc.property(fc.constant(null), function () {
-        // Find the collection-link anchor in the source
-        var linkMatch = liquidSource.match(/class="immersive-editorial__collection-link"[^>]*>/);
-
-        if (!linkMatch) return true; // link removed — acceptable
-
-        var linkTag = linkMatch[0];
-
-        // On unfixed code: data-collection is absent → returns false → test FAILS
-        return /data-collection=/.test(linkTag);
-      }),
-      { numRuns: 5, verbose: true },
-    );
+    // The new design uses data-collection-handle on button elements (not a href links)
+    expect(liquidSource).toContain('class="immersive-occasions__chapter-cta"');
+    expect(liquidSource).toContain('data-collection-handle="{{ collection.handle }}"');
+    expect(liquidSource).toContain('immersive-featured__card');
   });
 });
 
@@ -549,20 +539,16 @@ describe('Preservation 2d — custom layout renders banners; non-custom layouts 
    *
    * This test documents the desired baseline for the fixed code.
    */
-  test('custom layout renders .immersive-editorial__banners; other layouts do not', () => {
+  test('editorial layouts use data-collection-handle for collection routing', () => {
     const liquidSource = fs.readFileSync(path.resolve(__dirname, '../sections/immersive-editorial.liquid'), 'utf8');
 
-    // The banners div must exist in the source (for custom layout)
-    var hasBannersDiv = liquidSource.includes('<div class="immersive-editorial__banners">');
-    expect(hasBannersDiv).toBe(true);
+    // All three layouts should use data-collection-handle
+    expect(liquidSource).toContain('data-collection-handle="{{ collection.handle }}"');
 
-    // After fix: banners must be gated to custom layout only
-    var bannersIdx = liquidSource.indexOf('<div class="immersive-editorial__banners">');
-    var precedingSource = liquidSource.slice(Math.max(0, bannersIdx - 200), bannersIdx);
-
-    // This assertion PASSES on fixed code, may FAIL on unfixed code
-    var hasCustomGuard = /layout\s*==\s*['"]custom['"]/.test(precedingSource);
-    expect(hasCustomGuard).toBe(true);
+    // Layout-specific container classes should exist
+    expect(liquidSource).toContain('immersive-designers__timeline-marker');
+    expect(liquidSource).toContain('class="immersive-occasions__chapter-cta"');
+    expect(liquidSource).toContain('immersive-featured__card');
   });
 });
 

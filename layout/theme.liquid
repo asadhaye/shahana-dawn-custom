@@ -1,5 +1,8 @@
 <!doctype html>
-<html class="js" lang="{{ request.locale.iso_code }}">
+<html
+  class="js{% if template == 'page.immersive' %} template-page-immersive{% endif %}{% if request.design_mode %} shopify-design-mode{% endif %}"
+  lang="{{ request.locale.iso_code }}"
+>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -46,9 +49,7 @@
     {%- comment -%}Three.js + immersive scene manager on immersive templates{%- endcomment -%}
     {%- if template == 'page.immersive' -%}
       <script src="{{ 'three.min.js' | asset_url }}" defer></script>
-      <script src="{{ 'immersive-core.js' | asset_url }}" defer></script>
-      <script src="{{ 'immersive-init.js' | asset_url }}" defer></script>
-      <script src="{{ 'immersive-features.js' | asset_url }}" defer></script>
+      <script src="{{ 'immersive-bundle.js' | asset_url }}" defer></script>
       <script src="{{ 'immersive-luxury-refinements.js' | asset_url }}" defer></script>
     {%- endif -%}
 

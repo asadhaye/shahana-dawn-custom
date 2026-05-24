@@ -404,9 +404,11 @@ function initGalleryCarousel(canvas) {
   };
   canvas.style.cursor = 'grab';
   canvas.addEventListener('mousedown', startHandler);
-  canvas.addEventListener('touchstart', startHandler, { passive: true });
+  // Issue 23: touchstart must be non-passive so the browser knows we may
+  // call preventDefault on touchmove (needed for drag-to-rotate gallery).
+  canvas.addEventListener('touchstart', startHandler, { passive: false });
   document.addEventListener('mousemove', moveHandler);
-  document.addEventListener('touchmove', moveHandler, { passive: true });
+  document.addEventListener('touchmove', moveHandler, { passive: false });
   document.addEventListener('mouseup', endHandler);
   document.addEventListener('touchend', endHandler);
   canvas.addEventListener('wheel', wheelHandler, { passive: false });
@@ -443,6 +445,8 @@ var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function () 
 var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function () {})();
 
 function handleGalleryStageClick(event, camera, canvas) {
+  // Issue 9: Don't process gallery clicks if user clicked a hotspot or UI element
+  if (event.target && event.target.closest('[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner')) return;
   if (!currentRoomKey || !galleryStageRegistry[currentRoomKey]) return;
   if (!window.THREE) return;
 
@@ -616,7 +620,7 @@ var PREFERRED_MODE_KEY = 'immersive_preferred_mode';
 var NAVIGATION_HISTORY_KEY = 'immersive_nav_history';
 
 var wishlistItems = [];
-var wishlistProductCache = {};
+var _wishlistProductCache = {};
 var wishlistPanelTrigger = null;
 var activeHotspots = [];
 var navigationHistory = [];
@@ -792,8 +796,19 @@ function initFab() {
   if (!fab || !trigger || !actionsContainer) return;
 
   var isOpen = false;
+  // Issue 7: Shared drag state between mousedown/mousemove/mouseup
+  var isDragging = false;
+  var hasMoved = false;
+  var dragStartX = 0;
+  var dragStartY = 0;
 
   trigger.addEventListener('click', function (e) {
+    // Issue 7: If user was dragging (not just clicking), suppress toggle
+    if (hasMoved) {
+      hasMoved = false;
+      isDragging = false;
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     isOpen = !isOpen;
@@ -807,11 +822,13 @@ function initFab() {
     }
   });
 
-  var isDragging = false;
   var startY, startTopPct, startRight;
 
   fab.addEventListener('mousedown', function (e) {
     isDragging = true;
+    hasMoved = false;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
     startY = e.clientY;
     var style = window.getComputedStyle(fab);
     var topMatch = style.top.match(/([\d.]+)%/);
@@ -824,9 +841,15 @@ function initFab() {
 
   document.addEventListener('mousemove', function (e) {
     if (!isDragging) return;
-    var dy = startY - e.clientY;
+    var dx = Math.abs(e.clientX - dragStartX);
+    var dy = Math.abs(e.clientY - dragStartY);
+    // Only count as "moved" after 5px threshold
+    if (dx > 5 || dy > 5) {
+      hasMoved = true;
+    }
+    var deltaY = startY - e.clientY;
     var windowH = window.innerHeight;
-    var newTopPct = startTopPct + (dy / windowH) * 100;
+    var newTopPct = startTopPct + (deltaY / windowH) * 100;
     fab.style.top = newTopPct + '%';
     fab.style.right = startRight + 'px';
   });
@@ -840,16 +863,31 @@ function initFab() {
   });
 
   fab.addEventListener('click', function (e) {
+    // Issue 2: Wishlist FAB button should open the wishlist panel, not click
+    // an arbitrary [data-wishlist-toggle] on the page (which could be a
+    // product card toggle inside an open collection panel).
     var action = e.target.closest('[data-bottom-nav-wishlist]');
     if (action) {
-      var wishlist = document.querySelector('[data-wishlist-toggle]');
-      if (wishlist) wishlist.click();
+      var wishlistPanel = document.getElementById('immersive-wishlist-panel');
+      if (wishlistPanel) {
+        // Toggle the wishlist panel visibility
+        if (wishlistPanel.hasAttribute('hidden')) {
+          wishlistPanel.removeAttribute('hidden');
+          var closeBtn = wishlistPanel.querySelector('[data-wishlist-close]');
+          if (closeBtn) closeBtn.focus();
+        } else {
+          wishlistPanel.setAttribute('hidden', '');
+        }
+      }
       return;
     }
     action = e.target.closest('[data-bottom-nav-cart]');
     if (action) {
-      var cart = document.querySelector('[data-cart-toggle]');
-      if (cart) cart.click();
+      // Issue 2 (cart): Use Dawn's cart-drawer instead of [data-cart-toggle]
+      var cartDrawer = document.querySelector('cart-drawer');
+      if (cartDrawer && typeof cartDrawer.open === 'function') {
+        cartDrawer.open();
+      }
       return;
     }
     action = e.target.closest('[data-bottom-nav-2d]');
@@ -1043,6 +1081,9 @@ function showWelcomeToast() {
   try {
     if (localStorage.getItem(ONBOARDING_KEY)) return;
   } catch (e) {}
+  // Issue 25: If onboarding overlay is present and enabled, skip welcome toast (redundant)
+  var _ob = document.getElementById('immersive-onboarding');
+  if (_ob && !_ob.hasAttribute('hidden') && _ob.getAttribute('data-show-once') !== 'false') return;
   var section = document.querySelector('[data-msg-welcome-toast]');
   var msg = section && section.getAttribute('data-msg-welcome-toast');
   if (!msg) return;
@@ -1279,14 +1320,11 @@ function bindResizeHandling() {
     });
     resizeObserver.observe(canvas);
   }
-
-  if (window.matchMedia) {
-    orientationMediaQuery = window.matchMedia('(orientation: portrait)');
-    orientationListener = function () {
-      onWindowResize();
-    };
-    orientationMediaQuery.addEventListener('change', orientationListener);
-  }
+  // Issue 13: Removed separate orientation matchMedia listener.
+  // Orientation changes always fire a resize event too, and our RAF
+  // debounce in onWindowResize already deduplicates. The extra listener
+  // caused triple-fires (resize + observer + orientation) leading to
+  // incorrect device flag evaluation on some mobile browsers.
 }
 
 function unbindResizeHandling() {
@@ -1658,7 +1696,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
             verticalOffset: 0.3,
             tiltDegrees: -4,
           });
-          initGalleryCarousel(canvasEl);
+          initGalleryCarousel(renderer.domElement);
         }
 
         renderHotspots(roomKey);
@@ -1719,11 +1757,15 @@ function loadRoomTextures(roomData, callback) {
       textureCache.unshift({ key: cacheKey, base: loaded.base, depth: loaded.depth });
       if (textureCache.length > MAX_CACHED_TEXTURES) {
         var oldest = textureCache.pop();
-        // Evicting oldest texture from cache - tracked silently
-        try {
-          if (oldest.base) oldest.base.dispose();
-          if (oldest.depth) oldest.depth.dispose();
-        } catch (e) {}
+        // Issue 14: Only dispose if texture is not currently active in the shader
+        var isActive = (uniforms && uniforms.uTexture1 && uniforms.uDepth1) &&
+                       (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
+        if (!isActive) {
+          try {
+            if (oldest.base) oldest.base.dispose();
+            if (oldest.depth) oldest.depth.dispose();
+          } catch (e) {}
+        }
       }
     }
 
@@ -1750,6 +1792,11 @@ function loadRoomTextures(roomData, callback) {
       var canvas = document.getElementById(immersiveCanvasId);
       if (canvas) showWebGLFallback(canvas);
     }
+    // Issue 4: Mid-session texture failure -- show user-facing error and let them retry
+    if (typeof showFeedback === 'function') {
+      showFeedback('Unable to load scene. Please check your connection and try again.', 'error');
+    }
+    transitioning = false;
   }
 
   loader.load(
@@ -1992,6 +2039,9 @@ function closePanel(panel) {
   panel.removeAttribute('data-open');
   closeDialogFocus(panel, panel._panelTrigger);
   panel._panelTrigger = null;
+  // Issue 5: Clear panel state from sessionStorage on close so a page
+  // refresh doesn't reopen the panel with potentially stale data.
+  if (typeof clearState === 'function') clearState();
   setTimeout(function () {
     panel.classList.add('hidden');
     panel.setAttribute('hidden', '');
@@ -2263,9 +2313,11 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
 
   if (!overlay || !overlayContent) return;
 
+  // Clear previous room content to prevent flash of old content when switching rooms
+  overlayContent.innerHTML = '';
+
   if (!contentCache[fetchUrl]) {
-    overlayContent.innerHTML =
-      '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
+    overlayContent.innerHTML = '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
   }
 
   var performUIActivation = function () {
@@ -2311,12 +2363,13 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
         editorialSection.style.setProperty('display', 'block', 'important');
       }
 
-      initDesignersEditorial(overlayContent);
-      initOccasionsEditorial(overlayContent);
-      initFeaturedCollectionsEditorial(overlayContent);
-      initCoverflow(overlayContent);
-      initStacked(overlayContent);
-      initPerspective(overlayContent);
+      // Initialize editorial layout-specific JS
+      if (typeof initDesignersEditorial === 'function') initDesignersEditorial(overlayContent);
+      if (typeof initOccasionsEditorial === 'function') initOccasionsEditorial(overlayContent);
+      if (typeof initFeaturedCollectionsEditorial === 'function') initFeaturedCollectionsEditorial(overlayContent);
+      if (typeof initCoverflow === 'function') initCoverflow(overlayContent);
+      if (typeof initStacked === 'function') initStacked(overlayContent);
+      if (typeof initPerspective === 'function') initPerspective(overlayContent);
 
       // Initialize quick view buttons on any product cards in the overlay
       var cards = overlayContent.querySelectorAll('.immersive-product-card');
@@ -2326,13 +2379,177 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
     })
     .catch(function (err) {
       console.error('[Immersive] Overlay fetch failed:', err);
-      overlayContent.innerHTML =
-        '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">The story is temporarily unavailable.</div>';
+      // Fallback: use the source section's innerHTML which is already in the DOM
+      var fallbackSection = document.querySelector('.immersive-editorial[data-room-key="' + (window.immersiveState && window.immersiveState.editorialRoom || '') + '"]');
+      if (fallbackSection) {
+        overlayContent.innerHTML = fallbackSection.innerHTML;
+        var editorialSection = overlayContent.querySelector('.immersive-editorial');
+        if (editorialSection) {
+          editorialSection.style.setProperty('display', 'block', 'important');
+        }
+        if (typeof initDesignersEditorial === 'function') initDesignersEditorial(overlayContent);
+        if (typeof initOccasionsEditorial === 'function') initOccasionsEditorial(overlayContent);
+        if (typeof initFeaturedCollectionsEditorial === 'function') initFeaturedCollectionsEditorial(overlayContent);
+      } else {
+        overlayContent.innerHTML =
+          '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;padding:2rem;text-align:center;">' +
+          '<p>The story is temporarily unavailable.</p>' +
+          '<p style="font-size:0.8rem;color:rgba(212,175,55,0.6);margin-top:1rem;">Please check your connection and try again.</p>' +
+          '</div>';
+      }
     });
 }
 
 // ---------------------------------------------------------------------------
-// Explicit global exposure for immersive-features.js cross-script access
+// Shared editorial data layer -- cross-room state for the immersive overlay
+// ---------------------------------------------------------------------------
+var editorialData = {
+  currentRoom: null,
+  previousRoom: null,
+  viewedProducts: [],      // product handles seen across rooms
+  viewedCollections: [],   // collection handles seen across rooms
+  navigationHistory: [],   // room keys visited in this editorial session
+  wishlistHandles: null,   // cache of wishlist handles (synced from global wishlistItems)
+
+  enterRoom: function(roomKey) {
+    if (this.currentRoom) {
+      this.previousRoom = this.currentRoom;
+    }
+    this.currentRoom = roomKey;
+    this.navigationHistory.push(roomKey);
+    this.refreshWishlist();
+  },
+
+  exitRoom: function() {
+    this.previousRoom = this.currentRoom;
+    this.currentRoom = null;
+  },
+
+  getViewedProducts: function() {
+    return this.viewedProducts.slice();
+  },
+
+  addViewedProduct: function(handle) {
+    if (handle && this.viewedProducts.indexOf(handle) === -1) {
+      this.viewedProducts.push(handle);
+    }
+  },
+
+  addViewedCollection: function(handle) {
+    if (handle && this.viewedCollections.indexOf(handle) === -1) {
+      this.viewedCollections.push(handle);
+    }
+  },
+
+  refreshWishlist: function() {
+    if (typeof wishlistItems !== 'undefined') {
+      this.wishlistHandles = wishlistItems.map(function(item) {
+        return typeof item === 'string' ? item : item.handle;
+      });
+    }
+  },
+
+  isInWishlist: function(productHandle) {
+    if (!this.wishlistHandles) this.refreshWishlist();
+    return this.wishlistHandles && this.wishlistHandles.indexOf(productHandle) !== -1;
+  },
+
+  getNavigationHistory: function() {
+    return this.navigationHistory.slice();
+  },
+
+  hasVisitedRoom: function(roomKey) {
+    return this.navigationHistory.indexOf(roomKey) !== -1;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Editorial layout initializers
+// ---------------------------------------------------------------------------
+
+function initDesignersEditorial(root) {
+  if (!root) return;
+  var designersEl = root.querySelector('.immersive-designers');
+  if (!designersEl) return;
+
+  var markers = designersEl.querySelectorAll('.immersive-designers__marker');
+  var heroStates = designersEl.querySelectorAll('.immersive-designers__hero-state');
+  var productsContainer = designersEl.querySelector('.immersive-designers__products');
+  if (!markers.length || !heroStates.length) return;
+
+  function switchDesigner(index) {
+    heroStates.forEach(function (state, i) {
+      state.classList.toggle('is-active', i === index);
+    });
+    markers.forEach(function (marker, i) {
+      marker.classList.toggle('is-active', i === index);
+    });
+  }
+
+  markers.forEach(function (marker) {
+    marker.addEventListener('click', function () {
+      var idx = parseInt(marker.getAttribute('data-index'), 10);
+      if (isNaN(idx)) return;
+      switchDesigner(idx);
+
+      // Load products for this designer's collection
+      var collectionHandle = marker.getAttribute('data-collection-handle');
+      if (collectionHandle && productsContainer) {
+        if (typeof editorialData !== 'undefined') {
+          editorialData.addViewedCollection(collectionHandle);
+        }
+        productsContainer.innerHTML = '<div class="immersive-editorial__loading">Loading...</div>';
+        var fetchUrl = shopRoot + 'collections/' + collectionHandle + '?sections=immersive-product-grid';
+        fetchWithCache(fetchUrl)
+          .then(function (html) {
+            if (html) {
+              productsContainer.innerHTML = html;
+              // Track viewed products
+              var productHandles = productsContainer.querySelectorAll('[data-product-handle]');
+              productHandles.forEach(function (el) {
+                if (typeof editorialData !== 'undefined') {
+                  editorialData.addViewedProduct(el.getAttribute('data-product-handle'));
+                }
+              });
+              // Init product card clicks within editorial
+              productHandles.forEach(function (card) {
+                card.addEventListener('click', function (e) {
+                  e.preventDefault();
+                  var handle = card.getAttribute('data-product-handle');
+                  if (handle) {
+                    if (typeof editorialData !== 'undefined') {
+                      editorialData.addViewedProduct(handle);
+                    }
+                    exitEditorialMode();
+                    setTimeout(function () {
+                      openProductPanel(handle, collectionHandle);
+                    }, 120);
+                  }
+                });
+              });
+            } else {
+              productsContainer.innerHTML = '<p class="immersive-editorial__empty">No products found.</p>';
+            }
+          })
+          .catch(function () {
+            productsContainer.innerHTML = '<p class="immersive-editorial__empty">Unable to load products.</p>';
+          });
+      }
+    });
+  });
+}
+
+function initOccasionsEditorial(root) {
+  if (!root) return;
+  // Occasions are primarily content-driven; collection links handled by overlay delegation
+  // Add any occasion-specific JS here (e.g., scroll-triggered chapter reveals)
+}
+
+function initFeaturedCollectionsEditorial(root) {
+  if (!root) return;
+  // Featured collection items use data-collection, handled by overlay delegation
+  // Add any codex-specific JS here (e.g., grid animation on scroll)
+}
 // All top-level `var` and `function` declarations are already on `window`,
 // but we expose these explicitly for clarity and robustness.
 // ---------------------------------------------------------------------------

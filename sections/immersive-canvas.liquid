@@ -277,10 +277,18 @@
       aria-hidden="true"
       hidden
     >
-      <span class="immersive-guided-progress__dot" data-guided-step="0" aria-hidden="true"></span>
-      <span class="immersive-guided-progress__dot" data-guided-step="1" aria-hidden="true"></span>
-      <span class="immersive-guided-progress__dot" data-guided-step="2" aria-hidden="true"></span>
-      <span class="immersive-guided-progress__dot" data-guided-step="3" aria-hidden="true"></span>
+      {%- comment %}Issue 24: Dynamic guided tour dots based on room count{% endcomment -%}
+      {%- assign _guided_rooms = "storefront,lounge,designer_houses,occasions,featured_collections" | split: "," -%}
+      {%- if section.settings.guided_featured_wing == "occasions" -%}
+        {%- assign _guided_rooms = "storefront,lounge,occasions" | split: "," -%}
+      {%- elsif section.settings.guided_featured_wing == "designer_houses" -%}
+        {%- assign _guided_rooms = "storefront,lounge,designer_houses" | split: "," -%}
+      {%- elsif section.settings.guided_featured_wing == "featured_collections" -%}
+        {%- assign _guided_rooms = "storefront,lounge,featured_collections" | split: "," -%}
+      {%- endif -%}
+      {%- for _room in _guided_rooms -%}
+      <span class="immersive-guided-progress__dot" data-guided-step="{{ forloop.index0 }}" aria-hidden="true"></span>
+      {%- endfor -%}
     </div>
 
     <!-- Guided mode soft prompt — "Begin a curated experience" -->
@@ -331,18 +339,26 @@
     {%- else -%}
       {%- assign logo_src = 'sc-logo-transparent-bg.png' | asset_url -%}
     {%- endif -%}
-    <img
-      {%- comment -%} theme-check-disable RemoteAsset {%- endcomment -%}
-      src="{{ logo_src }}"
-      {%- comment -%} theme-check-enable RemoteAsset {%- endcomment -%}
-      alt=""
-      class="immersive-ceiling-logo-overlay__img"
-      width="200"
-      height="200"
-      loading="eager"
-      decoding="async"
-      aria-hidden="true"
+    {%- comment %}Issue 17: Logo navigates back to immersive storefront (not 2D homepage). Using onclick with goToRoom for proper in-scene navigation.{% endcomment -%}
+    <button
+      type="button"
+      class="immersive-ceiling-logo-link"
+      aria-label="{{ shop.name }} — Home"
+      onclick="if(typeof goToRoom==='function'){goToRoom('storefront');}else{window.location.href='/pages/immersive';}"
     >
+      <img
+        {%- comment -%} theme-check-disable RemoteAsset {%- endcomment -%}
+        src="{{ logo_src }}"
+        {%- comment -%} theme-check-enable RemoteAsset {%- endcomment -%}
+        alt=""
+        class="immersive-ceiling-logo-link__img"
+        width="200"
+        height="200"
+        loading="eager"
+        decoding="async"
+        aria-hidden="true"
+      >
+    </button>
     <div class="immersive-store__tagline" id="immersive-tagline" aria-hidden="true">
       <p>{{ 'sections.immersive_store.intro' | t }}</p>
     </div>
@@ -883,14 +899,34 @@
 
   #immersive-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
-  /* ── Ceiling logo only (no overlay wrapper) ── */ .immersive-ceiling-logo-overlay__img { position: absolute; top:
-  calc(var(--notif-height, 0px) + 71px); left: 0; right: 0; display: block; margin: 0 auto; z-index: 200; pointer-events:
-  none; height: clamp(110px, 16vh, 200px); width: auto; max-width: 75vw; filter: drop-shadow(0 0 16px rgba(212, 175, 55,
-  0.6)) drop-shadow(0 4px 32px rgba(0, 0, 0, 0.5)); animation: logo-float 4s ease-in-out infinite, logo-glow 3s
-  ease-in-out infinite; }
-
-  body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay__img { top: calc(var(--notif-height, 48px) + 72px);
+  /* ── Ceiling logo link (Issue 17: clickable home link) ── */
+  .immersive-ceiling-logo-link {
+    position: absolute;
+    top: calc(var(--notif-height, 0px) + 71px);
+    left: 0;
+    right: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
   }
+  .immersive-ceiling-logo-link__img {
+    display: block;
+    height: clamp(110px, 16vh, 200px);
+    width: auto;
+    max-width: 75vw;
+    filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.6)) drop-shadow(0 4px 32px rgba(0, 0, 0, 0.5));
+    animation: logo-float 4s ease-in-out infinite, logo-glow 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-link { top: calc(var(--notif-height, 48px) + 72px); }
 
   @keyframes logo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
@@ -898,11 +934,9 @@
   0, 0, 0.45)); } 50% { filter: drop-shadow(0 0 28px rgba(212, 175, 55, 0.9)) drop-shadow(0 4px 36px rgba(0, 0, 0, 0.55));
   } }
 
-  @media (max-width: 768px) { .immersive-ceiling-logo-overlay__img { top: calc(var(--notif-height, 0px) + 59px); height:
-  clamp(90px, 14vh, 160px); max-width: 85vw; } body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-overlay__img {
-  top: calc(var(--notif-height, 48px) + 59px); } }
+  @media (max-width: 768px) { .immersive-ceiling-logo-link { top: calc(var(--notif-height, 0px) + 59px); } .immersive-ceiling-logo-link__img { height: clamp(90px, 14vh, 160px); max-width: 85vw; } body:has([data-immersive-notif-bar]) .immersive-ceiling-logo-link { top: calc(var(--notif-height, 48px) + 59px); } }
 
-  @media (prefers-reduced-motion: reduce) { .immersive-ceiling-logo-overlay__img { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .immersive-ceiling-logo-link__img { animation: none; } }
 
   /* ============================================================================ 2. UI LAYER & HOTSPOTS
   ============================================================================ */ #ui-layer { position: absolute; inset:
@@ -1242,7 +1276,196 @@
   @media (prefers-reduced-motion: reduce) { .immersive-editorial-overlay, .immersive-editorial-overlay__back { transition:
   none !important; } }
 
-  /* ============================================================================ 8. WISHLIST BUTTON & PANEL
+  /* Scroll lock when editorial overlay is open */
+  html.immersive-overlay-open,
+  body.immersive-overlay-open {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  .immersive-editorial-overlay__content { min-height: 100vh; box-sizing: border-box; padding: 0; }
+
+  /* Canvas blur when editorial is active */ #immersive-canvas.editorial-blur { filter: blur(6px); transition: filter 0.5s ease; }
+
+  /* Editorial Loading State */
+  .immersive-editorial__loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 3rem 1rem; color: #d4af37; font-size: 0.875rem; text-align: center; }
+  .immersive-editorial__loading-spinner { width: 32px; height: 32px; border: 2px solid rgba(212,175,55,0.2); border-top-color: #d4af37; border-radius: 50%; animation: immersive-spin 0.8s linear infinite; }
+  .immersive-editorial__empty { text-align: center; padding: 2rem 1rem; color: rgba(255,255,255,0.5); font-size: 0.875rem; }
+
+  @keyframes immersive-spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) { .immersive-editorial-overlay, .immersive-editorial-overlay__back { transition: none !important; } }
+
+  /* Scroll lock when editorial overlay is open */
+  html.immersive-overlay-open,
+  body.immersive-overlay-open {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  /* ============================================================================
+     EDITORIAL LAYOUTS - Gallery / Story / Codex
+     Mobile-first design for women\'s clothing store
+     ============================================================================ */
+
+  /* -- DESIGNER HOUSES: Gallery Mode -- */
+  .immersive-designers { display: flex; flex-direction: column; min-height: 100vh; }
+  .immersive-designers__hero { position: relative; width: 100%; height: 70vh; min-height: 400px; overflow: hidden; flex-shrink: 0; }
+  .immersive-designers__hero-slides { position: relative; width: 100%; height: 100%; }
+  .immersive-designers__hero-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; z-index: 0; }
+  .immersive-designers__hero-slide.is-active { opacity: 1; z-index: 1; }
+  .immersive-designers__hero-media { position: absolute; inset: 0; }
+  .immersive-designers__hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+  .immersive-designers__hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, transparent 70%); pointer-events: none; }
+  .immersive-designers__hero-text { position: absolute; bottom: 0; left: 0; right: 0; padding: 2rem 1.5rem; z-index: 2; }
+  .immersive-designers__hero-logo { max-width: 120px; max-height: 40px; object-fit: contain; margin-bottom: 0.75rem; }
+  .immersive-designers__hero-name { font-size: clamp(1.75rem, 6vw, 3rem); font-weight: 300; letter-spacing: 0.02em; color: #fff; margin: 0 0 0.5rem; line-height: 1.1; }
+  .immersive-designers__hero-manifesto { font-size: clamp(0.8125rem, 2.5vw, 0.9375rem); color: rgba(255,255,255,0.75); line-height: 1.5; max-width: 40rem; margin: 0; }
+  .immersive-designers__hero-dots { position: absolute; top: 1rem; right: 1rem; display: flex; gap: 0.375rem; z-index: 3; }
+  .immersive-designers__hero-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); border: none; padding: 0; cursor: pointer; transition: background 0.3s ease, transform 0.3s ease; }
+  .immersive-designers__hero-dot.is-active { background: #d4af37; transform: scale(1.2); }
+  .immersive-designers__timeline { padding: 1rem 1.5rem; background: rgba(8, 12, 24, 0.95); border-top: 1px solid rgba(212,175,55,0.15); border-bottom: 1px solid rgba(212,175,55,0.1); flex-shrink: 0; }
+  .immersive-designers__timeline-label { font-size: 0.625rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(212,175,55,0.5); margin-bottom: 0.75rem; }
+  .immersive-designers__timeline-rail { display: flex; gap: 0.5rem; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 0.25rem; }
+  .immersive-designers__timeline-rail::-webkit-scrollbar { display: none; }
+  .immersive-designers__timeline-marker { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 0.5rem 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; color: rgba(255,255,255,0.5); }
+  .immersive-designers__timeline-marker.is-active { border-color: #d4af37; background: rgba(212,175,55,0.08); color: #d4af37; }
+  .immersive-designers__marker-number { font-size: 0.5625rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.5; }
+  .immersive-designers__marker-label { font-size: 0.75rem; font-weight: 500; white-space: nowrap; }
+  .immersive-designers__products { flex: 1; padding: 1.5rem; }
+  .immersive-designers__products-placeholder { display: flex; align-items: center; justify-content: center; min-height: 200px; color: rgba(255,255,255,0.3); font-size: 0.875rem; text-align: center; }
+  .immersive-editorial__products-grid { padding: 0.5rem 0; }
+  .immersive-editorial__products-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .immersive-editorial__products-title { font-size: 1rem; font-weight: 500; color: #d4af37; margin: 0; }
+  .immersive-editorial__products-count { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+  .immersive-editorial__products-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .immersive-editorial__product-card { position: relative; }
+  .immersive-editorial__product-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; }
+  .immersive-editorial__product-card-title { font-size: 0.8125rem; font-weight: 500; color: #fff; margin: 0.5rem 0 0.125rem; line-height: 1.3; }
+  .immersive-editorial__product-card-price { font-size: 0.75rem; color: #d4af37; font-weight: 600; }
+
+  /* -- OCCASIONS: Story Mode -- */
+  .immersive-occasions { display: flex; flex-direction: column; }
+  .immersive-occasions__story-hero { position: relative; width: 100%; height: 80vh; min-height: 450px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+  .immersive-occasions__story-hero-media { position: absolute; inset: 0; }
+  .immersive-occasions__story-hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+  .immersive-occasions__story-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, transparent 80%); pointer-events: none; }
+  .immersive-occasions__story-hero-text { position: relative; z-index: 2; padding: 2rem 1.5rem; }
+  .immersive-occasions__story-eyebrow { display: inline-block; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #d4af37; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(212,175,55,0.3); }
+  .immersive-occasions__story-heading { font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 300; letter-spacing: 0.01em; color: #fff; margin: 0 0 0.75rem; line-height: 1.05; }
+  .immersive-occasions__story-subheading { font-size: clamp(0.875rem, 3vw, 1rem); color: rgba(255,255,255,0.7); line-height: 1.6; max-width: 36rem; }
+  .immersive-occasions__story-scroll-hint { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 0.375rem; color: rgba(255,255,255,0.4); font-size: 0.625rem; letter-spacing: 0.15em; text-transform: uppercase; animation: story-hint-bounce 2s ease-in-out infinite; }
+  @keyframes story-hint-bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+  .immersive-occasions__chapters { display: flex; flex-direction: column; }
+  .immersive-occasions__chapter { position: relative; width: 100%; min-height: 80vh; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+  .immersive-occasions__chapter-inner { position: relative; width: 100%; min-height: inherit; display: flex; flex-direction: column; justify-content: flex-end; }
+  .immersive-occasions__chapter-media { position: absolute; inset: 0; }
+  .immersive-occasions__chapter-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+  .immersive-occasions__chapter-media-placeholder { position: absolute; inset: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+  .immersive-occasions__chapter-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 70%); pointer-events: none; }
+  .immersive-occasions__chapter-content { position: relative; z-index: 2; padding: 2rem 1.5rem; }
+  .immersive-occasions__chapter-number { display: inline-block; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #d4af37; margin-bottom: 0.75rem; }
+  .immersive-occasions__chapter-heading { font-size: clamp(1.5rem, 5vw, 2.25rem); font-weight: 300; letter-spacing: 0.01em; color: #fff; margin: 0 0 0.75rem; line-height: 1.15; }
+  .immersive-occasions__chapter-body { font-size: clamp(0.8125rem, 2.5vw, 0.9375rem); color: rgba(255,255,255,0.7); line-height: 1.6; max-width: 32rem; margin: 0 0 1.25rem; }
+  .immersive-occasions__chapter-cta { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.4); border-radius: 999px; color: #d4af37; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+  .immersive-occasions__chapter-cta:hover { background: rgba(212,175,55,0.25); border-color: #d4af37; }
+  .immersive-occasions__chapter-cta svg { transition: transform 0.3s ease; }
+  .immersive-occasions__chapter-cta:hover svg { transform: translateX(3px); }
+
+  /* -- FEATURED COLLECTIONS: Codex Mode -- */
+  .immersive-featured { display: flex; flex-direction: column; padding: 1.5rem; gap: 1.5rem; }
+  .immersive-featured__hero { padding: 0.5rem 0 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .immersive-featured__hero-eyebrow { display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #d4af37; margin-bottom: 0.5rem; }
+  .immersive-featured__hero-heading { font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 300; letter-spacing: 0.01em; color: #fff; margin: 0 0 0.5rem; line-height: 1.15; }
+  .immersive-featured__hero-subheading { font-size: clamp(0.8125rem, 2.5vw, 0.9375rem); color: rgba(255,255,255,0.55); line-height: 1.6; max-width: 36rem; }
+  .immersive-featured__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .immersive-featured__card { position: relative; display: flex; flex-direction: column; background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; border: none; padding: 0; text-align: left; width: 100%; }
+  .immersive-featured__card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .immersive-featured__card--large { grid-column: 1 / -1; }
+  .immersive-featured__card-media { position: relative; width: 100%; aspect-ratio: 4/5; overflow: hidden; }
+  .immersive-featured__card--large .immersive-featured__card-media { aspect-ratio: 16/10; }
+  .immersive-featured__card-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; transition: transform 0.5s ease; }
+  .immersive-featured__card:hover .immersive-featured__card-media img { transform: scale(1.03); }
+  .immersive-featured__card-media-placeholder { width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+  .immersive-featured__card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%); pointer-events: none; }
+  .immersive-featured__card-info { padding: 0.875rem; flex: 1; display: flex; flex-direction: column; gap: 0.375rem; }
+  .immersive-featured__card-number { font-size: 0.5625rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(212,175,55,0.5); }
+  .immersive-featured__card-heading { font-size: clamp(0.875rem, 2.5vw, 1rem); font-weight: 500; color: #fff; margin: 0; line-height: 1.3; }
+  .immersive-featured__card-body { font-size: 0.75rem; color: rgba(255,255,255,0.45); line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .immersive-featured__card-cta { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #d4af37; margin-top: auto; padding-top: 0.5rem; }
+  .immersive-featured__card-cta svg { transition: transform 0.3s ease; }
+  .immersive-featured__card:hover .immersive-featured__card-cta svg { transform: translateX(3px); }
+
+  /* -- Desktop enhancements -- */
+  @media (min-width: 768px) {
+    .immersive-designers__hero { height: 75vh; }
+    .immersive-designers__hero-text { padding: 3rem; }
+    .immersive-designers__hero-logo { max-width: 160px; max-height: 50px; }
+    .immersive-designers__timeline { padding: 1.25rem 3rem; }
+    .immersive-designers__products { padding: 2rem 3rem; }
+    .immersive-editorial__products-list { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .immersive-occasions__story-hero { height: 85vh; }
+    .immersive-occasions__story-hero-text { padding: 3rem; }
+    .immersive-occasions__chapter { min-height: 90vh; }
+    .immersive-occasions__chapter-content { padding: 3rem; }
+    .immersive-featured { padding: 2rem 3rem; gap: 2rem; }
+    .immersive-featured__grid { grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .immersive-featured__card--large { grid-column: span 2; }
+    .immersive-featured__card--large .immersive-featured__card-media { aspect-ratio: 16/9; }
+  }
+
+  @media (min-width: 1200px) {
+    .immersive-editorial__products-list { grid-template-columns: repeat(4, 1fr); }
+    .immersive-featured__grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  /* -- Disabled layout placeholders (for future use) -- */
+  .immersive-stacked { display: flex; flex-direction: column; }
+  .immersive-stacked__card { position: relative; display: block; }
+  .immersive-stacked__card-media { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; }
+  .immersive-stacked__card-media img { width: 100%; height: 100%; object-fit: cover; }
+  .immersive-stacked__card-info { padding: 1.5rem; }
+  .immersive-stacked__heading-heading { font-size: 1.25rem; font-weight: 500; color: #fff; margin: 0; }
+  .immersive-perspective { display: flex; flex-direction: column; }
+  .immersive-perspective__item { position: relative; display: block; }
+  .immersive-perspective__item-media { position: relative; width: 100%; aspect-ratio: 4/5; overflow: hidden; }
+  .immersive-perspective__item-media img { width: 100%; height: 100%; object-fit: cover; }
+  .immersive-perspective__item-info { padding: 1rem; }
+  .immersive-perspective__heading-heading { font-size: 1rem; font-weight: 500; color: #fff; margin: 0; }
+  .immersive-gallery-layout { display: flex; flex-direction: column; }
+  .immersive-gallery-layout__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+  .immersive-gallery-layout__card { position: relative; display: block; }
+  .immersive-gallery-layout__card-media { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; }
+  .immersive-gallery-layout__card-media img { width: 100%; height: 100%; object-fit: cover; }
+  .immersive-gallery-layout__card-label { padding: 0.75rem; font-size: 0.875rem; color: #fff; }
+  .immersive-coverflow { display: flex; flex-direction: column; }
+  .immersive-coverflow__track { display: flex; gap: 1rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .immersive-coverflow__slide { flex-shrink: 0; width: 280px; position: relative; display: block; }
+  .immersive-coverflow__slide-media { position: relative; width: 100%; aspect-ratio: 3/4; overflow: hidden; border-radius: 12px; }
+  .immersive-coverflow__slide-media img { width: 100%; height: 100%; object-fit: cover; }
+  .immersive-coverflow__slide-info { padding: 0.75rem 0; }
+  .immersive-coverflow__slide-heading { font-size: 0.875rem; font-weight: 500; color: #fff; margin: 0; }
+  .immersive-marquee { overflow: hidden; }
+  .immersive-marquee__track { display: flex; gap: 2rem; animation: marquee-scroll 30s linear infinite; }
+  .immersive-marquee__item { flex-shrink: 0; font-size: clamp(2rem, 8vw, 5rem); font-weight: 300; color: rgba(255,255,255,0.15); text-transform: uppercase; letter-spacing: 0.05em; }
+  @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .immersive-editorial__banners { display: flex; flex-direction: column; gap: 1.5rem; padding: 1.5rem; }
+  .immersive-editorial__banner { position: relative; display: block; border-radius: 12px; overflow: hidden; }
+  .immersive-editorial__banner-media { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; }
+  .immersive-editorial__banner-media img { width: 100%; height: 100%; object-fit: cover; }
+  .immersive-editorial__banner-content { padding: 1.5rem; }
+  .immersive-editorial__banner-heading { font-size: 1.25rem; font-weight: 500; color: #fff; margin: 0 0 0.5rem; }
+  .immersive-editorial__banner-body { font-size: 0.875rem; color: rgba(255,255,255,0.6); line-height: 1.5; }
+  .immersive-custom__card { background: rgba(255,255,255,0.03); }
+  .immersive-custom__card-media { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; }
+  .immersive-custom__card-content { padding: 1.5rem; }
+  .immersive-custom__card-heading { font-size: 1.25rem; font-weight: 500; color: #fff; margin: 0 0 0.5rem; }
+  .immersive-custom__card-body { font-size: 0.875rem; color: rgba(255,255,255,0.6); line-height: 1.5; }
+
+  /* Source section hidden state */
+  .immersive-editorial--source[hidden] { display: none !important; }
+
+  /* ============================================================================ 8. WISHLIST BUTTON & PANEL  /* ============================================================================ 8. WISHLIST BUTTON & PANEL  /* ============================================================================ 8. WISHLIST BUTTON & PANEL
   ============================================================================ */ .immersive-header__wishlist-btn {
   position: relative; }
 
@@ -1394,6 +1617,59 @@
 
   @media (max-width: 600px) { .immersive-cookie-banner { flex-direction: column; align-items: flex-start; bottom: 1rem; }
   } .immersive-cookie-banner__btn { transition: none; } }
+
+  /* Issue 20: Boost gold text contrast for users who need higher contrast.
+     Gold (#d4af37) on dark bg fails WCAG AA at reduced opacity. */
+  @media (prefers-contrast: high) {
+    .immersive-header__logo-tagline,
+    .glass-panel-section__breadcrumb-current,
+    .glass-product-section__breadcrumb-current { color: #e8c84a !important; }
+
+    .glass-panel-section__breadcrumb-btn,
+    .glass-product-section__breadcrumb-btn { color: #e8c84a !important; }
+
+    .immersive-search__input,
+    .immersive-header .field__input { color: #e8c84a !important; border-color: #e8c84a !important; }
+
+    .immersive-header .field__input::placeholder,
+    .immersive-header .field__label { color: #c4a030 !important; }
+
+    .immersive-search__group-label,
+    .immersive-search-result__title { color: #fff !important; }
+
+    .immersive-wishlist-card__title,
+    .immersive-wishlist-card__price,
+    [data-wishlist-empty] { color: #e8c84a !important; }
+
+    .immersive-header__icon-btn,
+    .immersive-back-btn,
+    .immersive-search__icon,
+    .immersive-search__button,
+    .immersive-header .search__button,
+    .immersive-header .reset__button { color: #e8c84a !important; }
+  }
+
+  /* Hide Dawn/Shopify cookie banner on immersive page -- our immersive banner handles consent */
+  .shopify-privacy-policy__banner,
+  .shopify-cookie-banner,
+  #shopify-privacy-policy-banner,
+  .shopify-pc__banner__dialog,
+  .shopify-pc__banner,
+  .shopify-pc__banner__wrapper,
+  .shopify-pc__modal,
+  #shopify-pc__banner,
+  .cc-banner,
+  .cc-window,
+  .osano-cm-window,
+  #onetrust-banner-sdk,
+  .trustarc-banner,
+  [class*="cookie-consent"]:not(.immersive-cookie-banner),
+  [class*="cookie-banner"]:not(.immersive-cookie-banner),
+  [class*="privacy-policy"]:not(.immersive-cookie-banner),
+  [data-testid*="cookie"],
+  iframe[src*="privacy"],
+  iframe[src*="cookie"],
+  iframe[src*="consent"] { display: none !important; }
 {% endstylesheet %}
 
 <script type="text/javascript">

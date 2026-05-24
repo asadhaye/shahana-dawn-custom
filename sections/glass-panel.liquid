@@ -10,13 +10,13 @@
   {% if panel_collection %}
     <header class="glass-panel-section__header">
       <nav class="glass-panel-section__breadcrumb" aria-label="Breadcrumb">
-        <button
-          type="button"
+        <a
+          href="{{ routes.root_url }}"
           class="glass-panel-section__breadcrumb-root glass-panel-section__breadcrumb-btn"
-          data-breadcrumb-action="close-panel"
+          data-breadcrumb-action="go-home"
         >
           {{- 'sections.immersive_store.breadcrumb_store' | t -}}
-        </button>
+        </a>
         <span class="glass-panel-section__breadcrumb-separator" aria-hidden="true">/</span>
         <span class="glass-panel-section__breadcrumb-current" aria-current="page">
           {{- panel_collection.title | escape -}}
@@ -45,7 +45,18 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="glass-panel-section__empty">{{ 'sections.immersive_store.collection_empty' | t }}</p>
+      <div class="glass-panel-section__empty">
+        <p>{{ 'sections.immersive_store.collection_empty' | t }}</p>
+        {% comment %}Issue 11: Provide navigation options when collection is empty{% endcomment %}
+        <div class="glass-panel-section__empty-actions">
+          <button type="button" class="glass-panel-section__empty-action" data-empty-action="go-home">
+            {{ 'sections.immersive_store.breadcrumb_store' | t }}
+          </button>
+          <button type="button" class="glass-panel-section__empty-action" data-empty-action="close-panel">
+            {{ 'sections.immersive_store.breadcrumb_store' | t }}
+          </button>
+        </div>
+      </div>
     {% endif %}
   {% else %}
     <div class="glass-panel-section__empty">

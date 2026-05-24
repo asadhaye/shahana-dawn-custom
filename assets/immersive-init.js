@@ -21,8 +21,6 @@ var _searchAbortController = null;
 var _gestureLastRoomTransition = 0;
 var _gestureCooldown = 600;
 var SWIPE_ROOM_SEQUENCE = ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'];
-var _nextActionsBar = null;
-var _nextActionsTimer = null;
 var _quickAddModal = null;
 var _quickAddTrigger = null;
 var _hotspotElements = [];
@@ -235,10 +233,20 @@ function initImmersiveSearch() {
     title.className = 'immersive-search__result-title';
     title.textContent = item.title || '';
     info.appendChild(title);
-    if (item.price) {
+    // Issue 8: Show metadata for both products and collections
+    var metaText = '';
+    if (type === 'product' && item.price) {
+      metaText = item.price;
+    } else if (type === 'collection') {
+      // Shopify suggest API returns products_count for collections
+      if (item.products_count !== undefined && item.products_count !== null) {
+        metaText = item.products_count + ' product' + (item.products_count !== 1 ? 's' : '');
+      }
+    }
+    if (metaText) {
       var meta = document.createElement('span');
       meta.className = 'immersive-search__result-meta';
-      meta.textContent = item.price;
+      meta.textContent = metaText;
       info.appendChild(meta);
     }
     el.appendChild(info);
@@ -503,6 +511,8 @@ function initImmersiveGestures() {
       var panelOpen = glassPanel && !glassPanel.hidden && !glassPanel.classList.contains('hidden');
       if (gesture === 'horizontal') {
         var now = Date.now();
+        // Issue 12: Reset cooldown after room transition completes so rapid
+        // swipes don't queue up and fire all at once when cooldown expires.
         if (now - _gestureLastRoomTransition < _gestureCooldown) return;
         _gestureLastRoomTransition = now;
         if (panelOpen) return;
@@ -755,8 +765,9 @@ function openQuickAdd(handle, triggerEl) {
     })
     .catch(function () {
       var glassPanel = document.getElementById('glass-panel');
+      // Issue 22: Try both attribute names for consistent error messaging
       var errorMsg =
-        (glassPanel && glassPanel.getAttribute('data-msg-load-product-error')) || 'Unable to load product.';
+        (glassPanel && (glassPanel.getAttribute('data-msg-load-product-error') || glassPanel.getAttribute('data-msg-load-error'))) || 'Unable to load product.';
       if (typeof showFeedback === 'function') {
         showFeedback(errorMsg, 'error');
       }
@@ -785,6 +796,13 @@ function initImmersiveQuickAdd() {
 
 function updateHotspotElements() {
   _hotspotElements = Array.from(document.querySelectorAll('[data-hotspot-btn]'));
+  // Give each hotspot its own tabindex so screen readers can enumerate them.
+  // Follows Dawn's getFocusableElements() pattern for discoverable controls.
+  _hotspotElements.forEach(function (el, i) {
+    if (!el.hasAttribute('tabindex')) {
+      el.setAttribute('tabindex', '0');
+    }
+  });
   _focusedHotspotIndex = -1;
 }
 
@@ -814,14 +832,64 @@ function announceHotspot(label) {
 function initHotspotKeyboardNav() {
   var canvas = document.getElementById('immersive-canvas');
   if (!canvas) return;
-  canvas.setAttribute('tabindex', '0');
-  canvas.setAttribute('role', 'application');
-  canvas.setAttribute('aria-label', 'Immersive 3D store navigation. Use Tab to navigate hotspots, Enter to activate.');
-  canvas.addEventListener('keydown', function (e) {
+
+  // Make canvas a focusable group label; individual hotspots get their own
+  // tabindex via updateHotspotElements().  Follows Dawn's CartDrawer focus
+  // trap pattern: TAB cycles only within focusable elements of the active
+  // container, Shift+TAB reverses, Escape exits to the canvas.
+  canvas.setAttribute('tabindex', '-1');
+  canvas.setAttribute('role', 'group');
+  canvas.setAttribute('aria-label', 'Immersive 3D store hotspots. Use Tab to move between hotspots, Enter to activate, Escape to leave.');
+
+  // Global keydown on the UI layer container, so it works even when focus
+  // is on the canvas wrapper (which sits behind hotspot buttons).
+  var uiLayer = document.getElementById('ui-layer');
+  var keyTarget = uiLayer || canvas;
+
+  keyTarget.addEventListener('keydown', function (e) {
     if (e.key === 'Tab') {
+      // If there are no hotspots, do nothing
+      if (_hotspotElements.length === 0) return;
+
+      // Find which hotspot (if any) is currently focussed
+      var currentIndex = -1;
+      for (var hi = 0; hi < _hotspotElements.length; hi++) {
+        if (_hotspotElements[hi] === document.activeElement) {
+          currentIndex = hi;
+          break;
+        }
+      }
+
+      // If focus is on a hotspot, move to the next/prev one
+      if (currentIndex !== -1) {
+        e.preventDefault();
+        var nextIndex = currentIndex + (e.shiftKey ? -1 : 1);
+        if (nextIndex >= _hotspotElements.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = _hotspotElements.length - 1;
+        _hotspotElements[nextIndex].focus();
+        _focusedHotspotIndex = nextIndex;
+        announceHotspot(_hotspotElements[nextIndex].getAttribute('aria-label') || 'Hotspot');
+        return;
+      }
+
+      // If focus is on the canvas wrapper / UI layer, move to first/last
       e.preventDefault();
-      focusNextHotspot(e.shiftKey ? -1 : 1);
-    } else if (e.key === 'Enter' && _focusedHotspotIndex >= 0) {
+      var targetIdx = e.shiftKey ? _hotspotElements.length - 1 : 0;
+      _hotspotElements[targetIdx].focus();
+      _focusedHotspotIndex = targetIdx;
+      announceHotspot(_hotspotElements[targetIdx].getAttribute('aria-label') || 'Hotspot');
+      return;
+    }
+
+    // Escape returns focus to canvas and leaves hotspot ring
+    if (e.key === 'Escape') {
+      _focusedHotspotIndex = -1;
+      canvas.focus();
+      return;
+    }
+
+    // Enter / Space activates the focussed hotspot
+    if ((e.key === 'Enter' || e.key === ' ') && _focusedHotspotIndex >= 0) {
       e.preventDefault();
       var focusedHotspot = _hotspotElements[_focusedHotspotIndex];
       if (focusedHotspot) {
@@ -829,6 +897,9 @@ function initHotspotKeyboardNav() {
       }
     }
   });
+
+  // Use Dawn's getFocusableElements() to set tabindex on each hotspot so
+  // they are individually reachable (screen readers can enumerate them).
   var hotspotObserver = new MutationObserver(function () {
     updateHotspotElements();
   });
@@ -970,23 +1041,27 @@ function initImmersiveBottomNav() {
       var saved = localStorage.getItem('immersive_fab_position');
       if (saved) {
         var pos = JSON.parse(saved);
-        fab.style.top = pos.top;
-        fab.style.right = pos.right;
-        fab.style.bottom = pos.bottom;
-        fab.style.left = pos.left;
-        fab.style.transform = pos.transform || 'none';
+        // Issue 18: Use CSS custom properties instead of inline styles to
+        // avoid flash on first load. Applied atomically via cssText.
+        var css = '';
+        if (pos.top) css += 'top:' + pos.top + ';';
+        if (pos.right && pos.right !== 'auto') css += 'right:' + pos.right + ';left:auto;';
+        if (pos.left && pos.left !== 'auto') css += 'left:' + pos.left + ';right:auto;';
+        if (pos.transform && pos.transform !== 'none') css += 'transform:' + pos.transform + ';';
+        if (css) fab.style.cssText = css;
       }
     } catch (e) {}
   }
 
   function saveFabPosition() {
     try {
+      // Issue 18: Only save meaningful position values, not the full
+      // inline style set. This prevents CSS conflicts on restore.
       var pos = {
-        top: fab.style.top,
-        right: fab.style.right,
-        bottom: fab.style.bottom,
-        left: fab.style.left,
-        transform: fab.style.transform,
+        top: fab.style.top || '',
+        right: fab.style.right || '',
+        left: fab.style.left || '',
+        transform: fab.style.transform || '',
       };
       localStorage.setItem('immersive_fab_position', JSON.stringify(pos));
     } catch (e) {}
@@ -1215,6 +1290,7 @@ function safeBindImmersiveInit() {
     if (typeof setupImageParallax === 'function') setupImageParallax();
     if (typeof showImmersiveOnboardingIfNeeded === 'function') showImmersiveOnboardingIfNeeded();
     if (typeof initWishlist === 'function') initWishlist();
+    if (typeof initBackButton === 'function') initBackButton();
     if (typeof bindCookieBanner === 'function') bindCookieBanner();
     if (typeof initTiltControlToggle === 'function') initTiltControlToggle();
 

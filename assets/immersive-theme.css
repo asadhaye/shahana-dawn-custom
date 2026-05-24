@@ -22,16 +22,13 @@
   --z-toast: 400;
 }
 
-/* Base: dark background — lock to viewport, no scroll */
+/* Base: dark background. Do not lock vertical scroll here: the storefront
+   canvas parallax and editorial overlays manage their own scroll state. */
 .template-page-immersive,
 .template-page-immersive body {
   background-color: #0a0f1e;
   background-image: radial-gradient(ellipse at top, rgba(30, 41, 59, 0.8), #0a0f1e);
   color: #d4af37;
-  /* Lock the page to exactly the viewport — no scrolling, no white space below */
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
   overflow-x: hidden;
 }
 
@@ -45,15 +42,19 @@
 .template-page-immersive #MainContent {
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* The immersive canvas section fills the viewport; support/source sections are
+   hidden on the storefront so they do not create below-canvas page content. */
+.template-page-immersive .shopify-section:has(.immersive-store) {
   height: 100vh;
   overflow: hidden;
 }
 
-/* The immersive section wrapper itself must fill the full viewport */
-.template-page-immersive .shopify-section:has(.immersive-store),
-.template-page-immersive .shopify-section {
-  height: 100vh;
-  overflow: hidden;
+.template-page-immersive:not(.shopify-design-mode)
+  #MainContent
+  > .shopify-section:not(:has(.immersive-store)):not(:has([data-immersive-notif-bar])) {
+  display: none !important;
 }
 
 /* Header overrides */
