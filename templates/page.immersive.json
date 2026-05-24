@@ -372,6 +372,7 @@
         "story_journey",
         "story_closing"
       ],
+      "disabled": true,
       "settings": {
         "show_hero": true,
         "hero_eyebrow": "Shahana story",
@@ -381,6 +382,7 @@
     },
     "exclusive_carousel": {
       "type": "immersive-exclusive-carousel",
+      "disabled": true,
       "settings": {
         "eyebrow": "Shahana Exclusives",
         "heading": "The Exclusive Edit",
@@ -428,6 +430,7 @@
         "typo_soraya",
         "typo_sbs"
       ],
+      "disabled": true,
       "settings": {
         "eyebrow": "Shahana Codex",
         "heading": "The Collection Index"
@@ -484,6 +487,7 @@
         "entry_eid",
         "entry_bridal"
       ],
+      "disabled": true,
       "settings": {
         "show_header": false,
         "heading": "",
@@ -564,6 +568,7 @@
         "gallery_item_4",
         "gallery_item_5"
       ],
+      "disabled": true,
       "settings": {
         "room_key": "storefront"
       }
