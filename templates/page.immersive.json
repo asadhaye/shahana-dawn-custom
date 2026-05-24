@@ -178,12 +178,21 @@
     "editorial_designer_houses": {
       "type": "immersive-editorial",
       "blocks": {
+        "designer_NzgAHN": {
+          "type": "designer",
+          "settings": {
+            "heading": "Faiza Saqlain",
+            "logo": "shopify://shop_images/faiza_saqlain_logo.webp",
+            "body": "",
+            "collection": "faiza-saqlain"
+          }
+        },
         "designer_suffuse": {
           "type": "designer",
           "settings": {
+            "heading": "Suffuse",
             "image": "shopify://shop_images/SILK_PRET.webp",
             "logo": "shopify://shop_images/SUFFUSE_LOGO.webp",
-            "heading": "Suffuse",
             "body": "<p>Redefining Pakistani luxury with fluid silhouettes, hand-embroidered textiles, and a palette drawn from the subcontinent's most storied landscapes.</p>",
             "collection": "suffuse"
           }
@@ -191,9 +200,9 @@
         "designer_soraya": {
           "type": "designer",
           "settings": {
+            "heading": "Soraya",
             "image": "shopify://shop_images/Soraya.jpg",
             "logo": "shopify://shop_images/Soraya-logo.png",
-            "heading": "Soraya",
             "body": "<p>Where heritage craft meets contemporary form. Soraya's collections speak to the modern South Asian woman — bold, refined, and unapologetically elegant.</p>",
             "collection": "soraya"
           }
@@ -201,15 +210,16 @@
         "designer_sbs": {
           "type": "designer",
           "settings": {
+            "heading": "Saad Bin Shahzad",
             "image": "shopify://shop_images/SBS-Summer-Pret-26.webp",
             "logo": "shopify://shop_images/saad_bin_shahzad_logo.png",
-            "heading": "Saad Bin Shahzad",
             "body": "<p>Architectural precision and artisanal embroidery define Saad Bin Shahzad's vision — a house built on the belief that menswear and womenswear can share the same quiet power.</p>",
             "collection": "saad-bin-shahzad"
           }
         }
       },
       "block_order": [
+        "designer_NzgAHN",
         "designer_suffuse",
         "designer_soraya",
         "designer_sbs"
@@ -217,8 +227,8 @@
       "settings": {
         "room_key": "designer_houses",
         "layout": "designers",
-        "hero_eyebrow": "Shahana Collection presents",
         "hero_heading": "The Designer Houses",
+        "hero_eyebrow": "Shahana Collection presents",
         "hero_subheading": "<p>Three distinct creative visions. One immersive destination.</p>"
       }
     },
@@ -271,8 +281,8 @@
       "settings": {
         "room_key": "occasions",
         "layout": "occasions",
-        "hero_eyebrow": "Curated for every moment",
         "hero_heading": "Dress the Occasion",
+        "hero_eyebrow": "Curated for every moment",
         "hero_subheading": "<p>From intimate gatherings to grand celebrations — find the perfect expression for every chapter of your story.</p>"
       }
     },
@@ -315,8 +325,8 @@
       "settings": {
         "room_key": "featured_collections",
         "layout": "featured_collections",
-        "hero_eyebrow": "This season",
         "hero_heading": "The Edit",
+        "hero_eyebrow": "This season",
         "hero_subheading": "<p>Three collections. Three stories. One curated moment in Pakistani fashion.</p>"
       }
     },
