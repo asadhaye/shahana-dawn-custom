@@ -2620,7 +2620,12 @@ function fadeInContent(container, html) {
 function transitionPanelContent(panel, renderCallback) {
   if (!panel) return;
   if (document.startViewTransition) {
-    document.startViewTransition(renderCallback);
+    // Use skipTransition to avoid conflicting with editorial view transitions
+    try {
+      document.startViewTransition({ update: renderCallback, types: [] });
+    } catch (e) {
+      renderCallback();
+    }
   } else {
     renderCallback();
   }
@@ -3165,8 +3170,8 @@ function exitEditorialMode() {
     triggerEl.style.viewTransitionName = '';
     // Force reflow so the clear takes effect before we set the new name
     void overlay.offsetHeight;
+    // Only apply viewTransitionName to the overlay to avoid "duplicate" errors
     overlay.style.viewTransitionName = 'editorial-morph';
-    triggerEl.style.viewTransitionName = 'editorial-morph';
 
     try {
       var transition = document.startViewTransition(performUIDeactivation);
