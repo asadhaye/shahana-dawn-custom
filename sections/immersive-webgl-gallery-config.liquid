@@ -74,38 +74,15 @@
 
 {% stylesheet %}
   .immersive-webgl-gallery-config {
-    position: relative;
-    padding: 1rem 1.5rem;
-    color: inherit;
-  }
-
-  .immersive-webgl-gallery-config__list {
-    margin: 0;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
     padding: 0;
-    list-style: none;
-  }
-
-  .immersive-webgl-gallery-config__item {
-    margin: 0 0 0.75rem;
-    padding: 0;
-  }
-
-  .immersive-webgl-gallery-config__img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-  }
-
-  .immersive-webgl-gallery-config__empty {
     margin: 0;
-    font-size: 0.9rem;
-    color: rgba(232, 246, 255, 0.8);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .immersive-webgl-gallery-config {
-      scroll-behavior: auto;
-    }
   }
 {% endstylesheet %}
 
@@ -141,6 +118,14 @@
         });
 
       window.immersiveWebglGalleryConfigs[roomKey] = items;
+      
+      // Dispatch event so immersive-core can rebuild gallery stage
+      try {
+        var evt = new CustomEvent('immersive:galleryConfigReady', {
+          detail: { roomKey: roomKey, itemCount: items.length }
+        });
+        document.dispatchEvent(evt);
+      } catch(e) {}
     });
   })();
 {% endjavascript %}

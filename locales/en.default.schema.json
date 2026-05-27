@@ -934,6 +934,22 @@
           "collection": { "label": "Collection link" },
           "cta_url": { "label": "Override link" }
         }
+      },
+      "stacked_slide": {
+        "name": "Stacked slide",
+        "settings": {
+          "heading": { "label": "Heading" },
+          "image": { "label": "Image" },
+          "collection": { "label": "Collection" }
+        }
+      },
+      "perspective_item": {
+        "name": "Perspective item",
+        "settings": {
+          "heading": { "label": "Heading" },
+          "image": { "label": "Image" },
+          "collection": { "label": "Collection" }
+        }
       }
     },
     "presets": {

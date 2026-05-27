@@ -273,6 +273,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   var THREE = window.THREE;
 
   options = options || {};
+  var layout = options.layout || 'arc';
   var radius = options.radius || 7;
   var arcDegrees = options.arcDegrees || 140;
   var verticalOffset = options.verticalOffset || 0.2;
@@ -283,125 +284,339 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   var textureLoader = new THREE.TextureLoader();
   var planes = [];
   var textures = [];
+  var labels = [];
 
   var count = items.length;
-  var step = count > 1 ? arcDegrees / (count - 1) : 0;
-  var startAngle = -arcDegrees / 2;
 
-  items.forEach(function (item, index) {
-    if (!item.imageSrc) return;
+  if (layout === 'vertical') {
+    // ── Vertical scroll layout (indrajaal-museum homepage style) ──
+    // Items stacked vertically in 3D space, scroll-driven
+    var cardSpacing = options.cardSpacing || 3.5;
+    var cardH = options.cardHeight || 2.2;
+    var cardAspect = options.cardAspect || (2 / 3);
+    var cardW = cardH * cardAspect;
+    var startY = ((count - 1) * cardSpacing) / 2;
 
-    var tex = textureLoader.load(
-      item.imageSrc,
-      function (texture) {
-        // Success callback
-        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        texture.anisotropy = 8;
-      },
-      undefined,
-      function (err) {
-        // Error callback - texture failed to load
-        if (window.__IMMERSIVE_DEV__) {
-          console.warn('[Immersive] Gallery texture load error:', err);
-        }
-      },
-    );
-    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-    tex.anisotropy = 8;
-    textures.push(tex);
+    items.forEach(function (item, index) {
+      if (!item.imageSrc) return;
 
-    var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
-    var h = 2.0;
-    var w = h * aspect;
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Gallery texture load error:', err);
+          }
+        },
+      );
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      textures.push(tex);
 
-    var geom = new THREE.PlaneGeometry(w, h, 1, 1);
-    var mat = new THREE.MeshStandardMaterial({
-      map: tex,
-      roughness: 0.85,
-      metalness: 0.15,
-      transparent: true,
-      opacity: 0.95,
+      var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
+      var mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.85,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.95,
+        side: THREE.DoubleSide,
+      });
+
+      var mesh = new THREE.Mesh(geom, mat);
+      var y = startY - index * cardSpacing;
+      mesh.position.set(0, y, 0);
+      mesh.rotation.x = THREE.MathUtils.degToRad(tiltDegrees);
+
+      mesh.userData = {
+        roomKey: roomKey,
+        galleryIndex: item.index,
+        title: item.title || '',
+        productHandle: item.productHandle || null,
+        collectionHandle: item.collectionHandle || null,
+        layout: 'vertical',
+        baseY: y,
+      };
+
+      group.add(mesh);
+      planes.push(mesh);
+
+      // Large title label below each card (indrajaal style: ~100px font, tight spacing, cream on dark)
+      if (item.title) {
+        var labelCanvas = document.createElement('canvas');
+        var lCtx = labelCanvas.getContext('2d');
+        labelCanvas.width = 1024;
+        labelCanvas.height = 160;
+        lCtx.clearRect(0, 0, 1024, 160);
+        lCtx.font = 'bold 72px Georgia, serif';
+        lCtx.textAlign = 'center';
+        lCtx.textBaseline = 'middle';
+        lCtx.fillStyle = '#ece3c2';
+        lCtx.letterSpacing = '-5px';
+        lCtx.fillText(item.title.toUpperCase(), 512, 60);
+
+        // Sub-label: "[ EXPLORE COLLECTION ]"
+        lCtx.font = '500 14px Arial, sans-serif';
+        lCtx.fillStyle = 'rgba(255,255,255,0.5)';
+        lCtx.letterSpacing = '3px';
+        lCtx.fillText('[ EXPLORE COLLECTION ]', 512, 120);
+
+        var labelTex = new THREE.CanvasTexture(labelCanvas);
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        var labelMat = new THREE.MeshBasicMaterial({
+          map: labelTex,
+          transparent: true,
+          depthTest: false,
+          side: THREE.DoubleSide,
+        });
+        var labelW = cardW * 1.2;
+        var labelH = labelW * (160 / 1024);
+        var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
+        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.position.set(0, y - cardH * 0.5 - labelH * 0.6, 0.05);
+        labelMesh.renderOrder = 999;
+        group.add(labelMesh);
+        labels.push(labelMesh);
+      }
     });
 
-    var mesh = new THREE.Mesh(geom, mat);
-    var angleDeg = startAngle + step * index;
-    var rad = (angleDeg * Math.PI) / 180;
-    var x = Math.sin(rad) * radius;
-    var z = Math.cos(rad) * radius * -1;
+    scene.add(group);
 
-    mesh.position.set(x, verticalOffset, z);
-    mesh.lookAt(new THREE.Vector3(0, verticalOffset, 0));
-    mesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
-
-    mesh.userData = {
-      roomKey: roomKey,
-      galleryIndex: item.index,
-      title: item.title || '',
-      productHandle: item.productHandle || null,
-      collectionHandle: item.collectionHandle || null,
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: planes,
+      labels: labels,
+      textures: textures,
+      layout: 'vertical',
+      scrollY: 0,
+      targetScrollY: 0,
+      currentRotationX: 0,
+      targetRotationX: 0,
+      cardSpacing: cardSpacing,
+      cardCount: count,
+      cardH: cardH,
+      startY: startY,
     };
 
-    group.add(mesh);
-    planes.push(mesh);
-  });
+  } else {
+    // ── Arc carousel layout (original horizontal rotation) ──
+    var step = count > 1 ? arcDegrees / (count - 1) : 0;
+    var startAngle = -arcDegrees / 2;
 
-  scene.add(group);
+    items.forEach(function (item, index) {
+      if (!item.imageSrc) return;
 
-  galleryStageRegistry[roomKey] = {
-    group: group,
-    planes: planes,
-    textures: textures,
-    currentAngle: 0,
-    targetAngle: 0,
-    radius: radius,
-  };
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Gallery texture load error:', err);
+          }
+        },
+      );
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      textures.push(tex);
+
+      var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
+      var h = 2.0;
+      var w = h * aspect;
+
+      var geom = new THREE.PlaneGeometry(w, h, 1, 1);
+      var mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.85,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.95,
+      });
+
+      var mesh = new THREE.Mesh(geom, mat);
+      var angleDeg = startAngle + step * index;
+      var rad = (angleDeg * Math.PI) / 180;
+      var x = Math.sin(rad) * radius;
+      var z = Math.cos(rad) * radius * -1;
+
+      mesh.position.set(x, verticalOffset, z);
+      mesh.lookAt(new THREE.Vector3(0, verticalOffset, 0));
+      mesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+
+      mesh.userData = {
+        roomKey: roomKey,
+        galleryIndex: item.index,
+        title: item.title || '',
+        productHandle: item.productHandle || null,
+        collectionHandle: item.collectionHandle || null,
+        layout: 'arc',
+      };
+
+      group.add(mesh);
+      planes.push(mesh);
+
+      // Add a text label below the card
+      if (item.title) {
+        var labelCanvas = document.createElement('canvas');
+        var lCtx = labelCanvas.getContext('2d');
+        labelCanvas.width = 512;
+        labelCanvas.height = 96;
+        lCtx.clearRect(0, 0, 512, 96);
+        lCtx.font = 'bold 36px Georgia, serif';
+        lCtx.textAlign = 'center';
+        lCtx.textBaseline = 'middle';
+        lCtx.fillStyle = '#d4af37';
+        lCtx.fillText(item.title, 256, 48);
+
+        var labelTex = new THREE.CanvasTexture(labelCanvas);
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        var labelMat = new THREE.MeshBasicMaterial({
+          map: labelTex,
+          transparent: true,
+          depthTest: false,
+        });
+        var labelW = w * 0.8;
+        var labelH = labelW * (96 / 512);
+        var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
+        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.position.set(x, verticalOffset - h * 0.55, z);
+        labelMesh.lookAt(new THREE.Vector3(0, verticalOffset - h * 0.55, 0));
+        labelMesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+        labelMesh.renderOrder = 999;
+        group.add(labelMesh);
+        labels.push(labelMesh);
+      }
+    });
+
+    scene.add(group);
+
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: planes,
+      labels: labels,
+      textures: textures,
+      layout: 'arc',
+      currentAngle: 0,
+      targetAngle: 0,
+      radius: radius,
+      arcDegrees: arcDegrees,
+      verticalOffset: verticalOffset,
+      tiltDegrees: tiltDegrees,
+    };
+  }
 
   if (window.__IMMERSIVE_DEV__) {
-    console.log('[Immersive] Gallery stage built for room:', roomKey, 'items:', items.length);
+    console.log('[Immersive] Gallery stage built for room:', roomKey, 'items:', items.length, 'layout:', layout);
   }
   return galleryStageRegistry[roomKey];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Gallery hint UI
+// ─────────────────────────────────────────────────────────────
+
+function showGalleryHint(roomKey) {
+  var existing = document.getElementById('immersive-gallery-hint');
+  if (existing) existing.remove();
+
+  var isVertical = getGalleryLayout(roomKey) === 'vertical';
+  var hint = document.createElement('div');
+  hint.id = 'immersive-gallery-hint';
+  hint.className = 'immersive-gallery-hint';
+  hint.innerHTML = isVertical
+    ? '<span class="immersive-gallery-hint__text">Scroll or drag to explore &middot; Click a card to view collection</span>'
+    : '<span class="immersive-gallery-hint__text">Drag to browse &middot; Click a card to explore</span>';
+  hint.setAttribute('aria-live', 'polite');
+  document.body.appendChild(hint);
+
+  setTimeout(function () {
+    hint.classList.add('is-fading');
+    setTimeout(function () { hint.remove(); }, 600);
+  }, 4000);
 }
 
 // Gallery carousel interaction - drag to rotate like Indrajaal
 var galleryDragState = {
   isDragging: false,
   startX: 0,
+  startY: 0,
   lastX: 0,
+  lastY: 0,
   velocity: 0,
+  velocityX: 0,
+  velocityY: 0,
 };
 
 function initGalleryCarousel(canvas) {
   if (!canvas) return;
+  var state = galleryStageRegistry[currentRoomKey];
+  var isVertical = state && state.layout === 'vertical';
+
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
     galleryDragState.isDragging = true;
     galleryDragState.startX = e.clientX || e.touches?.[0]?.clientX || 0;
+    galleryDragState.startY = e.clientY || e.touches?.[0]?.clientY || 0;
     galleryDragState.lastX = galleryDragState.startX;
+    galleryDragState.lastY = galleryDragState.startY;
+    galleryDragState.velocityX = 0;
+    galleryDragState.velocityY = 0;
     canvas.style.cursor = 'grabbing';
   };
+
   var moveHandler = function (e) {
     if (!galleryDragState.isDragging) return;
     var x = e.clientX || e.touches?.[0]?.clientX || 0;
-    var delta = (x - galleryDragState.lastX) * 0.008;
-    var state = galleryStageRegistry[currentRoomKey];
-    if (state) {
-      state.targetAngle += delta;
+    var y = e.clientY || e.touches?.[0]?.clientY || 0;
+    var s = galleryStageRegistry[currentRoomKey];
+    if (!s) return;
+
+    var dx = x - galleryDragState.lastX;
+    var dy = y - galleryDragState.lastY;
+
+    if (isVertical) {
+      // Free-form drag: Y translates the gallery, X adds subtle rotation
+      var deltaY = dy * 0.012;
+      var deltaX = dx * 0.003;
+      s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY));
+      s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
+      galleryDragState.velocityX = dx * 0.5;
+      galleryDragState.velocityY = dy * 0.5;
+    } else {
+      // Arc carousel: horizontal drag rotates
+      var delta = dx * 0.008;
+      s.targetAngle += delta;
+      galleryDragState.velocity = delta;
     }
     galleryDragState.lastX = x;
-    galleryDragState.velocity = delta;
+    galleryDragState.lastY = y;
   };
+
   var endHandler = function () {
     galleryDragState.isDragging = false;
     canvas.style.cursor = 'grab';
   };
+
   var wheelHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
     e.preventDefault();
-    var state = galleryStageRegistry[currentRoomKey];
-    if (state) {
-      state.targetAngle += e.deltaY * 0.002;
+    var s = galleryStageRegistry[currentRoomKey];
+    if (!s) return;
+
+    if (isVertical) {
+      s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+    } else {
+      s.targetAngle += e.deltaY * 0.002;
     }
   };
+
   canvas.style.cursor = 'grab';
   canvas.addEventListener('mousedown', startHandler);
   // Issue 23: touchstart must be non-passive so the browser knows we may
@@ -417,28 +632,71 @@ function initGalleryCarousel(canvas) {
 function animateGalleryCarousel() {
   var state = galleryStageRegistry[currentRoomKey];
   if (!state || !state.group) return;
-  // Apply inertia when not dragging
-  if (!galleryDragState.isDragging && Math.abs(galleryDragState.velocity) > 0.0001) {
-    state.targetAngle += galleryDragState.velocity;
-    galleryDragState.velocity *= 0.95;
+
+  if (state.layout === 'vertical') {
+    // ── Vertical scroll animation (indrajaal-museum free-form drag) ──
+
+    // Apply inertia when not dragging (smooth momentum)
+    if (!galleryDragState.isDragging) {
+      if (Math.abs(galleryDragState.velocityY) > 0.001) {
+        state.targetScrollY += galleryDragState.velocityY * 0.012;
+        galleryDragState.velocityY *= 0.93;
+      }
+      if (Math.abs(galleryDragState.velocityX) > 0.001) {
+        state.targetRotationX += galleryDragState.velocityX * 0.003;
+        galleryDragState.velocityX *= 0.93;
+      }
+    }
+
+    // Clamp scroll bounds
+    var maxScroll = (state.cardCount - 1) * state.cardSpacing * 0.5;
+    state.targetScrollY = Math.max(-maxScroll, Math.min(maxScroll * 0.5, state.targetScrollY));
+    // Clamp rotation
+    state.targetRotationX = Math.max(-0.15, Math.min(0.15, state.targetRotationX));
+
+    // Smooth interpolation
+    state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
+    state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.08;
+
+    // Apply to group: vertical translation + subtle X-axis tilt
+    state.group.position.y = state.scrollY;
+    state.group.rotation.x = state.currentRotationX;
+
+    // Fade cards based on distance from center (indrajaal style)
+    state.planes.forEach(function (plane) {
+      var cardY = plane.userData.baseY + state.scrollY;
+      var distFromCenter = Math.abs(cardY);
+      var normalizedDist = Math.min(distFromCenter / (state.cardSpacing * 2), 1);
+      if (plane.material) {
+        plane.material.opacity = 0.95 * (1 - normalizedDist * 0.7);
+      }
+    });
+
+  } else {
+    // ── Arc carousel animation (original) ──
+    // Apply inertia when not dragging
+    if (!galleryDragState.isDragging && Math.abs(galleryDragState.velocity) > 0.0001) {
+      state.targetAngle += galleryDragState.velocity;
+      galleryDragState.velocity *= 0.95;
+    }
+    // Smooth rotation
+    state.currentAngle += (state.targetAngle - state.currentAngle) * 0.08;
+    var count = state.planes.length;
+    if (count < 2) return;
+    var arcDegrees = state.arcDegrees || 140;
+    var radius = state.radius || 7;
+    var step = arcDegrees / (count - 1);
+    var startAngle = -arcDegrees / 2;
+    state.planes.forEach(function (plane, index) {
+      var baseAngle = startAngle + step * index;
+      var angleDeg = baseAngle + state.currentAngle * (180 / Math.PI);
+      var rad = (angleDeg * Math.PI) / 180;
+      var x = Math.sin(rad) * radius;
+      var z = Math.cos(rad) * radius * -1;
+      plane.position.x = x;
+      plane.position.z = z;
+    });
   }
-  // Smooth rotation
-  state.currentAngle += (state.targetAngle - state.currentAngle) * 0.08;
-  var count = state.planes.length;
-  if (count < 2) return;
-  var arcDegrees = 140;
-  var radius = state.radius || 7;
-  var step = arcDegrees / (count - 1);
-  var startAngle = -arcDegrees / 2;
-  state.planes.forEach(function (plane, index) {
-    var baseAngle = startAngle + step * index;
-    var angleDeg = baseAngle + state.currentAngle * (180 / Math.PI);
-    var rad = (angleDeg * Math.PI) / 180;
-    var x = Math.sin(rad) * radius;
-    var z = Math.cos(rad) * radius * -1;
-    plane.position.x = x;
-    plane.position.z = z;
-  });
 }
 
 var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function () {})();
@@ -541,6 +799,74 @@ var galleryStageRegistry = {};
 function getGalleryStageConfig(roomKey) {
   if (!window.immersiveWebglGalleryConfigs) return [];
   return window.immersiveWebglGalleryConfigs[roomKey] || [];
+}
+
+// Returns the gallery layout mode for a room key.
+// 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
+// 'arc' = original horizontal carousel (default fallback)
+function getGalleryLayout(roomKey) {
+  // Read merchant-chosen layout from the section data attribute
+  var sectionEl = document.getElementById('immersive-store-{{ section.id }}');
+  if (!sectionEl) {
+    // Fallback: designer_houses defaults to vertical, everything else arc
+    return roomKey === 'designer_houses' ? 'vertical' : 'arc';
+  }
+  var setting = sectionEl.getAttribute('data-gallery-layout');
+  if (setting === 'vertical' || setting === 'arc') return setting;
+  // Fallback for sections without the new setting
+  return roomKey === 'designer_houses' ? 'vertical' : 'arc';
+}
+
+function loadGalleryConfigsFromDOM() {
+  // Method 1: Read from <script id="immersive-webgl-gallery-configs"> (output by immersive-canvas)
+  var el = document.getElementById('immersive-webgl-gallery-configs');
+  if (el) {
+    try {
+      var data = JSON.parse(el.textContent);
+      if (data && typeof data === 'object') {
+        window.immersiveWebglGalleryConfigs = data;
+      }
+    } catch (e) {}
+  }
+
+  // Method 2: Read from [data-immersive-webgl-gallery-config] DOM elements (output by webgl_gallery_exclusives section)
+  // This overrides Method 1 and provides richer data (images, titles, product/collection handles)
+  var configEls = document.querySelectorAll('[data-immersive-webgl-gallery-config]');
+  if (configEls.length) {
+    if (!window.immersiveWebglGalleryConfigs) {
+      window.immersiveWebglGalleryConfigs = {};
+    }
+    configEls.forEach(function(configEl) {
+      var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
+      var items = Array.prototype.slice
+        .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
+        .map(function(itemEl) {
+          var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
+          return {
+            index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
+            room: itemEl.dataset.galleryRoom || roomKey,
+            title: itemEl.dataset.galleryTitle || '',
+            subtitle: itemEl.dataset.gallerySubtitle || '',
+            productHandle: itemEl.dataset.galleryProductHandle || null,
+            productId: itemEl.dataset.galleryProductId || null,
+            collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
+            imageSrc: imgEl ? imgEl.src : null,
+            imageWidth: imgEl ? parseInt(imgEl.getAttribute('width'), 10) || 1920 : 1920,
+            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080
+          };
+        });
+      window.immersiveWebglGalleryConfigs[roomKey] = items;
+    });
+  }
+
+  if (window.__IMMERSIVE_DEV__ && window.immersiveWebglGalleryConfigs) {
+    var rooms = Object.keys(window.immersiveWebglGalleryConfigs).join(', ');
+    var counts = {};
+    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function(k) {
+      counts[k] = window.immersiveWebglGalleryConfigs[k].length;
+    });
+    console.log('[Immersive] Gallery configs loaded for rooms:', rooms, 'counts:', JSON.stringify(counts));
+  }
 }
 
 var lastFrameTime = typeof performance !== 'undefined' ? performance.now() : 0;
@@ -1127,6 +1453,39 @@ function initImmersiveScene() {
   var uiLayer = document.getElementById(uiLayerId);
   if (!canvas || !uiLayer) return;
 
+  // Listen for gallery config ready events from data provider sections
+  document.addEventListener('immersive:galleryConfigReady', function(evt) {
+    var roomKey = evt.detail && evt.detail.roomKey;
+    if (!roomKey || roomKey !== currentRoomKey) return;
+    if (!getGalleryStageConfig(roomKey).length) return;
+    // Dispose old stage if exists
+    if (galleryStageRegistry[roomKey]) {
+      disposeGalleryStage(roomKey);
+    }
+    var layout = getGalleryLayout(roomKey);
+    buildGalleryStageForRoom(roomKey, scene, {
+      layout: layout,
+      radius: 6,
+      arcDegrees: 120,
+      verticalOffset: 0.3,
+      tiltDegrees: -3,
+      cardSpacing: 3.5,
+      cardHeight: 2.2,
+      cardAspect: 2 / 3,
+    });
+    if (renderer && renderer.domElement) {
+      initGalleryCarousel(renderer.domElement);
+    }
+    // Hide hotspot buttons — gallery cards are the interaction
+    var _uiLayer2 = document.getElementById('ui-layer');
+    if (_uiLayer2) {
+      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function(btn) {
+        btn.style.display = 'none';
+      });
+    }
+    hideLoader();
+  });
+
   if (!window.THREE || !isWebGLSupported()) {
     showWebGLFallback(canvas);
     return;
@@ -1198,6 +1557,14 @@ function initImmersiveScene() {
 
   if (!hasOpenPanel) clearState();
 
+  // Load gallery configs from DOM before first room render
+  loadGalleryConfigsFromDOM();
+
+  // Also re-read after a short delay to catch sections that render late
+  setTimeout(function() {
+    loadGalleryConfigsFromDOM();
+  }, 100);
+
   goToRoom(startRoom, true);
   pushNavigationHistory(startRoom);
   writeImmersivePreference();
@@ -1236,33 +1603,126 @@ function showWebGLFallback(canvas) {
   renderHotspots('lounge');
 }
 
+// ---------------------------------------------------------------------------
+// Three.js logo transition overlay
+// ---------------------------------------------------------------------------
+
+var transitionLogoMesh = null;
+var transitionLogoTex  = null;
+
 function showLoader() {
+  if (!scene || !window.THREE) return;
+  var THREE = window.THREE;
+
+  // Already showing
+  if (transitionLogoMesh) return;
+
+  // Read logo URL from the canvas wrapper data attribute
   var wrapper = document.querySelector('.immersive-store__canvas-wrapper');
-  if (!wrapper) return;
-  var loader = document.createElement('div');
-  loader.id = 'immersive-loader';
-  loader.innerHTML = '<div class="immersive-loader__ring"></div>';
-  loader.style.cssText =
-    'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;pointer-events:none;';
-  loader.querySelector('.immersive-loader__ring').style.cssText =
-    'width:48px;height:48px;border:3px solid rgba(212,175,55,0.2);border-top-color:#d4af37;border-radius:50%;animation:immersive-spin 0.8s linear infinite;';
-  if (!document.getElementById('immersive-loader-style')) {
-    var style = document.createElement('style');
-    style.id = 'immersive-loader-style';
-    style.textContent = '@keyframes immersive-spin{to{transform:rotate(360deg)}}';
-    document.head.appendChild(style);
-  }
-  wrapper.appendChild(loader);
+  var logoUrl = wrapper ? wrapper.getAttribute('data-logo-url') : '';
+  if (!logoUrl) return;
+
+  // Load logo texture
+  transitionLogoTex = new THREE.TextureLoader().load(
+    logoUrl,
+    function (tex) {
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy   = 8;
+    }
+  );
+  transitionLogoTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+
+  // Compute aspect-corrected plane that covers the full viewport in screen-space.
+  // We place the plane at z = -1 (just in front of the camera) and size it so
+  // it spans the full frustum at that depth — effectively a fullscreen quad.
+  var aspect = camera ? camera.aspect : (window.innerWidth / window.innerHeight);
+  var vFov  = camera ? camera.fov * Math.PI / 180 : 70 * Math.PI / 180;
+  var h = 2 * Math.tan(vFov / 2) * 1.05;  // z = 1
+  var w = h * aspect;
+
+  // Logo plane: use a larger plane scaled down so the logo sits in the centre
+  // with plenty of black around it.
+  var logoH = h * 0.35;  // logo fills 35 % of viewport height
+  var imgAspect = transitionLogoTex.image
+    ? transitionLogoTex.image.width / transitionLogoTex.image.height
+    : 1;
+  var logoW = logoH * Math.max(imgAspect, 0.5);
+
+  var geom  = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
+  var mat   = new THREE.MeshBasicMaterial({
+    map:         transitionLogoTex,
+    transparent: true,
+    opacity:     0,
+    side:        THREE.DoubleSide,
+    depthTest:   false,
+    depthWrite:  false,
+  });
+
+  transitionLogoMesh = new THREE.Mesh(geom, mat);
+  transitionLogoMesh.renderOrder = 9999;
+  transitionLogoMesh.material.onBeforeCompile = function (shader) {
+    shader.uniforms.uTime = { value: 0 };
+    shader.fragmentShader =
+      'uniform float uTime;\n' +
+      shader.fragmentShader.replace(
+        'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
+        'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
+        'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);'
+      );
+    transitionLogoMesh.userData.shader = shader;
+  };
+
+  scene.add(transitionLogoMesh);
+
+  // Fade the logo in via the existing room-transition opacity uniform so it
+  // matches the shader cross-fade timing.  We drive the material opacity from
+  // the render loop.
+  transitionLogoMesh.userData.fadeIn = true;
+  transitionLogoMesh.userData.fadeOut = false;
+  transitionLogoMesh.userData.fadeStart = performance.now();
 }
 
 function hideLoader() {
-  var loader = document.getElementById('immersive-loader');
-  if (!loader) return;
-  loader.style.transition = 'opacity 0.4s ease';
-  loader.style.opacity = '0';
-  setTimeout(function () {
-    loader.remove();
-  }, 400);
+  if (!transitionLogoMesh) return;
+  transitionLogoMesh.userData.fadeIn  = false;
+  transitionLogoMesh.userData.fadeOut = true;
+  transitionLogoMesh.userData.fadeStart = performance.now();
+}
+
+// Called every frame from the main render loop to drive logo opacity.
+function updateTransitionLogo(timeNow) {
+  if (!transitionLogoMesh) return;
+
+  var mesh = transitionLogoMesh;
+  var mat  = mesh.material;
+  var ud   = mesh.userData;
+  var elapsed = (timeNow - ud.fadeStart) / 1000;  // seconds
+
+  if (ud.fadeIn && !ud.fadeOut) {
+    // Fade in over 0.35 s
+    mat.opacity = Math.min(elapsed / 0.35, 1.0);
+    if (mat.opacity >= 1) { ud.fadeIn = false; }
+  } else if (ud.fadeOut) {
+    // Fade out over 0.35 s, then dispose
+    mat.opacity = Math.max(1.0 - elapsed / 0.35, 0.0);
+    if (mat.opacity <= 0) {
+      // Clean up
+      if (transitionLogoTex) { transitionLogoTex.dispose(); transitionLogoTex = null; }
+      scene.remove(mesh);
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material) mesh.material.dispose();
+      transitionLogoMesh = null;
+      return;
+    }
+  }
+
+  // Pulse animation (glow) while visible
+  if (mat.opacity > 0 && mat.onBeforeCompile) {
+    // handled by onBeforeCompile shader
+  }
+  if (ud.shader) {
+    ud.shader.uniforms.uTime.value = timeNow / 1000;
+  }
 }
 
 var mouseTarget = { x: 0.5, y: 0.5 };
@@ -1288,15 +1748,51 @@ function onWindowResize() {
   if (resizeRaf !== null) return;
   resizeRaf = requestAnimationFrame(function () {
     resizeRaf = null;
+    var wasMobile = isMobile;
+    var wasUsesMobileImg = usesMobileImg;
     evaluateDeviceFlags();
     updateCanvasRect();
     handleResize();
 
     var currentOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
-    if (isMobile !== lastMobile || currentOrientation !== lastOrientation) {
+    if (isMobile !== lastMobile || currentOrientation !== lastOrientation || usesMobileImg !== wasUsesMobileImg) {
       lastMobile = isMobile;
       lastOrientation = currentOrientation;
       if (currentRoomKey) renderHotspots(currentRoomKey);
+
+      // Reload room texture if device type, orientation, or mobile-image flag changed
+      if ((wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) && currentRoomKey) {
+        var roomData = getRoomTextureUrls(currentRoomKey);
+        if (roomData) {
+          showLoader();
+          loadRoomTextures(roomData, function (baseTexture, depthTexture) {
+            if (uniforms) {
+              uniforms.uTexture1.value = baseTexture;
+              uniforms.uDepth1.value = depthTexture;
+              uniforms.uTexture2.value = baseTexture;
+              uniforms.uDepth2.value = depthTexture;
+              uniforms.uTransitionProgress.value = 0;
+            }
+            // Rebuild gallery stage for new screen size
+            if (getGalleryStageConfig(currentRoomKey).length) {
+              if (galleryStageRegistry[currentRoomKey]) {
+                disposeGalleryStage(currentRoomKey);
+              }
+              buildGalleryStageForRoom(currentRoomKey, scene, {
+                layout: getGalleryLayout(currentRoomKey),
+                radius: 6,
+                arcDegrees: 120,
+                verticalOffset: 0.3,
+                tiltDegrees: -3,
+                cardSpacing: 3.5,
+                cardHeight: 2.2,
+                cardAspect: 2 / 3,
+              });
+            }
+            hideLoader();
+          });
+        }
+      }
     }
   });
 }
@@ -1347,7 +1843,17 @@ function handleResize(roomKeyOverride) {
   var width = canvas.clientWidth || window.innerWidth;
   var height = canvas.clientHeight || window.innerHeight;
   if (width === 0 || height === 0) return;
+
   renderer.setSize(width, height, false);
+
+  // Update orthographic camera to match new aspect ratio
+  var aspect = width / height;
+  camera.left   = -aspect;
+  camera.right  =  aspect;
+  camera.top    =  1;
+  camera.bottom = -1;
+  camera.updateProjectionMatrix();
+
   if (planeMesh) {
     var resolvedRoomKey = roomKeyOverride || currentRoomKey;
     var room = resolvedRoomKey && getRoomData(resolvedRoomKey);
@@ -1466,6 +1972,9 @@ function animate() {
   if (galleryStageRegistry[currentRoomKey]) {
     animateGalleryCarousel();
   }
+
+  // Animate transition logo overlay
+  updateTransitionLogo(performance.now());
 
   if (!reduceMotion && activeHotspots.length > 0) {
     for (var i = 0; i < activeHotspots.length; i++) {
@@ -1600,6 +2109,7 @@ function goToRoom(roomKey, initial, skipHistory) {
 
   if (!initial) {
     transitioning = true;
+    showLoader();
     if (reduceMotion) {
       uiLayer.style.transition = '';
       uiLayer.style.opacity = '0';
@@ -1691,12 +2201,35 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
 
         if (getGalleryStageConfig(roomKey).length) {
           buildGalleryStageForRoom(roomKey, scene, {
-            radius: 7,
-            arcDegrees: 140,
+            layout: getGalleryLayout(roomKey),
+            radius: 6,
+            arcDegrees: 120,
             verticalOffset: 0.3,
-            tiltDegrees: -4,
+            tiltDegrees: -3,
+            cardSpacing: 3.5,
+            cardHeight: 2.2,
+            cardAspect: 2 / 3,
           });
           initGalleryCarousel(renderer.domElement);
+
+          // Hide hotspot buttons — gallery cards are the interaction
+          var _uiLayer = document.getElementById('ui-layer');
+          if (_uiLayer) {
+            _uiLayer.querySelectorAll('.immersive-hotspot').forEach(function (btn) {
+              btn.style.display = 'none';
+            });
+          }
+
+          // Adjust atmosphere for gallery mode
+          if (uniforms) {
+            if (uniforms.uAtmosphericMood) uniforms.uAtmosphericMood.value = 0.6;
+            if (uniforms.uScrollVignette) uniforms.uScrollVignette.value = 0.25;
+          }
+
+          // Show gallery hint
+          if (typeof showGalleryHint === 'function') {
+            showGalleryHint(roomKey);
+          }
         }
 
         renderHotspots(roomKey);

@@ -273,6 +273,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   var THREE = window.THREE;
 
   options = options || {};
+  var layout = options.layout || 'arc';
   var radius = options.radius || 7;
   var arcDegrees = options.arcDegrees || 140;
   var verticalOffset = options.verticalOffset || 0.2;
@@ -283,125 +284,339 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   var textureLoader = new THREE.TextureLoader();
   var planes = [];
   var textures = [];
+  var labels = [];
 
   var count = items.length;
-  var step = count > 1 ? arcDegrees / (count - 1) : 0;
-  var startAngle = -arcDegrees / 2;
 
-  items.forEach(function (item, index) {
-    if (!item.imageSrc) return;
+  if (layout === 'vertical') {
+    // ── Vertical scroll layout (indrajaal-museum homepage style) ──
+    // Items stacked vertically in 3D space, scroll-driven
+    var cardSpacing = options.cardSpacing || 3.5;
+    var cardH = options.cardHeight || 2.2;
+    var cardAspect = options.cardAspect || (2 / 3);
+    var cardW = cardH * cardAspect;
+    var startY = ((count - 1) * cardSpacing) / 2;
 
-    var tex = textureLoader.load(
-      item.imageSrc,
-      function (texture) {
-        // Success callback
-        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        texture.anisotropy = 8;
-      },
-      undefined,
-      function (err) {
-        // Error callback - texture failed to load
-        if (window.__IMMERSIVE_DEV__) {
-          console.warn('[Immersive] Gallery texture load error:', err);
-        }
-      },
-    );
-    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-    tex.anisotropy = 8;
-    textures.push(tex);
+    items.forEach(function (item, index) {
+      if (!item.imageSrc) return;
 
-    var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
-    var h = 2.0;
-    var w = h * aspect;
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Gallery texture load error:', err);
+          }
+        },
+      );
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      textures.push(tex);
 
-    var geom = new THREE.PlaneGeometry(w, h, 1, 1);
-    var mat = new THREE.MeshStandardMaterial({
-      map: tex,
-      roughness: 0.85,
-      metalness: 0.15,
-      transparent: true,
-      opacity: 0.95,
+      var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
+      var mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.85,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.95,
+        side: THREE.DoubleSide,
+      });
+
+      var mesh = new THREE.Mesh(geom, mat);
+      var y = startY - index * cardSpacing;
+      mesh.position.set(0, y, 0);
+      mesh.rotation.x = THREE.MathUtils.degToRad(tiltDegrees);
+
+      mesh.userData = {
+        roomKey: roomKey,
+        galleryIndex: item.index,
+        title: item.title || '',
+        productHandle: item.productHandle || null,
+        collectionHandle: item.collectionHandle || null,
+        layout: 'vertical',
+        baseY: y,
+      };
+
+      group.add(mesh);
+      planes.push(mesh);
+
+      // Large title label below each card (indrajaal style: ~100px font, tight spacing, cream on dark)
+      if (item.title) {
+        var labelCanvas = document.createElement('canvas');
+        var lCtx = labelCanvas.getContext('2d');
+        labelCanvas.width = 1024;
+        labelCanvas.height = 160;
+        lCtx.clearRect(0, 0, 1024, 160);
+        lCtx.font = 'bold 72px Georgia, serif';
+        lCtx.textAlign = 'center';
+        lCtx.textBaseline = 'middle';
+        lCtx.fillStyle = '#ece3c2';
+        lCtx.letterSpacing = '-5px';
+        lCtx.fillText(item.title.toUpperCase(), 512, 60);
+
+        // Sub-label: "[ EXPLORE COLLECTION ]"
+        lCtx.font = '500 14px Arial, sans-serif';
+        lCtx.fillStyle = 'rgba(255,255,255,0.5)';
+        lCtx.letterSpacing = '3px';
+        lCtx.fillText('[ EXPLORE COLLECTION ]', 512, 120);
+
+        var labelTex = new THREE.CanvasTexture(labelCanvas);
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        var labelMat = new THREE.MeshBasicMaterial({
+          map: labelTex,
+          transparent: true,
+          depthTest: false,
+          side: THREE.DoubleSide,
+        });
+        var labelW = cardW * 1.2;
+        var labelH = labelW * (160 / 1024);
+        var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
+        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.position.set(0, y - cardH * 0.5 - labelH * 0.6, 0.05);
+        labelMesh.renderOrder = 999;
+        group.add(labelMesh);
+        labels.push(labelMesh);
+      }
     });
 
-    var mesh = new THREE.Mesh(geom, mat);
-    var angleDeg = startAngle + step * index;
-    var rad = (angleDeg * Math.PI) / 180;
-    var x = Math.sin(rad) * radius;
-    var z = Math.cos(rad) * radius * -1;
+    scene.add(group);
 
-    mesh.position.set(x, verticalOffset, z);
-    mesh.lookAt(new THREE.Vector3(0, verticalOffset, 0));
-    mesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
-
-    mesh.userData = {
-      roomKey: roomKey,
-      galleryIndex: item.index,
-      title: item.title || '',
-      productHandle: item.productHandle || null,
-      collectionHandle: item.collectionHandle || null,
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: planes,
+      labels: labels,
+      textures: textures,
+      layout: 'vertical',
+      scrollY: 0,
+      targetScrollY: 0,
+      currentRotationX: 0,
+      targetRotationX: 0,
+      cardSpacing: cardSpacing,
+      cardCount: count,
+      cardH: cardH,
+      startY: startY,
     };
 
-    group.add(mesh);
-    planes.push(mesh);
-  });
+  } else {
+    // ── Arc carousel layout (original horizontal rotation) ──
+    var step = count > 1 ? arcDegrees / (count - 1) : 0;
+    var startAngle = -arcDegrees / 2;
 
-  scene.add(group);
+    items.forEach(function (item, index) {
+      if (!item.imageSrc) return;
 
-  galleryStageRegistry[roomKey] = {
-    group: group,
-    planes: planes,
-    textures: textures,
-    currentAngle: 0,
-    targetAngle: 0,
-    radius: radius,
-  };
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Gallery texture load error:', err);
+          }
+        },
+      );
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      textures.push(tex);
+
+      var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
+      var h = 2.0;
+      var w = h * aspect;
+
+      var geom = new THREE.PlaneGeometry(w, h, 1, 1);
+      var mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.85,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.95,
+      });
+
+      var mesh = new THREE.Mesh(geom, mat);
+      var angleDeg = startAngle + step * index;
+      var rad = (angleDeg * Math.PI) / 180;
+      var x = Math.sin(rad) * radius;
+      var z = Math.cos(rad) * radius * -1;
+
+      mesh.position.set(x, verticalOffset, z);
+      mesh.lookAt(new THREE.Vector3(0, verticalOffset, 0));
+      mesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+
+      mesh.userData = {
+        roomKey: roomKey,
+        galleryIndex: item.index,
+        title: item.title || '',
+        productHandle: item.productHandle || null,
+        collectionHandle: item.collectionHandle || null,
+        layout: 'arc',
+      };
+
+      group.add(mesh);
+      planes.push(mesh);
+
+      // Add a text label below the card
+      if (item.title) {
+        var labelCanvas = document.createElement('canvas');
+        var lCtx = labelCanvas.getContext('2d');
+        labelCanvas.width = 512;
+        labelCanvas.height = 96;
+        lCtx.clearRect(0, 0, 512, 96);
+        lCtx.font = 'bold 36px Georgia, serif';
+        lCtx.textAlign = 'center';
+        lCtx.textBaseline = 'middle';
+        lCtx.fillStyle = '#d4af37';
+        lCtx.fillText(item.title, 256, 48);
+
+        var labelTex = new THREE.CanvasTexture(labelCanvas);
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        var labelMat = new THREE.MeshBasicMaterial({
+          map: labelTex,
+          transparent: true,
+          depthTest: false,
+        });
+        var labelW = w * 0.8;
+        var labelH = labelW * (96 / 512);
+        var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
+        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.position.set(x, verticalOffset - h * 0.55, z);
+        labelMesh.lookAt(new THREE.Vector3(0, verticalOffset - h * 0.55, 0));
+        labelMesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+        labelMesh.renderOrder = 999;
+        group.add(labelMesh);
+        labels.push(labelMesh);
+      }
+    });
+
+    scene.add(group);
+
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: planes,
+      labels: labels,
+      textures: textures,
+      layout: 'arc',
+      currentAngle: 0,
+      targetAngle: 0,
+      radius: radius,
+      arcDegrees: arcDegrees,
+      verticalOffset: verticalOffset,
+      tiltDegrees: tiltDegrees,
+    };
+  }
 
   if (window.__IMMERSIVE_DEV__) {
-    console.log('[Immersive] Gallery stage built for room:', roomKey, 'items:', items.length);
+    console.log('[Immersive] Gallery stage built for room:', roomKey, 'items:', items.length, 'layout:', layout);
   }
   return galleryStageRegistry[roomKey];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Gallery hint UI
+// ─────────────────────────────────────────────────────────────
+
+function showGalleryHint(roomKey) {
+  var existing = document.getElementById('immersive-gallery-hint');
+  if (existing) existing.remove();
+
+  var isVertical = getGalleryLayout(roomKey) === 'vertical';
+  var hint = document.createElement('div');
+  hint.id = 'immersive-gallery-hint';
+  hint.className = 'immersive-gallery-hint';
+  hint.innerHTML = isVertical
+    ? '<span class="immersive-gallery-hint__text">Scroll or drag to explore &middot; Click a card to view collection</span>'
+    : '<span class="immersive-gallery-hint__text">Drag to browse &middot; Click a card to explore</span>';
+  hint.setAttribute('aria-live', 'polite');
+  document.body.appendChild(hint);
+
+  setTimeout(function () {
+    hint.classList.add('is-fading');
+    setTimeout(function () { hint.remove(); }, 600);
+  }, 4000);
 }
 
 // Gallery carousel interaction - drag to rotate like Indrajaal
 var galleryDragState = {
   isDragging: false,
   startX: 0,
+  startY: 0,
   lastX: 0,
+  lastY: 0,
   velocity: 0,
+  velocityX: 0,
+  velocityY: 0,
 };
 
 function initGalleryCarousel(canvas) {
   if (!canvas) return;
+  var state = galleryStageRegistry[currentRoomKey];
+  var isVertical = state && state.layout === 'vertical';
+
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
     galleryDragState.isDragging = true;
     galleryDragState.startX = e.clientX || e.touches?.[0]?.clientX || 0;
+    galleryDragState.startY = e.clientY || e.touches?.[0]?.clientY || 0;
     galleryDragState.lastX = galleryDragState.startX;
+    galleryDragState.lastY = galleryDragState.startY;
+    galleryDragState.velocityX = 0;
+    galleryDragState.velocityY = 0;
     canvas.style.cursor = 'grabbing';
   };
+
   var moveHandler = function (e) {
     if (!galleryDragState.isDragging) return;
     var x = e.clientX || e.touches?.[0]?.clientX || 0;
-    var delta = (x - galleryDragState.lastX) * 0.008;
-    var state = galleryStageRegistry[currentRoomKey];
-    if (state) {
-      state.targetAngle += delta;
+    var y = e.clientY || e.touches?.[0]?.clientY || 0;
+    var s = galleryStageRegistry[currentRoomKey];
+    if (!s) return;
+
+    var dx = x - galleryDragState.lastX;
+    var dy = y - galleryDragState.lastY;
+
+    if (isVertical) {
+      // Free-form drag: Y translates the gallery, X adds subtle rotation
+      var deltaY = dy * 0.012;
+      var deltaX = dx * 0.003;
+      s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY));
+      s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
+      galleryDragState.velocityX = dx * 0.5;
+      galleryDragState.velocityY = dy * 0.5;
+    } else {
+      // Arc carousel: horizontal drag rotates
+      var delta = dx * 0.008;
+      s.targetAngle += delta;
+      galleryDragState.velocity = delta;
     }
     galleryDragState.lastX = x;
-    galleryDragState.velocity = delta;
+    galleryDragState.lastY = y;
   };
+
   var endHandler = function () {
     galleryDragState.isDragging = false;
     canvas.style.cursor = 'grab';
   };
+
   var wheelHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
     e.preventDefault();
-    var state = galleryStageRegistry[currentRoomKey];
-    if (state) {
-      state.targetAngle += e.deltaY * 0.002;
+    var s = galleryStageRegistry[currentRoomKey];
+    if (!s) return;
+
+    if (isVertical) {
+      s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+    } else {
+      s.targetAngle += e.deltaY * 0.002;
     }
   };
+
   canvas.style.cursor = 'grab';
   canvas.addEventListener('mousedown', startHandler);
   // Issue 23: touchstart must be non-passive so the browser knows we may
@@ -417,28 +632,71 @@ function initGalleryCarousel(canvas) {
 function animateGalleryCarousel() {
   var state = galleryStageRegistry[currentRoomKey];
   if (!state || !state.group) return;
-  // Apply inertia when not dragging
-  if (!galleryDragState.isDragging && Math.abs(galleryDragState.velocity) > 0.0001) {
-    state.targetAngle += galleryDragState.velocity;
-    galleryDragState.velocity *= 0.95;
+
+  if (state.layout === 'vertical') {
+    // ── Vertical scroll animation (indrajaal-museum free-form drag) ──
+
+    // Apply inertia when not dragging (smooth momentum)
+    if (!galleryDragState.isDragging) {
+      if (Math.abs(galleryDragState.velocityY) > 0.001) {
+        state.targetScrollY += galleryDragState.velocityY * 0.012;
+        galleryDragState.velocityY *= 0.93;
+      }
+      if (Math.abs(galleryDragState.velocityX) > 0.001) {
+        state.targetRotationX += galleryDragState.velocityX * 0.003;
+        galleryDragState.velocityX *= 0.93;
+      }
+    }
+
+    // Clamp scroll bounds
+    var maxScroll = (state.cardCount - 1) * state.cardSpacing * 0.5;
+    state.targetScrollY = Math.max(-maxScroll, Math.min(maxScroll * 0.5, state.targetScrollY));
+    // Clamp rotation
+    state.targetRotationX = Math.max(-0.15, Math.min(0.15, state.targetRotationX));
+
+    // Smooth interpolation
+    state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
+    state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.08;
+
+    // Apply to group: vertical translation + subtle X-axis tilt
+    state.group.position.y = state.scrollY;
+    state.group.rotation.x = state.currentRotationX;
+
+    // Fade cards based on distance from center (indrajaal style)
+    state.planes.forEach(function (plane) {
+      var cardY = plane.userData.baseY + state.scrollY;
+      var distFromCenter = Math.abs(cardY);
+      var normalizedDist = Math.min(distFromCenter / (state.cardSpacing * 2), 1);
+      if (plane.material) {
+        plane.material.opacity = 0.95 * (1 - normalizedDist * 0.7);
+      }
+    });
+
+  } else {
+    // ── Arc carousel animation (original) ──
+    // Apply inertia when not dragging
+    if (!galleryDragState.isDragging && Math.abs(galleryDragState.velocity) > 0.0001) {
+      state.targetAngle += galleryDragState.velocity;
+      galleryDragState.velocity *= 0.95;
+    }
+    // Smooth rotation
+    state.currentAngle += (state.targetAngle - state.currentAngle) * 0.08;
+    var count = state.planes.length;
+    if (count < 2) return;
+    var arcDegrees = state.arcDegrees || 140;
+    var radius = state.radius || 7;
+    var step = arcDegrees / (count - 1);
+    var startAngle = -arcDegrees / 2;
+    state.planes.forEach(function (plane, index) {
+      var baseAngle = startAngle + step * index;
+      var angleDeg = baseAngle + state.currentAngle * (180 / Math.PI);
+      var rad = (angleDeg * Math.PI) / 180;
+      var x = Math.sin(rad) * radius;
+      var z = Math.cos(rad) * radius * -1;
+      plane.position.x = x;
+      plane.position.z = z;
+    });
   }
-  // Smooth rotation
-  state.currentAngle += (state.targetAngle - state.currentAngle) * 0.08;
-  var count = state.planes.length;
-  if (count < 2) return;
-  var arcDegrees = 140;
-  var radius = state.radius || 7;
-  var step = arcDegrees / (count - 1);
-  var startAngle = -arcDegrees / 2;
-  state.planes.forEach(function (plane, index) {
-    var baseAngle = startAngle + step * index;
-    var angleDeg = baseAngle + state.currentAngle * (180 / Math.PI);
-    var rad = (angleDeg * Math.PI) / 180;
-    var x = Math.sin(rad) * radius;
-    var z = Math.cos(rad) * radius * -1;
-    plane.position.x = x;
-    plane.position.z = z;
-  });
 }
 
 var galleryRaycaster = new (window.THREE ? window.THREE.Raycaster : function () {})();
@@ -541,6 +799,74 @@ var galleryStageRegistry = {};
 function getGalleryStageConfig(roomKey) {
   if (!window.immersiveWebglGalleryConfigs) return [];
   return window.immersiveWebglGalleryConfigs[roomKey] || [];
+}
+
+// Returns the gallery layout mode for a room key.
+// 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
+// 'arc' = original horizontal carousel (default fallback)
+function getGalleryLayout(roomKey) {
+  // Read merchant-chosen layout from the section data attribute
+  var sectionEl = document.getElementById('immersive-store-{{ section.id }}');
+  if (!sectionEl) {
+    // Fallback: designer_houses defaults to vertical, everything else arc
+    return roomKey === 'designer_houses' ? 'vertical' : 'arc';
+  }
+  var setting = sectionEl.getAttribute('data-gallery-layout');
+  if (setting === 'vertical' || setting === 'arc') return setting;
+  // Fallback for sections without the new setting
+  return roomKey === 'designer_houses' ? 'vertical' : 'arc';
+}
+
+function loadGalleryConfigsFromDOM() {
+  // Method 1: Read from <script id="immersive-webgl-gallery-configs"> (output by immersive-canvas)
+  var el = document.getElementById('immersive-webgl-gallery-configs');
+  if (el) {
+    try {
+      var data = JSON.parse(el.textContent);
+      if (data && typeof data === 'object') {
+        window.immersiveWebglGalleryConfigs = data;
+      }
+    } catch (e) {}
+  }
+
+  // Method 2: Read from [data-immersive-webgl-gallery-config] DOM elements (output by webgl_gallery_exclusives section)
+  // This overrides Method 1 and provides richer data (images, titles, product/collection handles)
+  var configEls = document.querySelectorAll('[data-immersive-webgl-gallery-config]');
+  if (configEls.length) {
+    if (!window.immersiveWebglGalleryConfigs) {
+      window.immersiveWebglGalleryConfigs = {};
+    }
+    configEls.forEach(function(configEl) {
+      var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
+      var items = Array.prototype.slice
+        .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
+        .map(function(itemEl) {
+          var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
+          return {
+            index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
+            room: itemEl.dataset.galleryRoom || roomKey,
+            title: itemEl.dataset.galleryTitle || '',
+            subtitle: itemEl.dataset.gallerySubtitle || '',
+            productHandle: itemEl.dataset.galleryProductHandle || null,
+            productId: itemEl.dataset.galleryProductId || null,
+            collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
+            imageSrc: imgEl ? imgEl.src : null,
+            imageWidth: imgEl ? parseInt(imgEl.getAttribute('width'), 10) || 1920 : 1920,
+            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080
+          };
+        });
+      window.immersiveWebglGalleryConfigs[roomKey] = items;
+    });
+  }
+
+  if (window.__IMMERSIVE_DEV__ && window.immersiveWebglGalleryConfigs) {
+    var rooms = Object.keys(window.immersiveWebglGalleryConfigs).join(', ');
+    var counts = {};
+    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function(k) {
+      counts[k] = window.immersiveWebglGalleryConfigs[k].length;
+    });
+    console.log('[Immersive] Gallery configs loaded for rooms:', rooms, 'counts:', JSON.stringify(counts));
+  }
 }
 
 var lastFrameTime = typeof performance !== 'undefined' ? performance.now() : 0;
@@ -1127,6 +1453,39 @@ function initImmersiveScene() {
   var uiLayer = document.getElementById(uiLayerId);
   if (!canvas || !uiLayer) return;
 
+  // Listen for gallery config ready events from data provider sections
+  document.addEventListener('immersive:galleryConfigReady', function(evt) {
+    var roomKey = evt.detail && evt.detail.roomKey;
+    if (!roomKey || roomKey !== currentRoomKey) return;
+    if (!getGalleryStageConfig(roomKey).length) return;
+    // Dispose old stage if exists
+    if (galleryStageRegistry[roomKey]) {
+      disposeGalleryStage(roomKey);
+    }
+    var layout = getGalleryLayout(roomKey);
+    buildGalleryStageForRoom(roomKey, scene, {
+      layout: layout,
+      radius: 6,
+      arcDegrees: 120,
+      verticalOffset: 0.3,
+      tiltDegrees: -3,
+      cardSpacing: 3.5,
+      cardHeight: 2.2,
+      cardAspect: 2 / 3,
+    });
+    if (renderer && renderer.domElement) {
+      initGalleryCarousel(renderer.domElement);
+    }
+    // Hide hotspot buttons — gallery cards are the interaction
+    var _uiLayer2 = document.getElementById('ui-layer');
+    if (_uiLayer2) {
+      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function(btn) {
+        btn.style.display = 'none';
+      });
+    }
+    hideLoader();
+  });
+
   if (!window.THREE || !isWebGLSupported()) {
     showWebGLFallback(canvas);
     return;
@@ -1198,6 +1557,14 @@ function initImmersiveScene() {
 
   if (!hasOpenPanel) clearState();
 
+  // Load gallery configs from DOM before first room render
+  loadGalleryConfigsFromDOM();
+
+  // Also re-read after a short delay to catch sections that render late
+  setTimeout(function() {
+    loadGalleryConfigsFromDOM();
+  }, 100);
+
   goToRoom(startRoom, true);
   pushNavigationHistory(startRoom);
   writeImmersivePreference();
@@ -1236,33 +1603,126 @@ function showWebGLFallback(canvas) {
   renderHotspots('lounge');
 }
 
+// ---------------------------------------------------------------------------
+// Three.js logo transition overlay
+// ---------------------------------------------------------------------------
+
+var transitionLogoMesh = null;
+var transitionLogoTex  = null;
+
 function showLoader() {
+  if (!scene || !window.THREE) return;
+  var THREE = window.THREE;
+
+  // Already showing
+  if (transitionLogoMesh) return;
+
+  // Read logo URL from the canvas wrapper data attribute
   var wrapper = document.querySelector('.immersive-store__canvas-wrapper');
-  if (!wrapper) return;
-  var loader = document.createElement('div');
-  loader.id = 'immersive-loader';
-  loader.innerHTML = '<div class="immersive-loader__ring"></div>';
-  loader.style.cssText =
-    'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:50;pointer-events:none;';
-  loader.querySelector('.immersive-loader__ring').style.cssText =
-    'width:48px;height:48px;border:3px solid rgba(212,175,55,0.2);border-top-color:#d4af37;border-radius:50%;animation:immersive-spin 0.8s linear infinite;';
-  if (!document.getElementById('immersive-loader-style')) {
-    var style = document.createElement('style');
-    style.id = 'immersive-loader-style';
-    style.textContent = '@keyframes immersive-spin{to{transform:rotate(360deg)}}';
-    document.head.appendChild(style);
-  }
-  wrapper.appendChild(loader);
+  var logoUrl = wrapper ? wrapper.getAttribute('data-logo-url') : '';
+  if (!logoUrl) return;
+
+  // Load logo texture
+  transitionLogoTex = new THREE.TextureLoader().load(
+    logoUrl,
+    function (tex) {
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy   = 8;
+    }
+  );
+  transitionLogoTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+
+  // Compute aspect-corrected plane that covers the full viewport in screen-space.
+  // We place the plane at z = -1 (just in front of the camera) and size it so
+  // it spans the full frustum at that depth — effectively a fullscreen quad.
+  var aspect = camera ? camera.aspect : (window.innerWidth / window.innerHeight);
+  var vFov  = camera ? camera.fov * Math.PI / 180 : 70 * Math.PI / 180;
+  var h = 2 * Math.tan(vFov / 2) * 1.05;  // z = 1
+  var w = h * aspect;
+
+  // Logo plane: use a larger plane scaled down so the logo sits in the centre
+  // with plenty of black around it.
+  var logoH = h * 0.35;  // logo fills 35 % of viewport height
+  var imgAspect = transitionLogoTex.image
+    ? transitionLogoTex.image.width / transitionLogoTex.image.height
+    : 1;
+  var logoW = logoH * Math.max(imgAspect, 0.5);
+
+  var geom  = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
+  var mat   = new THREE.MeshBasicMaterial({
+    map:         transitionLogoTex,
+    transparent: true,
+    opacity:     0,
+    side:        THREE.DoubleSide,
+    depthTest:   false,
+    depthWrite:  false,
+  });
+
+  transitionLogoMesh = new THREE.Mesh(geom, mat);
+  transitionLogoMesh.renderOrder = 9999;
+  transitionLogoMesh.material.onBeforeCompile = function (shader) {
+    shader.uniforms.uTime = { value: 0 };
+    shader.fragmentShader =
+      'uniform float uTime;\n' +
+      shader.fragmentShader.replace(
+        'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
+        'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
+        'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);'
+      );
+    transitionLogoMesh.userData.shader = shader;
+  };
+
+  scene.add(transitionLogoMesh);
+
+  // Fade the logo in via the existing room-transition opacity uniform so it
+  // matches the shader cross-fade timing.  We drive the material opacity from
+  // the render loop.
+  transitionLogoMesh.userData.fadeIn = true;
+  transitionLogoMesh.userData.fadeOut = false;
+  transitionLogoMesh.userData.fadeStart = performance.now();
 }
 
 function hideLoader() {
-  var loader = document.getElementById('immersive-loader');
-  if (!loader) return;
-  loader.style.transition = 'opacity 0.4s ease';
-  loader.style.opacity = '0';
-  setTimeout(function () {
-    loader.remove();
-  }, 400);
+  if (!transitionLogoMesh) return;
+  transitionLogoMesh.userData.fadeIn  = false;
+  transitionLogoMesh.userData.fadeOut = true;
+  transitionLogoMesh.userData.fadeStart = performance.now();
+}
+
+// Called every frame from the main render loop to drive logo opacity.
+function updateTransitionLogo(timeNow) {
+  if (!transitionLogoMesh) return;
+
+  var mesh = transitionLogoMesh;
+  var mat  = mesh.material;
+  var ud   = mesh.userData;
+  var elapsed = (timeNow - ud.fadeStart) / 1000;  // seconds
+
+  if (ud.fadeIn && !ud.fadeOut) {
+    // Fade in over 0.35 s
+    mat.opacity = Math.min(elapsed / 0.35, 1.0);
+    if (mat.opacity >= 1) { ud.fadeIn = false; }
+  } else if (ud.fadeOut) {
+    // Fade out over 0.35 s, then dispose
+    mat.opacity = Math.max(1.0 - elapsed / 0.35, 0.0);
+    if (mat.opacity <= 0) {
+      // Clean up
+      if (transitionLogoTex) { transitionLogoTex.dispose(); transitionLogoTex = null; }
+      scene.remove(mesh);
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material) mesh.material.dispose();
+      transitionLogoMesh = null;
+      return;
+    }
+  }
+
+  // Pulse animation (glow) while visible
+  if (mat.opacity > 0 && mat.onBeforeCompile) {
+    // handled by onBeforeCompile shader
+  }
+  if (ud.shader) {
+    ud.shader.uniforms.uTime.value = timeNow / 1000;
+  }
 }
 
 var mouseTarget = { x: 0.5, y: 0.5 };
@@ -1288,15 +1748,51 @@ function onWindowResize() {
   if (resizeRaf !== null) return;
   resizeRaf = requestAnimationFrame(function () {
     resizeRaf = null;
+    var wasMobile = isMobile;
+    var wasUsesMobileImg = usesMobileImg;
     evaluateDeviceFlags();
     updateCanvasRect();
     handleResize();
 
     var currentOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
-    if (isMobile !== lastMobile || currentOrientation !== lastOrientation) {
+    if (isMobile !== lastMobile || currentOrientation !== lastOrientation || usesMobileImg !== wasUsesMobileImg) {
       lastMobile = isMobile;
       lastOrientation = currentOrientation;
       if (currentRoomKey) renderHotspots(currentRoomKey);
+
+      // Reload room texture if device type, orientation, or mobile-image flag changed
+      if ((wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) && currentRoomKey) {
+        var roomData = getRoomTextureUrls(currentRoomKey);
+        if (roomData) {
+          showLoader();
+          loadRoomTextures(roomData, function (baseTexture, depthTexture) {
+            if (uniforms) {
+              uniforms.uTexture1.value = baseTexture;
+              uniforms.uDepth1.value = depthTexture;
+              uniforms.uTexture2.value = baseTexture;
+              uniforms.uDepth2.value = depthTexture;
+              uniforms.uTransitionProgress.value = 0;
+            }
+            // Rebuild gallery stage for new screen size
+            if (getGalleryStageConfig(currentRoomKey).length) {
+              if (galleryStageRegistry[currentRoomKey]) {
+                disposeGalleryStage(currentRoomKey);
+              }
+              buildGalleryStageForRoom(currentRoomKey, scene, {
+                layout: getGalleryLayout(currentRoomKey),
+                radius: 6,
+                arcDegrees: 120,
+                verticalOffset: 0.3,
+                tiltDegrees: -3,
+                cardSpacing: 3.5,
+                cardHeight: 2.2,
+                cardAspect: 2 / 3,
+              });
+            }
+            hideLoader();
+          });
+        }
+      }
     }
   });
 }
@@ -1347,7 +1843,17 @@ function handleResize(roomKeyOverride) {
   var width = canvas.clientWidth || window.innerWidth;
   var height = canvas.clientHeight || window.innerHeight;
   if (width === 0 || height === 0) return;
+
   renderer.setSize(width, height, false);
+
+  // Update orthographic camera to match new aspect ratio
+  var aspect = width / height;
+  camera.left   = -aspect;
+  camera.right  =  aspect;
+  camera.top    =  1;
+  camera.bottom = -1;
+  camera.updateProjectionMatrix();
+
   if (planeMesh) {
     var resolvedRoomKey = roomKeyOverride || currentRoomKey;
     var room = resolvedRoomKey && getRoomData(resolvedRoomKey);
@@ -1466,6 +1972,9 @@ function animate() {
   if (galleryStageRegistry[currentRoomKey]) {
     animateGalleryCarousel();
   }
+
+  // Animate transition logo overlay
+  updateTransitionLogo(performance.now());
 
   if (!reduceMotion && activeHotspots.length > 0) {
     for (var i = 0; i < activeHotspots.length; i++) {
@@ -1600,6 +2109,7 @@ function goToRoom(roomKey, initial, skipHistory) {
 
   if (!initial) {
     transitioning = true;
+    showLoader();
     if (reduceMotion) {
       uiLayer.style.transition = '';
       uiLayer.style.opacity = '0';
@@ -1691,12 +2201,35 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
 
         if (getGalleryStageConfig(roomKey).length) {
           buildGalleryStageForRoom(roomKey, scene, {
-            radius: 7,
-            arcDegrees: 140,
+            layout: getGalleryLayout(roomKey),
+            radius: 6,
+            arcDegrees: 120,
             verticalOffset: 0.3,
-            tiltDegrees: -4,
+            tiltDegrees: -3,
+            cardSpacing: 3.5,
+            cardHeight: 2.2,
+            cardAspect: 2 / 3,
           });
           initGalleryCarousel(renderer.domElement);
+
+          // Hide hotspot buttons — gallery cards are the interaction
+          var _uiLayer = document.getElementById('ui-layer');
+          if (_uiLayer) {
+            _uiLayer.querySelectorAll('.immersive-hotspot').forEach(function (btn) {
+              btn.style.display = 'none';
+            });
+          }
+
+          // Adjust atmosphere for gallery mode
+          if (uniforms) {
+            if (uniforms.uAtmosphericMood) uniforms.uAtmosphericMood.value = 0.6;
+            if (uniforms.uScrollVignette) uniforms.uScrollVignette.value = 0.25;
+          }
+
+          // Show gallery hint
+          if (typeof showGalleryHint === 'function') {
+            showGalleryHint(roomKey);
+          }
         }
 
         renderHotspots(roomKey);
@@ -6472,1370 +7005,3 @@ function _updateGuidedDots(activeStep) {
   }
 }
 window.enterEditorialMode = enterEditorialMode;
-/**
- * Immersive Init — coordination layer for the 3D store.
- *
- * Loads after immersive-core.js and immersive-features.js.
- * Contains:
- *   - Init wrappers that call existing modular functions
- *   - Entirely missing features ported from legacy (search, gestures, quick-add, etc.)
- *   - Full FAB
- *   - safeBindImmersiveInit() + Shopify theme editor re-init handlers
- */
-
-// ---------------------------------------------------------------------------
-// State Variables
-// ---------------------------------------------------------------------------
-
-var _immersiveInitBound = false;
-var _searchActiveIndex = -1;
-var _searchResults = [];
-var _searchDebounceTimer = null;
-var _searchAbortController = null;
-var _gestureLastRoomTransition = 0;
-var _gestureCooldown = 600;
-var SWIPE_ROOM_SEQUENCE = ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'];
-var _quickAddModal = null;
-var _quickAddTrigger = null;
-var _hotspotElements = [];
-var _focusedHotspotIndex = -1;
-var _esrCooldown = false;
-var _esrWheelBound = false;
-var _pctRafPending = false;
-var _pctActiveCard = null;
-var _pctPendingNormX = 0;
-var _pctPendingNormY = 0;
-var parallaxStrength = 0;
-
-// ---------------------------------------------------------------------------
-// Helper Functions
-// ---------------------------------------------------------------------------
-
-function getSearchResultIcon(type) {
-  var icons = {
-    product:
-      '<path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM10 5h4v2h-4V5z"/>',
-    collection:
-      '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
-    room: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
-  };
-  var path = icons[type] || icons.product;
-  return (
-    '<svg class="immersive-search-result__icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-    path +
-    '</svg>'
-  );
-}
-
-function formatMoney(cents) {
-  if (!cents && cents !== 0) return '';
-  return 'PKR ' + (cents / 100).toLocaleString('en-PK', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-
-function showFeedback(message, type) {
-  var existing = document.querySelector('.immersive-feedback-toast');
-  if (existing) existing.remove();
-  var toast = document.createElement('div');
-  toast.className = 'immersive-feedback-toast immersive-feedback-toast--' + (type || 'info');
-  toast.setAttribute('role', 'status');
-  toast.setAttribute('aria-live', 'polite');
-  toast.textContent = message;
-  toast.style.cssText =
-    'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:0.75rem 1.5rem;border-radius:8px;font-size:0.875rem;z-index:10000;max-width:90vw;text-align:center;';
-  if (type === 'error') {
-    toast.style.background = 'rgba(220,38,38,0.9)';
-    toast.style.color = '#fff';
-  } else if (type === 'success') {
-    toast.style.background = 'rgba(34,197,94,0.9)';
-    toast.style.color = '#fff';
-  } else {
-    toast.style.background = 'rgba(15,23,42,0.9)';
-    toast.style.color = '#d4af37';
-  }
-  document.body.appendChild(toast);
-  setTimeout(function () {
-    if (toast.parentNode) toast.remove();
-  }, 3000);
-}
-
-function _esrEaseOutParallax(durationMs, callback) {
-  var startValue = typeof parallaxStrength !== 'undefined' ? parallaxStrength : 0;
-  var startTime = null;
-  function step(ts) {
-    if (!startTime) startTime = ts;
-    var elapsed = ts - startTime;
-    var t = Math.min(elapsed / durationMs, 1);
-    if (typeof parallaxStrength !== 'undefined') {
-      parallaxStrength = startValue * (1 - t);
-    }
-    if (t < 1) {
-      requestAnimationFrame(step);
-    } else {
-      if (typeof parallaxStrength !== 'undefined') parallaxStrength = 0;
-      if (typeof callback === 'function') callback();
-    }
-  }
-  requestAnimationFrame(step);
-}
-
-function _esrTrigger() {
-  if (!immersiveState || immersiveState.mode !== 'showroom') return;
-  var editorialRooms = ['designer_houses', 'occasions', 'featured_collections'];
-  if (editorialRooms.indexOf(immersiveState.currentRoom) === -1) return;
-  var panel = document.getElementById('glass-panel');
-  if (panel && (panel.classList.contains('is-active') || (!panel.hidden && !panel.classList.contains('hidden'))))
-    return;
-  if (_esrCooldown) return;
-  _esrCooldown = true;
-  setTimeout(function () {
-    _esrCooldown = false;
-  }, 700);
-  var roomKey = immersiveState.currentRoom;
-  var reduceMotionESR = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotionESR) {
-    if (typeof enterEditorialMode === 'function') enterEditorialMode(roomKey, null);
-  } else {
-    _esrEaseOutParallax(300, function () {
-      if (typeof enterEditorialMode === 'function') enterEditorialMode(roomKey, null);
-    });
-  }
-}
-
-function _esrOnWheel(event) {
-  if (event.deltaY > 0) _esrTrigger();
-}
-
-function _esrOnSwipeDown(deltaX, deltaY) {
-  var absDy = Math.abs(deltaY);
-  var absDx = Math.abs(deltaX);
-  if (absDy < 60) return;
-  if (absDx > 0 && absDy / absDx <= 2.5) return;
-  if (deltaY < 0) return;
-  _esrTrigger();
-}
-
-function _pctOnMouseMove(event) {
-  var card = event.target && event.target.closest && event.target.closest('.immersive-product-card');
-  if (!card) return;
-  if (document.activeElement === card || card.contains(document.activeElement)) return;
-  var rect = card.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) return;
-  var centerX = rect.left + rect.width / 2;
-  var centerY = rect.top + rect.height / 2;
-  if (typeof _pctClamp === 'function') {
-    _pctPendingNormX = _pctClamp((event.clientX - centerX) / (rect.width / 2), -1, 1);
-    _pctPendingNormY = _pctClamp((event.clientY - centerY) / (rect.height / 2), -1, 1);
-  }
-  _pctActiveCard = card;
-  card.classList.remove('tilt-reset');
-  if (!_pctRafPending && typeof _pctApplyTilt === 'function') {
-    _pctRafPending = true;
-    requestAnimationFrame(_pctApplyTilt);
-  }
-}
-
-function _pctOnMouseLeave(event) {
-  var card =
-    (event.target && event.target.closest && event.target.closest('.immersive-product-card')) || _pctActiveCard;
-  if (card) {
-    card.classList.add('tilt-reset');
-    card.style.transform = '';
-  }
-  _pctActiveCard = null;
-}
-
-// ---------------------------------------------------------------------------
-// Immersive Search
-// ---------------------------------------------------------------------------
-
-function initImmersiveSearch() {
-  var container = document.querySelector('[data-immersive-search]');
-  if (!container) return;
-  var input = container.querySelector('#immersive-search-input');
-  var dropdown = container.querySelector('#immersive-search-results');
-  if (!input || !dropdown) return;
-
-  var msgNoResults = container.getAttribute('data-msg-no-results') || 'No results';
-  var msgNoResultsHint = container.getAttribute('data-msg-no-results-hint') || '';
-  var msgUnavailable = container.getAttribute('data-msg-unavailable') || 'Search unavailable';
-  var labelProducts = container.getAttribute('data-label-products') || 'Products';
-  var labelCollections = container.getAttribute('data-label-collections') || 'Collections';
-  var labelRooms = container.getAttribute('data-label-rooms') || 'Rooms';
-
-  var ROOM_LIST = [
-    { roomKey: 'storefront', label: 'Storefront' },
-    { roomKey: 'lounge', label: 'Lounge' },
-    { roomKey: 'designer_houses', label: 'Designer Houses' },
-    { roomKey: 'occasions', label: 'Occasions' },
-    { roomKey: 'featured_collections', label: 'Featured Collections' },
-  ];
-
-  function focusSearch() {
-    input.focus();
-    input.select();
-  }
-
-  function closeDropdown() {
-    dropdown.hidden = true;
-    dropdown.innerHTML = '';
-    input.setAttribute('aria-expanded', 'false');
-    _searchActiveIndex = -1;
-    _searchResults = [];
-  }
-
-  function fuzzyMatchRooms(term) {
-    var t = term.toLowerCase();
-    return ROOM_LIST.filter(function (r) {
-      return r.label.toLowerCase().indexOf(t) !== -1 || r.roomKey.indexOf(t) !== -1;
-    });
-  }
-
-  function buildResultEl(item, type, index) {
-    var el = document.createElement('div');
-    el.className = 'immersive-search__result';
-    el.setAttribute('role', 'option');
-    el.setAttribute('id', 'immersive-search-result-' + index);
-    el.setAttribute('aria-selected', 'false');
-    var iconType = type === 'collection' ? 'collection' : 'product';
-    var iconWrapper = document.createElement('div');
-    iconWrapper.innerHTML = getSearchResultIcon(iconType);
-    var iconEl = iconWrapper.firstChild;
-    if (iconEl) el.appendChild(iconEl);
-    var info = document.createElement('div');
-    info.className = 'immersive-search__result-info';
-    var title = document.createElement('span');
-    title.className = 'immersive-search__result-title';
-    title.textContent = item.title || '';
-    info.appendChild(title);
-    // Issue 8: Show metadata for both products and collections
-    var metaText = '';
-    if (type === 'product' && item.price) {
-      metaText = item.price;
-    } else if (type === 'collection') {
-      // Shopify suggest API returns products_count for collections
-      if (item.products_count !== undefined && item.products_count !== null) {
-        metaText = item.products_count + ' product' + (item.products_count !== 1 ? 's' : '');
-      }
-    }
-    if (metaText) {
-      var meta = document.createElement('span');
-      meta.className = 'immersive-search__result-meta';
-      meta.textContent = metaText;
-      info.appendChild(meta);
-    }
-    el.appendChild(info);
-    el.addEventListener('click', function () {
-      selectResult(index);
-    });
-    return el;
-  }
-
-  function buildRoomResultEl(room, index) {
-    var el = document.createElement('div');
-    el.className = 'immersive-search__result';
-    el.setAttribute('role', 'option');
-    el.setAttribute('id', 'immersive-search-result-' + index);
-    el.setAttribute('aria-selected', 'false');
-    var iconWrapper = document.createElement('div');
-    iconWrapper.innerHTML = getSearchResultIcon('room');
-    var iconEl = iconWrapper.firstChild;
-    if (iconEl) el.appendChild(iconEl);
-    var info = document.createElement('div');
-    info.className = 'immersive-search__result-info';
-    var title = document.createElement('span');
-    title.className = 'immersive-search__result-title';
-    title.textContent = room.label;
-    info.appendChild(title);
-    var meta = document.createElement('span');
-    meta.className = 'immersive-search__result-meta';
-    meta.textContent = 'Room';
-    info.appendChild(meta);
-    el.appendChild(info);
-    el.addEventListener('click', function () {
-      selectResult(index);
-    });
-    return el;
-  }
-
-  function renderResults(apiResults, roomMatches) {
-    dropdown.innerHTML = '';
-    var hasContent = false;
-    _searchResults = [];
-    if (apiResults.products && apiResults.products.length) {
-      hasContent = true;
-      var groupLabel = document.createElement('span');
-      groupLabel.className = 'immersive-search__group-label';
-      groupLabel.textContent = labelProducts;
-      dropdown.appendChild(groupLabel);
-      apiResults.products.forEach(function (item) {
-        _searchResults.push({ type: 'product', data: item });
-        dropdown.appendChild(buildResultEl(item, 'product', _searchResults.length - 1));
-      });
-    }
-    if (apiResults.collections && apiResults.collections.length) {
-      hasContent = true;
-      var groupLabel2 = document.createElement('span');
-      groupLabel2.className = 'immersive-search__group-label';
-      groupLabel2.textContent = labelCollections;
-      dropdown.appendChild(groupLabel2);
-      apiResults.collections.forEach(function (item) {
-        _searchResults.push({ type: 'collection', data: item });
-        dropdown.appendChild(buildResultEl(item, 'collection', _searchResults.length - 1));
-      });
-    }
-    if (roomMatches && roomMatches.length) {
-      hasContent = true;
-      var groupLabel3 = document.createElement('span');
-      groupLabel3.className = 'immersive-search__group-label';
-      groupLabel3.textContent = labelRooms;
-      dropdown.appendChild(groupLabel3);
-      roomMatches.forEach(function (room) {
-        _searchResults.push({ type: 'room', data: room });
-        dropdown.appendChild(buildRoomResultEl(room, _searchResults.length - 1));
-      });
-    }
-    if (!hasContent) {
-      var noRes = document.createElement('div');
-      noRes.className = 'immersive-search__no-results';
-      noRes.textContent = msgNoResults.replace('{{term}}', input.value);
-      if (msgNoResultsHint) {
-        var hint = document.createElement('span');
-        hint.className = 'immersive-search__no-results-hint';
-        hint.textContent = msgNoResultsHint;
-        noRes.appendChild(hint);
-      }
-      dropdown.appendChild(noRes);
-    }
-    dropdown.hidden = false;
-    input.setAttribute('aria-expanded', 'true');
-    _searchActiveIndex = -1;
-  }
-
-  function selectResult(index) {
-    var item = _searchResults[index];
-    if (!item) return;
-    closeDropdown();
-    input.value = '';
-    if (item.type === 'product') {
-      if (typeof openProductPanel === 'function') openProductPanel(item.data.handle);
-    } else if (item.type === 'collection') {
-      if (typeof openCollectionPanel === 'function') openCollectionPanel(item.data.handle);
-    } else if (item.type === 'room') {
-      if (typeof goToRoom === 'function') goToRoom(item.data.roomKey);
-    }
-  }
-
-  function navigateResults(direction) {
-    if (!_searchResults.length) return;
-    if (direction === 'down') {
-      _searchActiveIndex = Math.min(_searchActiveIndex + 1, _searchResults.length - 1);
-    } else {
-      _searchActiveIndex = Math.max(_searchActiveIndex - 1, 0);
-    }
-    var allResults = dropdown.querySelectorAll('[role="option"]');
-    allResults.forEach(function (el, i) {
-      el.setAttribute('aria-selected', i === _searchActiveIndex ? 'true' : 'false');
-    });
-    var activeId = 'immersive-search-result-' + _searchActiveIndex;
-    input.setAttribute('aria-activedescendant', activeId);
-  }
-
-  function doSearch(term) {
-    if (!term || term.length < 2) {
-      closeDropdown();
-      return;
-    }
-    var roomMatches = fuzzyMatchRooms(term);
-    if (_searchAbortController) {
-      try {
-        _searchAbortController.abort();
-      } catch (e) {}
-    }
-    var timeoutId = setTimeout(function () {
-      dropdown.innerHTML = '<div class="immersive-search__unavailable">' + msgUnavailable + '</div>';
-      dropdown.hidden = false;
-      input.setAttribute('aria-expanded', 'true');
-    }, 3000);
-    var url =
-      '/search/suggest?q=' + encodeURIComponent(term) + '&resources[type]=product,collection&resources[limit]=5';
-    fetch(url, {
-      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    })
-      .then(function (res) {
-        clearTimeout(timeoutId);
-        if (!res.ok) throw new Error('Search failed');
-        return res.json();
-      })
-      .then(function (data) {
-        var resources = (data.resources && data.resources.results) || {};
-        renderResults(
-          {
-            products: resources.products || [],
-            collections: resources.collections || [],
-          },
-          roomMatches,
-        );
-      })
-      .catch(function () {
-        clearTimeout(timeoutId);
-        if (roomMatches.length) {
-          renderResults({ products: [], collections: [] }, roomMatches);
-        } else {
-          dropdown.innerHTML = '<div class="immersive-search__unavailable">' + msgUnavailable + '</div>';
-          dropdown.hidden = false;
-          input.setAttribute('aria-expanded', 'true');
-        }
-      });
-  }
-
-  input.addEventListener('input', function () {
-    clearTimeout(_searchDebounceTimer);
-    var term = input.value.trim();
-    _searchDebounceTimer = setTimeout(function () {
-      doSearch(term);
-    }, 200);
-  });
-
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      navigateResults('down');
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      navigateResults('up');
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (_searchActiveIndex >= 0) {
-        selectResult(_searchActiveIndex);
-      }
-    } else if (e.key === 'Escape') {
-      closeDropdown();
-      input.blur();
-    }
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!container.contains(e.target)) {
-      closeDropdown();
-    }
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-      e.preventDefault();
-      focusSearch();
-    }
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Immersive Gestures
-// ---------------------------------------------------------------------------
-
-function classifyGesture(deltaX, deltaY) {
-  var absDx = Math.abs(deltaX);
-  var absDy = Math.abs(deltaY);
-  if (absDx < 60 && absDy < 60) return 'none';
-  if (absDy === 0) return absDx >= 60 ? 'horizontal' : 'none';
-  var ratio = absDx / absDy;
-  if (ratio > 2.5) return 'horizontal';
-  if (absDy >= 60) return deltaY > 0 ? 'vertical-down' : 'vertical-up';
-  return 'none';
-}
-
-function initImmersiveGestures() {
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var canvasWrapper = document.getElementById('immersive-canvas') || document.querySelector('.immersive-store');
-  if (!canvasWrapper) return;
-
-  var touchStartX = 0;
-  var touchStartY = 0;
-  var touchStartTime = 0;
-
-  canvasWrapper.addEventListener(
-    'touchstart',
-    function (e) {
-      var touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      touchStartTime = Date.now();
-    },
-    { passive: true },
-  );
-
-  canvasWrapper.addEventListener('touchmove', function () {}, { passive: true });
-
-  canvasWrapper.addEventListener(
-    'touchend',
-    function (e) {
-      var target = e.target;
-      if (
-        target &&
-        target.closest('button, a, input, select, textarea, [role="radio"], [role="option"], [data-immersive-search]')
-      )
-        return;
-      var touch = e.changedTouches[0];
-      var deltaX = touch.clientX - touchStartX;
-      var deltaY = touch.clientY - touchStartY;
-      var elapsed = Date.now() - touchStartTime;
-      if (elapsed > 600) return;
-      var gesture = classifyGesture(deltaX, deltaY);
-      if (gesture === 'none') return;
-      var glassPanel = document.getElementById('glass-panel');
-      var panelOpen = glassPanel && !glassPanel.hidden && !glassPanel.classList.contains('hidden');
-      if (gesture === 'horizontal') {
-        var now = Date.now();
-        // Issue 12: Reset cooldown after room transition completes so rapid
-        // swipes don't queue up and fire all at once when cooldown expires.
-        if (now - _gestureLastRoomTransition < _gestureCooldown) return;
-        _gestureLastRoomTransition = now;
-        if (panelOpen) return;
-        var currentRoom = (typeof immersiveState !== 'undefined' && immersiveState.currentRoom) || 'storefront';
-        var idx = SWIPE_ROOM_SEQUENCE.indexOf(currentRoom);
-        if (idx === -1) idx = 0;
-        var nextIdx;
-        if (deltaX < 0) {
-          nextIdx = (idx + 1) % SWIPE_ROOM_SEQUENCE.length;
-        } else {
-          nextIdx = (idx - 1 + SWIPE_ROOM_SEQUENCE.length) % SWIPE_ROOM_SEQUENCE.length;
-        }
-        if (typeof goToRoom === 'function') {
-          goToRoom(SWIPE_ROOM_SEQUENCE[nextIdx], reduceMotion ? 'instant' : undefined);
-        }
-      } else if (gesture === 'vertical-down' && panelOpen) {
-        var closeBtn = glassPanel && glassPanel.querySelector('.immersive-store__panel-close');
-        if (closeBtn) closeBtn.click();
-      } else if (gesture === 'vertical-down' && !panelOpen) {
-        _esrOnSwipeDown(deltaX, deltaY);
-      } else if (gesture === 'vertical-up' && !panelOpen) {
-        var wishlistOpenBtn = document.querySelector('[data-wishlist-open]');
-        if (wishlistOpenBtn) wishlistOpenBtn.click();
-      }
-    },
-    { passive: true },
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Next Actions
-// ---------------------------------------------------------------------------
-
-function initImmersiveNextActions() {
-  _nextActionsBar = document.createElement('div');
-  _nextActionsBar.className = 'immersive-next-actions';
-  _nextActionsBar.setAttribute('role', 'status');
-  _nextActionsBar.setAttribute('aria-live', 'polite');
-  _nextActionsBar.hidden = true;
-  document.body.appendChild(_nextActionsBar);
-}
-
-function showNextActions(chips) {
-  if (!_nextActionsBar) return;
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  clearTimeout(_nextActionsTimer);
-  _nextActionsBar.innerHTML = '';
-  var inner = document.createElement('div');
-  inner.className = 'immersive-next-actions__inner';
-  chips.forEach(function (chip) {
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'immersive-next-actions__chip immersive-chip';
-    btn.textContent = chip.label;
-    btn.addEventListener('click', function () {
-      dismissNextActions();
-      if (typeof chip.action === 'function') chip.action();
-    });
-    inner.appendChild(btn);
-  });
-  var closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'immersive-next-actions__close';
-  closeBtn.setAttribute('aria-label', 'Dismiss');
-  closeBtn.innerHTML =
-    '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  closeBtn.addEventListener('click', dismissNextActions);
-  inner.appendChild(closeBtn);
-  _nextActionsBar.appendChild(inner);
-  _nextActionsBar.hidden = false;
-  if (!reduceMotion) _nextActionsBar.classList.add('is-visible');
-  _nextActionsTimer = setTimeout(dismissNextActions, 6000);
-}
-
-function dismissNextActions() {
-  clearTimeout(_nextActionsTimer);
-  if (_nextActionsBar) {
-    _nextActionsBar.classList.remove('is-visible');
-    _nextActionsBar.hidden = true;
-    _nextActionsBar.innerHTML = '';
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Quick Add
-// ---------------------------------------------------------------------------
-
-function closeQuickAdd() {
-  if (_quickAddModal) {
-    _quickAddModal.remove();
-    _quickAddModal = null;
-  }
-  if (_quickAddTrigger) {
-    _quickAddTrigger.focus();
-    _quickAddTrigger = null;
-  }
-}
-
-function renderQuickAddModal(product, triggerEl) {
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (_quickAddModal) _quickAddModal.remove();
-  var modal = document.createElement('div');
-  modal.className = 'immersive-quick-add-modal';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-labelledby', 'quick-add-modal-title');
-  if (reduceMotion) modal.classList.add('no-animation');
-  var inner = document.createElement('div');
-  inner.className = 'immersive-quick-add-modal__inner';
-  var header = document.createElement('div');
-  header.className = 'immersive-quick-add-modal__header';
-  var title = document.createElement('h3');
-  title.id = 'quick-add-modal-title';
-  title.className = 'immersive-quick-add-modal__title';
-  title.textContent = product.title;
-  var closeBtn = document.createElement('button');
-  closeBtn.type = 'button';
-  closeBtn.className = 'immersive-quick-add-modal__close';
-  closeBtn.setAttribute('aria-label', 'Close');
-  closeBtn.innerHTML =
-    '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  closeBtn.addEventListener('click', closeQuickAdd);
-  header.appendChild(title);
-  header.appendChild(closeBtn);
-  var price = document.createElement('div');
-  price.className = 'immersive-quick-add-modal__price';
-  price.setAttribute('data-quick-add-price', '');
-  var firstVariant = product.variants && product.variants[0];
-  price.textContent = firstVariant ? formatMoney(firstVariant.price) : '';
-  var selectedVariantId = firstVariant ? firstVariant.id : null;
-  var variantGroup = null;
-  if (product.variants && product.variants.length > 1) {
-    variantGroup = document.createElement('div');
-    variantGroup.className = 'immersive-quick-add-modal__variants';
-    variantGroup.setAttribute('role', 'radiogroup');
-    variantGroup.setAttribute('aria-label', 'Select size');
-    product.variants.forEach(function (variant, i) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'immersive-quick-add-modal__variant';
-      btn.setAttribute('role', 'radio');
-      btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
-      btn.setAttribute('data-variant-id', variant.id);
-      btn.setAttribute('data-variant-price', variant.price);
-      btn.textContent = variant.title;
-      if (!variant.available) {
-        btn.disabled = true;
-        btn.classList.add('is-unavailable');
-      }
-      if (i === 0) btn.classList.add('is-selected');
-      btn.addEventListener('click', function () {
-        if (!variant.available) return;
-        selectedVariantId = variant.id;
-        variantGroup.querySelectorAll('[role="radio"]').forEach(function (b) {
-          b.setAttribute('aria-checked', 'false');
-          b.classList.remove('is-selected');
-        });
-        btn.setAttribute('aria-checked', 'true');
-        btn.classList.add('is-selected');
-        var priceEl = modal.querySelector('[data-quick-add-price]');
-        if (priceEl) priceEl.textContent = formatMoney(variant.price);
-        var cta = modal.querySelector('[data-quick-add-cta]');
-        if (cta) {
-          cta.disabled = false;
-          cta.textContent = 'Add to cart';
-        }
-      });
-      variantGroup.appendChild(btn);
-    });
-  }
-  var cta = document.createElement('button');
-  cta.type = 'button';
-  cta.className = 'immersive-quick-add-modal__cta';
-  cta.setAttribute('data-quick-add-cta', '');
-  cta.setAttribute('data-variant-id', selectedVariantId);
-  cta.textContent = 'Add to cart';
-  if (firstVariant && !firstVariant.available) {
-    cta.disabled = true;
-    cta.textContent = 'Sold out';
-  }
-  cta.addEventListener('click', function () {
-    if (!selectedVariantId) return;
-    cta.disabled = true;
-    cta.textContent = 'Adding...';
-    fetch(window.routes.cart_add_url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ id: selectedVariantId, quantity: 1 }),
-    })
-      .then(function (res) {
-        if (!res.ok) throw new Error('Add to cart failed');
-        return res.json();
-      })
-      .then(function () {
-        closeQuickAdd();
-        if (typeof showFeedback === 'function') {
-          showFeedback('Added to cart', 'success');
-        }
-        if (typeof showNextActions === 'function') {
-          showNextActions([
-            {
-              label: 'View cart',
-              action: function () {
-                var cartDrawer = document.querySelector('cart-drawer');
-                if (cartDrawer && typeof cartDrawer.open === 'function') cartDrawer.open();
-              },
-            },
-          ]);
-        }
-      })
-      .catch(function () {
-        cta.disabled = false;
-        cta.textContent = 'Add to cart';
-        if (typeof showFeedback === 'function') {
-          showFeedback('Unable to add to cart', 'error');
-        }
-      });
-  });
-  inner.appendChild(header);
-  inner.appendChild(price);
-  if (variantGroup) inner.appendChild(variantGroup);
-  inner.appendChild(cta);
-  modal.appendChild(inner);
-  document.body.appendChild(modal);
-  _quickAddModal = modal;
-  setTimeout(function () {
-    closeBtn.focus();
-  }, 50);
-}
-
-function openQuickAdd(handle, triggerEl) {
-  _quickAddTrigger = triggerEl || null;
-  var cacheKey = 'quickadd_' + handle;
-  var loadProductUrl = '/products/' + handle + '.js';
-  var cached = contentCache && contentCache[cacheKey];
-  if (cached) {
-    renderQuickAddModal(cached, triggerEl);
-    return;
-  }
-  fetch(loadProductUrl, {
-    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-  })
-    .then(function (res) {
-      if (!res.ok) throw new Error('Product fetch failed');
-      return res.json();
-    })
-    .then(function (product) {
-      if (contentCache) contentCache[cacheKey] = product;
-      renderQuickAddModal(product, triggerEl);
-    })
-    .catch(function () {
-      var glassPanel = document.getElementById('glass-panel');
-      // Issue 22: Try both attribute names for consistent error messaging
-      var errorMsg =
-        (glassPanel && (glassPanel.getAttribute('data-msg-load-product-error') || glassPanel.getAttribute('data-msg-load-error'))) || 'Unable to load product.';
-      if (typeof showFeedback === 'function') {
-        showFeedback(errorMsg, 'error');
-      }
-    });
-}
-
-function initImmersiveQuickAdd() {
-  document.addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-quick-add]');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    var handle = btn.getAttribute('data-product-handle');
-    if (handle) openQuickAdd(handle, btn);
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && _quickAddModal && !_quickAddModal.hidden) {
-      closeQuickAdd();
-    }
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Hotspot Keyboard Navigation
-// ---------------------------------------------------------------------------
-
-function updateHotspotElements() {
-  _hotspotElements = Array.from(document.querySelectorAll('[data-hotspot-btn]'));
-  // Give each hotspot its own tabindex so screen readers can enumerate them.
-  // Follows Dawn's getFocusableElements() pattern for discoverable controls.
-  _hotspotElements.forEach(function (el, i) {
-    if (!el.hasAttribute('tabindex')) {
-      el.setAttribute('tabindex', '0');
-    }
-  });
-  _focusedHotspotIndex = -1;
-}
-
-function focusNextHotspot(direction) {
-  if (_hotspotElements.length === 0) return;
-  _focusedHotspotIndex += direction;
-  if (_focusedHotspotIndex >= _hotspotElements.length) {
-    _focusedHotspotIndex = 0;
-  } else if (_focusedHotspotIndex < 0) {
-    _focusedHotspotIndex = _hotspotElements.length - 1;
-  }
-  var hotspot = _hotspotElements[_focusedHotspotIndex];
-  if (hotspot) {
-    hotspot.focus();
-    var label = hotspot.getAttribute('aria-label') || 'Hotspot';
-    announceHotspot(label);
-  }
-}
-
-function announceHotspot(label) {
-  var announcer = document.getElementById('immersive-hotspot-announcer');
-  if (announcer) {
-    announcer.textContent = label;
-  }
-}
-
-function initHotspotKeyboardNav() {
-  var canvas = document.getElementById('immersive-canvas');
-  if (!canvas) return;
-
-  // Make canvas a focusable group label; individual hotspots get their own
-  // tabindex via updateHotspotElements().  Follows Dawn's CartDrawer focus
-  // trap pattern: TAB cycles only within focusable elements of the active
-  // container, Shift+TAB reverses, Escape exits to the canvas.
-  canvas.setAttribute('tabindex', '-1');
-  canvas.setAttribute('role', 'group');
-  canvas.setAttribute('aria-label', 'Immersive 3D store hotspots. Use Tab to move between hotspots, Enter to activate, Escape to leave.');
-
-  // Global keydown on the UI layer container, so it works even when focus
-  // is on the canvas wrapper (which sits behind hotspot buttons).
-  var uiLayer = document.getElementById('ui-layer');
-  var keyTarget = uiLayer || canvas;
-
-  keyTarget.addEventListener('keydown', function (e) {
-    if (e.key === 'Tab') {
-      // If there are no hotspots, do nothing
-      if (_hotspotElements.length === 0) return;
-
-      // Find which hotspot (if any) is currently focussed
-      var currentIndex = -1;
-      for (var hi = 0; hi < _hotspotElements.length; hi++) {
-        if (_hotspotElements[hi] === document.activeElement) {
-          currentIndex = hi;
-          break;
-        }
-      }
-
-      // If focus is on a hotspot, move to the next/prev one
-      if (currentIndex !== -1) {
-        e.preventDefault();
-        var nextIndex = currentIndex + (e.shiftKey ? -1 : 1);
-        if (nextIndex >= _hotspotElements.length) nextIndex = 0;
-        if (nextIndex < 0) nextIndex = _hotspotElements.length - 1;
-        _hotspotElements[nextIndex].focus();
-        _focusedHotspotIndex = nextIndex;
-        announceHotspot(_hotspotElements[nextIndex].getAttribute('aria-label') || 'Hotspot');
-        return;
-      }
-
-      // If focus is on the canvas wrapper / UI layer, move to first/last
-      e.preventDefault();
-      var targetIdx = e.shiftKey ? _hotspotElements.length - 1 : 0;
-      _hotspotElements[targetIdx].focus();
-      _focusedHotspotIndex = targetIdx;
-      announceHotspot(_hotspotElements[targetIdx].getAttribute('aria-label') || 'Hotspot');
-      return;
-    }
-
-    // Escape returns focus to canvas and leaves hotspot ring
-    if (e.key === 'Escape') {
-      _focusedHotspotIndex = -1;
-      canvas.focus();
-      return;
-    }
-
-    // Enter / Space activates the focussed hotspot
-    if ((e.key === 'Enter' || e.key === ' ') && _focusedHotspotIndex >= 0) {
-      e.preventDefault();
-      var focusedHotspot = _hotspotElements[_focusedHotspotIndex];
-      if (focusedHotspot) {
-        focusedHotspot.click();
-      }
-    }
-  });
-
-  // Use Dawn's getFocusableElements() to set tabindex on each hotspot so
-  // they are individually reachable (screen readers can enumerate them).
-  var hotspotObserver = new MutationObserver(function () {
-    updateHotspotElements();
-  });
-  hotspotObserver.observe(canvas, { childList: true, subtree: true });
-  updateHotspotElements();
-}
-
-// ---------------------------------------------------------------------------
-// Editorial Scroll Reveal
-// ---------------------------------------------------------------------------
-
-function initEditorialScrollReveal() {
-  if (_esrWheelBound) return;
-  var canvasWrapper = document.querySelector('.immersive-store__canvas-wrapper');
-  if (!canvasWrapper) return;
-  canvasWrapper.addEventListener('wheel', _esrOnWheel, { passive: true });
-  _esrWheelBound = true;
-}
-
-// ---------------------------------------------------------------------------
-// Init Wrappers (call existing modular functions)
-// ---------------------------------------------------------------------------
-
-function initImmersiveRoomRecommender() {
-  if (typeof _wishlistItems !== 'undefined') {
-    var bc = typeof _browsingContext !== 'undefined' ? _browsingContext : null;
-    if (bc) {
-      bc.savedProducts = _wishlistItems.map(function (item) {
-        return item.handle || '';
-      });
-    }
-  }
-}
-
-function initImmersiveLimitedTime() {
-  var storeEl = document.querySelector('.immersive-store');
-  if (storeEl) {
-    var threshold = parseInt(storeEl.getAttribute('data-low-stock-threshold'), 10);
-    if (!isNaN(threshold)) {
-      if (typeof _lowStockThreshold !== 'undefined') {
-        _lowStockThreshold = threshold;
-      }
-    }
-  }
-  if (typeof scanLimitedTimeCards === 'function') scanLimitedTimeCards();
-  if (typeof showFlashSaleAlert === 'function') showFlashSaleAlert();
-}
-
-function initEditorialBackToLounge() {
-  var overlay = document.getElementById('immersive-editorial-overlay');
-  if (!overlay) return;
-  var btn = overlay.querySelector('[data-editorial-back-to-lounge]');
-  if (!btn) return;
-  var label = overlay.getAttribute('data-back-to-lounge-label') || 'Back to Lounge';
-  btn.textContent = label;
-  if (!btn._btlBound) {
-    btn._btlBound = true;
-    btn.addEventListener('click', function () {
-      if (typeof exitEditorialMode === 'function') exitEditorialMode();
-      if (typeof goToRoom === 'function') goToRoom('lounge');
-    });
-    btn.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        if (typeof exitEditorialMode === 'function') exitEditorialMode();
-        if (typeof goToRoom === 'function') goToRoom('lounge');
-      }
-    });
-  }
-}
-
-function initProductCardTilt() {
-  var reduceMotionPCT = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotionPCT) return;
-  if (!window.matchMedia('(pointer: fine)').matches) return;
-  var panel = document.getElementById('glass-panel');
-  if (!panel) return;
-  panel.addEventListener('mousemove', _pctOnMouseMove);
-  panel.addEventListener('mouseleave', _pctOnMouseLeave);
-}
-
-function initGuidedMode() {
-  var storeEl = document.querySelector('.immersive-store');
-  if (storeEl) {
-    var wing = storeEl.getAttribute('data-guided-featured-wing');
-    if (wing && typeof _guidedFeaturedWing !== 'undefined') _guidedFeaturedWing = wing;
-  }
-  var promptCta = document.querySelector('[data-guided-prompt-cta]');
-  var promptSkip = document.querySelector('[data-guided-prompt-skip]');
-  if (promptCta) {
-    promptCta.addEventListener('click', function () {
-      if (typeof hideGuidedPrompt === 'function') hideGuidedPrompt();
-      if (typeof _guidedAdvance === 'function') _guidedAdvance();
-    });
-  }
-  if (promptSkip) {
-    promptSkip.addEventListener('click', function () {
-      if (typeof exitGuidedMode === 'function') exitGuidedMode();
-    });
-  }
-  var intentEvents = ['mousedown', 'touchstart', 'keydown', 'wheel'];
-  intentEvents.forEach(function (evt) {
-    document.addEventListener(
-      evt,
-      function () {
-        if (immersiveState && immersiveState.guided) {
-          if (typeof _guidedResetIdleTimer === 'function') _guidedResetIdleTimer();
-        }
-      },
-      { passive: true },
-    );
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Full FAB
-// ---------------------------------------------------------------------------
-
-function initImmersiveBottomNav() {
-  var fab = document.querySelector('[data-immersive-fab]');
-  if (!fab) return;
-  var fabTrigger = fab.querySelector('[data-fab-trigger]');
-  var fabActions = fab.querySelector('[data-fab-actions]');
-  var wishlistBtn = fab.querySelector('[data-bottom-nav-wishlist]');
-  var cartBtn = fab.querySelector('[data-bottom-nav-cart]');
-  var twoDBtn = fab.querySelector('[data-bottom-nav-2d]');
-  var wishlistBadge = fab.querySelector('[data-bottom-nav-wishlist-badge]');
-  var cartBadge = fab.querySelector('[data-bottom-nav-cart-badge]');
-  var isOpen = false;
-  var isDragging = false;
-  var dragStartX = 0;
-  var dragStartY = 0;
-  var fabStartX = 0;
-  var fabStartY = 0;
-  var hasMoved = false;
-
-  function loadFabPosition() {
-    try {
-      var saved = localStorage.getItem('immersive_fab_position');
-      if (saved) {
-        var pos = JSON.parse(saved);
-        // Issue 18: Use CSS custom properties instead of inline styles to
-        // avoid flash on first load. Applied atomically via cssText.
-        var css = '';
-        if (pos.top) css += 'top:' + pos.top + ';';
-        if (pos.right && pos.right !== 'auto') css += 'right:' + pos.right + ';left:auto;';
-        if (pos.left && pos.left !== 'auto') css += 'left:' + pos.left + ';right:auto;';
-        if (pos.transform && pos.transform !== 'none') css += 'transform:' + pos.transform + ';';
-        if (css) fab.style.cssText = css;
-      }
-    } catch (e) {}
-  }
-
-  function saveFabPosition() {
-    try {
-      // Issue 18: Only save meaningful position values, not the full
-      // inline style set. This prevents CSS conflicts on restore.
-      var pos = {
-        top: fab.style.top || '',
-        right: fab.style.right || '',
-        left: fab.style.left || '',
-        transform: fab.style.transform || '',
-      };
-      localStorage.setItem('immersive_fab_position', JSON.stringify(pos));
-    } catch (e) {}
-  }
-
-  function snapToEdge(x, y) {
-    var rect = fab.getBoundingClientRect();
-    var viewportWidth = window.innerWidth;
-    var viewportHeight = window.innerHeight;
-    var fabWidth = rect.width;
-    var fabHeight = rect.height;
-    var snapThreshold = 40;
-    var centerX = x + fabWidth / 2;
-    var centerY = y + fabHeight / 2;
-    var distToLeft = centerX;
-    var distToRight = viewportWidth - centerX;
-    var distToTop = centerY;
-    var distToBottom = viewportHeight - centerY;
-    var minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
-    if (minDist < snapThreshold || minDist === distToLeft || minDist === distToRight) {
-      if (distToLeft < distToRight) {
-        fab.style.left = '1.25rem';
-        fab.style.right = 'auto';
-      } else {
-        fab.style.right = '1.25rem';
-        fab.style.left = 'auto';
-      }
-      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
-      fab.style.bottom = 'auto';
-      fab.style.transform = 'none';
-    } else {
-      fab.style.left = Math.max(20, Math.min(x, viewportWidth - fabWidth - 20)) + 'px';
-      fab.style.top = Math.max(72, Math.min(y, viewportHeight - fabHeight - 20)) + 'px';
-      fab.style.right = 'auto';
-      fab.style.bottom = 'auto';
-      fab.style.transform = 'none';
-    }
-  }
-
-  function onDragStart(e) {
-    if (isOpen) return;
-    var touch = e.type === 'touchstart' ? e.touches[0] : e;
-    isDragging = true;
-    hasMoved = false;
-    dragStartX = touch.clientX;
-    dragStartY = touch.clientY;
-    var rect = fab.getBoundingClientRect();
-    fabStartX = rect.left;
-    fabStartY = rect.top;
-  }
-
-  function onDragMove(e) {
-    if (!isDragging) return;
-    var touch = e.type === 'touchmove' ? e.touches[0] : e;
-    var deltaX = touch.clientX - dragStartX;
-    var deltaY = touch.clientY - dragStartY;
-    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-      hasMoved = true;
-      fab.style.transition = 'none';
-      fab.style.cursor = 'grabbing';
-      e.preventDefault();
-    }
-    if (hasMoved) {
-      var newX = fabStartX + deltaX;
-      var newY = fabStartY + deltaY;
-      fab.style.left = newX + 'px';
-      fab.style.top = newY + 'px';
-      fab.style.right = 'auto';
-      fab.style.bottom = 'auto';
-      fab.style.transform = 'none';
-    }
-  }
-
-  function onDragEnd(e) {
-    if (!isDragging) return;
-    isDragging = false;
-    fab.style.transition = '';
-    fab.style.cursor = '';
-    if (hasMoved) {
-      var rect = fab.getBoundingClientRect();
-      snapToEdge(rect.left, rect.top);
-      saveFabPosition();
-      e.preventDefault();
-    }
-  }
-
-  if (fabTrigger) {
-    fabTrigger.addEventListener('mousedown', onDragStart);
-    fabTrigger.addEventListener('touchstart', onDragStart, { passive: false });
-  }
-  document.addEventListener('mousemove', onDragMove);
-  document.addEventListener('touchmove', onDragMove, { passive: false });
-  document.addEventListener('mouseup', onDragEnd);
-  document.addEventListener('touchend', onDragEnd);
-  loadFabPosition();
-
-  if (fabTrigger && fabActions) {
-    fabTrigger.addEventListener('click', function (e) {
-      if (hasMoved) {
-        hasMoved = false;
-        return;
-      }
-      isOpen = !isOpen;
-      fabTrigger.setAttribute('aria-expanded', isOpen);
-      fabActions.hidden = !isOpen;
-      if (isOpen) {
-        var actions = fabActions.querySelectorAll('.immersive-fab__action');
-        actions.forEach(function (action, index) {
-          action.style.animation =
-            'fab-action-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) ' + index * 0.05 + 's forwards';
-        });
-      }
-    });
-  }
-
-  document.addEventListener('click', function (e) {
-    if (isOpen && !fab.contains(e.target)) {
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-    }
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && isOpen) {
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-      fabTrigger.focus();
-    }
-  });
-
-  if (wishlistBtn) {
-    wishlistBtn.addEventListener('click', function () {
-      if (typeof exitGuidedMode === 'function') exitGuidedMode();
-      if (typeof openWishlistPanel === 'function') openWishlistPanel();
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-    });
-  }
-
-  if (cartBtn) {
-    cartBtn.addEventListener('click', function () {
-      if (typeof exitGuidedMode === 'function') exitGuidedMode();
-      var cartDrawer = document.querySelector('cart-drawer');
-      if (cartDrawer && typeof cartDrawer.open === 'function') {
-        cartDrawer.open(cartBtn);
-      }
-      isOpen = false;
-      fabTrigger.setAttribute('aria-expanded', 'false');
-      fabActions.hidden = true;
-    });
-  }
-
-  if (twoDBtn) {
-    twoDBtn.addEventListener('click', function (e) {
-      var modeSwitchBtn = document.querySelector('[data-mode-switch-2d]');
-      if (modeSwitchBtn) {
-        e.preventDefault();
-        modeSwitchBtn.click();
-      }
-    });
-  }
-
-  window.updateBottomNavBadges = function (wishlistCount, cartCount) {
-    if (wishlistBadge) {
-      wishlistBadge.textContent = wishlistCount;
-      wishlistBadge.hidden = wishlistCount === 0;
-    }
-    if (cartBadge) {
-      cartBadge.textContent = cartCount;
-      cartBadge.hidden = cartCount === 0;
-    }
-  };
-
-  var glassPanel = document.getElementById('glass-panel');
-  if (glassPanel) {
-    var panelObserver = new MutationObserver(function () {
-      var panelIsOpen = !glassPanel.hidden && !glassPanel.classList.contains('hidden');
-      fab.style.display = panelIsOpen ? 'none' : 'flex';
-    });
-    panelObserver.observe(glassPanel, { attributes: true, attributeFilter: ['hidden', 'class'] });
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Master Init + Section Handlers
-// ---------------------------------------------------------------------------
-
-function safeBindImmersiveInit() {
-  if (_immersiveInitBound) return;
-  if (!document.getElementById('immersive-canvas')) return;
-  _immersiveInitBound = true;
-
-  if (typeof renderer !== 'undefined' && renderer) {
-    if (typeof animationFrameId !== 'undefined' && animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
-    }
-    try {
-      renderer.dispose();
-    } catch (e) {}
-    renderer = null;
-    scene = null;
-    camera = null;
-    planeMesh = null;
-    uniforms = null;
-    if (typeof currentRoomKey !== 'undefined') currentRoomKey = null;
-    if (typeof transitioning !== 'undefined') transitioning = false;
-    if (typeof textureCache !== 'undefined') {
-      textureCache.forEach(function (entry) {
-        try {
-          if (entry.base) entry.base.dispose();
-          if (entry.depth) entry.depth.dispose();
-        } catch (e) {}
-      });
-      textureCache = [];
-    }
-    if (typeof contentCache !== 'undefined') contentCache = {};
-  }
-
-  requestAnimationFrame(function () {
-    if (typeof initImmersiveScene === 'function') initImmersiveScene();
-    if (typeof bindImmersiveNav === 'function') bindImmersiveNav();
-    if (typeof setupImageParallax === 'function') setupImageParallax();
-    if (typeof showImmersiveOnboardingIfNeeded === 'function') showImmersiveOnboardingIfNeeded();
-    if (typeof initWishlist === 'function') initWishlist();
-    if (typeof initBackButton === 'function') initBackButton();
-    if (typeof bindCookieBanner === 'function') bindCookieBanner();
-    if (typeof initTiltControlToggle === 'function') initTiltControlToggle();
-
-    if (typeof initImmersiveRoomRecommender === 'function') initImmersiveRoomRecommender();
-    if (typeof initImmersiveLimitedTime === 'function') initImmersiveLimitedTime();
-    if (typeof initEditorialBackToLounge === 'function') initEditorialBackToLounge();
-    if (typeof initProductCardTilt === 'function') initProductCardTilt();
-    if (typeof initGuidedMode === 'function') initGuidedMode();
-
-    if (typeof initImmersiveSearch === 'function') initImmersiveSearch();
-    if (typeof initImmersiveGestures === 'function') initImmersiveGestures();
-    if (typeof initImmersiveNextActions === 'function') initImmersiveNextActions();
-    if (typeof initImmersiveQuickAdd === 'function') initImmersiveQuickAdd();
-    if (typeof initHotspotKeyboardNav === 'function') initHotspotKeyboardNav();
-    if (typeof initEditorialScrollReveal === 'function') initEditorialScrollReveal();
-
-    if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
-
-    if (typeof window.ImmersiveCarousel !== 'undefined' && window.ImmersiveCarousel.init) {
-      window.ImmersiveCarousel.init();
-    }
-    if (typeof window.CodexCollectionsGrid !== 'undefined' && window.CodexCollectionsGrid.init) {
-      window.CodexCollectionsGrid.init();
-    }
-
-    setTimeout(function () {
-      _immersiveInitBound = false;
-    }, 500);
-  });
-}
-
-function scheduleImmersiveInit() {
-  if (typeof window === 'undefined') return;
-  function run() {
-    try {
-      safeBindImmersiveInit();
-    } catch (e) {
-      if (typeof console !== 'undefined' && console.error) console.error('[Immersive] Init failed:', e);
-    }
-  }
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(run, { timeout: 1000 });
-  } else {
-    setTimeout(run, 300);
-  }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', scheduleImmersiveInit);
-} else {
-  scheduleImmersiveInit();
-}
-
-document.addEventListener('shopify:section:load', function (e) {
-  if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
-    _immersiveInitBound = false;
-    safeBindImmersiveInit();
-    if (typeof initImmersiveSearch === 'function') initImmersiveSearch();
-    if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
-    if (typeof initImmersiveLimitedTime === 'function') initImmersiveLimitedTime();
-  }
-});
-
-document.addEventListener('shopify:section:select', function (e) {
-  if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
-    safeBindImmersiveInit();
-  }
-});
-
-document.addEventListener('shopify:section:unload', function (e) {
-  if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
-    _immersiveInitBound = false;
-  }
-});
