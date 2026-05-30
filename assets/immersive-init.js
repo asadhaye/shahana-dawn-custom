@@ -478,22 +478,21 @@ function initImmersiveGestures() {
   var touchStartY = 0;
   var touchStartTime = 0;
 
-  canvasWrapper.addEventListener(
-    'touchstart',
-    function (e) {
+  ListenerRegistry.add('gesture-touchstart', canvasWrapper,
+    'touchstart', function (e) {
       var touch = e.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
       touchStartTime = Date.now();
-    },
-    { passive: true },
+    }, { passive: true }
   );
 
-  canvasWrapper.addEventListener('touchmove', function () {}, { passive: true });
+  ListenerRegistry.add('gesture-touchmove', canvasWrapper,
+    'touchmove', function () {}, { passive: true }
+  );
 
-  canvasWrapper.addEventListener(
-    'touchend',
-    function (e) {
+  ListenerRegistry.add('gesture-touchend', canvasWrapper,
+    'touchend', function (e) {
       var target = e.target;
       if (
         target &&
@@ -634,7 +633,7 @@ function renderQuickAddModal(product, triggerEl) {
   closeBtn.setAttribute('aria-label', 'Close');
   closeBtn.innerHTML =
     '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  closeBtn.addEventListener('click', closeQuickAdd);
+  ListenerRegistry.add('quick-add-close', closeBtn, 'click', closeQuickAdd);
   header.appendChild(title);
   header.appendChild(closeBtn);
   var price = document.createElement('div');
@@ -1150,10 +1149,10 @@ function initImmersiveBottomNav() {
 
   if (fabTrigger) {
     fabTrigger.addEventListener('mousedown', onDragStart);
-    fabTrigger.addEventListener('touchstart', onDragStart, { passive: false });
+    ListenerRegistry.add('fab-drag', fabTrigger, 'touchstart', onDragStart, { passive: false });
   }
   document.addEventListener('mousemove', onDragMove);
-  document.addEventListener('touchmove', onDragMove, { passive: false });
+  ListenerRegistry.add('fab-drag', document, 'touchmove', onDragMove, { passive: false });
   document.addEventListener('mouseup', onDragEnd);
   document.addEventListener('touchend', onDragEnd);
   loadFabPosition();

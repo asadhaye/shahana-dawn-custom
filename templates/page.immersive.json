@@ -16,15 +16,15 @@
           "type": "announcement",
           "settings": {
             "text": "Free shipping on orders over PKR 150,000",
-            "icon": "✦",
+            "icon": "\u2726",
             "url": ""
           }
         },
         "notif_2": {
           "type": "announcement",
           "settings": {
-            "text": "New arrivals — Eid Collection 2026",
-            "icon": "✦",
+            "text": "New arrivals \u2014 Eid Collection 2026",
+            "icon": "\u2726",
             "url": ""
           }
         },
@@ -32,7 +32,7 @@
           "type": "announcement",
           "settings": {
             "text": "Explore the 3D Immersive Store",
-            "icon": "✦",
+            "icon": "\u2726",
             "url": ""
           }
         }
@@ -46,7 +46,7 @@
         "enabled": true,
         "bar_height": 48,
         "display_duration": 4,
-        "separator": "✦",
+        "separator": "\u2726",
         "aria_label": "Store announcements"
       }
     },
@@ -77,26 +77,6 @@
         "designer_houses_base_image_mobile": "shopify://shop_images/designer-m-base.jpg",
         "designer_houses_depth_map": "shopify://shop_images/designer-d-depth.webp",
         "designer_houses_depth_map_mobile": "shopify://shop_images/designer-m-depth.png",
-        "designer_houses_hotspot_1_x": 50,
-        "designer_houses_hotspot_1_y": 15,
-        "designer_houses_hotspot_1_mobile_x": 50,
-        "designer_houses_hotspot_1_mobile_y": 15,
-        "designer_houses_hotspot_2_x": 13,
-        "designer_houses_hotspot_2_y": 40,
-        "designer_houses_hotspot_2_mobile_x": 13,
-        "designer_houses_hotspot_2_mobile_y": 40,
-        "designer_houses_hotspot_3_x": 50,
-        "designer_houses_hotspot_3_y": 45,
-        "designer_houses_hotspot_3_mobile_x": 50,
-        "designer_houses_hotspot_3_mobile_y": 45,
-        "designer_houses_hotspot_4_x": 87,
-        "designer_houses_hotspot_4_y": 40,
-        "designer_houses_hotspot_4_mobile_x": 87,
-        "designer_houses_hotspot_4_mobile_y": 40,
-        "designer_houses_hotspot_5_x": 50,
-        "designer_houses_hotspot_5_y": 90,
-        "designer_houses_hotspot_5_mobile_x": 50,
-        "designer_houses_hotspot_5_mobile_y": 90,
         "designer_houses_slot_1_collection": "suffuse",
         "designer_houses_slot_1_label": "Suffuse",
         "designer_houses_slot_2_collection": "soraya",
@@ -203,7 +183,7 @@
             "heading": "Soraya",
             "image": "shopify://shop_images/Soraya.jpg",
             "logo": "shopify://shop_images/Soraya-logo.png",
-            "body": "<p>Where heritage craft meets contemporary form. Soraya's collections speak to the modern South Asian woman — bold, refined, and unapologetically elegant.</p>",
+            "body": "<p>Where heritage craft meets contemporary form. Soraya's collections speak to the modern South Asian woman \u2014 bold, refined, and unapologetically elegant.</p>",
             "collection": "soraya"
           }
         },
@@ -213,7 +193,7 @@
             "heading": "Saad Bin Shahzad",
             "image": "shopify://shop_images/SBS-Summer-Pret-26.webp",
             "logo": "shopify://shop_images/saad_bin_shahzad_logo.png",
-            "body": "<p>Architectural precision and artisanal embroidery define Saad Bin Shahzad's vision — a house built on the belief that menswear and womenswear can share the same quiet power.</p>",
+            "body": "<p>Architectural precision and artisanal embroidery define Saad Bin Shahzad's vision \u2014 a house built on the belief that menswear and womenswear can share the same quiet power.</p>",
             "collection": "saad-bin-shahzad"
           }
         }
@@ -248,7 +228,7 @@
           "type": "occasion_card",
           "settings": {
             "heading": "Bridal & Mehndi",
-            "body": "<p>From the mehndi morning to the walima evening — a complete bridal wardrobe curated for every ritual of the celebration.</p>",
+            "body": "<p>From the mehndi morning to the walima evening \u2014 a complete bridal wardrobe curated for every ritual of the celebration.</p>",
             "collection": "bridal-mehndi",
             "cta_url": ""
           }
@@ -283,7 +263,7 @@
         "layout": "occasions",
         "hero_heading": "Dress the Occasion",
         "hero_eyebrow": "Curated for every moment",
-        "hero_subheading": "<p>From intimate gatherings to grand celebrations — find the perfect expression for every chapter of your story.</p>"
+        "hero_subheading": "<p>From intimate gatherings to grand celebrations \u2014 find the perfect expression for every chapter of your story.</p>"
       }
     },
     "editorial_featured_collections": {
@@ -293,7 +273,7 @@
           "type": "featured_item",
           "settings": {
             "heading": "SS5 Summer Pret '26",
-            "body": "<p>Saad Bin Shahzad's summer pret edit — lightweight fabrics, architectural cuts, and the quiet confidence of a house at its peak.</p>",
+            "body": "<p>Saad Bin Shahzad's summer pret edit \u2014 lightweight fabrics, architectural cuts, and the quiet confidence of a house at its peak.</p>",
             "collection": "summer-pret-26-eid-edit-saad-bin-shahzad",
             "cta_url": ""
           }
@@ -311,7 +291,7 @@
           "type": "featured_item",
           "settings": {
             "heading": "Soraya Eid Pret",
-            "body": "<p>Lumene Festive '25–'26 — Soraya's most celebrated seasonal collection, now available in the immersive store.</p>",
+            "body": "<p>Lumene Festive '25\u2013'26 \u2014 Soraya's most celebrated seasonal collection, now available in the immersive store.</p>",
             "collection": "lumene-festive-25-26-soraya-official",
             "cta_url": ""
           }
@@ -338,13 +318,13 @@
           "settings": {
             "eyebrow": "Origins",
             "heading": "From Lahore ateliers to London evenings",
-            "body": "<p>Shahana Collection was born from a simple belief: that Pakistani luxury fashion deserves a stage as extraordinary as the craft itself. Each piece in our world carries the weight of generations — the embroiderer's patience, the weaver's precision, the designer's vision.</p>"
+            "body": "<p>Shahana Collection was born from a simple belief: that Pakistani luxury fashion deserves a stage as extraordinary as the craft itself. Each piece in our world carries the weight of generations \u2014 the embroiderer's patience, the weaver's precision, the designer's vision.</p>"
           }
         },
         "story_marquee": {
           "type": "marquee",
           "settings": {
-            "marquee_text": "Craft · Heritage · Exclusives · Shahana Collection"
+            "marquee_text": "Craft \u00b7 Heritage \u00b7 Exclusives \u00b7 Shahana Collection"
           }
         },
         "story_journey": {
@@ -352,7 +332,7 @@
           "settings": {
             "eyebrow": "The journey",
             "heading": "Craft, ritual, and the garments that carry them",
-            "body": "<p>From the first sketch in a Lahore atelier to the final stitch of zardozi, every Shahana piece passes through hands that have spent lifetimes perfecting their art. These are not garments — they are preserved rituals, worn at the moments that define us.</p>"
+            "body": "<p>From the first sketch in a Lahore atelier to the final stitch of zardozi, every Shahana piece passes through hands that have spent lifetimes perfecting their art. These are not garments \u2014 they are preserved rituals, worn at the moments that define us.</p>"
           }
         },
         "story_closing": {
@@ -377,7 +357,7 @@
         "show_hero": true,
         "hero_eyebrow": "Shahana story",
         "hero_heading": "The world behind the collection",
-        "hero_subheading": "An editorial journey through our designers, rituals, and exclusive pieces — before you enter the immersive store."
+        "hero_subheading": "An editorial journey through our designers, rituals, and exclusive pieces \u2014 before you enter the immersive store."
       }
     },
     "exclusive_carousel": {
@@ -568,9 +548,8 @@
         "gallery_item_4",
         "gallery_item_5"
       ],
-      "disabled": true,
       "settings": {
-        "room_key": "storefront"
+        "room_key": "designer_houses"
       }
     }
   },
