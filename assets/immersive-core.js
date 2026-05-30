@@ -386,9 +386,13 @@ var LAYOUT_REGISTRY = {
 };
 
 function getLayoutForRoom(roomKey) {
+  if (!roomKey || typeof roomKey !== 'string') {
+    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Invalid roomKey:', roomKey);
+    return null;
+  }
   for (var layoutKey in LAYOUT_REGISTRY) {
     var layout = LAYOUT_REGISTRY[layoutKey];
-    if (layout.rooms.indexOf(roomKey) !== -1) {
+    if (layout && layout.rooms && layout.rooms.indexOf(roomKey) !== -1) {
       return layout;
     }
   }
@@ -1441,8 +1445,23 @@ var transitioning = false;
 var currentImageAspect = 16 / 9;
 
 var textureCache = [];
+var textureRefCount = {};
 var MAX_CACHED_TEXTURES = 5;
 var galleryStageRegistry = {};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animation Frame Scheduler - tracks all rAF calls for cleanup
+// ─────────────────────────────────────────────────────────────────────────────
+var _rafIds = [];
+function scheduleRaf(callback) {
+  var id = requestAnimationFrame(callback);
+  _rafIds.push(id);
+  return id;
+}
+function cancelAllRafs() {
+  _rafIds.forEach(function(id) { cancelAnimationFrame(id); });
+  _rafIds = [];
+}
 
 function getGalleryStageConfig(roomKey) {
   if (!window.immersiveWebglGalleryConfigs) return [];
@@ -2051,7 +2070,7 @@ function preloadRoom(roomKey) {
   var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
 
   var isCached = textureCache.some(function (entry) {
-    return entry.key === cacheKey;
+    return entry && entry.key === cacheKey;
   });
 
   if (isCached) return;
@@ -2257,6 +2276,14 @@ function showWebGLFallback(canvas) {
   var wrapper = canvas.parentElement;
   if (!wrapper) return;
   var img = document.createElement('img');
+  var _fallbackImgTimeout = setTimeout(function() {
+    if (!img.complete) {
+      console.warn('[Immersive] Fallback image load timeout:', room.baseTextureUrl);
+      img.style.display = 'none';
+    }
+  }, 30000);
+  img.onload = function() { clearTimeout(_fallbackImgTimeout); };
+  img.onerror = function() { clearTimeout(_fallbackImgTimeout); };
   img.src = room.baseTextureUrl;
   img.alt = '';
   img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
@@ -2929,7 +2956,7 @@ function loadRoomTextures(roomData, callback) {
   var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
 
   var cachedIndex = textureCache.findIndex(function (entry) {
-    return entry.key === cacheKey;
+    return entry && entry.key === cacheKey;
   });
 
   if (cachedIndex !== -1) {
@@ -2956,16 +2983,20 @@ function loadRoomTextures(roomData, callback) {
 
     if (loaded.base.image && loaded.depth.image) {
       textureCache.unshift({ key: cacheKey, base: loaded.base, depth: loaded.depth });
+      textureRefCount[cacheKey] = (textureRefCount[cacheKey] || 0) + 1;
       if (textureCache.length > MAX_CACHED_TEXTURES) {
         var oldest = textureCache.pop();
-        // Issue 14: Only dispose if texture is not currently active in the shader
-        var isActive = (uniforms && uniforms.uTexture1 && uniforms.uDepth1) &&
-                       (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
-        if (!isActive) {
-          try {
-            if (oldest.base) oldest.base.dispose();
-            if (oldest.depth) oldest.depth.dispose();
-          } catch (e) {}
+        if (oldest && oldest.key) {
+          textureRefCount[oldest.key] = (textureRefCount[oldest.key] || 1) - 1;
+          var isActive = (uniforms && uniforms.uTexture1 && uniforms.uDepth1) &&
+                         (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
+          if (!isActive && textureRefCount[oldest.key] <= 0) {
+            try {
+              if (oldest.base) oldest.base.dispose();
+              if (oldest.depth) oldest.depth.dispose();
+            } catch (e) {}
+            delete textureRefCount[oldest.key];
+          }
         }
       }
     }
@@ -3264,10 +3295,18 @@ function fetchWithCache(url) {
     contentCacheOrder.push(url);
     return Promise.resolve(contentCache[url]);
   }
-  return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  var _ctrl = new AbortController();
+  var _fetchTimeout = setTimeout(function() { _ctrl.abort(); }, 30000);
+  return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl.signal })
     .then(function (response) {
+      clearTimeout(_fetchTimeout);
       if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
       return response.text();
+    })
+    .catch(function(_fetchErr) {
+      clearTimeout(_fetchTimeout);
+      if (_fetchErr.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
+      throw _fetchErr;
     })
     .then(function (html) {
       if (contentCacheOrder.length >= MAX_CACHE_ENTRIES) {
@@ -3293,10 +3332,18 @@ function fetchSectionHtml(path, sectionId, extraParams) {
     });
   }
 
-  return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  var _ctrl2 = new AbortController();
+  var _fetchTimeout2 = setTimeout(function() { _ctrl2.abort(); }, 30000);
+  return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl2.signal })
     .then(function (response) {
+      clearTimeout(_fetchTimeout2);
       if (!response.ok) return null;
       return response.json();
+    })
+    .catch(function(err) {
+      clearTimeout(_fetchTimeout2);
+      if (err.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
+      return null;
     })
     .then(function (json) {
       if (!json || typeof json !== 'object') return null;
