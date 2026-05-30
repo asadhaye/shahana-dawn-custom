@@ -1577,8 +1577,15 @@ var usesMobileImg = null;
 var canvasRect = null;
 
 function evaluateDeviceFlags() {
-  isMobile = window.innerWidth < 768;
-  isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+  // Use actual device type from initDeviceOptimization, not viewport width
+  // This prevents loading mobile images on desktop browsers with narrow windows
+  var actualDeviceIsMobile = /iPhone|iPad|Android|Mobile/.test(navigator.userAgent);
+  var actualDeviceIsTablet = /iPad|Android/.test(navigator.userAgent) && !/Mobile/.test(navigator.userAgent);
+  
+  // Only use viewport width as a secondary factor for responsive layout
+  // but don't override the actual device type detection
+  isMobile = actualDeviceIsMobile || (window.innerWidth < 480);
+  isTablet = actualDeviceIsTablet || (window.innerWidth >= 480 && window.innerWidth < 768);
 
   var connectionQuality = 1.0;
   if ('connection' in navigator && navigator.connection) {
