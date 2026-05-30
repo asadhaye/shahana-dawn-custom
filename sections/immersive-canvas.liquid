@@ -2677,14 +2677,40 @@
       "info": "t:sections.immersive_store.settings.transition_style.info"
     },
     {
+      "type": "header",
+      "content": "Gallery Layouts"
+    },
+    {
       "type": "select",
-      "id": "gallery_layout",
-      "label": "Gallery Layout",
-      "info": "Layout for the 3D gallery cards shown in rooms with collection slots",
-      "default": "vertical",
+      "id": "designer_houses_layout",
+      "label": "Designer Houses Layout",
+      "default": "asymmetric-gallery",
       "options": [
-        { "value": "vertical", "label": "Vertical Scroll" },
-        { "value": "arc", "label": "Arc Carousel" }
+        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery (Indrajaal-style)" },
+        { "value": "scroll-narrative", "label": "Scroll Narrative" },
+        { "value": "masonry-featured", "label": "Masonry Featured" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "occasions_layout",
+      "label": "Occasions Layout",
+      "default": "scroll-narrative",
+      "options": [
+        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
+        { "value": "scroll-narrative", "label": "Scroll Narrative (Story-driven)" },
+        { "value": "masonry-featured", "label": "Masonry Featured" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "featured_collections_layout",
+      "label": "Featured Collections Layout",
+      "default": "masonry-featured",
+      "options": [
+        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
+        { "value": "scroll-narrative", "label": "Scroll Narrative" },
+        { "value": "masonry-featured", "label": "Masonry Featured (Curated)" }
       ]
     }
   ],

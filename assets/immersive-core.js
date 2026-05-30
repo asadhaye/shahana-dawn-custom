@@ -151,6 +151,262 @@ var CODEX_THEME_TO_ROOM = {
   Everyday: 'occasions',
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LISTENER REGISTRY - Prevent memory leaks
+// ─────────────────────────────────────────────────────────────────────────────
+var ListenerRegistry = {
+  registry: {},
+  
+  add: function(key, element, event, handler, options) {
+    if (!this.registry[key]) this.registry[key] = [];
+    element.addEventListener(event, handler, options);
+    this.registry[key].push({ element: element, event: event, handler: handler, options: options });
+  },
+  
+  cleanup: function(key) {
+    if (!this.registry[key]) return;
+    this.registry[key].forEach(function(listener) {
+      try {
+        listener.element.removeEventListener(listener.event, listener.handler, listener.options);
+      } catch (e) {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Listener removal failed:', e);
+      }
+    });
+    delete this.registry[key];
+  },
+  
+  cleanupAll: function() {
+    var self = this;
+    Object.keys(this.registry).forEach(function(key) {
+      self.cleanup(key);
+    });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IMMERSIVE STORE NAMESPACE - Prevent global pollution
+// ─────────────────────────────────────────────────────────────────────────────
+if (!window.ShahanaImmersive) {
+  window.ShahanaImmersive = {
+    graphics: {
+      renderer: null,
+      scene: null,
+      camera: null,
+      planeMesh: null,
+      uniforms: null
+    },
+    room: {
+      current: null,
+      subMode: null,
+      transitioning: false
+    },
+    cache: {
+      textures: [],
+      content: {},
+      gallery: {}
+    },
+    settings: {
+      reduceMotion: false,
+      isMobile: false,
+      isTablet: false,
+      textureQuality: 1.0,
+      targetFPS: 60
+    },
+    search: {
+      activeIndex: -1,
+      results: [],
+      debounceTimer: null,
+      abortController: null
+    },
+    gesture: {
+      lastRoomTransition: 0,
+      cooldown: 600,
+      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections']
+    },
+    quickAdd: {
+      modal: null,
+      trigger: null
+    },
+    hotspot: {
+      elements: [],
+      focusedIndex: -1
+    },
+    device: {
+      isMobile: false,
+      isTablet: false,
+      isLowEnd: false
+    },
+    layout: {
+      registry: {},
+      current: {}
+    }
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEVICE OPTIMIZATION
+// ─────────────────────────────────────────────────────────────────────────────
+function initDeviceOptimization() {
+  var isMobile = /iPhone|iPad|Android|Mobile/.test(navigator.userAgent);
+  var isTablet = /iPad|Android/.test(navigator.userAgent) && !/Mobile/.test(navigator.userAgent);
+  var cores = navigator.hardwareConcurrency || 1;
+  var memory = navigator.deviceMemory || 4;
+  var isLowEnd = cores <= 2 || memory <= 2;
+  
+  window.ShahanaImmersive.device.isMobile = isMobile;
+  window.ShahanaImmersive.device.isTablet = isTablet;
+  window.ShahanaImmersive.device.isLowEnd = isLowEnd;
+  window.ShahanaImmersive.settings.isMobile = isMobile;
+  window.ShahanaImmersive.settings.isTablet = isTablet;
+  
+  if (isLowEnd) {
+    window.ShahanaImmersive.settings.textureQuality = 0.5;
+    window.ShahanaImmersive.settings.targetFPS = 24;
+  } else if (isMobile) {
+    window.ShahanaImmersive.settings.textureQuality = 0.75;
+    window.ShahanaImmersive.settings.targetFPS = 30;
+  } else {
+    window.ShahanaImmersive.settings.textureQuality = 1.0;
+    window.ShahanaImmersive.settings.targetFPS = 60;
+  }
+  
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] Device optimization initialized:', {
+      isMobile: isMobile,
+      isTablet: isTablet,
+      isLowEnd: isLowEnd,
+      textureQuality: window.ShahanaImmersive.settings.textureQuality,
+      targetFPS: window.ShahanaImmersive.settings.targetFPS
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOADING STATE MANAGEMENT
+// ─────────────────────────────────────────────────────────────────────────────
+var LoadingState = {
+  isLoading: false,
+  startTime: null,
+  timeout: 15000,
+  timeoutId: null,
+  
+  start: function() {
+    this.isLoading = true;
+    this.startTime = Date.now();
+    var self = this;
+    this.timeoutId = setTimeout(function() {
+      if (self.isLoading) {
+        self.fail('Loading took too long. Please check your connection.');
+      }
+    }, this.timeout);
+  },
+  
+  complete: function() {
+    this.isLoading = false;
+    clearTimeout(this.timeoutId);
+  },
+  
+  fail: function(message) {
+    this.isLoading = false;
+    clearTimeout(this.timeoutId);
+    if (typeof showFeedback === 'function') {
+      showFeedback(message, 'error');
+    }
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS
+// ─────────────────────────────────────────────────────────────────────────────
+var Analytics = {
+  track: function(event, data) {
+    try {
+      if (window.gtag) {
+        gtag('event', event, data);
+      }
+      if (window.shopifyAnalytics) {
+        shopifyAnalytics.publish('immersive:' + event, data);
+      }
+    } catch (e) {
+      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Analytics error:', e);
+    }
+  },
+  
+  trackRoomTransition: function(fromRoom, toRoom) {
+    this.track('room_transition', { from: fromRoom, to: toRoom, timestamp: Date.now() });
+  },
+  
+  trackError: function(errorType, message) {
+    this.track('error', { type: errorType, message: message, timestamp: Date.now() });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYOUT SYSTEM - Three Configurable Layouts
+// ─────────────────────────────────────────────────────────────────────────────
+var LAYOUT_REGISTRY = {
+  'asymmetric-gallery': {
+    name: 'Asymmetric Gallery',
+    description: 'Indrajaal-inspired organic gallery layout for Designer Houses',
+    rooms: ['designer_houses'],
+    config: {
+      spacing: 3.5,
+      maxItems: 12,
+      draggable: true,
+      physics: true,
+      parallaxStrength: 0.08
+    }
+  },
+  'scroll-narrative': {
+    name: 'Scroll Narrative',
+    description: 'Story-driven vertical scroll layout for Occasions',
+    rooms: ['occasions'],
+    config: {
+      spacing: 2.5,
+      maxItems: 8,
+      draggable: false,
+      physics: false,
+      parallaxStrength: 0.04,
+      scrollDriven: true
+    }
+  },
+  'masonry-featured': {
+    name: 'Masonry Featured',
+    description: 'Curated grid with featured highlight for Collections',
+    rooms: ['featured_collections'],
+    config: {
+      spacing: 3.0,
+      maxItems: 9,
+      draggable: true,
+      physics: false,
+      parallaxStrength: 0.06,
+      featuredIndex: 0
+    }
+  }
+};
+
+function getLayoutForRoom(roomKey) {
+  for (var layoutKey in LAYOUT_REGISTRY) {
+    var layout = LAYOUT_REGISTRY[layoutKey];
+    if (layout.rooms.indexOf(roomKey) !== -1) {
+      return layout;
+    }
+  }
+  return null;
+}
+
+function applyLayoutToRoom(roomKey, layoutKey) {
+  if (!LAYOUT_REGISTRY[layoutKey]) {
+    console.error('[Immersive] Layout not found:', layoutKey);
+    return false;
+  }
+  window.ShahanaImmersive.layout.current[roomKey] = layoutKey;
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] Applied layout', layoutKey, 'to room', roomKey);
+  }
+  return true;
+}
+
 function getRoomForCollectionHandleFromCodex(handle) {
   if (!handle || !window.codexCollectionThemes) return null;
   var theme = window.codexCollectionThemes[handle];
@@ -1449,6 +1705,9 @@ function _dismissWelcomeToast(toast) {
 }
 
 function initImmersiveScene() {
+  // Initialize device optimization
+  initDeviceOptimization();
+  
   var canvas = document.getElementById(immersiveCanvasId);
   var uiLayer = document.getElementById(uiLayerId);
   if (!canvas || !uiLayer) return;
