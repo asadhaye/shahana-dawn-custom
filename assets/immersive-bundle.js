@@ -609,10 +609,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       textures.push(tex);
 
       var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
-      var mat = new THREE.MeshStandardMaterial({
+      var mat = new THREE.MeshBasicMaterial({
         map: tex,
-        roughness: 0.8,
-        metalness: 0.1,
         transparent: true,
         opacity: 0.95,
         side: THREE.DoubleSide,
@@ -770,10 +768,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var thisCardW = thisCardH * thisCardAspect;
 
       var geom = new THREE.PlaneGeometry(thisCardW, thisCardH, 1, 1);
-      var mat = new THREE.MeshStandardMaterial({
+      var mat = new THREE.MeshBasicMaterial({
         map: tex,
-        roughness: isFeatured ? 0.6 : 0.8,
-        metalness: isFeatured ? 0.2 : 0.1,
         transparent: true,
         opacity: 0.95,
         side: THREE.DoubleSide,
@@ -1030,10 +1026,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var thisCardW = thisCardH * asymCardAspect * (0.9 + seededRandom(index + 100) * 0.25);
 
       var geom = new THREE.PlaneGeometry(thisCardW, thisCardH, 1, 1);
-      var mat = new THREE.MeshStandardMaterial({
+      var mat = new THREE.MeshBasicMaterial({
         map: tex,
-        roughness: 0.75,
-        metalness: 0.12,
         transparent: true,
         opacity: 0.95,
         side: THREE.DoubleSide,
