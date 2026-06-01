@@ -569,16 +569,20 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   var count = items.length;
 
-  if (layout === 'helix') {
-    // ── Helix / spiral layout (story view) ──
+  if (layout === 'scroll-narrative' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
+    // ── Scroll Narrative / Helix layout ──
     // Cards arranged along a 3D helix curve. Scroll/drag rotates around
     // the vertical axis and translates up/down through the spiral.
-    var helixRadius = options.helixRadius || 5;
-    var helixPitch = options.helixPitch || 2.8;   // vertical spacing per revolution
-    var helixRevolutions = options.helixRevolutions || 2.5;
-    var cardH = options.cardHeight || 1.6;
-    var cardAspect = options.cardAspect || (2 / 3);
+    // For scroll-narrative mode, adds parallax depth and scroll-driven animation.
+    var isScrollNarrative = layout === 'scroll-narrative';
+    var parallaxStrength = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.04;
+    var cardH = options.cardHeight || (isScrollNarrative ? 0.45 : 0.4);
+    var cardAspect = options.cardAspect || (isScrollNarrative ? (3/4) : (2/3));
     var cardW = cardH * cardAspect;
+    // Helix radius: keep within camera frustum (near=0, far=2, center at Z=1)
+    var helixRadius = options.helixRadius || (isScrollNarrative ? 0.8 : 0.6);
+    var helixPitch = options.helixPitch || (isScrollNarrative ? 3.5 : 2.8);
+    var helixRevolutions = options.helixRevolutions || (isScrollNarrative ? 1.5 : 2.5);
 
     var totalAngle = helixRevolutions * Math.PI * 2;
     var angleStep = count > 1 ? totalAngle / (count - 1) : 0;
@@ -617,15 +621,23 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var angle = startAngle + angleStep * index;
       var y = (angle / (Math.PI * 2)) * helixPitch;
 
+      // Scroll-narrative: add depth parallax offset for story-driven feel
+      var depthOffset = 0;
+      if (isScrollNarrative) {
+        // Cards further from center angle get pushed deeper (more parallax)
+        var normalizedAngle = (angle - startAngle) / totalAngle; // 0..1
+        depthOffset = (normalizedAngle - 0.5) * parallaxStrength * 20;
+      }
+
       var mesh = new THREE.Mesh(geom, mat);
+      // Center Z around 1.0 (middle of camera frustum near=0, far=2)
       mesh.position.set(
         Math.cos(angle) * helixRadius,
         y,
-        Math.sin(angle) * helixRadius,
+        1.0 + Math.sin(angle) * helixRadius * 0.5 + depthOffset,
       );
-      // Face outward from helix axis, upright
-      mesh.lookAt(new THREE.Vector3(0, y, 0));
-      mesh.rotateY(Math.PI); // flip so front faces outward
+      mesh.lookAt(new THREE.Vector3(0, y, 1.0 + depthOffset));
+      mesh.rotateY(Math.PI);
 
       mesh.userData = {
         roomKey: roomKey,
@@ -633,9 +645,10 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         title: item.title || '',
         productHandle: item.productHandle || null,
         collectionHandle: item.collectionHandle || null,
-        layout: 'helix',
+        layout: isScrollNarrative ? 'scroll-narrative' : 'helix',
         baseAngle: angle,
         baseY: y,
+        depthOffset: depthOffset,
       };
 
       group.add(mesh);
@@ -695,7 +708,9 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       planes: planes,
       labels: labels,
       textures: textures,
-      layout: 'helix',
+      layout: isScrollNarrative ? 'scroll-narrative' : 'helix',
+      isScrollDriven: isScrollNarrative,
+      parallaxStrength: parallaxStrength,
       currentRotationY: 0,
       targetRotationY: 0,
       currentScrollY: 0,
@@ -707,24 +722,25 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       cardCount: count,
     };
 
-  } else if (layout === 'grid') {
-    // ── Grid / index layout (featured collections) ──
-    // Cards arranged in a flat 2D grid in 3D space.
-    // Horizontal drag/scroll pages through columns.
+  } else if (layout === 'masonry-featured' || (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)) {
+    // ── Masonry Featured layout ──
+    // First item (featuredIndex) is a large hero card, centered, closer to camera.
+    // Remaining items arranged in masonry grid around it with varying sizes
+    // and subtle 3D depth offsets for a curated editorial feel.
+    var isMasonry = layout === 'masonry-featured';
+    var featuredIdx = (options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
+      ? options.layoutConfig.featuredIndex : 0;
+    var masonrySpacing = (options.layoutConfig && options.layoutConfig.spacing) || 0.6;
+    var parallaxStr = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.06;
     var gridCols = options.gridCols || 3;
-    var gridRows = options.gridRows || 3;
-    var gridSpacingX = options.gridSpacingX || 3.2;
-    var gridSpacingY = options.gridSpacingY || 3.8;
-    var gridCardH = options.cardHeight || 2.4;
+    var gridSpacingX = options.gridSpacingX || masonrySpacing;
+    var gridSpacingY = options.gridSpacingY || (masonrySpacing * 1.2);
+    var baseCardH = options.cardHeight || 0.5;
     var gridCardAspect = options.cardAspect || (3 / 4);
-    var gridCardW = gridCardH * gridCardAspect;
-
-    // Wrap items into pages (cols x rows per page)
-    var itemsPerPage = gridCols * gridRows;
-    var totalPages = Math.ceil(count / itemsPerPage);
+    var baseCardW = baseCardH * gridCardAspect;
 
     var startX = -((gridCols - 1) * gridSpacingX) / 2;
-    var startY = ((gridRows - 1) * gridSpacingY) / 2;
+    var startY = ((Math.ceil(count / gridCols) - 1) * gridSpacingY) / 2;
 
     items.forEach(function (item, index) {
       if (!item.imageSrc) return;
@@ -746,30 +762,43 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       tex.anisotropy = 8;
       textures.push(tex);
 
-      var geom = new THREE.PlaneGeometry(gridCardW, gridCardH, 1, 1);
+      var isFeatured = (index === featuredIdx);
+
+      // Featured card: 2x size, centered, closer to camera
+      var thisCardH = isFeatured ? baseCardH * 1.8 : baseCardH;
+      var thisCardAspect = isFeatured ? gridCardAspect : gridCardAspect * (0.9 + Math.random() * 0.2);
+      var thisCardW = thisCardH * thisCardAspect;
+
+      var geom = new THREE.PlaneGeometry(thisCardW, thisCardH, 1, 1);
       var mat = new THREE.MeshStandardMaterial({
         map: tex,
-        roughness: 0.8,
-        metalness: 0.1,
+        roughness: isFeatured ? 0.6 : 0.8,
+        metalness: isFeatured ? 0.2 : 0.1,
         transparent: true,
         opacity: 0.95,
         side: THREE.DoubleSide,
       });
 
-      var pageIndex = Math.floor(index / itemsPerPage);
-      var localIndex = index % itemsPerPage;
-      var col = localIndex % gridCols;
-      var row = Math.floor(localIndex / gridCols);
-
-      // Position: each page is offset along Z axis
-      var pageDepth = pageIndex * 20; // separate pages in Z
-      var x = startX + col * gridSpacingX;
-      var y = startY - row * gridSpacingY;
-
       var mesh = new THREE.Mesh(geom, mat);
-      mesh.position.set(x, y, pageDepth);
-      // Face the camera (along -Z)
-      mesh.lookAt(0, y, pageDepth - 10);
+
+      var col, row, x, y, z;
+      if (isFeatured) {
+        // Featured: centered, closer to camera (Z=1.5, well within frustum)
+        x = 0;
+        y = 0;
+        z = 1.5;
+      } else {
+        // Masonry: grid with organic offsets, Z centered around 0.8-1.2
+        var masonryIndex = index < featuredIdx ? index : index - 1;
+        col = masonryIndex % gridCols;
+        row = Math.floor(masonryIndex / gridCols);
+        x = startX + col * gridSpacingX + (isMasonry ? (Math.random() - 0.5) * 0.6 : 0);
+        y = startY - row * gridSpacingY + (isMasonry ? (Math.random() - 0.5) * 0.4 : 0);
+        z = 1.0 + Math.abs(col - gridCols / 2) * parallaxStr * 0.3 + row * parallaxStr * 0.2;
+      }
+
+      mesh.position.set(x, y, z);
+      mesh.lookAt(0, y, z - 10);
 
       mesh.userData = {
         roomKey: roomKey,
@@ -777,11 +806,13 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         title: item.title || '',
         productHandle: productHandle || item.productHandle || null,
         collectionHandle: item.collectionHandle || null,
-        layout: 'grid',
+        layout: isMasonry ? 'masonry-featured' : 'grid',
         baseX: x,
         baseY: y,
-        pageDepth: pageDepth,
-        pageIndex: pageIndex,
+        baseZ: z,
+        isFeatured: isFeatured,
+        col: isFeatured ? -1 : col,
+        row: isFeatured ? -1 : row,
       };
 
       group.add(mesh);
@@ -791,14 +822,14 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       if (item.title) {
         var labelCanvas = document.createElement('canvas');
         var lCtx = labelCanvas.getContext('2d');
-        labelCanvas.width = 512;
-        labelCanvas.height = 64;
-        lCtx.clearRect(0, 0, 512, 64);
-        lCtx.font = 'bold 28px Georgia, serif';
+        labelCanvas.width = isFeatured ? 1024 : 512;
+        labelCanvas.height = isFeatured ? 96 : 64;
+        lCtx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+        lCtx.font = 'bold ' + (isFeatured ? 36 : 28) + 'px Georgia, serif';
         lCtx.textAlign = 'center';
         lCtx.textBaseline = 'middle';
-        lCtx.fillStyle = '#ffffff';
-        lCtx.fillText(item.title, 256, 32);
+        lCtx.fillStyle = isFeatured ? '#d4af37' : '#ffffff';
+        lCtx.fillText(item.title, labelCanvas.width / 2, labelCanvas.height / 2);
 
         var labelTex = new THREE.CanvasTexture(labelCanvas);
         labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
@@ -808,11 +839,11 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
           depthTest: false,
           side: THREE.DoubleSide,
         });
-        var labelW = gridCardW * 0.85;
-        var labelH = labelW * (64 / 512);
+        var labelW = thisCardW * (isFeatured ? 0.7 : 0.85);
+        var labelH = labelW * (labelCanvas.height / labelCanvas.width);
         var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        labelMesh.position.set(x, y - gridCardH * 0.5 - labelH * 0.3, pageDepth + 0.01);
+        labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.3, z + 0.01);
         labelMesh.renderOrder = 999;
         group.add(labelMesh);
         labels.push(labelMesh);
@@ -826,21 +857,19 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       planes: planes,
       labels: labels,
       textures: textures,
-      layout: 'grid',
+      layout: isMasonry ? 'masonry-featured' : 'grid',
       currentPage: 0,
       targetPage: 0,
-      totalPages: totalPages,
+      totalPages: 1,
       gridCols: gridCols,
-      gridRows: gridRows,
-      itemsPerPage: itemsPerPage,
       gridSpacingX: gridSpacingX,
       gridSpacingY: gridSpacingY,
-      gridCardW: gridCardW,
-      gridCardH: gridCardH,
+      baseCardW: baseCardW,
+      baseCardH: baseCardH,
       startX: startX,
       startY: startY,
-      currentZ: 0,
-      targetZ: 0,
+      featuredIndex: featuredIdx,
+      parallaxStrength: parallaxStr,
     };
 
   } else if (layout === 'vertical') {
@@ -955,6 +984,150 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       cardCount: count,
       cardH: cardH,
       startY: startY,
+    };
+
+  } else if (layout === 'asymmetric-gallery') {
+    // ── Asymmetric Gallery layout (Indrajaal-inspired organic 3D) ──
+    // Cards placed organically in 3D space with varying sizes, depths,
+    // and asymmetric positions. Parallax-driven. Physics-enabled for
+    // subtle floating animation.
+    var asymSpacing = (options.layoutConfig && options.layoutConfig.spacing) || 3.5;
+    var parallaxStr = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.08;
+    var asymCardH = options.cardHeight || 0.5;
+    var asymCardAspect = options.cardAspect || (2 / 3);
+    var asymCardW = asymCardH * asymCardAspect;
+
+    // Seed random for deterministic layout
+    var seed = roomKey.split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0);
+    var seededRandom = function(i) {
+      var x = Math.sin(seed + i * 127.1) * 43758.5453;
+      return x - Math.floor(x);
+    };
+
+    items.forEach(function (item, index) {
+      if (!item.imageSrc) return;
+
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Gallery texture load error:', err);
+          }
+        },
+      );
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      textures.push(tex);
+
+      // Organic sizing: each card varies slightly
+      var sizeVar = 0.85 + seededRandom(index) * 0.4;
+      var thisCardH = asymCardH * sizeVar;
+      var thisCardW = thisCardH * asymCardAspect * (0.9 + seededRandom(index + 100) * 0.25);
+
+      var geom = new THREE.PlaneGeometry(thisCardW, thisCardH, 1, 1);
+      var mat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.75,
+        metalness: 0.12,
+        transparent: true,
+        opacity: 0.95,
+        side: THREE.DoubleSide,
+      });
+
+      var mesh = new THREE.Mesh(geom, mat);
+
+      // Asymmetric positioning: organic cloud around center
+      // Camera is orthographic with bounds ±1 on X/Y, 0-2 on Z
+      var angle = (index / count) * Math.PI * 2 + seededRandom(index + 200) * 0.5;
+      var radius = 0.6 + seededRandom(index + 300) * 0.5; // 0.6–1.1, fits camera ±1
+      var x = Math.cos(angle) * radius;
+      var y = (seededRandom(index + 400) - 0.5) * 1.2; // ±0.6
+      var z = 1.0 + Math.sin(angle) * radius * 0.3; // 0.7–1.3, within 0-2 frustum
+
+      mesh.position.set(x, y, z);
+      mesh.lookAt(0, y, z - 10);
+
+      // Subtle random rotation for organic feel
+      mesh.rotation.x = (seededRandom(index + 500) - 0.5) * 0.15;
+      mesh.rotation.y = (seededRandom(index + 600) - 0.5) * 0.1;
+
+      mesh.userData = {
+        roomKey: roomKey,
+        galleryIndex: item.index,
+        title: item.title || '',
+        productHandle: item.productHandle || null,
+        collectionHandle: item.collectionHandle || null,
+        layout: 'asymmetric-gallery',
+        baseX: x,
+        baseY: y,
+        baseZ: z,
+        baseRotX: mesh.rotation.x,
+        baseRotY: mesh.rotation.y,
+        angle: angle,
+        parallaxFactor: 1.0 + seededRandom(index + 700) * 0.5,
+      };
+
+      group.add(mesh);
+      planes.push(mesh);
+
+      // Elegant title label
+      if (item.title) {
+        var labelCanvas = document.createElement('canvas');
+        var lCtx = labelCanvas.getContext('2d');
+        labelCanvas.width = 768;
+        labelCanvas.height = 100;
+        lCtx.clearRect(0, 0, 768, 100);
+        lCtx.font = 'bold 42px Georgia, serif';
+        lCtx.textAlign = 'center';
+        lCtx.textBaseline = 'middle';
+        lCtx.fillStyle = '#ece3c2';
+        lCtx.letterSpacing = '-1px';
+        lCtx.fillText(item.title.toUpperCase(), 384, 35);
+
+        lCtx.font = '500 12px Arial, sans-serif';
+        lCtx.fillStyle = 'rgba(255,255,255,0.4)';
+        lCtx.letterSpacing = '3px';
+        lCtx.fillText('[ EXPLORE ]', 384, 75);
+
+        var labelTex = new THREE.CanvasTexture(labelCanvas);
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        var labelMat = new THREE.MeshBasicMaterial({
+          map: labelTex,
+          transparent: true,
+          depthTest: false,
+          side: THREE.DoubleSide,
+        });
+        var labelW = thisCardW * 0.85;
+        var labelH = labelW * (100 / 768);
+        var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
+        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.5, z + 0.05);
+        labelMesh.renderOrder = 999;
+        group.add(labelMesh);
+        labels.push(labelMesh);
+      }
+    });
+
+    scene.add(group);
+
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: planes,
+      labels: labels,
+      textures: textures,
+      layout: 'asymmetric-gallery',
+      parallaxStrength: parallaxStr,
+      asymSpacing: asymSpacing,
+      cardCount: count,
+      scrollY: 0,
+      targetScrollY: 0,
+      rotationY: 0,
+      targetRotationY: 0,
     };
 
   } else {
@@ -1081,11 +1254,12 @@ function showGalleryHint(roomKey) {
   var existing = document.getElementById('immersive-gallery-hint');
   if (existing) existing.remove();
 
-  var isVertical = getGalleryLayout(roomKey) === 'vertical';
+  var l = getGalleryLayout(roomKey);
+  var isScrollLayout = (l === 'vertical' || l === 'asymmetric-gallery' || l === 'scroll-narrative');
   var hint = document.createElement('div');
   hint.id = 'immersive-gallery-hint';
   hint.className = 'immersive-gallery-hint';
-  hint.innerHTML = isVertical
+  hint.innerHTML = isScrollLayout
     ? '<span class="immersive-gallery-hint__text">Scroll or drag to explore &middot; Click a card to view collection</span>'
     : '<span class="immersive-gallery-hint__text">Drag to browse &middot; Click a card to explore</span>';
   hint.setAttribute('aria-live', 'polite');
@@ -1112,7 +1286,10 @@ var galleryDragState = {
 function initGalleryCarousel(canvas) {
   if (!canvas) return;
   var state = galleryStageRegistry[currentRoomKey];
-  var isVertical = state && state.layout === 'vertical';
+  var layout = state ? state.layout : 'arc';
+  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical');
+  var isHelixLayout = (layout === 'helix' || layout === 'scroll-narrative');
+  var isGridLayout = (layout === 'grid' || layout === 'masonry-featured');
 
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
@@ -1136,24 +1313,37 @@ function initGalleryCarousel(canvas) {
     var dx = x - galleryDragState.lastX;
     var dy = y - galleryDragState.lastY;
 
-    if (isVertical) {
-      // Free-form drag: Y translates the gallery, X adds subtle rotation
+    if (isScrollLayout) {
+      // Scroll-driven layouts: asymmetric-gallery, scroll-narrative, vertical
+      // Y drag translates/scrolls, X drag adds subtle rotation
       var deltaY = dy * 0.012;
       var deltaX = dx * 0.003;
-      s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY));
-      s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
+      if (layout === 'asymmetric-gallery') {
+        // Asymmetric: parallax-driven Y scroll + subtle Y-axis rotation
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - deltaY));
+        s.targetRotationY += dx * 0.002;
+      } else {
+        // Vertical / scroll-narrative: standard scroll + tilt
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY));
+        s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
+      }
       galleryDragState.velocityX = dx * 0.5;
       galleryDragState.velocityY = dy * 0.5;
-    } else if (s.layout === 'helix') {
+    } else if (isHelixLayout) {
       // Helix: X drag rotates around spiral, Y drag scrolls up/down
       s.targetRotationY += dx * 0.006;
       var _hh = (s.totalAngle || (2.5 * Math.PI * 2)) / (Math.PI * 2) * (s.helixPitch || 2.8) * 0.5;
       s.targetScrollY = Math.max(-_hh, Math.min(_hh, s.targetScrollY - dy * 0.01));
       galleryDragState.velocityX = dx * 0.5;
       galleryDragState.velocityY = dy * 0.5;
-    } else if (s.layout === 'grid') {
-      // Grid: horizontal drag pages through the grid
-      s.targetPage -= dx * 0.004;
+    } else if (isGridLayout) {
+      // Grid / masonry-featured: horizontal drag scrolls through items
+      if (s.targetPage !== undefined) {
+        s.targetPage -= dx * 0.004;
+      } else {
+        // Masonry: horizontal drag shifts the group
+        s.targetRotationY += dx * 0.003;
+      }
       galleryDragState.velocityX = dx * 0.5;
     } else {
       // Arc carousel: horizontal drag rotates
@@ -1176,14 +1366,20 @@ function initGalleryCarousel(canvas) {
     var s = galleryStageRegistry[currentRoomKey];
     if (!s) return;
 
-    if (isVertical) {
-      s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
-    } else if (s.layout === 'helix') {
-      // Scroll rotates around the helix spiral
+    if (isScrollLayout) {
+      if (layout === 'asymmetric-gallery') {
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+      } else {
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+      }
+    } else if (isHelixLayout) {
       s.targetRotationY += e.deltaY * 0.003;
-    } else if (s.layout === 'grid') {
-      // Scroll pages through grid
-      s.targetPage -= e.deltaY * 0.002;
+    } else if (isGridLayout) {
+      if (s.targetPage !== undefined) {
+        s.targetPage -= e.deltaY * 0.002;
+      } else {
+        s.targetRotationY += e.deltaY * 0.002;
+      }
     } else {
       s.targetAngle += e.deltaY * 0.002;
     }
@@ -1205,47 +1401,65 @@ function animateGalleryCarousel() {
   var state = galleryStageRegistry[currentRoomKey];
   if (!state || !state.group) return;
 
-  if (state.layout === 'vertical') {
-    // ── Vertical scroll animation (indrajaal-museum free-form drag) ──
+  var layout = state.layout;
+  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical');
 
-    // Apply inertia when not dragging (smooth momentum)
+  if (isScrollAnim) {
+    // ── Scroll-driven animation: asymmetric-gallery, scroll-narrative, vertical ──
+    var scrollSpacing = (layout === 'asymmetric-gallery') ? (state.asymSpacing || 3.5) : (state.cardSpacing || 3.5);
+
+    // Inertia
     if (!galleryDragState.isDragging) {
       if (Math.abs(galleryDragState.velocityY) > 0.001) {
         state.targetScrollY += galleryDragState.velocityY * 0.012;
         galleryDragState.velocityY *= 0.93;
       }
       if (Math.abs(galleryDragState.velocityX) > 0.001) {
-        state.targetRotationX += galleryDragState.velocityX * 0.003;
-        galleryDragState.velocityX *= 0.93;
+        if (layout === 'asymmetric-gallery') {
+          state.targetRotationY += galleryDragState.velocityX * 0.003;
+          state.targetRotationY *= 0.93;
+        } else {
+          state.targetRotationX += galleryDragState.velocityX * 0.003;
+          state.targetRotationX *= 0.93;
+        }
       }
     }
 
-    // Clamp scroll bounds
-    var maxScroll = (state.cardCount - 1) * state.cardSpacing * 0.5;
-    state.targetScrollY = Math.max(-maxScroll, Math.min(maxScroll * 0.5, state.targetScrollY));
-    // Clamp rotation
-    state.targetRotationX = Math.max(-0.15, Math.min(0.15, state.targetRotationX));
+    // Clamp
+    var maxScr = (state.cardCount - 1) * scrollSpacing * 0.5;
+    state.targetScrollY = Math.max(-maxScr, Math.min(maxScr * 0.5, state.targetScrollY));
+    if (layout === 'asymmetric-gallery') {
+      state.targetRotationY = Math.max(-0.3, Math.min(0.3, state.targetRotationY));
+    } else {
+      state.targetRotationX = Math.max(-0.15, Math.min(0.15, state.targetRotationX));
+    }
 
-    // Smooth interpolation
+    // Interpolate
     state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
-    state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.08;
+    if (layout === 'asymmetric-gallery') {
+      state.rotationY += (state.targetRotationY - state.rotationY) * 0.08;
+      state.group.position.y = state.scrollY;
+      state.group.rotation.y = state.rotationY;
+    } else {
+      state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.08;
+      state.group.position.y = state.scrollY;
+      state.group.rotation.x = state.currentRotationX;
+    }
 
-    // Apply to group: vertical translation + subtle X-axis tilt
-    state.group.position.y = state.scrollY;
-    state.group.rotation.x = state.currentRotationX;
-
-    // Fade cards based on distance from center (indrajaal style)
+    // Fade cards based on distance from center
     state.planes.forEach(function (plane) {
       var cardY = plane.userData.baseY + state.scrollY;
       var distFromCenter = Math.abs(cardY);
-      var normalizedDist = Math.min(distFromCenter / (state.cardSpacing * 2), 1);
+      var normalizedDist = Math.min(distFromCenter / (scrollSpacing * 2), 1);
       if (plane.material) {
         plane.material.opacity = 0.95 * (1 - normalizedDist * 0.7);
       }
     });
 
-  } else if (state.layout === 'helix') {
-    // ── Helix / spiral animation (story view) ──
+  } else if (layout === 'helix' || layout === 'scroll-narrative') {
+    // ── Helix / scroll-narrative animation ──
+    // If scrollDriven, the scroll-narrative uses the scroll loop above (isScrollAnim).
+    // This branch handles helix and scroll-narrative drag-to-rotate.
     // Drag X rotates around the helix, drag Y scrolls up/down through spiral.
     var _hr = state.helixRadius || 5;
     var _hp = state.helixPitch || 2.8;
@@ -1290,8 +1504,8 @@ function animateGalleryCarousel() {
       }
     });
 
-  } else if (state.layout === 'grid') {
-    // ── Grid / index animation (featured collections) ──
+  } else if (layout === 'grid' || layout === 'masonry-featured') {
+    // ── Grid / masonry-featured animation ──
     // Horizontal drag/scroll pages through the grid.
     var _gz = state.gridSpacingX || 3.2;
 
@@ -1472,22 +1686,45 @@ function getGalleryStageConfig(roomKey) {
 // 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
 // 'arc' = original horizontal carousel (default fallback)
 function getGalleryLayout(roomKey) {
-  // Read merchant-chosen layout from the section data attribute
-  // Supported: 'vertical', 'arc', 'helix', 'grid'
-  var sectionEl = document.getElementById('immersive-store-{{ section.id }}');
+  // Read merchant-chosen layout from per-room section data attributes.
+  // Returns the semantic layout name (asymmetric-gallery, scroll-narrative,
+  // masonry-featured) which buildGalleryStageForRoom handles as distinct branches.
+  var sectionEl = document.querySelector('.immersive-store');
   if (!sectionEl) {
-    // Fallback defaults per room
-    if (roomKey === 'designer_houses') return 'vertical';
-    if (roomKey === 'occasions') return 'helix';
-    if (roomKey === 'featured_collections') return 'grid';
+    // Fallback per room — use new 3D layout names
+    if (roomKey === 'designer_houses') return 'asymmetric-gallery';
+    if (roomKey === 'occasions') return 'scroll-narrative';
+    if (roomKey === 'featured_collections') return 'masonry-featured';
     return 'arc';
   }
-  var setting = sectionEl.getAttribute('data-gallery-layout');
-  if (setting === 'vertical' || setting === 'arc' || setting === 'helix' || setting === 'grid') return setting;
-  // Fallback per room when setting is missing/invalid
-  if (roomKey === 'designer_houses') return 'vertical';
-  if (roomKey === 'occasions') return 'helix';
-  if (roomKey === 'featured_collections') return 'grid';
+
+  // Try per-room attribute first: data-<room>-layout
+  var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
+  var setting = sectionEl.getAttribute(perRoomAttr);
+
+  // Legacy fallback: single global data-gallery-layout
+  if (!setting) {
+    setting = sectionEl.getAttribute('data-gallery-layout');
+  }
+
+  // Valid semantic layout names (passthrough to buildGalleryStageForRoom)
+  var validLayouts = {
+    'asymmetric-gallery': 1,
+    'scroll-narrative': 1,
+    'masonry-featured': 1,
+    // Legacy/internal names still supported
+    'vertical': 1,
+    'arc': 1,
+    'helix': 1,
+    'grid': 1
+  };
+
+  if (validLayouts[setting]) return setting;
+
+  // Per-room fallback when setting is missing/invalid — use new 3D layouts
+  if (roomKey === 'designer_houses') return 'asymmetric-gallery';
+  if (roomKey === 'occasions') return 'scroll-narrative';
+  if (roomKey === 'featured_collections') return 'masonry-featured';
   return 'arc';
 }
 
@@ -1720,28 +1957,10 @@ function popNavigationHistory() {
   return null;
 }
 
+// initWishlist is defined in immersive-features.js (more complete version)
+// Kept here as a no-op in case something calls it before features loads.
 function initWishlist() {
-  if (window.__IMMERSIVE_DEV__) {
-    console.log('[Immersive] initWishlist called');
-  }
-  try {
-    var saved = localStorage.getItem(WISHLIST_KEY);
-    if (saved) {
-      wishlistItems = JSON.parse(saved);
-      if (window.__IMMERSIVE_DEV__) {
-        console.log('[Immersive] loaded wishlist:', wishlistItems.length, 'items');
-      }
-    }
-  } catch (e) {
-    wishlistItems = [];
-  }
-  wishlistPanelTrigger =
-    document.querySelector('[data-wishlist-trigger]') || document.getElementById('wishlist-panel-trigger');
-  if (wishlistPanelTrigger) {
-    wishlistPanelTrigger.addEventListener('click', function () {
-      // Wishlist trigger clicked
-    });
-  }
+  // Delegated to immersive-features.js initWishlist (uses _wishlistItems)
 }
 
 function saveNavigationHistory() {
@@ -2144,15 +2363,23 @@ function initImmersiveScene() {
       disposeGalleryStage(roomKey);
     }
     var layout = getGalleryLayout(roomKey);
+    // Read semantic layout name from per-room attribute to look up LAYOUT_REGISTRY config
+    var sectionEl = document.querySelector('.immersive-store');
+    var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
+    var semanticLayout = sectionEl ? sectionEl.getAttribute(perRoomAttr) : null;
+    var layoutConfig = (semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[semanticLayout])
+      ? LAYOUT_REGISTRY[semanticLayout].config
+      : {};
     buildGalleryStageForRoom(roomKey, scene, {
       layout: layout,
       radius: 6,
       arcDegrees: 120,
       verticalOffset: 0.3,
       tiltDegrees: -3,
-      cardSpacing: 3.5,
+      cardSpacing: layoutConfig.spacing || 3.5,
       cardHeight: 2.2,
       cardAspect: 2 / 3,
+      layoutConfig: layoutConfig,
     });
     if (renderer && renderer.domElement) {
       initGalleryCarousel(renderer.domElement);
@@ -2474,15 +2701,21 @@ function onWindowResize() {
               if (galleryStageRegistry[currentRoomKey]) {
                 disposeGalleryStage(currentRoomKey);
               }
+              var _sectionEl = document.querySelector('.immersive-store');
+              var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
+              var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
+              var _layoutConfig = (_semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout])
+                ? LAYOUT_REGISTRY[_semanticLayout].config : {};
               buildGalleryStageForRoom(currentRoomKey, scene, {
                 layout: getGalleryLayout(currentRoomKey),
                 radius: 6,
                 arcDegrees: 120,
                 verticalOffset: 0.3,
                 tiltDegrees: -3,
-                cardSpacing: 3.5,
+                cardSpacing: _layoutConfig.spacing || 3.5,
                 cardHeight: 2.2,
                 cardAspect: 2 / 3,
+                layoutConfig: _layoutConfig,
               });
             }
             hideLoader();
@@ -2900,15 +3133,21 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
         currentRoomKey = roomKey;
 
         if (getGalleryStageConfig(roomKey).length) {
+          var _sectionEl2 = document.querySelector('.immersive-store');
+          var _perRoomAttr2 = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
+          var _semanticLayout2 = _sectionEl2 ? _sectionEl2.getAttribute(_perRoomAttr2) : null;
+          var _layoutConfig2 = (_semanticLayout2 && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout2])
+            ? LAYOUT_REGISTRY[_semanticLayout2].config : {};
           buildGalleryStageForRoom(roomKey, scene, {
             layout: getGalleryLayout(roomKey),
             radius: 6,
             arcDegrees: 120,
             verticalOffset: 0.3,
             tiltDegrees: -3,
-            cardSpacing: 3.5,
+            cardSpacing: _layoutConfig2.spacing || 3.5,
             cardHeight: 2.2,
             cardAspect: 2 / 3,
+            layoutConfig: _layoutConfig2,
           });
           initGalleryCarousel(renderer.domElement);
 
@@ -3823,8 +4062,8 @@ initDeviceOptimization();
 
 // ---------------------------------------------------------------------------
 // Auto-init: bind initImmersiveScene to DOMContentLoaded (with double-init guard)
+// _immersiveInitBound is defined at top of file (line ~1583)
 // ---------------------------------------------------------------------------
-var _immersiveInitBound = false;
 function safeBindImmersiveInit() {
   if (_immersiveInitBound) return;
   _immersiveInitBound = true;

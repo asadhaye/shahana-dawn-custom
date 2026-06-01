@@ -68,6 +68,10 @@ describe('immersive-editorial enabled editorial layouts', () => {
     expect(opened).toEqual([]);
   });
 
+  test('designer marker click without stopPropagation reaches collection-panel route', () => {
+    document.body.innerHTML =
+      '<div id="overlay"><button class="immersive-designers__marker" data-collection="suffuse"><span>Suffuse</span></button></div>';
+
     const opened = [];
     const exited = [];
     const overlay = document.getElementById('overlay');

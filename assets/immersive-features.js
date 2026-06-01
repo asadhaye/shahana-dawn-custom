@@ -3441,15 +3441,11 @@ function showAfterAddToCart(product) {
 // ImmersiveRoomRecommender — rule-based room suggestions
 // ============================================================
 
-var _browsingContext = {
-  visitedRooms: [],
-  savedProducts: [],
-  viewedCollections: [],
-  cartCollections: [],
-};
+// _browsingContext is defined in immersive-core.js — do not redeclare here.
+// Features module references it via typeof check.
 
-var BRIDAL_KEYWORDS = ['bridal', 'bride', 'wedding', 'mehndi', 'nikah', 'walima', 'barat'];
-var DESIGNER_HOUSE_COLLECTIONS = ['suffuse', 'soraya', 'saad-bin-shahzad'];
+// BRIDAL_KEYWORDS and DESIGNER_HOUSE_COLLECTIONS are defined in immersive-core.js
+// and accessed here via the global scope (no redeclaration needed).
 
 function getRecommendation(context) {
   // Override hook for ML-driven scoring

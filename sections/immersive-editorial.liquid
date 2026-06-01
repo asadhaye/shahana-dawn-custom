@@ -1,15 +1,137 @@
+{% comment %}
+  Immersive Editorial Section
+  Renders editorial content for gallery rooms with layout-specific block rendering.
+  Layouts: designers, occasions, featured_collections, gallery_card
+{% endcomment %}
+
 <section
   id="immersive-editorial-{{ section.settings.room_key | escape }}"
   class="immersive-editorial immersive-editorial--source immersive-editorial--{{ section.settings.room_key | escape }}"
   data-room-key="{{ section.settings.room_key | escape }}"
   data-section-id="{{ section.id }}"
+  data-editorial-layout="{{ section.settings.layout | default: 'designers' | escape }}"
   {% unless request.design_mode %}hidden{% endunless %}
   {% unless request.design_mode %}aria-hidden="true"{% endunless %}
 >
 
-  {%- comment -%}2D overlay layouts removed — gallery is now 3D canvas only{%- endcomment -%}
-</section>
+  {%- comment -%}── Designers layout: timeline markers with data-collection-handle ──{%- endcomment -%}
+  {%- if section.settings.layout == 'designers' -%}
+    <div class="immersive-designers" data-editorial-layout="designers">
+      {%- if section.settings.hero_heading != blank -%}
+        <h2 class="immersive-designers__heading">{{ section.settings.hero_heading }}</h2>
+      {%- endif -%}
+      {%- if section.settings.hero_eyebrow != blank -%}
+        <p class="immersive-designers__eyebrow">{{ section.settings.hero_eyebrow }}</p>
+      {%- endif -%}
+      <div class="immersive-designers__timeline">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'designer' and block.settings.collection != blank -%}
+            <button
+              type="button"
+              class="immersive-designers__timeline-marker"
+              data-collection-handle="{{ block.settings.collection.handle }}"
+              data-collection="{{ block.settings.collection.handle }}"
+              {{ block.shopify_attributes }}
+            >
+              {%- if block.settings.logo != blank -%}
+                <img
+                  src="{{ block.settings.logo | image_url: width: 200 }}"
+                  alt="{{ block.settings.heading }}"
+                  class="immersive-designers__marker-logo"
+                  loading="lazy"
+                  width="100"
+                  height="100"
+                />
+              {%- endif -%}
+              <span class="immersive-designers__marker-label">{{ block.settings.heading }}</span>
+            </button>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
 
+  {%- elsif section.settings.layout == 'occasions' -%}
+    {%- comment -%}── Occasions layout: chapter CTAs with data-collection-handle ──{%- endcomment -%}
+    <div class="immersive-occasions" data-editorial-layout="occasions">
+      {%- if section.settings.hero_heading != blank -%}
+        <h2 class="immersive-occasions__heading">{{ section.settings.hero_heading }}</h2>
+      {%- endif -%}
+      {%- if section.settings.hero_eyebrow != blank -%}
+        <p class="immersive-occasions__eyebrow">{{ section.settings.hero_eyebrow }}</p>
+      {%- endif -%}
+      <div class="immersive-occasions__chapters">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'occasion_card' and block.settings.collection != blank -%}
+            <button
+              type="button"
+              class="immersive-occasions__chapter-cta"
+              data-collection-handle="{{ block.settings.collection.handle }}"
+              data-collection="{{ block.settings.collection.handle }}"
+              {{ block.shopify_attributes }}
+            >
+              {%- if block.settings.image != blank -%}
+                <img
+                  src="{{ block.settings.image | image_url: width: 400 }}"
+                  alt="{{ block.settings.heading }}"
+                  class="immersive-occasions__chapter-img"
+                  loading="lazy"
+                  width="200"
+                  height="280"
+                />
+              {%- endif -%}
+              <span class="immersive-occasions__chapter-label">{{ block.settings.heading }}</span>
+            </button>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+
+  {%- elsif section.settings.layout == 'featured_collections' -%}
+    {%- comment -%}── Featured Collections layout: cards with data-collection-handle ──{%- endcomment -%}
+    <div class="immersive-featured" data-editorial-layout="featured_collections">
+      {%- if section.settings.hero_heading != blank -%}
+        <h2 class="immersive-featured__heading">{{ section.settings.hero_heading }}</h2>
+      {%- endif -%}
+      {%- if section.settings.hero_eyebrow != blank -%}
+        <p class="immersive-featured__eyebrow">{{ section.settings.hero_eyebrow }}</p>
+      {%- endif -%}
+      <div class="immersive-featured__grid">
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'featured_item' and block.settings.collection != blank -%}
+            <button
+              type="button"
+              class="immersive-featured__card"
+              data-collection-handle="{{ block.settings.collection.handle }}"
+              data-collection="{{ block.settings.collection.handle }}"
+              {{ block.shopify_attributes }}
+            >
+              {%- if block.settings.image != blank -%}
+                <img
+                  src="{{ block.settings.image | image_url: width: 400 }}"
+                  alt="{{ block.settings.heading }}"
+                  class="immersive-featured__card-img"
+                  loading="lazy"
+                  width="200"
+                  height="280"
+                />
+              {%- endif -%}
+              <span class="immersive-featured__card-label">{{ block.settings.heading }}</span>
+            </button>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+
+  {%- endif -%}
+
+  {%- comment -%}── Editorial banners (layout-specific) ──{%- endcomment -%}
+  {%- if section.settings.layout == 'designers' or section.settings.layout == 'occasions' or section.settings.layout == 'featured_collections' -%}
+    <div class="immersive-editorial__banners" hidden>
+      {%- comment -%}Banners rendered by JS on-demand{%- endcomment -%}
+    </div>
+  {%- endif -%}
+
+</section>
 
 {% schema %}
 {
@@ -24,6 +146,19 @@
         { "value": "designer_houses", "label": "t:sections.immersive_editorial.settings.room_key.options__1.label" },
         { "value": "occasions", "label": "t:sections.immersive_editorial.settings.room_key.options__2.label" },
         { "value": "featured_collections", "label": "t:sections.immersive_editorial.settings.room_key.options__3.label" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "default": "designers",
+      "label": "Editorial Layout",
+      "info": "Choose the editorial layout variant for this room",
+      "options": [
+        { "value": "designers", "label": "Designers (timeline markers)" },
+        { "value": "occasions", "label": "Occasions (chapter CTAs)" },
+        { "value": "featured_collections", "label": "Featured Collections (cards)" },
+        { "value": "gallery_card", "label": "Gallery Card (generic grid)" }
       ]
     },
     {
@@ -83,12 +218,23 @@
         { "type": "collection", "id": "collection", "label": "t:sections.immersive_editorial.blocks.featured_item.settings.collection.label" },
         { "type": "url", "id": "cta_url", "label": "t:sections.immersive_editorial.blocks.featured_item.settings.cta_url.label" }
       ]
+    },
+    {
+      "type": "gallery_card",
+      "name": "Gallery Card",
+      "limit": 20,
+      "settings": [
+        { "type": "text", "id": "heading", "label": "Card Heading", "default": "Collection" },
+        { "type": "image_picker", "id": "image", "label": "Card Image" },
+        { "type": "collection", "id": "collection", "label": "Collection" },
+        { "type": "url", "id": "cta_url", "label": "CTA URL" }
+      ]
     }
   ],
   "presets": [
     {
       "name": "t:sections.immersive_editorial.presets.designer_houses.name",
-      "settings": { "room_key": "designer_houses" },
+      "settings": { "room_key": "designer_houses", "layout": "designers" },
       "blocks": [
         { "type": "designer", "settings": { "heading": "Suffuse" } },
         { "type": "designer", "settings": { "heading": "Soraya" } },
@@ -97,7 +243,7 @@
     },
     {
       "name": "t:sections.immersive_editorial.presets.occasions.name",
-      "settings": { "room_key": "occasions" },
+      "settings": { "room_key": "occasions", "layout": "occasions" },
       "blocks": [
         { "type": "occasion_card", "settings": { "heading": "Eid Collection" } },
         { "type": "occasion_card", "settings": { "heading": "Bridal & Mehndi" } },
@@ -106,7 +252,7 @@
     },
     {
       "name": "t:sections.immersive_editorial.presets.featured_collections.name",
-      "settings": { "room_key": "featured_collections" },
+      "settings": { "room_key": "featured_collections", "layout": "featured_collections" },
       "blocks": [
         { "type": "featured_item", "settings": { "heading": "Collection One" } },
         { "type": "featured_item", "settings": { "heading": "Collection Two" } },
