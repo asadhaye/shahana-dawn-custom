@@ -180,7 +180,7 @@ var ListenerRegistry = {
     Object.keys(this.registry).forEach(function (key) {
       self.cleanup(key);
     });
-  },
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,53 +193,53 @@ if (!window.ShahanaImmersive) {
       scene: null,
       camera: null,
       planeMesh: null,
-      uniforms: null,
+      uniforms: null
     },
     room: {
       current: null,
       subMode: null,
-      transitioning: false,
+      transitioning: false
     },
     cache: {
       textures: [],
       content: {},
-      gallery: {},
+      gallery: {}
     },
     settings: {
       reduceMotion: false,
       isMobile: false,
       isTablet: false,
       textureQuality: 1.0,
-      targetFPS: 60,
+      targetFPS: 60
     },
     search: {
       activeIndex: -1,
       results: [],
       debounceTimer: null,
-      abortController: null,
+      abortController: null
     },
     gesture: {
       lastRoomTransition: 0,
       cooldown: 600,
-      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'],
+      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections']
     },
     quickAdd: {
       modal: null,
-      trigger: null,
+      trigger: null
     },
     hotspot: {
       elements: [],
-      focusedIndex: -1,
+      focusedIndex: -1
     },
     device: {
       isMobile: false,
       isTablet: false,
-      isLowEnd: false,
+      isLowEnd: false
     },
     layout: {
       registry: {},
-      current: {},
-    },
+      current: {}
+    }
   };
 }
 
@@ -276,7 +276,7 @@ function initDeviceOptimization() {
       isTablet: isTablet,
       isLowEnd: isLowEnd,
       textureQuality: window.ShahanaImmersive.settings.textureQuality,
-      targetFPS: window.ShahanaImmersive.settings.targetFPS,
+      targetFPS: window.ShahanaImmersive.settings.targetFPS
     });
   }
 }
@@ -312,7 +312,7 @@ var LoadingState = {
     if (typeof showFeedback === 'function') {
       showFeedback(message, 'error');
     }
-  },
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -338,25 +338,24 @@ var Analytics = {
 
   trackError: function (errorType, message) {
     this.track('error', { type: errorType, message: message, timestamp: Date.now() });
-  },
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYOUT REGISTRY - Three Configurable Layouts
 // ─────────────────────────────────────────────────────────────────────────────
-
 var LAYOUT_REGISTRY = {
   'asymmetric-gallery': {
     name: 'Asymmetric Gallery',
-    description: '3D-inspired organic gallery layout for Designer Houses',
+    description: 'Indrajaal-inspired organic gallery layout for Designer Houses',
     rooms: ['designer_houses'],
     config: {
       spacing: 3.5,
       maxItems: 12,
       draggable: true,
       physics: true,
-      parallaxStrength: 0.08,
-    },
+      parallaxStrength: 0.08
+    }
   },
   'scroll-narrative': {
     name: 'Scroll Narrative',
@@ -368,8 +367,8 @@ var LAYOUT_REGISTRY = {
       draggable: false,
       physics: false,
       parallaxStrength: 0.04,
-      scrollDriven: true,
-    },
+      scrollDriven: true
+    }
   },
   'masonry-featured': {
     name: 'Masonry Featured',
@@ -381,7 +380,23 @@ var LAYOUT_REGISTRY = {
       draggable: true,
       physics: false,
       parallaxStrength: 0.06,
-      featuredIndex: 0,
+      featuredIndex: 0
+    }
+  },
+  'infinite-drag-gallery': {
+    name: 'Infinite Drag Gallery',
+    description: '2D infinite draggable grid with inertia and wrap',
+    rooms: ['designer_houses', 'occasions', 'featured_collections'],
+    config: {
+      spacing: 0.08,
+      cardWidth: 0.7,
+      cardHeight: 1.05,
+      columns: 4,
+      friction: 0.95,
+      draggable: true,
+      physics: true,
+      infinite: true,
+      shaderEffects: true,
     },
   },
 };
@@ -494,38 +509,22 @@ function disposeGalleryStage(roomKey) {
     state.group.traverse(function (obj) {
       if (obj.isMesh) {
         if (obj.geometry) {
-          try {
-            obj.geometry.dispose();
-          } catch (e) {}
+          try { obj.geometry.dispose(); } catch (e) {}
         }
         if (obj.material) {
           if (Array.isArray(obj.material)) {
             obj.material.forEach(function (m) {
-              if (m.map) {
-                try {
-                  m.map.dispose();
-                } catch (e) {}
-              }
-              try {
-                m.dispose();
-              } catch (e) {}
+              if (m.map) { try { m.map.dispose(); } catch (e) {} }
+              try { m.dispose(); } catch (e) {}
             });
           } else {
-            if (obj.material.map) {
-              try {
-                obj.material.map.dispose();
-              } catch (e) {}
-            }
-            try {
-              obj.material.dispose();
-            } catch (e) {}
+            if (obj.material.map) { try { obj.material.map.dispose(); } catch (e) {} }
+            try { obj.material.dispose(); } catch (e) {}
           }
         }
       }
     });
-    try {
-      scene.remove(state.group);
-    } catch (e) {}
+    try { scene.remove(state.group); } catch (e) {}
   }
 
   // Dispose all textures
@@ -586,10 +585,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   var count = items.length;
 
-  if (
-    layout === 'scroll-narrative' ||
-    (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))
-  ) {
+  if (layout === 'scroll-narrative' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
     // ── Scroll Narrative / Helix layout ──
     // Cards arranged along a 3D helix curve. Scroll/drag rotates around
     // the vertical axis and translates up/down through the spiral.
@@ -597,7 +593,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
     var isScrollNarrative = layout === 'scroll-narrative';
     var parallaxStrength = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.04;
     var cardH = options.cardHeight || (isScrollNarrative ? 0.45 : 0.4);
-    var cardAspect = options.cardAspect || (isScrollNarrative ? 3 / 4 : 2 / 3);
+    var cardAspect = options.cardAspect || (isScrollNarrative ? (3/4) : (2/3));
     var cardW = cardH * cardAspect;
     // Helix radius: keep within camera frustum (near=0, far=2, center at Z=1)
     var helixRadius = options.helixRadius || (isScrollNarrative ? 0.8 : 0.6);
@@ -649,7 +645,11 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
       var mesh = new THREE.Mesh(geom, mat);
       // Center Z around 1.0 (middle of camera frustum near=0, far=2)
-      mesh.position.set(Math.cos(angle) * helixRadius, y, 1.0 + Math.sin(angle) * helixRadius * 0.5 + depthOffset);
+      mesh.position.set(
+        Math.cos(angle) * helixRadius,
+        y,
+        1.0 + Math.sin(angle) * helixRadius * 0.5 + depthOffset,
+      );
       mesh.lookAt(new THREE.Vector3(0, y, 1.0 + depthOffset));
       mesh.rotateY(Math.PI);
 
@@ -702,7 +702,11 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         // Position below card, facing same direction as card
         var la = angle;
         var ly = y;
-        labelMesh.position.set(Math.cos(la) * helixRadius, ly - cardH * 0.55, Math.sin(la) * helixRadius);
+        labelMesh.position.set(
+          Math.cos(la) * helixRadius,
+          ly - cardH * 0.55,
+          Math.sin(la) * helixRadius,
+        );
         labelMesh.lookAt(new THREE.Vector3(0, ly - cardH * 0.55, 0));
         labelMesh.rotateY(Math.PI);
         labelMesh.renderOrder = 999;
@@ -731,24 +735,22 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       totalAngle: totalAngle,
       cardCount: count,
     };
-  } else if (
-    layout === 'masonry-featured' ||
-    (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
-  ) {
+
+  } else if (layout === 'masonry-featured' || (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)) {
     // ── Masonry Featured layout ──
     // First item (featuredIndex) is a large hero card, centered, closer to camera.
     // Remaining items arranged in masonry grid around it with varying sizes
     // and subtle 3D depth offsets for a curated editorial feel.
     var isMasonry = layout === 'masonry-featured';
-    var featuredIdx =
-      options.layoutConfig && options.layoutConfig.featuredIndex !== undefined ? options.layoutConfig.featuredIndex : 0;
+    var featuredIdx = (options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
+      ? options.layoutConfig.featuredIndex : 0;
     var masonrySpacing = (options.layoutConfig && options.layoutConfig.spacing) || 0.6;
     var parallaxStr = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.06;
     var gridCols = options.gridCols || 3;
     var gridSpacingX = options.gridSpacingX || masonrySpacing;
-    var gridSpacingY = options.gridSpacingY || masonrySpacing * 1.2;
+    var gridSpacingY = options.gridSpacingY || (masonrySpacing * 1.2);
     var baseCardH = options.cardHeight || 0.5;
-    var gridCardAspect = options.cardAspect || 3 / 4;
+    var gridCardAspect = options.cardAspect || (3 / 4);
     var baseCardW = baseCardH * gridCardAspect;
 
     var startX = -((gridCols - 1) * gridSpacingX) / 2;
@@ -774,7 +776,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       tex.anisotropy = 8;
       textures.push(tex);
 
-      var isFeatured = index === featuredIdx;
+      var isFeatured = (index === featuredIdx);
 
       // Featured card: 2x size, centered, closer to camera
       var thisCardH = isFeatured ? baseCardH * 1.8 : baseCardH;
@@ -881,12 +883,13 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       featuredIndex: featuredIdx,
       parallaxStrength: parallaxStr,
     };
+
   } else if (layout === 'vertical') {
-    // ── Vertical scroll layout (3D-museum homepage style) ──
+    // ── Vertical scroll layout (indrajaal-museum homepage style) ──
     // Items stacked vertically in 3D space, scroll-driven
     var cardSpacing = options.cardSpacing || 3.5;
     var cardH = options.cardHeight || 2.2;
-    var cardAspect = options.cardAspect || 2 / 3;
+    var cardAspect = options.cardAspect || (2 / 3);
     var cardW = cardH * cardAspect;
     var startY = ((count - 1) * cardSpacing) / 2;
 
@@ -938,7 +941,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       group.add(mesh);
       planes.push(mesh);
 
-      // Large title label below each card (3D style: ~100px font, tight spacing, cream on dark)
+      // Large title label below each card (indrajaal style: ~100px font, tight spacing, cream on dark)
       if (item.title) {
         var labelCanvas = document.createElement('canvas');
         var lCtx = labelCanvas.getContext('2d');
@@ -994,84 +997,16 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       cardH: cardH,
       startY: startY,
     };
+
   } else if (layout === 'asymmetric-gallery') {
-    // ── Asymmetric Gallery layout (Indrajaal-inspired grid) ──
-    // Cards placed in a uniform grid. Two shapes: square (1:1) or portrait (2:3).
-    // Grid is centered on screen. Tight spacing. Loops infinitely on drag.
-
-    var COLS = 4;
-    var GUTTER = 0.06;
-    var cardShape = (options.layoutConfig && options.layoutConfig.cardShape) || 'portrait';
-    var cardW, cardH;
-    if (cardShape === 'square') {
-      cardW = 0.85; cardH = 0.85;
-    } else {
-      cardW = 0.7; cardH = 1.05;
-    }
-
-    var loadedItems = [];
-    items.forEach(function (item, index) {
-      if (!item.imageSrc) return;
-      var tex = textureLoader.load(item.imageSrc, function (texture) {
-        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        texture.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Gallery texture load error:', err);
-      });
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      tex.anisotropy = 8;
-      textures.push(tex);
-      loadedItems.push({ item: item, tex: tex, index: index });
-    });
-
-    if (loadedItems.length === 0) {
-      scene.add(group);
-      galleryStageRegistry[roomKey] = { group: group, planes: [], labels: [], textures: textures, layout: 'asymmetric-gallery', cardCount: 0, scrollY: 0, targetScrollY: 0, cardH: cardH, cardW: cardW, gridCols: COLS, totalRows: 0, gridHeight: 0, baseY: 0, asymSpacing: GUTTER };
-      return;
-    }
-
-    // Duplicate to fill 3 viewport heights for infinite scroll
-    var vpH = camera.top - camera.bottom;
-    var minRows = Math.max(6, Math.ceil(3 * vpH / (cardH + GUTTER)));
-    var totalCardsNeeded = COLS * minRows;
-    var dupItems = [];
-    var si = 0;
-    while (dupItems.length < totalCardsNeeded) {
-      var src = loadedItems[si % loadedItems.length];
-      if (!src) break;
-      dupItems.push({ item: src.item, tex: src.tex, originalIndex: src.index });
-      si++;
-    }
-
-    var totalRows = Math.ceil(dupItems.length / COLS);
-    var gridTotalW = COLS * cardW + (COLS - 1) * GUTTER;
-    var gridTotalH = totalRows * (cardH + GUTTER);
-    var startX = -gridTotalW / 2 + cardW / 2;
-    var startY = gridTotalH / 2 - cardH / 2;
-
-    dupItems.forEach(function (entry, idx) {
-      if (!entry) return;
-      var item = entry.item;
-      var col = idx % COLS;
-      var row = Math.floor(idx / COLS);
-      var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
-      var mat = new THREE.MeshBasicMaterial({ map: entry.tex, transparent: true, opacity: 1.0, side: THREE.DoubleSide });
-      var mesh = new THREE.Mesh(geom, mat);
-      var x = startX + col * (cardW + GUTTER);
-      var y = startY - row * (cardH + GUTTER);
-      mesh.position.set(x, y, 1.0);
-      mesh.userData = { roomKey: roomKey, galleryIndex: entry.originalIndex, title: item.title || '', productHandle: item.productHandle || null, collectionHandle: item.collectionHandle || null, layout: 'asymmetric-gallery', baseX: x, baseY: y, baseZ: 1.0, cardW: cardW, cardH: cardH, row: row, col: col };
-      group.add(mesh);
-      planes.push(mesh);
-    });
-
-    scene.add(group);
-    // Initialize scrollY so the grid is centered in the viewport
-    // startY is the top of the grid; we need to shift it down by startY to center
-    galleryStageRegistry[roomKey] = { group: group, planes: planes, labels: labels, textures: textures, layout: 'asymmetric-gallery', asymSpacing: GUTTER, cardCount: dupItems.length, gridCols: COLS, totalRows: totalRows, cardW: cardW, cardH: cardH, scrollY: -startY, targetScrollY: -startY, rotationY: 0, targetRotationY: 0, gridHeight: gridTotalH, baseY: startY };
-
-
-
+    // ── Asymmetric Gallery: delegated to infinite-drag-gallery builder ──
+    options.layoutConfig = options.layoutConfig || {};
+    options.layoutConfig.infinite = true;
+    options.layoutConfig.friction = 0.95;
+    options.layoutConfig.shaderEffects = true;
+    _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
+  } else if (layout === 'infinite-drag-gallery') {
+    _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
   } else {
     // ── Arc carousel layout (original horizontal rotation) ──
     var step = count > 1 ? arcDegrees / (count - 1) : 0;
@@ -1189,6 +1124,141 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// INFINITE DRAG GALLERY — shared builder
+// ─────────────────────────────────────────────────────────────
+function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
+  var cfg = options.layoutConfig || {};
+  var COLS = cfg.columns || 4;
+  var GUTTER = cfg.spacing || 0.08;
+  var cardW = cfg.cardWidth || 0.7;
+  var cardH = cfg.cardHeight || 1.05;
+  var useShader = !!cfg.shaderEffects;
+
+  var loadedItems = [];
+  var texCache = {};
+  items.forEach(function (item, index) {
+    if (!item.imageSrc) return;
+    if (!texCache[item.imageSrc]) {
+      var tex = textureLoader.load(item.imageSrc, function (texture) {
+        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        texture.anisotropy = 8;
+      }, undefined, function (err) {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Gallery texture load error:', err);
+      });
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      texCache[item.imageSrc] = tex;
+      textures.push(tex);
+    }
+    loadedItems.push({ item: item, tex: texCache[item.imageSrc], index: index });
+  });
+
+  if (loadedItems.length === 0) {
+    scene.add(group);
+    galleryStageRegistry[roomKey] = { group: group, planes: [], labels: [], textures: textures, layout: 'infinite-drag-gallery', cardCount: 0, gridCols: COLS, gridTotalW: 0, gridTotalH: 0, cardW: cardW, cardH: cardH, spacing: GUTTER, velocityX: 0, velocityY: 0, useShader: useShader };
+    return;
+  }
+
+  // Duplicate to fill 3 viewport widths + 3 viewport heights for infinite drag
+  var vpH = camera.top - camera.bottom;
+  var vpW = camera.right - camera.left;
+  var minRows = Math.max(6, Math.ceil(3 * vpH / (cardH + GUTTER)));
+  var minCols = Math.max(4, Math.ceil(3 * vpW / (cardW + GUTTER)));
+  var totalCardsNeeded = minCols * minRows;
+  var dupItems = [];
+  var si = 0;
+  while (dupItems.length < totalCardsNeeded) {
+    var src = loadedItems[si % loadedItems.length];
+    if (!src) break;
+    dupItems.push({ item: src.item, tex: src.tex, originalIndex: src.index });
+    si++;
+  }
+
+  var totalRows = Math.ceil(dupItems.length / COLS);
+  var gridTotalW = COLS * cardW + (COLS - 1) * GUTTER;
+  var gridTotalH = totalRows * (cardH + GUTTER);
+  var startX = -gridTotalW / 2 + cardW / 2;
+  var startY = gridTotalH / 2 - cardH / 2;
+
+  // Shared shader uniforms
+  var sharedUniforms = {
+    uTime: { value: 0 },
+    uVelocity: { value: 0 },
+  };
+
+  dupItems.forEach(function (entry, idx) {
+    if (!entry) return;
+    var item = entry.item;
+    var col = idx % COLS;
+    var row = Math.floor(idx / COLS);
+    var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
+
+    var mat;
+    if (useShader) {
+      mat = new THREE.ShaderMaterial({
+        vertexShader: [
+          'varying vec2 vUv;',
+          'void main() {',
+          '  vUv = uv;',
+          '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+          '}',
+        ].join('\n'),
+        fragmentShader: [
+          'precision highp float;',
+          'uniform sampler2D uTexture;',
+          'uniform float uTime;',
+          'uniform float uVelocity;',
+          'varying vec2 vUv;',
+          'void main() {',
+          '  float shift = uVelocity * 0.003;',
+          '  vec2 dir = vUv - 0.5;',
+          '  float dist = length(dir);',
+          '  float edge = smoothstep(0.0, 0.5, dist);',
+          '  float amount = shift * edge;',
+          '  vec2 rUV = clamp(vUv + dir * amount, 0.0, 1.0);',
+          '  vec2 gUV = vUv;',
+          '  vec2 bUV = clamp(vUv - dir * amount, 0.0, 1.0);',
+          '  float r = texture2D(uTexture, rUV).r;',
+          '  float g = texture2D(uTexture, gUV).g;',
+          '  float b = texture2D(uTexture, bUV).b;',
+          '  float a = texture2D(uTexture, gUV).a;',
+          '  gl_FragColor = vec4(r, g, b, a);',
+          '}',
+        ].join('\n'),
+        uniforms: {
+          uTexture: { value: entry.tex },
+          uTime: sharedUniforms.uTime,
+          uVelocity: sharedUniforms.uVelocity,
+        },
+        transparent: true,
+        side: THREE.DoubleSide,
+      });
+    } else {
+      mat = new THREE.MeshBasicMaterial({ map: entry.tex, transparent: true, opacity: 1.0, side: THREE.DoubleSide });
+    }
+
+    var mesh = new THREE.Mesh(geom, mat);
+    var x = startX + col * (cardW + GUTTER);
+    var y = startY - row * (cardH + GUTTER);
+    mesh.position.set(x, y, 1.0);
+    mesh.userData = { roomKey: roomKey, galleryIndex: entry.originalIndex, title: item.title || '', productHandle: item.productHandle || null, collectionHandle: item.collectionHandle || null, layout: 'infinite-drag-gallery', baseX: x, baseY: y, baseZ: 1.0, cardW: cardW, cardH: cardH, row: row, col: col };
+    group.add(mesh);
+    planes.push(mesh);
+  });
+
+  scene.add(group);
+  galleryStageRegistry[roomKey] = {
+    group: group, planes: planes, labels: labels, textures: textures,
+    layout: 'infinite-drag-gallery',
+    cardCount: dupItems.length, gridCols: COLS, totalRows: totalRows,
+    cardW: cardW, cardH: cardH, spacing: GUTTER,
+    gridTotalW: gridTotalW, gridTotalH: gridTotalH,
+    velocityX: 0, velocityY: 0,
+    useShader: useShader, sharedUniforms: sharedUniforms,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Gallery hint UI
 // ─────────────────────────────────────────────────────────────
 
@@ -1197,7 +1267,7 @@ function showGalleryHint(roomKey) {
   if (existing) existing.remove();
 
   var l = getGalleryLayout(roomKey);
-  var isScrollLayout = l === 'vertical' || l === 'asymmetric-gallery' || l === 'scroll-narrative';
+  var isScrollLayout = (l === 'vertical' || l === 'asymmetric-gallery' || l === 'scroll-narrative');
   var hint = document.createElement('div');
   hint.id = 'immersive-gallery-hint';
   hint.className = 'immersive-gallery-hint';
@@ -1209,13 +1279,11 @@ function showGalleryHint(roomKey) {
 
   setTimeout(function () {
     hint.classList.add('is-fading');
-    setTimeout(function () {
-      hint.remove();
-    }, 600);
+    setTimeout(function () { hint.remove(); }, 600);
   }, 4000);
 }
 
-// Gallery carousel interaction - drag to rotate like 3D
+// Gallery carousel interaction - drag to rotate like Indrajaal
 var galleryDragState = {
   isDragging: false,
   startX: 0,
@@ -1231,9 +1299,10 @@ function initGalleryCarousel(canvas) {
   if (!canvas) return;
   var state = galleryStageRegistry[currentRoomKey];
   var layout = state ? state.layout : 'arc';
-  var isScrollLayout = layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical';
-  var isHelixLayout = layout === 'helix' || layout === 'scroll-narrative';
-  var isGridLayout = layout === 'grid' || layout === 'masonry-featured';
+  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'infinite-drag-gallery');
+  var isHelixLayout = (layout === 'helix' || layout === 'scroll-narrative');
+  var isGridLayout = (layout === 'grid' || layout === 'masonry-featured');
+  var isInfiniteDrag = (layout === 'infinite-drag-gallery');
 
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
@@ -1263,15 +1332,12 @@ function initGalleryCarousel(canvas) {
       var deltaY = dy * 0.012;
       var deltaX = dx * 0.003;
       if (layout === 'asymmetric-gallery') {
-        // No clamp — infinite scroll. Just apply delta directly.
-        s.targetScrollY = (s.targetScrollY || 0) - deltaY;
+        // Asymmetric: parallax-driven Y scroll + subtle Y-axis rotation
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - deltaY));
         s.targetRotationY += dx * 0.002;
       } else {
         // Vertical / scroll-narrative: standard scroll + tilt
-        s.targetScrollY = Math.max(
-          -(s.cardCount - 1) * s.cardSpacing * 0.5,
-          Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY),
-        );
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY));
         s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
       }
       galleryDragState.velocityX = dx * 0.5;
@@ -1279,7 +1345,7 @@ function initGalleryCarousel(canvas) {
     } else if (isHelixLayout) {
       // Helix: X drag rotates around spiral, Y drag scrolls up/down
       s.targetRotationY += dx * 0.006;
-      var _hh = ((s.totalAngle || 2.5 * Math.PI * 2) / (Math.PI * 2)) * (s.helixPitch || 2.8) * 0.5;
+      var _hh = (s.totalAngle || (2.5 * Math.PI * 2)) / (Math.PI * 2) * (s.helixPitch || 2.8) * 0.5;
       s.targetScrollY = Math.max(-_hh, Math.min(_hh, s.targetScrollY - dy * 0.01));
       galleryDragState.velocityX = dx * 0.5;
       galleryDragState.velocityY = dy * 0.5;
@@ -1292,6 +1358,15 @@ function initGalleryCarousel(canvas) {
         s.targetRotationY += dx * 0.003;
       }
       galleryDragState.velocityX = dx * 0.5;
+    } else if (isInfiniteDrag) {
+      // Infinite drag gallery: direct velocity tracking for X + Y
+      galleryDragState.velocityX = dx * 0.8;
+      galleryDragState.velocityY = dy * 0.8;
+      // Apply immediate position change for responsiveness
+      if (s.group) {
+        s.group.position.x += dx * 0.008;
+        s.group.position.y -= dy * 0.008;
+      }
     } else {
       // Arc carousel: horizontal drag rotates
       var delta = dx * 0.008;
@@ -1315,16 +1390,14 @@ function initGalleryCarousel(canvas) {
 
     if (isScrollLayout) {
       if (layout === 'asymmetric-gallery') {
-        s.targetScrollY = Math.max(
-          -(s.cardCount - 1) * s.asymSpacing * 0.5,
-          Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
-        );
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
       } else {
-        s.targetScrollY = Math.max(
-          -(s.cardCount - 1) * s.cardSpacing * 0.5,
-          Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
-        );
+        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
       }
+    } else if (isInfiniteDrag) {
+      // Wheel adds to velocity for infinite drag
+      galleryDragState.velocityY += e.deltaY * 0.05;
+      galleryDragState.velocityX += e.deltaX * 0.05;
     } else if (isHelixLayout) {
       s.targetRotationY += e.deltaY * 0.003;
     } else if (isGridLayout) {
@@ -1355,11 +1428,12 @@ function animateGalleryCarousel() {
   if (!state || !state.group) return;
 
   var layout = state.layout;
-  var isScrollAnim = layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical';
+  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical');
+  var isInfiniteDrag = (layout === 'infinite-drag-gallery');
 
   if (isScrollAnim) {
-    // ── Scroll-driven animation: asymmetric-gallery, scroll-narrative, vertical ──
-    var scrollSpacing = layout === 'asymmetric-gallery' ? state.asymSpacing || 3.5 : state.cardSpacing || 3.5;
+    // ── Scroll-driven animation: scroll-narrative, vertical ──
+    var scrollSpacing = state.cardSpacing || 3.5;
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1368,49 +1442,21 @@ function animateGalleryCarousel() {
         galleryDragState.velocityY *= 0.93;
       }
       if (Math.abs(galleryDragState.velocityX) > 0.001) {
-        if (layout === 'asymmetric-gallery') {
-          state.targetRotationY += galleryDragState.velocityX * 0.003;
-          state.targetRotationY *= 0.93;
-        } else {
-          state.targetRotationX += galleryDragState.velocityX * 0.003;
-          state.targetRotationX *= 0.93;
-        }
+        state.targetRotationX += galleryDragState.velocityX * 0.003;
+        state.targetRotationX *= 0.93;
       }
     }
 
-    // For asymmetric-gallery: no clamping, infinite scroll with wrap
-    if (layout === 'asymmetric-gallery') {
-      state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
-      state.group.position.y = state.scrollY;
+    // Clamp
+    var maxScr = (state.cardCount - 1) * scrollSpacing * 0.5;
+    state.targetScrollY = Math.max(-maxScr, Math.min(maxScr * 0.5, state.targetScrollY));
+    state.targetRotationX = Math.max(-0.15, Math.min(0.15, state.targetRotationX));
 
-      // Infinite wrap: reposition cards that scroll out of view
-      // Use actual gridHeight. Guard against 0/undefined.
-      var gridH = state.gridHeight || 0;
-      if (gridH > 0) {
-        var vpCenter = (camera.top + camera.bottom) / 2;
-        var wrapThresh = gridH / 2 + 1.0; // half grid + 1 unit buffer
-        state.planes.forEach(function (plane) {
-          if (!plane.userData) return;
-          var worldY = plane.userData.baseY + state.scrollY;
-          // Card too far below viewport
-          if (worldY < vpCenter - wrapThresh) {
-            plane.userData.baseY += gridH;
-            plane.position.y = plane.userData.baseY + state.scrollY;
-          }
-          // Card too far above viewport
-          else if (worldY > vpCenter + wrapThresh) {
-            plane.userData.baseY -= gridH;
-            plane.position.y = plane.userData.baseY + state.scrollY;
-          }
-        });
-      }
-    } else {
-      // Clamp for scroll-narrative / vertical
-      var maxScr = (state.cardCount - 1) * scrollSpacing * 0.5;
-      state.targetScrollY = Math.max(-maxScr, Math.min(maxScr * 0.5, state.targetScrollY));
-      state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
-      state.group.position.y = state.scrollY;
-    }
+    // Interpolate
+    state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
+    state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.08;
+    state.group.position.y = state.scrollY;
+    state.group.rotation.x = state.currentRotationX;
 
     // Fade cards based on distance from center
     state.planes.forEach(function (plane) {
@@ -1421,6 +1467,62 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - normalizedDist * 0.7);
       }
     });
+  } else if (isInfiniteDrag) {
+    // ── Infinite drag gallery: X + Y velocity with friction, infinite wrap ──
+    var friction = 0.95;
+    var vpW = camera.right - camera.left;
+    var vpH = camera.top - camera.bottom;
+    var thresholdX = vpW / 2 + state.cardW * 0.5 + state.spacing;
+    var thresholdY = vpH / 2 + state.cardH * 0.5 + state.spacing;
+    var totalW = state.gridTotalW + state.spacing;
+    var totalH = state.gridTotalH + state.spacing;
+
+    // Apply velocity to group position
+    if (!galleryDragState.isDragging) {
+      if (Math.abs(galleryDragState.velocityX) > 0.001) {
+        state.group.position.x += galleryDragState.velocityX * 0.008;
+        galleryDragState.velocityX *= friction;
+      }
+      if (Math.abs(galleryDragState.velocityY) > 0.001) {
+        state.group.position.y += galleryDragState.velocityY * 0.008;
+        galleryDragState.velocityY *= friction;
+      }
+    }
+
+    // Infinite wrap: reposition meshes that exit viewport
+    var cam = camera;
+    var vpLeft = cam.position.x + cam.left;
+    var vpRight = cam.position.x + cam.right;
+    var vpTop = cam.position.y + cam.top;
+    var vpBottom = cam.position.y + cam.bottom;
+    var tmpVec = new THREE.Vector3();
+
+    state.planes.forEach(function (plane) {
+      if (!plane.userData) return;
+      plane.getWorldPosition(tmpVec);
+      if (tmpVec.x > vpRight + thresholdX) {
+        plane.userData.baseX -= totalW;
+        plane.position.x = plane.userData.baseX;
+      } else if (tmpVec.x < vpLeft - thresholdX) {
+        plane.userData.baseX += totalW;
+        plane.position.x = plane.userData.baseX;
+      }
+      plane.getWorldPosition(tmpVec);
+      if (tmpVec.y > vpTop + thresholdY) {
+        plane.userData.baseY -= totalH;
+        plane.position.y = plane.userData.baseY;
+      } else if (tmpVec.y < vpBottom - thresholdY) {
+        plane.userData.baseY += totalH;
+        plane.position.y = plane.userData.baseY;
+      }
+    });
+
+    // Update shader uniforms
+    if (state.useShader && state.sharedUniforms) {
+      var speed = Math.sqrt(galleryDragState.velocityX * galleryDragState.velocityX + galleryDragState.velocityY * galleryDragState.velocityY);
+      state.sharedUniforms.uTime.value = performance.now() * 0.001;
+      state.sharedUniforms.uVelocity.value = speed;
+    }
   } else if (layout === 'helix' || layout === 'scroll-narrative') {
     // ── Helix / scroll-narrative animation ──
     // If scrollDriven, the scroll-narrative uses the scroll loop above (isScrollAnim).
@@ -1428,7 +1530,7 @@ function animateGalleryCarousel() {
     // Drag X rotates around the helix, drag Y scrolls up/down through spiral.
     var _hr = state.helixRadius || 5;
     var _hp = state.helixPitch || 2.8;
-    var _ht = state.totalAngle || 2.5 * Math.PI * 2;
+    var _ht = state.totalAngle || (2.5 * Math.PI * 2);
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1468,6 +1570,7 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - _norm * 0.6);
       }
     });
+
   } else if (layout === 'grid' || layout === 'masonry-featured') {
     // ── Grid / masonry-featured animation ──
     // Horizontal drag/scroll pages through the grid.
@@ -1501,6 +1604,7 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - _gridNorm * 0.85);
       }
     });
+
   } else {
     // ── Arc carousel animation (original) ──
     // Apply inertia when not dragging
@@ -1533,13 +1637,7 @@ var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function () {})();
 
 function handleGalleryStageClick(event, camera, canvas) {
   // Issue 9: Don't process gallery clicks if user clicked a hotspot or UI element
-  if (
-    event.target &&
-    event.target.closest(
-      '[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner',
-    )
-  )
-    return;
+  if (event.target && event.target.closest('[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner')) return;
   if (!currentRoomKey || !galleryStageRegistry[currentRoomKey]) return;
   if (!window.THREE) return;
 
@@ -1642,9 +1740,7 @@ function scheduleRaf(callback) {
   return id;
 }
 function cancelAllRafs() {
-  _rafIds.forEach(function (id) {
-    cancelAnimationFrame(id);
-  });
+  _rafIds.forEach(function(id) { cancelAnimationFrame(id); });
   _rafIds = [];
 }
 
@@ -1654,7 +1750,7 @@ function getGalleryStageConfig(roomKey) {
 }
 
 // Returns the gallery layout mode for a room key.
-// 'vertical' = 3D-museum homepage style (scroll-driven vertical stack)
+// 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
 // 'arc' = original horizontal carousel (default fallback)
 function getGalleryLayout(roomKey) {
   // Read merchant-chosen layout from per-room section data attributes.
@@ -1684,10 +1780,11 @@ function getGalleryLayout(roomKey) {
     'scroll-narrative': 1,
     'masonry-featured': 1,
     // Legacy/internal names still supported
-    vertical: 1,
-    arc: 1,
-    helix: 1,
-    grid: 1,
+    'vertical': 1,
+    'arc': 1,
+    'helix': 1,
+    'grid': 1,
+    'infinite-drag-gallery': 1,
   };
 
   if (validLayouts[setting]) return setting;
@@ -1718,11 +1815,11 @@ function loadGalleryConfigsFromDOM() {
     if (!window.immersiveWebglGalleryConfigs) {
       window.immersiveWebglGalleryConfigs = {};
     }
-    configEls.forEach(function (configEl) {
+    configEls.forEach(function(configEl) {
       var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
       var items = Array.prototype.slice
         .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
-        .map(function (itemEl) {
+        .map(function(itemEl) {
           var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
           return {
             index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
@@ -1734,7 +1831,7 @@ function loadGalleryConfigsFromDOM() {
             collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
             imageSrc: imgEl ? imgEl.src : null,
             imageWidth: imgEl ? parseInt(imgEl.getAttribute('width'), 10) || 1920 : 1920,
-            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080,
+            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080
           };
         });
       window.immersiveWebglGalleryConfigs[roomKey] = items;
@@ -1744,7 +1841,7 @@ function loadGalleryConfigsFromDOM() {
   if (window.__IMMERSIVE_DEV__ && window.immersiveWebglGalleryConfigs) {
     var rooms = Object.keys(window.immersiveWebglGalleryConfigs).join(', ');
     var counts = {};
-    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function (k) {
+    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function(k) {
       counts[k] = window.immersiveWebglGalleryConfigs[k].length;
     });
     console.log('[Immersive] Gallery configs loaded for rooms:', rooms, 'counts:', JSON.stringify(counts));
@@ -1789,10 +1886,10 @@ function evaluateDeviceFlags() {
   // This prevents loading mobile images on desktop browsers with narrow windows
   var actualDeviceIsMobile = /iPhone|iPad|Android|Mobile/.test(navigator.userAgent);
   var actualDeviceIsTablet = /iPad|Android/.test(navigator.userAgent) && !/Mobile/.test(navigator.userAgent);
-
+  
   // Only use viewport width as a secondary factor for responsive layout
   // but don't override the actual device type detection
-  isMobile = actualDeviceIsMobile || window.innerWidth < 480;
+  isMobile = actualDeviceIsMobile || (window.innerWidth < 480);
   isTablet = actualDeviceIsTablet || (window.innerWidth >= 480 && window.innerWidth < 768);
 
   var connectionQuality = 1.0;
@@ -2325,7 +2422,7 @@ function initImmersiveScene() {
   if (!canvas || !uiLayer) return;
 
   // Listen for gallery config ready events from data provider sections
-  document.addEventListener('immersive:galleryConfigReady', function (evt) {
+  document.addEventListener('immersive:galleryConfigReady', function(evt) {
     var roomKey = evt.detail && evt.detail.roomKey;
     if (!roomKey || roomKey !== currentRoomKey) return;
     if (!getGalleryStageConfig(roomKey).length) return;
@@ -2338,10 +2435,9 @@ function initImmersiveScene() {
     var sectionEl = document.querySelector('.immersive-store');
     var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
     var semanticLayout = sectionEl ? sectionEl.getAttribute(perRoomAttr) : null;
-    var layoutConfig =
-      semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[semanticLayout]
-        ? LAYOUT_REGISTRY[semanticLayout].config
-        : {};
+    var layoutConfig = (semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[semanticLayout])
+      ? LAYOUT_REGISTRY[semanticLayout].config
+      : {};
     buildGalleryStageForRoom(roomKey, scene, {
       layout: layout,
       radius: 6,
@@ -2359,7 +2455,7 @@ function initImmersiveScene() {
     // Hide hotspot buttons — gallery cards are the interaction
     var _uiLayer2 = document.getElementById('ui-layer');
     if (_uiLayer2) {
-      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function (btn) {
+      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function(btn) {
         btn.style.display = 'none';
       });
     }
@@ -2448,7 +2544,7 @@ function initImmersiveScene() {
   loadGalleryConfigsFromDOM();
 
   // Also re-read after a short delay to catch sections that render late
-  setTimeout(function () {
+  setTimeout(function() {
     loadGalleryConfigsFromDOM();
   }, 100);
 
@@ -2482,18 +2578,14 @@ function showWebGLFallback(canvas) {
   var wrapper = canvas.parentElement;
   if (!wrapper) return;
   var img = document.createElement('img');
-  var _fallbackImgTimeout = setTimeout(function () {
+  var _fallbackImgTimeout = setTimeout(function() {
     if (!img.complete) {
       console.warn('[Immersive] Fallback image load timeout:', room.baseTextureUrl);
       img.style.display = 'none';
     }
   }, 30000);
-  img.onload = function () {
-    clearTimeout(_fallbackImgTimeout);
-  };
-  img.onerror = function () {
-    clearTimeout(_fallbackImgTimeout);
-  };
+  img.onload = function() { clearTimeout(_fallbackImgTimeout); };
+  img.onerror = function() { clearTimeout(_fallbackImgTimeout); };
   img.src = room.baseTextureUrl;
   img.alt = '';
   img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
@@ -2507,7 +2599,7 @@ function showWebGLFallback(canvas) {
 // ---------------------------------------------------------------------------
 
 var transitionLogoMesh = null;
-var transitionLogoTex = null;
+var transitionLogoTex  = null;
 
 function showLoader() {
   if (!scene || !window.THREE) return;
@@ -2522,34 +2614,39 @@ function showLoader() {
   if (!logoUrl) return;
 
   // Load logo texture
-  transitionLogoTex = new THREE.TextureLoader().load(logoUrl, function (tex) {
-    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-    tex.anisotropy = 8;
-  });
+  transitionLogoTex = new THREE.TextureLoader().load(
+    logoUrl,
+    function (tex) {
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy   = 8;
+    }
+  );
   transitionLogoTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
 
   // Compute aspect-corrected plane that covers the full viewport in screen-space.
   // We place the plane at z = -1 (just in front of the camera) and size it so
   // it spans the full frustum at that depth — effectively a fullscreen quad.
-  var aspect = camera ? camera.aspect : window.innerWidth / window.innerHeight;
-  var vFov = camera ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
-  var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
+  var aspect = camera ? camera.aspect : (window.innerWidth / window.innerHeight);
+  var vFov  = camera ? camera.fov * Math.PI / 180 : 70 * Math.PI / 180;
+  var h = 2 * Math.tan(vFov / 2) * 1.05;  // z = 1
   var w = h * aspect;
 
   // Logo plane: use a larger plane scaled down so the logo sits in the centre
   // with plenty of black around it.
-  var logoH = h * 0.35; // logo fills 35 % of viewport height
-  var imgAspect = transitionLogoTex.image ? transitionLogoTex.image.width / transitionLogoTex.image.height : 1;
+  var logoH = h * 0.35;  // logo fills 35 % of viewport height
+  var imgAspect = transitionLogoTex.image
+    ? transitionLogoTex.image.width / transitionLogoTex.image.height
+    : 1;
   var logoW = logoH * Math.max(imgAspect, 0.5);
 
-  var geom = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
-  var mat = new THREE.MeshBasicMaterial({
-    map: transitionLogoTex,
+  var geom  = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
+  var mat   = new THREE.MeshBasicMaterial({
+    map:         transitionLogoTex,
     transparent: true,
-    opacity: 0,
-    side: THREE.DoubleSide,
-    depthTest: false,
-    depthWrite: false,
+    opacity:     0,
+    side:        THREE.DoubleSide,
+    depthTest:   false,
+    depthWrite:  false,
   });
 
   transitionLogoMesh = new THREE.Mesh(geom, mat);
@@ -2561,7 +2658,7 @@ function showLoader() {
       shader.fragmentShader.replace(
         'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
         'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
-          'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
+        'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);'
       );
     transitionLogoMesh.userData.shader = shader;
   };
@@ -2578,7 +2675,7 @@ function showLoader() {
 
 function hideLoader() {
   if (!transitionLogoMesh) return;
-  transitionLogoMesh.userData.fadeIn = false;
+  transitionLogoMesh.userData.fadeIn  = false;
   transitionLogoMesh.userData.fadeOut = true;
   transitionLogoMesh.userData.fadeStart = performance.now();
 }
@@ -2588,25 +2685,20 @@ function updateTransitionLogo(timeNow) {
   if (!transitionLogoMesh) return;
 
   var mesh = transitionLogoMesh;
-  var mat = mesh.material;
-  var ud = mesh.userData;
-  var elapsed = (timeNow - ud.fadeStart) / 1000; // seconds
+  var mat  = mesh.material;
+  var ud   = mesh.userData;
+  var elapsed = (timeNow - ud.fadeStart) / 1000;  // seconds
 
   if (ud.fadeIn && !ud.fadeOut) {
     // Fade in over 0.35 s
     mat.opacity = Math.min(elapsed / 0.35, 1.0);
-    if (mat.opacity >= 1) {
-      ud.fadeIn = false;
-    }
+    if (mat.opacity >= 1) { ud.fadeIn = false; }
   } else if (ud.fadeOut) {
     // Fade out over 0.35 s, then dispose
     mat.opacity = Math.max(1.0 - elapsed / 0.35, 0.0);
     if (mat.opacity <= 0) {
       // Clean up
-      if (transitionLogoTex) {
-        transitionLogoTex.dispose();
-        transitionLogoTex = null;
-      }
+      if (transitionLogoTex) { transitionLogoTex.dispose(); transitionLogoTex = null; }
       scene.remove(mesh);
       if (mesh.geometry) mesh.geometry.dispose();
       if (mesh.material) mesh.material.dispose();
@@ -2660,10 +2752,7 @@ function onWindowResize() {
       if (currentRoomKey) renderHotspots(currentRoomKey);
 
       // Reload room texture if device type, orientation, or mobile-image flag changed
-      if (
-        (wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) &&
-        currentRoomKey
-      ) {
+      if ((wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) && currentRoomKey) {
         var roomData = getRoomTextureUrls(currentRoomKey);
         if (roomData) {
           showLoader();
@@ -2683,10 +2772,8 @@ function onWindowResize() {
               var _sectionEl = document.querySelector('.immersive-store');
               var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
               var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
-              var _layoutConfig =
-                _semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout]
-                  ? LAYOUT_REGISTRY[_semanticLayout].config
-                  : {};
+              var _layoutConfig = (_semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout])
+                ? LAYOUT_REGISTRY[_semanticLayout].config : {};
               buildGalleryStageForRoom(currentRoomKey, scene, {
                 layout: getGalleryLayout(currentRoomKey),
                 radius: 6,
@@ -2758,9 +2845,9 @@ function handleResize(roomKeyOverride) {
 
   // Update orthographic camera to match new aspect ratio
   var aspect = width / height;
-  camera.left = -aspect;
-  camera.right = aspect;
-  camera.top = 1;
+  camera.left   = -aspect;
+  camera.right  =  aspect;
+  camera.top    =  1;
   camera.bottom = -1;
   camera.updateProjectionMatrix();
 
@@ -2871,25 +2958,12 @@ function initTiltControlToggle() {
 }
 
 function animate() {
-  // Cancel any existing loop to prevent multiple parallel RAF calls
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-  }
   animationFrameId = requestAnimationFrame(animate);
-
   if (!uniforms) return;
 
-  // Guard against NaN in mouse tracking
-  if (isFinite(mouseTarget.x) && isFinite(mouseTarget.y) &&
-      isFinite(mouseCurrent.x) && isFinite(mouseCurrent.y) &&
-      isFinite(lerpFactor)) {
-    mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
-    mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
-  }
-  // Final NaN check before passing to GPU
-  if (isFinite(mouseCurrent.x) && isFinite(mouseCurrent.y)) {
-    uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
-  }
+  mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
+  mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
+  uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
 
   // Animate gallery carousel rotation
   if (galleryStageRegistry[currentRoomKey]) {
@@ -3130,10 +3204,8 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
           var _sectionEl2 = document.querySelector('.immersive-store');
           var _perRoomAttr2 = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
           var _semanticLayout2 = _sectionEl2 ? _sectionEl2.getAttribute(_perRoomAttr2) : null;
-          var _layoutConfig2 =
-            _semanticLayout2 && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout2]
-              ? LAYOUT_REGISTRY[_semanticLayout2].config
-              : {};
+          var _layoutConfig2 = (_semanticLayout2 && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout2])
+            ? LAYOUT_REGISTRY[_semanticLayout2].config : {};
           buildGalleryStageForRoom(roomKey, scene, {
             layout: getGalleryLayout(roomKey),
             radius: 6,
@@ -3230,11 +3302,8 @@ function loadRoomTextures(roomData, callback) {
         var oldest = textureCache.pop();
         if (oldest && oldest.key) {
           textureRefCount[oldest.key] = (textureRefCount[oldest.key] || 1) - 1;
-          var isActive =
-            uniforms &&
-            uniforms.uTexture1 &&
-            uniforms.uDepth1 &&
-            (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
+          var isActive = (uniforms && uniforms.uTexture1 && uniforms.uDepth1) &&
+                         (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
           if (!isActive && textureRefCount[oldest.key] <= 0) {
             try {
               if (oldest.base) oldest.base.dispose();
@@ -3541,16 +3610,14 @@ function fetchWithCache(url) {
     return Promise.resolve(contentCache[url]);
   }
   var _ctrl = new AbortController();
-  var _fetchTimeout = setTimeout(function () {
-    _ctrl.abort();
-  }, 30000);
+  var _fetchTimeout = setTimeout(function() { _ctrl.abort(); }, 30000);
   return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl.signal })
     .then(function (response) {
       clearTimeout(_fetchTimeout);
       if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
       return response.text();
     })
-    .catch(function (_fetchErr) {
+    .catch(function(_fetchErr) {
       clearTimeout(_fetchTimeout);
       if (_fetchErr.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
       throw _fetchErr;
@@ -3580,16 +3647,14 @@ function fetchSectionHtml(path, sectionId, extraParams) {
   }
 
   var _ctrl2 = new AbortController();
-  var _fetchTimeout2 = setTimeout(function () {
-    _ctrl2.abort();
-  }, 30000);
+  var _fetchTimeout2 = setTimeout(function() { _ctrl2.abort(); }, 30000);
   return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl2.signal })
     .then(function (response) {
       clearTimeout(_fetchTimeout2);
       if (!response.ok) return null;
       return response.json();
     })
-    .catch(function (err) {
+    .catch(function(err) {
       clearTimeout(_fetchTimeout2);
       if (err.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
       return null;
@@ -3814,8 +3879,7 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
   overlayContent.innerHTML = '';
 
   if (!contentCache[fetchUrl]) {
-    overlayContent.innerHTML =
-      '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
+    overlayContent.innerHTML = '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
   }
 
   var performUIActivation = function () {
@@ -3878,11 +3942,7 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
     .catch(function (err) {
       console.error('[Immersive] Overlay fetch failed:', err);
       // Fallback: use the source section's innerHTML which is already in the DOM
-      var fallbackSection = document.querySelector(
-        '.immersive-editorial[data-room-key="' +
-          ((window.immersiveState && window.immersiveState.editorialRoom) || '') +
-          '"]',
-      );
+      var fallbackSection = document.querySelector('.immersive-editorial[data-room-key="' + (window.immersiveState && window.immersiveState.editorialRoom || '') + '"]');
       if (fallbackSection) {
         overlayContent.innerHTML = fallbackSection.innerHTML;
         var editorialSection = overlayContent.querySelector('.immersive-editorial');
@@ -3908,12 +3968,12 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
 var editorialData = {
   currentRoom: null,
   previousRoom: null,
-  viewedProducts: [], // product handles seen across rooms
-  viewedCollections: [], // collection handles seen across rooms
-  navigationHistory: [], // room keys visited in this editorial session
-  wishlistHandles: null, // cache of wishlist handles (synced from global wishlistItems)
+  viewedProducts: [],      // product handles seen across rooms
+  viewedCollections: [],   // collection handles seen across rooms
+  navigationHistory: [],   // room keys visited in this editorial session
+  wishlistHandles: null,   // cache of wishlist handles (synced from global wishlistItems)
 
-  enterRoom: function (roomKey) {
+  enterRoom: function(roomKey) {
     if (this.currentRoom) {
       this.previousRoom = this.currentRoom;
     }
@@ -3922,47 +3982,47 @@ var editorialData = {
     this.refreshWishlist();
   },
 
-  exitRoom: function () {
+  exitRoom: function() {
     this.previousRoom = this.currentRoom;
     this.currentRoom = null;
   },
 
-  getViewedProducts: function () {
+  getViewedProducts: function() {
     return this.viewedProducts.slice();
   },
 
-  addViewedProduct: function (handle) {
+  addViewedProduct: function(handle) {
     if (handle && this.viewedProducts.indexOf(handle) === -1) {
       this.viewedProducts.push(handle);
     }
   },
 
-  addViewedCollection: function (handle) {
+  addViewedCollection: function(handle) {
     if (handle && this.viewedCollections.indexOf(handle) === -1) {
       this.viewedCollections.push(handle);
     }
   },
 
-  refreshWishlist: function () {
+  refreshWishlist: function() {
     if (typeof wishlistItems !== 'undefined') {
-      this.wishlistHandles = wishlistItems.map(function (item) {
+      this.wishlistHandles = wishlistItems.map(function(item) {
         return typeof item === 'string' ? item : item.handle;
       });
     }
   },
 
-  isInWishlist: function (productHandle) {
+  isInWishlist: function(productHandle) {
     if (!this.wishlistHandles) this.refreshWishlist();
     return this.wishlistHandles && this.wishlistHandles.indexOf(productHandle) !== -1;
   },
 
-  getNavigationHistory: function () {
+  getNavigationHistory: function() {
     return this.navigationHistory.slice();
   },
 
-  hasVisitedRoom: function (roomKey) {
+  hasVisitedRoom: function(roomKey) {
     return this.navigationHistory.indexOf(roomKey) !== -1;
-  },
+  }
 };
 
 // ---------------------------------------------------------------------------
@@ -8043,664 +8103,3 @@ function _updateGuidedDots(activeStep) {
   }
 }
 window.enterEditorialMode = enterEditorialMode;
-/**
- * InfiniteGallery — 2D infinite draggable gallery for Three.js
- *
- * Creates a flat 2D grid of image meshes on #immersive-canvas using an
- * OrthographicCamera. Supports native JS drag physics with inertia on both
- * X and Y axes. Infinite wrapping on all 4 edges. RGB-shift shader distortion
- * proportional to drag speed. Raycaster for click/hover through #ui-layer.
- *
- * Usage:
- *   var gallery = new InfiniteGallery({
- *     canvasId: 'immersive-canvas',
- *     uiLayerId: 'ui-layer',
- *     columns: 4,
- *     spacing: 0.08,
- *     cardWidth: 0.85,
- *     cardHeight: 1.05,
- *     friction: 0.95,
- *   });
- *   gallery.init();
- */
-
-(function () {
-  'use strict';
-
-  // ---------------------------------------------------------------------------
-  // Shader source
-  // ---------------------------------------------------------------------------
-  var VERTEX_SHADER = [
-    'varying vec2 vUv;',
-    'void main() {',
-    '  vUv = uv;',
-    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-    '}',
-  ].join('\n');
-
-  var FRAGMENT_SHADER = [
-    'precision highp float;',
-    'uniform sampler2D uTexture;',
-    'uniform float uTime;',
-    'uniform float uVelocity;',
-    'uniform vec2 uResolution;',
-    'varying vec2 vUv;',
-
-    // Attempt a subtle RGB shift proportional to velocity
-    'void main() {',
-    '  float shift = uVelocity * 0.003;',
-    '  vec2 dir = vUv - 0.5;',
-    '  float dist = length(dir);',
-    '  float edge = smoothstep(0.0, 0.5, dist);',
-    '  float amount = shift * edge;',
-
-    '  vec2 rUV = vUv + dir * amount;',
-    '  vec2 gUV = vUv;',
-    '  vec2 bUV = vUv - dir * amount;',
-
-    // Clamp to avoid sampling outside texture
-    '  rUV = clamp(rUV, 0.0, 1.0);',
-    '  bUV = clamp(bUV, 0.0, 1.0);',
-
-    '  float r = texture2D(uTexture, rUV).r;',
-    '  float g = texture2D(uTexture, gUV).g;',
-    '  float b = texture2D(uTexture, bUV).b;',
-    '  float a = texture2D(uTexture, gUV).a;',
-
-    '  gl_FragColor = vec4(r, g, b, a);',
-    '}',
-  ].join('\n');
-
-  // ---------------------------------------------------------------------------
-  // Constructor
-  // ---------------------------------------------------------------------------
-  function InfiniteGallery(opts) {
-    opts = opts || {};
-
-    // DOM
-    this.canvasId = opts.canvasId || 'immersive-canvas';
-    this.uiLayerId = opts.uiLayerId || 'ui-layer';
-
-    // Grid
-    this.columns = opts.columns || 4;
-    this.spacing = opts.spacing || 0.08;
-    this.cardWidth = opts.cardWidth || 0.85;
-    this.cardHeight = opts.cardHeight || 1.05;
-    this.dupMultiplier = opts.dupMultiplier || 3; // duplicate items to fill N viewports
-
-    // Physics
-    this.friction = opts.friction || 0.95;
-    this.minVelocity = 0.001;
-
-    // Internal
-    this._rafId = null;
-    this._disposed = false;
-    this._meshData = []; // [{mesh, baseX, baseY, origItem}]
-    this._hoveredMesh = null;
-    this._canvasRect = null;
-
-    // Bind methods
-    this._onPointerDown = this._onPointerDown.bind(this);
-    this._onPointerMove = this._onPointerMove.bind(this);
-    this._onPointerUp = this._onPointerUp.bind(this);
-    this._onResize = this._onResize.bind(this);
-    this._renderLoop = this._renderLoop.bind(this);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Lifecycle
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype.init = function () {
-    if (this._disposed) return;
-    if (typeof THREE === 'undefined') {
-      console.warn('[InfiniteGallery] THREE not available');
-      return;
-    }
-
-    var canvas = document.getElementById(this.canvasId);
-    if (!canvas) {
-      console.warn('[InfiniteGallery] Canvas not found:', this.canvasId);
-      return;
-    }
-
-    this.canvas = canvas;
-
-    // --- Renderer ---
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      antialias: true,
-      alpha: true,
-    });
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.renderer.setPixelRatio(dpr);
-
-    var w = canvas.clientWidth || canvas.offsetWidth || window.innerWidth;
-    var h = canvas.clientHeight || canvas.offsetHeight || window.innerHeight;
-    this.renderer.setSize(w, h, false);
-
-    // --- Scene ---
-    this.scene = new THREE.Scene();
-
-    // --- Camera ---
-    this._updateCamera(w, h);
-
-    // --- Build grid ---
-    this._buildGrid();
-
-    // --- Raycaster ---
-    this._raycaster = new THREE.Raycaster();
-    this._mouse = new THREE.Vector2();
-
-    // --- Drag state ---
-    this._dragState = {
-      isDragging: false,
-      startX: 0,
-      startY: 0,
-      lastX: 0,
-      lastY: 0,
-      velocityX: 0,
-      velocityY: 0,
-    };
-
-    // --- Group ---
-    this.group = new THREE.Group();
-    this.scene.add(this.group);
-
-    // Move meshes into the group
-    this._meshData.forEach(function (d) {
-      this.group.attach(d.mesh);
-    }.bind(this));
-
-    // --- Events ---
-    this._bindEvents();
-
-    // --- Start loop ---
-    this._rafId = requestAnimationFrame(this._renderLoop);
-
-    if (window.__IMMERSIVE_DEV__) {
-      console.log(
-        '[InfiniteGallery] Init: ' + this._meshData.length + ' meshes, ' +
-        this.columns + ' cols, card ' + this.cardWidth + 'x' + this.cardHeight +
-        ', spacing ' + this.spacing
-      );
-    }
-  };
-
-  InfiniteGallery.prototype.dispose = function () {
-    this._disposed = true;
-
-    if (this._rafId) {
-      cancelAnimationFrame(this._rafId);
-      this._rafId = null;
-    }
-
-    this._unbindEvents();
-
-    // Dispose meshes
-    this._meshData.forEach(function (d) {
-      if (d.mesh.geometry) d.mesh.geometry.dispose();
-      if (d.mesh.material) {
-        if (d.mesh.material.uniforms && d.mesh.material.uniforms.uTexture) {
-          var tex = d.mesh.material.uniforms.uTexture.value;
-          if (tex && tex.dispose) tex.dispose();
-        }
-        d.mesh.material.dispose();
-      }
-    });
-    this._meshData = [];
-
-    if (this.renderer) {
-      this.renderer.dispose();
-      this.renderer = null;
-    }
-
-    if (window.__IMMERSIVE_DEV__) {
-      console.log('[InfiniteGallery] Disposed');
-    }
-  };
-
-  // ---------------------------------------------------------------------------
-  // Camera
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype._updateCamera = function (w, h) {
-    var aspect = w / h;
-    var viewH = 2.0; // world units visible vertically
-    var viewW = viewH * aspect;
-
-    this.camera = new THREE.OrthographicCamera(
-      -viewW / 2, viewW / 2,
-      viewH / 2, -viewH / 2,
-      0.01, 100
-    );
-    this.camera.position.z = 10;
-
-    // Store viewport dimensions for wrap logic
-    this._vp = {
-      viewW: viewW,
-      viewH: viewH,
-      halfW: viewW / 2,
-      halfH: viewH / 2,
-    };
-  };
-
-  // ---------------------------------------------------------------------------
-  // Grid builder
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype._buildGrid = function () {
-    var items = this._loadItems();
-    if (!items.length) return;
-
-    var texLoader = new THREE.TextureLoader();
-
-    // Deduplicate textures by src
-    var texCache = {};
-
-    // Duplicate items to fill N viewport areas in each direction
-    var totalVpData = this.dupMultiplier * 3; // horizontal + vertical coverage
-    var totalNeeded = this.columns * Math.ceil(totalVpData / this.columns);
-    var dupItems = [];
-    var si = 0;
-    while (dupItems.length < totalNeeded && items.length > 0) {
-      var src = dupItems.length % items.length;
-      dupItems.push(items[src]);
-    }
-
-    var totalRows = Math.ceil(dupItems.length / this.columns);
-    var gridTotalW = this.columns * this.cardWidth + (this.columns - 1) * this.spacing;
-    var gridTotalH = totalRows * (this.cardHeight + this.spacing) - this.spacing;
-
-    this._gridMetrics = {
-      gridTotalW: gridTotalW,
-      gridTotalH: gridTotalH,
-      totalRows: totalRows,
-      cardCount: dupItems.length,
-    };
-
-    var startX = -gridTotalW / 2 + this.cardWidth / 2;
-    var startY = gridTotalH / 2 - this.cardHeight / 2;
-
-    var sharedUniforms = {
-      uTime: { value: 0 },
-      uVelocity: { value: 0 },
-      uResolution: { value: new THREE.Vector2(
-        this.canvas.clientWidth || window.innerWidth,
-        this.canvas.clientHeight || window.innerHeight
-      )},
-    };
-
-    dupItems.forEach(function (item, idx) {
-      if (!item.imageSrc) return;
-
-      var col = idx % this.columns;
-      var row = Math.floor(idx / this.columns);
-
-      // Load or reuse texture
-      var tex = texCache[item.imageSrc];
-      if (!tex) {
-        tex = texLoader.load(item.imageSrc);
-        tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        tex.anisotropy = 8;
-        texCache[item.imageSrc] = tex;
-      }
-
-      var uniforms = {
-        uTexture: { value: tex },
-        uTime: sharedUniforms.uTime,
-        uVelocity: sharedUniforms.uVelocity,
-        uResolution: sharedUniforms.uResolution,
-      };
-
-      var mat = new THREE.ShaderMaterial({
-        vertexShader: VERTEX_SHADER,
-        fragmentShader: FRAGMENT_SHADER,
-        uniforms: uniforms,
-        transparent: true,
-        side: THREE.DoubleSide,
-      });
-
-      var geom = new THREE.PlaneGeometry(this.cardWidth, this.cardHeight, 1, 1);
-      var mesh = new THREE.Mesh(geom, mat);
-
-      var x = startX + col * (this.cardWidth + this.spacing);
-      var y = startY - row * (this.cardHeight + this.spacing);
-      mesh.position.set(x, y, 0);
-
-      mesh.userData = {
-        galleryIndex: item.index,
-        title: item.title || '',
-        subtitle: item.subtitle || '',
-        productHandle: item.productHandle || null,
-        collectionHandle: item.collectionHandle || null,
-        baseX: x,
-        baseY: y,
-        row: row,
-        col: col,
-      };
-
-      this.scene.add(mesh);
-      this._meshData.push({
-        mesh: mesh,
-        baseX: x,
-        baseY: y,
-        origItem: item,
-      });
-    }.bind(this));
-
-    // Center the group vertically
-    this.group.position.y = 0;
-    this.group.position.x = 0;
-  };
-
-  InfiniteGallery.prototype._loadItems = function () {
-    // Read from window.immersiveWebglGalleryConfigs (populated by loadGalleryConfigsFromDOM)
-    var configs = window.immersiveWebglGalleryConfigs;
-    if (!configs) return [];
-
-    // Use the current room key from the global, or default
-    var roomKey = (typeof currentRoomKey !== 'undefined' && currentRoomKey) ? currentRoomKey : 'designer_houses';
-    var items = configs[roomKey] || configs['designer_houses'] || [];
-
-    return items.map(function (item, idx) {
-      return {
-        index: item.index != null ? item.index : idx,
-        imageSrc: item.imageSrc,
-        title: item.title,
-        subtitle: item.subtitle,
-        productHandle: item.productHandle,
-        collectionHandle: item.collectionHandle,
-        imageWidth: item.imageWidth,
-        imageHeight: item.imageHeight,
-      };
-    }).filter(function (item) {
-      return !!item.imageSrc;
-    });
-  };
-
-  // ---------------------------------------------------------------------------
-  // Events
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype._bindEvents = function () {
-    var el = this.canvas;
-    if (!el) return;
-
-    el.style.cursor = 'grab';
-
-    // Pointer events
-    el.addEventListener('mousedown', this._onPointerDown, { passive: true });
-    el.addEventListener('touchstart', this._onPointerDown, { passive: true });
-    window.addEventListener('mousemove', this._onPointerMove, { passive: true });
-    window.addEventListener('touchmove', this._onPointerMove, { passive: true });
-    window.addEventListener('mouseup', this._onPointerUp, { passive: true });
-    window.addEventListener('touchend', this._onPointerUp, { passive: true });
-
-    // Click
-    el.addEventListener('click', this._onPointerUp.bind(this, true), { passive: false });
-
-    // Resize
-    window.addEventListener('resize', this._onResize, { passive: true });
-
-    this._eventsBound = true;
-  };
-
-  InfiniteGallery.prototype._unbindEvents = function () {
-    var el = this.canvas;
-    if (!el) return;
-
-    el.removeEventListener('mousedown', this._onPointerDown);
-    el.removeEventListener('touchstart', this._onPointerDown);
-    window.removeEventListener('mousemove', this._onPointerMove);
-    window.removeEventListener('touchmove', this._onPointerMove);
-    window.removeEventListener('mouseup', this._onPointerUp);
-    window.removeEventListener('touchend', this._onPointerUp);
-    window.removeEventListener('resize', this._onResize);
-
-    this._eventsBound = false;
-  };
-
-  InfiniteGallery.prototype._getPointerPos = function (e) {
-    if (e.touches && e.touches.length > 0) {
-      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    return { x: e.clientX || 0, y: e.clientY || 0 };
-  };
-
-  // ---------------------------------------------------------------------------
-  // Pointer handlers
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype._onPointerDown = function (e) {
-    var pos = this._getPointerPos(e);
-    var ds = this._dragState;
-    ds.isDragging = true;
-    ds.startX = pos.x;
-    ds.startY = pos.y;
-    ds.lastX = pos.x;
-    ds.lastY = pos.y;
-    ds.velocityX = 0;
-    ds.velocityY = 0;
-    this.canvas.style.cursor = 'grabbing';
-
-    // Hide hint
-    var hint = document.getElementById('immersive-gallery-hint');
-    if (hint) hint.style.opacity = '0';
-  };
-
-  InfiniteGallery.prototype._onPointerMove = function (e) {
-    var pos = this._getPointerPos(e);
-    var ds = this._dragState;
-
-    // Update raycaster for hover detection every frame
-    this._updateMouse(pos.x, pos.y);
-
-    if (!ds.isDragging) return;
-
-    var dx = pos.x - ds.lastX;
-    var dy = pos.y - ds.lastY;
-
-    // Store velocity (pixels per frame)
-    ds.velocityX = dx;
-    ds.velocityY = dy;
-
-    ds.lastX = pos.x;
-    ds.lastY = pos.y;
-  };
-
-  InfiniteGallery.prototype._onPointerUp = function (e) {
-    var ds = this._dragState;
-    if (!ds.isDragging) return;
-    ds.isDragging = false;
-    this.canvas.style.cursor = 'grab';
-  };
-
-  InfiniteGallery.prototype._updateMouse = function (clientX, clientY) {
-    if (!this._canvasRect) {
-      this._canvasRect = this.canvas ? this.canvas.getBoundingClientRect() : null;
-    }
-    if (!this._canvasRect) return;
-
-    var x = ((clientX - this._canvasRect.left) / this._canvasRect.width) * 2 - 1;
-    var y = -((clientY - this._canvasRect.top) / this._canvasRect.height) * 2 + 1;
-    this._mouse.set(x, y);
-  };
-
-  InfiniteGallery.prototype._onResize = function () {
-    var w = this.canvas.clientWidth || this.canvas.offsetWidth || window.innerWidth;
-    var h = this.canvas.clientHeight || this.canvas.offsetHeight || window.innerHeight;
-    this.renderer.setSize(w, h, false);
-    this._updateCamera(w, h);
-    this._canvasRect = null; // force recalc
-  };
-
-  // ---------------------------------------------------------------------------
-  // Render loop
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype._renderLoop = function () {
-    if (this._disposed) return;
-    this._rafId = requestAnimationFrame(this._renderLoop);
-
-    var ds = this._dragState;
-    var friction = this.friction;
-
-    // --- Physics: apply velocity to group ---
-    if (!ds.isDragging) {
-      if (Math.abs(ds.velocityX) > this.minVelocity) {
-        this.group.position.x += ds.velocityX * 0.008;
-        ds.velocityX *= friction;
-      }
-      if (Math.abs(ds.velocityY) > this.minVelocity) {
-        this.group.position.y += ds.velocityY * 0.008;
-        ds.velocityY *= friction;
-      }
-    }
-
-    // Combined velocity magnitude for shader
-    var speed = Math.sqrt(ds.velocityX * ds.velocityX + ds.velocityY * ds.velocityY);
-
-    // --- Infinite wrap ---
-    this._wrapMeshes();
-
-    // --- Update shader uniforms ---
-    var time = performance.now() * 0.001;
-    this._meshData.forEach(function (d) {
-      var mat = d.mesh.material;
-      if (mat && mat.uniforms) {
-        if (mat.uniforms.uTime) mat.uniforms.uTime.value = time;
-        if (mat.uniforms.uVelocity) mat.uniforms.uVelocity.value = speed;
-      }
-    });
-
-    // --- Raycaster hover ---
-    this._checkHover();
-
-    // --- Render ---
-    if (this.renderer && this.scene && this.camera) {
-      this.renderer.render(this.scene, this.camera);
-    }
-  };
-
-  // ---------------------------------------------------------------------------
-  // Infinite wrapping
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype._wrapMeshes = function () {
-    var metrics = this._gridMetrics;
-    if (!metrics || !metrics.gridTotalW || !metrics.gridTotalH) return;
-
-    var vp = this._vp;
-    if (!vp) return;
-
-    var thresholdX = vp.halfW + this.cardWidth * 0.5 + this.spacing;
-    var thresholdY = vp.halfH + this.cardHeight * 0.5 + this.spacing;
-    var totalW = metrics.gridTotalW + this.spacing;
-    var totalH = metrics.gridTotalH + this.spacing;
-
-    // Use the camera's world-space viewport edges
-    var cam = this.camera;
-    var vpLeft = cam.position.x + cam.left;
-    var vpRight = cam.position.x + cam.right;
-    var vpTop = cam.position.y + cam.top;
-    var vpBottom = cam.position.y + cam.bottom;
-
-    // But since camera is fixed at (0,0,10) and group moves, we check mesh
-    // world positions against the camera's frustum
-    var tmpVec = new THREE.Vector3();
-
-    this._meshData.forEach(function (d) {
-      var mesh = d.mesh;
-
-      // Get world position (group.position + mesh.local position)
-      mesh.getWorldPosition(tmpVec);
-
-      // Horizontal wrap
-      if (tmpVec.x > vpRight + thresholdX) {
-        d.baseX -= totalW;
-        mesh.position.x = d.baseX;
-      } else if (tmpVec.x < vpLeft - thresholdX) {
-        d.baseX += totalW;
-        mesh.position.x = d.baseX;
-      }
-
-      // Recompute world X after potential horizontal wrap
-      mesh.getWorldPosition(tmpVec);
-
-      // Vertical wrap
-      if (tmpVec.y > vpTop + thresholdY) {
-        d.baseY -= totalH;
-        mesh.position.y = d.baseY;
-      } else if (tmpVec.y < vpBottom - thresholdY) {
-        d.baseY += totalH;
-        mesh.position.y = d.baseY;
-      }
-    });
-  };
-
-  // ---------------------------------------------------------------------------
-  // Raycaster (hover)
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype._checkHover = function () {
-    if (!this._raycaster || !this._meshData.length) return;
-
-    // Only update raycaster every other frame for perf
-    if (!this._frameCount) this._frameCount = 0;
-    this._frameCount++;
-    if (this._frameCount % 2 !== 0) return;
-
-    this._raycaster.setFromCamera(this._mouse, this.camera);
-    var meshes = this._meshData.map(function (d) { return d.mesh; });
-    var hits = this._raycaster.intersectObjects(meshes, false);
-
-    var uiLayer = document.getElementById(this.uiLayerId);
-    var labelEl = uiLayer ? uiLayer.querySelector('[data-infinite-gallery-label]') : null;
-
-    if (hits.length > 0) {
-      var mesh = hits[0].object;
-      var data = mesh.userData || {};
-
-      if (this._hoveredMesh !== mesh) {
-        this._hoveredMesh = mesh;
-        this.canvas.style.cursor = 'pointer';
-
-        // Show label
-        if (labelEl) {
-          var textEl = labelEl.querySelector('.infinite-gallery-label__text') || labelEl;
-          textEl.textContent = data.title || '';
-          labelEl.hidden = false;
-        }
-
-        if (window.__IMMERSIVE_DEV__) {
-          console.log('[InfiniteGallery] Hover:', data.title, data.productHandle);
-        }
-      }
-    } else {
-      if (this._hoveredMesh) {
-        this._hoveredMesh = null;
-        this.canvas.style.cursor = this._dragState.isDragging ? 'grabbing' : 'grab';
-        if (labelEl) labelEl.hidden = true;
-      }
-    }
-  };
-
-  // ---------------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------------
-  InfiniteGallery.prototype.goToItem = function (index) {
-    var d = this._meshData[index];
-    if (!d) return;
-    var mesh = d.mesh;
-    mesh.getWorldPosition(new THREE.Vector3());
-    this.group.position.x -= mesh.position.x + this.group.position.x;
-    this.group.position.y -= mesh.position.y + this.group.position.y;
-    this._dragState.velocityX = 0;
-    this._dragState.velocityY = 0;
-  };
-
-  InfiniteGallery.prototype.getVelocity = function () {
-    return {
-      x: this._dragState.velocityX,
-      y: this._dragState.velocityY,
-    };
-  };
-
-  // ---------------------------------------------------------------------------
-  // Expose
-  // ---------------------------------------------------------------------------
-  window.InfiniteGallery = InfiniteGallery;
-})();
