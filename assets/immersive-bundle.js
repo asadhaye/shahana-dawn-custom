@@ -180,7 +180,7 @@ var ListenerRegistry = {
     Object.keys(this.registry).forEach(function (key) {
       self.cleanup(key);
     });
-  }
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,53 +193,53 @@ if (!window.ShahanaImmersive) {
       scene: null,
       camera: null,
       planeMesh: null,
-      uniforms: null
+      uniforms: null,
     },
     room: {
       current: null,
       subMode: null,
-      transitioning: false
+      transitioning: false,
     },
     cache: {
       textures: [],
       content: {},
-      gallery: {}
+      gallery: {},
     },
     settings: {
       reduceMotion: false,
       isMobile: false,
       isTablet: false,
       textureQuality: 1.0,
-      targetFPS: 60
+      targetFPS: 60,
     },
     search: {
       activeIndex: -1,
       results: [],
       debounceTimer: null,
-      abortController: null
+      abortController: null,
     },
     gesture: {
       lastRoomTransition: 0,
       cooldown: 600,
-      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections']
+      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'],
     },
     quickAdd: {
       modal: null,
-      trigger: null
+      trigger: null,
     },
     hotspot: {
       elements: [],
-      focusedIndex: -1
+      focusedIndex: -1,
     },
     device: {
       isMobile: false,
       isTablet: false,
-      isLowEnd: false
+      isLowEnd: false,
     },
     layout: {
       registry: {},
-      current: {}
-    }
+      current: {},
+    },
   };
 }
 
@@ -276,7 +276,7 @@ function initDeviceOptimization() {
       isTablet: isTablet,
       isLowEnd: isLowEnd,
       textureQuality: window.ShahanaImmersive.settings.textureQuality,
-      targetFPS: window.ShahanaImmersive.settings.targetFPS
+      targetFPS: window.ShahanaImmersive.settings.targetFPS,
     });
   }
 }
@@ -312,7 +312,7 @@ var LoadingState = {
     if (typeof showFeedback === 'function') {
       showFeedback(message, 'error');
     }
-  }
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -338,24 +338,25 @@ var Analytics = {
 
   trackError: function (errorType, message) {
     this.track('error', { type: errorType, message: message, timestamp: Date.now() });
-  }
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LAYOUT REGISTRY - Three Configurable Layouts
 // ─────────────────────────────────────────────────────────────────────────────
+
 var LAYOUT_REGISTRY = {
   'asymmetric-gallery': {
     name: 'Asymmetric Gallery',
-    description: 'Indrajaal-inspired organic gallery layout for Designer Houses',
+    description: '3D-inspired organic gallery layout for Designer Houses',
     rooms: ['designer_houses'],
     config: {
       spacing: 3.5,
       maxItems: 12,
       draggable: true,
       physics: true,
-      parallaxStrength: 0.08
-    }
+      parallaxStrength: 0.08,
+    },
   },
   'scroll-narrative': {
     name: 'Scroll Narrative',
@@ -367,8 +368,8 @@ var LAYOUT_REGISTRY = {
       draggable: false,
       physics: false,
       parallaxStrength: 0.04,
-      scrollDriven: true
-    }
+      scrollDriven: true,
+    },
   },
   'masonry-featured': {
     name: 'Masonry Featured',
@@ -380,9 +381,9 @@ var LAYOUT_REGISTRY = {
       draggable: true,
       physics: false,
       parallaxStrength: 0.06,
-      featuredIndex: 0
-    }
-  }
+      featuredIndex: 0,
+    },
+  },
 };
 
 function getLayoutForRoom(roomKey) {
@@ -493,22 +494,38 @@ function disposeGalleryStage(roomKey) {
     state.group.traverse(function (obj) {
       if (obj.isMesh) {
         if (obj.geometry) {
-          try { obj.geometry.dispose(); } catch (e) {}
+          try {
+            obj.geometry.dispose();
+          } catch (e) {}
         }
         if (obj.material) {
           if (Array.isArray(obj.material)) {
             obj.material.forEach(function (m) {
-              if (m.map) { try { m.map.dispose(); } catch (e) {} }
-              try { m.dispose(); } catch (e) {}
+              if (m.map) {
+                try {
+                  m.map.dispose();
+                } catch (e) {}
+              }
+              try {
+                m.dispose();
+              } catch (e) {}
             });
           } else {
-            if (obj.material.map) { try { obj.material.map.dispose(); } catch (e) {} }
-            try { obj.material.dispose(); } catch (e) {}
+            if (obj.material.map) {
+              try {
+                obj.material.map.dispose();
+              } catch (e) {}
+            }
+            try {
+              obj.material.dispose();
+            } catch (e) {}
           }
         }
       }
     });
-    try { scene.remove(state.group); } catch (e) {}
+    try {
+      scene.remove(state.group);
+    } catch (e) {}
   }
 
   // Dispose all textures
@@ -569,7 +586,10 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   var count = items.length;
 
-  if (layout === 'scroll-narrative' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
+  if (
+    layout === 'scroll-narrative' ||
+    (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))
+  ) {
     // ── Scroll Narrative / Helix layout ──
     // Cards arranged along a 3D helix curve. Scroll/drag rotates around
     // the vertical axis and translates up/down through the spiral.
@@ -577,7 +597,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
     var isScrollNarrative = layout === 'scroll-narrative';
     var parallaxStrength = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.04;
     var cardH = options.cardHeight || (isScrollNarrative ? 0.45 : 0.4);
-    var cardAspect = options.cardAspect || (isScrollNarrative ? (3/4) : (2/3));
+    var cardAspect = options.cardAspect || (isScrollNarrative ? 3 / 4 : 2 / 3);
     var cardW = cardH * cardAspect;
     // Helix radius: keep within camera frustum (near=0, far=2, center at Z=1)
     var helixRadius = options.helixRadius || (isScrollNarrative ? 0.8 : 0.6);
@@ -629,11 +649,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
       var mesh = new THREE.Mesh(geom, mat);
       // Center Z around 1.0 (middle of camera frustum near=0, far=2)
-      mesh.position.set(
-        Math.cos(angle) * helixRadius,
-        y,
-        1.0 + Math.sin(angle) * helixRadius * 0.5 + depthOffset,
-      );
+      mesh.position.set(Math.cos(angle) * helixRadius, y, 1.0 + Math.sin(angle) * helixRadius * 0.5 + depthOffset);
       mesh.lookAt(new THREE.Vector3(0, y, 1.0 + depthOffset));
       mesh.rotateY(Math.PI);
 
@@ -686,11 +702,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         // Position below card, facing same direction as card
         var la = angle;
         var ly = y;
-        labelMesh.position.set(
-          Math.cos(la) * helixRadius,
-          ly - cardH * 0.55,
-          Math.sin(la) * helixRadius,
-        );
+        labelMesh.position.set(Math.cos(la) * helixRadius, ly - cardH * 0.55, Math.sin(la) * helixRadius);
         labelMesh.lookAt(new THREE.Vector3(0, ly - cardH * 0.55, 0));
         labelMesh.rotateY(Math.PI);
         labelMesh.renderOrder = 999;
@@ -719,22 +731,24 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       totalAngle: totalAngle,
       cardCount: count,
     };
-
-  } else if (layout === 'masonry-featured' || (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)) {
+  } else if (
+    layout === 'masonry-featured' ||
+    (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
+  ) {
     // ── Masonry Featured layout ──
     // First item (featuredIndex) is a large hero card, centered, closer to camera.
     // Remaining items arranged in masonry grid around it with varying sizes
     // and subtle 3D depth offsets for a curated editorial feel.
     var isMasonry = layout === 'masonry-featured';
-    var featuredIdx = (options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
-      ? options.layoutConfig.featuredIndex : 0;
+    var featuredIdx =
+      options.layoutConfig && options.layoutConfig.featuredIndex !== undefined ? options.layoutConfig.featuredIndex : 0;
     var masonrySpacing = (options.layoutConfig && options.layoutConfig.spacing) || 0.6;
     var parallaxStr = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.06;
     var gridCols = options.gridCols || 3;
     var gridSpacingX = options.gridSpacingX || masonrySpacing;
-    var gridSpacingY = options.gridSpacingY || (masonrySpacing * 1.2);
+    var gridSpacingY = options.gridSpacingY || masonrySpacing * 1.2;
     var baseCardH = options.cardHeight || 0.5;
-    var gridCardAspect = options.cardAspect || (3 / 4);
+    var gridCardAspect = options.cardAspect || 3 / 4;
     var baseCardW = baseCardH * gridCardAspect;
 
     var startX = -((gridCols - 1) * gridSpacingX) / 2;
@@ -760,7 +774,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       tex.anisotropy = 8;
       textures.push(tex);
 
-      var isFeatured = (index === featuredIdx);
+      var isFeatured = index === featuredIdx;
 
       // Featured card: 2x size, centered, closer to camera
       var thisCardH = isFeatured ? baseCardH * 1.8 : baseCardH;
@@ -867,13 +881,12 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       featuredIndex: featuredIdx,
       parallaxStrength: parallaxStr,
     };
-
   } else if (layout === 'vertical') {
-    // ── Vertical scroll layout (indrajaal-museum homepage style) ──
+    // ── Vertical scroll layout (3D-museum homepage style) ──
     // Items stacked vertically in 3D space, scroll-driven
     var cardSpacing = options.cardSpacing || 3.5;
     var cardH = options.cardHeight || 2.2;
-    var cardAspect = options.cardAspect || (2 / 3);
+    var cardAspect = options.cardAspect || 2 / 3;
     var cardW = cardH * cardAspect;
     var startY = ((count - 1) * cardSpacing) / 2;
 
@@ -925,7 +938,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       group.add(mesh);
       planes.push(mesh);
 
-      // Large title label below each card (indrajaal style: ~100px font, tight spacing, cream on dark)
+      // Large title label below each card (3D style: ~100px font, tight spacing, cream on dark)
       if (item.title) {
         var labelCanvas = document.createElement('canvas');
         var lCtx = labelCanvas.getContext('2d');
@@ -981,148 +994,83 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       cardH: cardH,
       startY: startY,
     };
-
   } else if (layout === 'asymmetric-gallery') {
-    // ── Asymmetric Gallery layout (Indrajaal-inspired organic 3D) ──
-    // Cards placed organically in 3D space with varying sizes, depths,
-    // and asymmetric positions. Parallax-driven. Physics-enabled for
-    // subtle floating animation.
-    var asymSpacing = (options.layoutConfig && options.layoutConfig.spacing) || 3.5;
-    var parallaxStr = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.08;
-    var asymCardH = options.cardHeight || 0.5;
-    var asymCardAspect = options.cardAspect || (2 / 3);
-    var asymCardW = asymCardH * asymCardAspect;
+    // ── Asymmetric Gallery layout (Indrajaal-inspired grid) ──
+    // Cards placed in a uniform grid. Two shapes: square (1:1) or portrait (2:3).
+    // Grid is centered on screen. Tight spacing. Loops infinitely on drag.
 
-    // Seed random for deterministic layout
-    var seed = roomKey.split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0);
-    var seededRandom = function(i) {
-      var x = Math.sin(seed + i * 127.1) * 43758.5453;
-      return x - Math.floor(x);
-    };
+    var COLS = 4;
+    var GUTTER = 0.06;
+    var cardShape = (options.layoutConfig && options.layoutConfig.cardShape) || 'portrait';
+    var cardW, cardH;
+    if (cardShape === 'square') {
+      cardW = 0.85; cardH = 0.85;
+    } else {
+      cardW = 0.7; cardH = 1.05;
+    }
 
+    var loadedItems = [];
     items.forEach(function (item, index) {
       if (!item.imageSrc) return;
-
-      var tex = textureLoader.load(
-        item.imageSrc,
-        function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-          texture.anisotropy = 8;
-        },
-        undefined,
-        function (err) {
-          if (window.__IMMERSIVE_DEV__) {
-            console.warn('[Immersive] Gallery texture load error:', err);
-          }
-        },
-      );
+      var tex = textureLoader.load(item.imageSrc, function (texture) {
+        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        texture.anisotropy = 8;
+      }, undefined, function (err) {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Gallery texture load error:', err);
+      });
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       tex.anisotropy = 8;
       textures.push(tex);
+      loadedItems.push({ item: item, tex: tex, index: index });
+    });
 
-      // Organic sizing: each card varies slightly
-      var sizeVar = 0.85 + seededRandom(index) * 0.4;
-      var thisCardH = asymCardH * sizeVar;
-      var thisCardW = thisCardH * asymCardAspect * (0.9 + seededRandom(index + 100) * 0.25);
+    if (loadedItems.length === 0) {
+      scene.add(group);
+      galleryStageRegistry[roomKey] = { group: group, planes: [], labels: [], textures: textures, layout: 'asymmetric-gallery', cardCount: 0, scrollY: 0, targetScrollY: 0, cardH: cardH, cardW: cardW, gridCols: COLS, totalRows: 0, gridHeight: 0, baseY: 0, asymSpacing: GUTTER };
+      return;
+    }
 
-      var geom = new THREE.PlaneGeometry(thisCardW, thisCardH, 1, 1);
-      var mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0.95,
-        side: THREE.DoubleSide,
-      });
+    // Duplicate to fill 3 viewport heights for infinite scroll
+    var vpH = camera.top - camera.bottom;
+    var minRows = Math.max(6, Math.ceil(3 * vpH / (cardH + GUTTER)));
+    var totalCardsNeeded = COLS * minRows;
+    var dupItems = [];
+    var si = 0;
+    while (dupItems.length < totalCardsNeeded) {
+      var src = loadedItems[si % loadedItems.length];
+      if (!src) break;
+      dupItems.push({ item: src.item, tex: src.tex, originalIndex: src.index });
+      si++;
+    }
 
+    var totalRows = Math.ceil(dupItems.length / COLS);
+    var gridTotalW = COLS * cardW + (COLS - 1) * GUTTER;
+    var gridTotalH = totalRows * (cardH + GUTTER);
+    var startX = -gridTotalW / 2 + cardW / 2;
+    var startY = gridTotalH / 2 - cardH / 2;
+
+    dupItems.forEach(function (entry, idx) {
+      if (!entry) return;
+      var item = entry.item;
+      var col = idx % COLS;
+      var row = Math.floor(idx / COLS);
+      var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
+      var mat = new THREE.MeshBasicMaterial({ map: entry.tex, transparent: true, opacity: 1.0, side: THREE.DoubleSide });
       var mesh = new THREE.Mesh(geom, mat);
-
-      // Asymmetric positioning: organic cloud around center
-      // Camera is orthographic with bounds ±1 on X/Y, 0-2 on Z
-      var angle = (index / count) * Math.PI * 2 + seededRandom(index + 200) * 0.5;
-      var radius = 0.6 + seededRandom(index + 300) * 0.5; // 0.6–1.1, fits camera ±1
-      var x = Math.cos(angle) * radius;
-      var y = (seededRandom(index + 400) - 0.5) * 1.2; // ±0.6
-      var z = 1.0 + Math.sin(angle) * radius * 0.3; // 0.7–1.3, within 0-2 frustum
-
-      mesh.position.set(x, y, z);
-      mesh.lookAt(0, y, z - 10);
-
-      // Subtle random rotation for organic feel
-      mesh.rotation.x = (seededRandom(index + 500) - 0.5) * 0.15;
-      mesh.rotation.y = (seededRandom(index + 600) - 0.5) * 0.1;
-
-      mesh.userData = {
-        roomKey: roomKey,
-        galleryIndex: item.index,
-        title: item.title || '',
-        productHandle: item.productHandle || null,
-        collectionHandle: item.collectionHandle || null,
-        layout: 'asymmetric-gallery',
-        baseX: x,
-        baseY: y,
-        baseZ: z,
-        baseRotX: mesh.rotation.x,
-        baseRotY: mesh.rotation.y,
-        angle: angle,
-        parallaxFactor: 1.0 + seededRandom(index + 700) * 0.5,
-      };
-
+      var x = startX + col * (cardW + GUTTER);
+      var y = startY - row * (cardH + GUTTER);
+      mesh.position.set(x, y, 1.0);
+      mesh.userData = { roomKey: roomKey, galleryIndex: entry.originalIndex, title: item.title || '', productHandle: item.productHandle || null, collectionHandle: item.collectionHandle || null, layout: 'asymmetric-gallery', baseX: x, baseY: y, baseZ: 1.0, cardW: cardW, cardH: cardH, row: row, col: col };
       group.add(mesh);
       planes.push(mesh);
-
-      // Elegant title label
-      if (item.title) {
-        var labelCanvas = document.createElement('canvas');
-        var lCtx = labelCanvas.getContext('2d');
-        labelCanvas.width = 768;
-        labelCanvas.height = 100;
-        lCtx.clearRect(0, 0, 768, 100);
-        lCtx.font = 'bold 42px Georgia, serif';
-        lCtx.textAlign = 'center';
-        lCtx.textBaseline = 'middle';
-        lCtx.fillStyle = '#ece3c2';
-        lCtx.letterSpacing = '-1px';
-        lCtx.fillText(item.title.toUpperCase(), 384, 35);
-
-        lCtx.font = '500 12px Arial, sans-serif';
-        lCtx.fillStyle = 'rgba(255,255,255,0.4)';
-        lCtx.letterSpacing = '3px';
-        lCtx.fillText('[ EXPLORE ]', 384, 75);
-
-        var labelTex = new THREE.CanvasTexture(labelCanvas);
-        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        var labelMat = new THREE.MeshBasicMaterial({
-          map: labelTex,
-          transparent: true,
-          depthTest: false,
-          side: THREE.DoubleSide,
-        });
-        var labelW = thisCardW * 0.85;
-        var labelH = labelW * (100 / 768);
-        var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
-        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.5, z + 0.05);
-        labelMesh.renderOrder = 999;
-        group.add(labelMesh);
-        labels.push(labelMesh);
-      }
     });
 
     scene.add(group);
+    // Initialize scrollY so the grid is centered in the viewport
+    // startY is the top of the grid; we need to shift it down by startY to center
+    galleryStageRegistry[roomKey] = { group: group, planes: planes, labels: labels, textures: textures, layout: 'asymmetric-gallery', asymSpacing: GUTTER, cardCount: dupItems.length, gridCols: COLS, totalRows: totalRows, cardW: cardW, cardH: cardH, scrollY: -startY, targetScrollY: -startY, rotationY: 0, targetRotationY: 0, gridHeight: gridTotalH, baseY: startY };
 
-    galleryStageRegistry[roomKey] = {
-      group: group,
-      planes: planes,
-      labels: labels,
-      textures: textures,
-      layout: 'asymmetric-gallery',
-      parallaxStrength: parallaxStr,
-      asymSpacing: asymSpacing,
-      cardCount: count,
-      scrollY: 0,
-      targetScrollY: 0,
-      rotationY: 0,
-      targetRotationY: 0,
-    };
+
 
   } else {
     // ── Arc carousel layout (original horizontal rotation) ──
@@ -1249,7 +1197,7 @@ function showGalleryHint(roomKey) {
   if (existing) existing.remove();
 
   var l = getGalleryLayout(roomKey);
-  var isScrollLayout = (l === 'vertical' || l === 'asymmetric-gallery' || l === 'scroll-narrative');
+  var isScrollLayout = l === 'vertical' || l === 'asymmetric-gallery' || l === 'scroll-narrative';
   var hint = document.createElement('div');
   hint.id = 'immersive-gallery-hint';
   hint.className = 'immersive-gallery-hint';
@@ -1261,11 +1209,13 @@ function showGalleryHint(roomKey) {
 
   setTimeout(function () {
     hint.classList.add('is-fading');
-    setTimeout(function () { hint.remove(); }, 600);
+    setTimeout(function () {
+      hint.remove();
+    }, 600);
   }, 4000);
 }
 
-// Gallery carousel interaction - drag to rotate like Indrajaal
+// Gallery carousel interaction - drag to rotate like 3D
 var galleryDragState = {
   isDragging: false,
   startX: 0,
@@ -1281,9 +1231,9 @@ function initGalleryCarousel(canvas) {
   if (!canvas) return;
   var state = galleryStageRegistry[currentRoomKey];
   var layout = state ? state.layout : 'arc';
-  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical');
-  var isHelixLayout = (layout === 'helix' || layout === 'scroll-narrative');
-  var isGridLayout = (layout === 'grid' || layout === 'masonry-featured');
+  var isScrollLayout = layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical';
+  var isHelixLayout = layout === 'helix' || layout === 'scroll-narrative';
+  var isGridLayout = layout === 'grid' || layout === 'masonry-featured';
 
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
@@ -1313,12 +1263,15 @@ function initGalleryCarousel(canvas) {
       var deltaY = dy * 0.012;
       var deltaX = dx * 0.003;
       if (layout === 'asymmetric-gallery') {
-        // Asymmetric: parallax-driven Y scroll + subtle Y-axis rotation
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - deltaY));
+        // No clamp — infinite scroll. Just apply delta directly.
+        s.targetScrollY = (s.targetScrollY || 0) - deltaY;
         s.targetRotationY += dx * 0.002;
       } else {
         // Vertical / scroll-narrative: standard scroll + tilt
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY));
+        s.targetScrollY = Math.max(
+          -(s.cardCount - 1) * s.cardSpacing * 0.5,
+          Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY),
+        );
         s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
       }
       galleryDragState.velocityX = dx * 0.5;
@@ -1326,7 +1279,7 @@ function initGalleryCarousel(canvas) {
     } else if (isHelixLayout) {
       // Helix: X drag rotates around spiral, Y drag scrolls up/down
       s.targetRotationY += dx * 0.006;
-      var _hh = (s.totalAngle || (2.5 * Math.PI * 2)) / (Math.PI * 2) * (s.helixPitch || 2.8) * 0.5;
+      var _hh = ((s.totalAngle || 2.5 * Math.PI * 2) / (Math.PI * 2)) * (s.helixPitch || 2.8) * 0.5;
       s.targetScrollY = Math.max(-_hh, Math.min(_hh, s.targetScrollY - dy * 0.01));
       galleryDragState.velocityX = dx * 0.5;
       galleryDragState.velocityY = dy * 0.5;
@@ -1362,9 +1315,15 @@ function initGalleryCarousel(canvas) {
 
     if (isScrollLayout) {
       if (layout === 'asymmetric-gallery') {
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+        s.targetScrollY = Math.max(
+          -(s.cardCount - 1) * s.asymSpacing * 0.5,
+          Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
+        );
       } else {
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+        s.targetScrollY = Math.max(
+          -(s.cardCount - 1) * s.cardSpacing * 0.5,
+          Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
+        );
       }
     } else if (isHelixLayout) {
       s.targetRotationY += e.deltaY * 0.003;
@@ -1396,11 +1355,11 @@ function animateGalleryCarousel() {
   if (!state || !state.group) return;
 
   var layout = state.layout;
-  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical');
+  var isScrollAnim = layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical';
 
   if (isScrollAnim) {
     // ── Scroll-driven animation: asymmetric-gallery, scroll-narrative, vertical ──
-    var scrollSpacing = (layout === 'asymmetric-gallery') ? (state.asymSpacing || 3.5) : (state.cardSpacing || 3.5);
+    var scrollSpacing = layout === 'asymmetric-gallery' ? state.asymSpacing || 3.5 : state.cardSpacing || 3.5;
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1419,25 +1378,38 @@ function animateGalleryCarousel() {
       }
     }
 
-    // Clamp
-    var maxScr = (state.cardCount - 1) * scrollSpacing * 0.5;
-    state.targetScrollY = Math.max(-maxScr, Math.min(maxScr * 0.5, state.targetScrollY));
+    // For asymmetric-gallery: no clamping, infinite scroll with wrap
     if (layout === 'asymmetric-gallery') {
-      state.targetRotationY = Math.max(-0.3, Math.min(0.3, state.targetRotationY));
-    } else {
-      state.targetRotationX = Math.max(-0.15, Math.min(0.15, state.targetRotationX));
-    }
+      state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
+      state.group.position.y = state.scrollY;
 
-    // Interpolate
-    state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
-    if (layout === 'asymmetric-gallery') {
-      state.rotationY += (state.targetRotationY - state.rotationY) * 0.08;
-      state.group.position.y = state.scrollY;
-      state.group.rotation.y = state.rotationY;
+      // Infinite wrap: reposition cards that scroll out of view
+      // Use actual gridHeight. Guard against 0/undefined.
+      var gridH = state.gridHeight || 0;
+      if (gridH > 0) {
+        var vpCenter = (camera.top + camera.bottom) / 2;
+        var wrapThresh = gridH / 2 + 1.0; // half grid + 1 unit buffer
+        state.planes.forEach(function (plane) {
+          if (!plane.userData) return;
+          var worldY = plane.userData.baseY + state.scrollY;
+          // Card too far below viewport
+          if (worldY < vpCenter - wrapThresh) {
+            plane.userData.baseY += gridH;
+            plane.position.y = plane.userData.baseY + state.scrollY;
+          }
+          // Card too far above viewport
+          else if (worldY > vpCenter + wrapThresh) {
+            plane.userData.baseY -= gridH;
+            plane.position.y = plane.userData.baseY + state.scrollY;
+          }
+        });
+      }
     } else {
-      state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.08;
+      // Clamp for scroll-narrative / vertical
+      var maxScr = (state.cardCount - 1) * scrollSpacing * 0.5;
+      state.targetScrollY = Math.max(-maxScr, Math.min(maxScr * 0.5, state.targetScrollY));
+      state.scrollY += (state.targetScrollY - state.scrollY) * 0.1;
       state.group.position.y = state.scrollY;
-      state.group.rotation.x = state.currentRotationX;
     }
 
     // Fade cards based on distance from center
@@ -1449,7 +1421,6 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - normalizedDist * 0.7);
       }
     });
-
   } else if (layout === 'helix' || layout === 'scroll-narrative') {
     // ── Helix / scroll-narrative animation ──
     // If scrollDriven, the scroll-narrative uses the scroll loop above (isScrollAnim).
@@ -1457,7 +1428,7 @@ function animateGalleryCarousel() {
     // Drag X rotates around the helix, drag Y scrolls up/down through spiral.
     var _hr = state.helixRadius || 5;
     var _hp = state.helixPitch || 2.8;
-    var _ht = state.totalAngle || (2.5 * Math.PI * 2);
+    var _ht = state.totalAngle || 2.5 * Math.PI * 2;
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1497,7 +1468,6 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - _norm * 0.6);
       }
     });
-
   } else if (layout === 'grid' || layout === 'masonry-featured') {
     // ── Grid / masonry-featured animation ──
     // Horizontal drag/scroll pages through the grid.
@@ -1531,7 +1501,6 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - _gridNorm * 0.85);
       }
     });
-
   } else {
     // ── Arc carousel animation (original) ──
     // Apply inertia when not dragging
@@ -1564,7 +1533,13 @@ var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function () {})();
 
 function handleGalleryStageClick(event, camera, canvas) {
   // Issue 9: Don't process gallery clicks if user clicked a hotspot or UI element
-  if (event.target && event.target.closest('[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner')) return;
+  if (
+    event.target &&
+    event.target.closest(
+      '[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner',
+    )
+  )
+    return;
   if (!currentRoomKey || !galleryStageRegistry[currentRoomKey]) return;
   if (!window.THREE) return;
 
@@ -1667,7 +1642,9 @@ function scheduleRaf(callback) {
   return id;
 }
 function cancelAllRafs() {
-  _rafIds.forEach(function(id) { cancelAnimationFrame(id); });
+  _rafIds.forEach(function (id) {
+    cancelAnimationFrame(id);
+  });
   _rafIds = [];
 }
 
@@ -1677,7 +1654,7 @@ function getGalleryStageConfig(roomKey) {
 }
 
 // Returns the gallery layout mode for a room key.
-// 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
+// 'vertical' = 3D-museum homepage style (scroll-driven vertical stack)
 // 'arc' = original horizontal carousel (default fallback)
 function getGalleryLayout(roomKey) {
   // Read merchant-chosen layout from per-room section data attributes.
@@ -1707,10 +1684,10 @@ function getGalleryLayout(roomKey) {
     'scroll-narrative': 1,
     'masonry-featured': 1,
     // Legacy/internal names still supported
-    'vertical': 1,
-    'arc': 1,
-    'helix': 1,
-    'grid': 1
+    vertical: 1,
+    arc: 1,
+    helix: 1,
+    grid: 1,
   };
 
   if (validLayouts[setting]) return setting;
@@ -1741,11 +1718,11 @@ function loadGalleryConfigsFromDOM() {
     if (!window.immersiveWebglGalleryConfigs) {
       window.immersiveWebglGalleryConfigs = {};
     }
-    configEls.forEach(function(configEl) {
+    configEls.forEach(function (configEl) {
       var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
       var items = Array.prototype.slice
         .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
-        .map(function(itemEl) {
+        .map(function (itemEl) {
           var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
           return {
             index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
@@ -1757,7 +1734,7 @@ function loadGalleryConfigsFromDOM() {
             collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
             imageSrc: imgEl ? imgEl.src : null,
             imageWidth: imgEl ? parseInt(imgEl.getAttribute('width'), 10) || 1920 : 1920,
-            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080
+            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080,
           };
         });
       window.immersiveWebglGalleryConfigs[roomKey] = items;
@@ -1767,7 +1744,7 @@ function loadGalleryConfigsFromDOM() {
   if (window.__IMMERSIVE_DEV__ && window.immersiveWebglGalleryConfigs) {
     var rooms = Object.keys(window.immersiveWebglGalleryConfigs).join(', ');
     var counts = {};
-    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function(k) {
+    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function (k) {
       counts[k] = window.immersiveWebglGalleryConfigs[k].length;
     });
     console.log('[Immersive] Gallery configs loaded for rooms:', rooms, 'counts:', JSON.stringify(counts));
@@ -1812,10 +1789,10 @@ function evaluateDeviceFlags() {
   // This prevents loading mobile images on desktop browsers with narrow windows
   var actualDeviceIsMobile = /iPhone|iPad|Android|Mobile/.test(navigator.userAgent);
   var actualDeviceIsTablet = /iPad|Android/.test(navigator.userAgent) && !/Mobile/.test(navigator.userAgent);
-  
+
   // Only use viewport width as a secondary factor for responsive layout
   // but don't override the actual device type detection
-  isMobile = actualDeviceIsMobile || (window.innerWidth < 480);
+  isMobile = actualDeviceIsMobile || window.innerWidth < 480;
   isTablet = actualDeviceIsTablet || (window.innerWidth >= 480 && window.innerWidth < 768);
 
   var connectionQuality = 1.0;
@@ -2348,7 +2325,7 @@ function initImmersiveScene() {
   if (!canvas || !uiLayer) return;
 
   // Listen for gallery config ready events from data provider sections
-  document.addEventListener('immersive:galleryConfigReady', function(evt) {
+  document.addEventListener('immersive:galleryConfigReady', function (evt) {
     var roomKey = evt.detail && evt.detail.roomKey;
     if (!roomKey || roomKey !== currentRoomKey) return;
     if (!getGalleryStageConfig(roomKey).length) return;
@@ -2361,9 +2338,10 @@ function initImmersiveScene() {
     var sectionEl = document.querySelector('.immersive-store');
     var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
     var semanticLayout = sectionEl ? sectionEl.getAttribute(perRoomAttr) : null;
-    var layoutConfig = (semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[semanticLayout])
-      ? LAYOUT_REGISTRY[semanticLayout].config
-      : {};
+    var layoutConfig =
+      semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[semanticLayout]
+        ? LAYOUT_REGISTRY[semanticLayout].config
+        : {};
     buildGalleryStageForRoom(roomKey, scene, {
       layout: layout,
       radius: 6,
@@ -2381,7 +2359,7 @@ function initImmersiveScene() {
     // Hide hotspot buttons — gallery cards are the interaction
     var _uiLayer2 = document.getElementById('ui-layer');
     if (_uiLayer2) {
-      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function(btn) {
+      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function (btn) {
         btn.style.display = 'none';
       });
     }
@@ -2470,7 +2448,7 @@ function initImmersiveScene() {
   loadGalleryConfigsFromDOM();
 
   // Also re-read after a short delay to catch sections that render late
-  setTimeout(function() {
+  setTimeout(function () {
     loadGalleryConfigsFromDOM();
   }, 100);
 
@@ -2504,14 +2482,18 @@ function showWebGLFallback(canvas) {
   var wrapper = canvas.parentElement;
   if (!wrapper) return;
   var img = document.createElement('img');
-  var _fallbackImgTimeout = setTimeout(function() {
+  var _fallbackImgTimeout = setTimeout(function () {
     if (!img.complete) {
       console.warn('[Immersive] Fallback image load timeout:', room.baseTextureUrl);
       img.style.display = 'none';
     }
   }, 30000);
-  img.onload = function() { clearTimeout(_fallbackImgTimeout); };
-  img.onerror = function() { clearTimeout(_fallbackImgTimeout); };
+  img.onload = function () {
+    clearTimeout(_fallbackImgTimeout);
+  };
+  img.onerror = function () {
+    clearTimeout(_fallbackImgTimeout);
+  };
   img.src = room.baseTextureUrl;
   img.alt = '';
   img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
@@ -2525,7 +2507,7 @@ function showWebGLFallback(canvas) {
 // ---------------------------------------------------------------------------
 
 var transitionLogoMesh = null;
-var transitionLogoTex  = null;
+var transitionLogoTex = null;
 
 function showLoader() {
   if (!scene || !window.THREE) return;
@@ -2540,39 +2522,34 @@ function showLoader() {
   if (!logoUrl) return;
 
   // Load logo texture
-  transitionLogoTex = new THREE.TextureLoader().load(
-    logoUrl,
-    function (tex) {
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      tex.anisotropy   = 8;
-    }
-  );
+  transitionLogoTex = new THREE.TextureLoader().load(logoUrl, function (tex) {
+    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+    tex.anisotropy = 8;
+  });
   transitionLogoTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
 
   // Compute aspect-corrected plane that covers the full viewport in screen-space.
   // We place the plane at z = -1 (just in front of the camera) and size it so
   // it spans the full frustum at that depth — effectively a fullscreen quad.
-  var aspect = camera ? camera.aspect : (window.innerWidth / window.innerHeight);
-  var vFov  = camera ? camera.fov * Math.PI / 180 : 70 * Math.PI / 180;
-  var h = 2 * Math.tan(vFov / 2) * 1.05;  // z = 1
+  var aspect = camera ? camera.aspect : window.innerWidth / window.innerHeight;
+  var vFov = camera ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
+  var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
   var w = h * aspect;
 
   // Logo plane: use a larger plane scaled down so the logo sits in the centre
   // with plenty of black around it.
-  var logoH = h * 0.35;  // logo fills 35 % of viewport height
-  var imgAspect = transitionLogoTex.image
-    ? transitionLogoTex.image.width / transitionLogoTex.image.height
-    : 1;
+  var logoH = h * 0.35; // logo fills 35 % of viewport height
+  var imgAspect = transitionLogoTex.image ? transitionLogoTex.image.width / transitionLogoTex.image.height : 1;
   var logoW = logoH * Math.max(imgAspect, 0.5);
 
-  var geom  = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
-  var mat   = new THREE.MeshBasicMaterial({
-    map:         transitionLogoTex,
+  var geom = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
+  var mat = new THREE.MeshBasicMaterial({
+    map: transitionLogoTex,
     transparent: true,
-    opacity:     0,
-    side:        THREE.DoubleSide,
-    depthTest:   false,
-    depthWrite:  false,
+    opacity: 0,
+    side: THREE.DoubleSide,
+    depthTest: false,
+    depthWrite: false,
   });
 
   transitionLogoMesh = new THREE.Mesh(geom, mat);
@@ -2584,7 +2561,7 @@ function showLoader() {
       shader.fragmentShader.replace(
         'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
         'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
-        'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);'
+          'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
       );
     transitionLogoMesh.userData.shader = shader;
   };
@@ -2601,7 +2578,7 @@ function showLoader() {
 
 function hideLoader() {
   if (!transitionLogoMesh) return;
-  transitionLogoMesh.userData.fadeIn  = false;
+  transitionLogoMesh.userData.fadeIn = false;
   transitionLogoMesh.userData.fadeOut = true;
   transitionLogoMesh.userData.fadeStart = performance.now();
 }
@@ -2611,20 +2588,25 @@ function updateTransitionLogo(timeNow) {
   if (!transitionLogoMesh) return;
 
   var mesh = transitionLogoMesh;
-  var mat  = mesh.material;
-  var ud   = mesh.userData;
-  var elapsed = (timeNow - ud.fadeStart) / 1000;  // seconds
+  var mat = mesh.material;
+  var ud = mesh.userData;
+  var elapsed = (timeNow - ud.fadeStart) / 1000; // seconds
 
   if (ud.fadeIn && !ud.fadeOut) {
     // Fade in over 0.35 s
     mat.opacity = Math.min(elapsed / 0.35, 1.0);
-    if (mat.opacity >= 1) { ud.fadeIn = false; }
+    if (mat.opacity >= 1) {
+      ud.fadeIn = false;
+    }
   } else if (ud.fadeOut) {
     // Fade out over 0.35 s, then dispose
     mat.opacity = Math.max(1.0 - elapsed / 0.35, 0.0);
     if (mat.opacity <= 0) {
       // Clean up
-      if (transitionLogoTex) { transitionLogoTex.dispose(); transitionLogoTex = null; }
+      if (transitionLogoTex) {
+        transitionLogoTex.dispose();
+        transitionLogoTex = null;
+      }
       scene.remove(mesh);
       if (mesh.geometry) mesh.geometry.dispose();
       if (mesh.material) mesh.material.dispose();
@@ -2678,7 +2660,10 @@ function onWindowResize() {
       if (currentRoomKey) renderHotspots(currentRoomKey);
 
       // Reload room texture if device type, orientation, or mobile-image flag changed
-      if ((wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) && currentRoomKey) {
+      if (
+        (wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) &&
+        currentRoomKey
+      ) {
         var roomData = getRoomTextureUrls(currentRoomKey);
         if (roomData) {
           showLoader();
@@ -2698,8 +2683,10 @@ function onWindowResize() {
               var _sectionEl = document.querySelector('.immersive-store');
               var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
               var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
-              var _layoutConfig = (_semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout])
-                ? LAYOUT_REGISTRY[_semanticLayout].config : {};
+              var _layoutConfig =
+                _semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout]
+                  ? LAYOUT_REGISTRY[_semanticLayout].config
+                  : {};
               buildGalleryStageForRoom(currentRoomKey, scene, {
                 layout: getGalleryLayout(currentRoomKey),
                 radius: 6,
@@ -2771,9 +2758,9 @@ function handleResize(roomKeyOverride) {
 
   // Update orthographic camera to match new aspect ratio
   var aspect = width / height;
-  camera.left   = -aspect;
-  camera.right  =  aspect;
-  camera.top    =  1;
+  camera.left = -aspect;
+  camera.right = aspect;
+  camera.top = 1;
   camera.bottom = -1;
   camera.updateProjectionMatrix();
 
@@ -2884,12 +2871,25 @@ function initTiltControlToggle() {
 }
 
 function animate() {
+  // Cancel any existing loop to prevent multiple parallel RAF calls
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
   animationFrameId = requestAnimationFrame(animate);
+
   if (!uniforms) return;
 
-  mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
-  mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
-  uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
+  // Guard against NaN in mouse tracking
+  if (isFinite(mouseTarget.x) && isFinite(mouseTarget.y) &&
+      isFinite(mouseCurrent.x) && isFinite(mouseCurrent.y) &&
+      isFinite(lerpFactor)) {
+    mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
+    mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
+  }
+  // Final NaN check before passing to GPU
+  if (isFinite(mouseCurrent.x) && isFinite(mouseCurrent.y)) {
+    uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
+  }
 
   // Animate gallery carousel rotation
   if (galleryStageRegistry[currentRoomKey]) {
@@ -3130,8 +3130,10 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
           var _sectionEl2 = document.querySelector('.immersive-store');
           var _perRoomAttr2 = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
           var _semanticLayout2 = _sectionEl2 ? _sectionEl2.getAttribute(_perRoomAttr2) : null;
-          var _layoutConfig2 = (_semanticLayout2 && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout2])
-            ? LAYOUT_REGISTRY[_semanticLayout2].config : {};
+          var _layoutConfig2 =
+            _semanticLayout2 && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout2]
+              ? LAYOUT_REGISTRY[_semanticLayout2].config
+              : {};
           buildGalleryStageForRoom(roomKey, scene, {
             layout: getGalleryLayout(roomKey),
             radius: 6,
@@ -3228,8 +3230,11 @@ function loadRoomTextures(roomData, callback) {
         var oldest = textureCache.pop();
         if (oldest && oldest.key) {
           textureRefCount[oldest.key] = (textureRefCount[oldest.key] || 1) - 1;
-          var isActive = (uniforms && uniforms.uTexture1 && uniforms.uDepth1) &&
-                         (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
+          var isActive =
+            uniforms &&
+            uniforms.uTexture1 &&
+            uniforms.uDepth1 &&
+            (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
           if (!isActive && textureRefCount[oldest.key] <= 0) {
             try {
               if (oldest.base) oldest.base.dispose();
@@ -3536,14 +3541,16 @@ function fetchWithCache(url) {
     return Promise.resolve(contentCache[url]);
   }
   var _ctrl = new AbortController();
-  var _fetchTimeout = setTimeout(function() { _ctrl.abort(); }, 30000);
+  var _fetchTimeout = setTimeout(function () {
+    _ctrl.abort();
+  }, 30000);
   return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl.signal })
     .then(function (response) {
       clearTimeout(_fetchTimeout);
       if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
       return response.text();
     })
-    .catch(function(_fetchErr) {
+    .catch(function (_fetchErr) {
       clearTimeout(_fetchTimeout);
       if (_fetchErr.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
       throw _fetchErr;
@@ -3573,14 +3580,16 @@ function fetchSectionHtml(path, sectionId, extraParams) {
   }
 
   var _ctrl2 = new AbortController();
-  var _fetchTimeout2 = setTimeout(function() { _ctrl2.abort(); }, 30000);
+  var _fetchTimeout2 = setTimeout(function () {
+    _ctrl2.abort();
+  }, 30000);
   return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl2.signal })
     .then(function (response) {
       clearTimeout(_fetchTimeout2);
       if (!response.ok) return null;
       return response.json();
     })
-    .catch(function(err) {
+    .catch(function (err) {
       clearTimeout(_fetchTimeout2);
       if (err.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
       return null;
@@ -3805,7 +3814,8 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
   overlayContent.innerHTML = '';
 
   if (!contentCache[fetchUrl]) {
-    overlayContent.innerHTML = '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
+    overlayContent.innerHTML =
+      '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
   }
 
   var performUIActivation = function () {
@@ -3868,7 +3878,11 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
     .catch(function (err) {
       console.error('[Immersive] Overlay fetch failed:', err);
       // Fallback: use the source section's innerHTML which is already in the DOM
-      var fallbackSection = document.querySelector('.immersive-editorial[data-room-key="' + (window.immersiveState && window.immersiveState.editorialRoom || '') + '"]');
+      var fallbackSection = document.querySelector(
+        '.immersive-editorial[data-room-key="' +
+          ((window.immersiveState && window.immersiveState.editorialRoom) || '') +
+          '"]',
+      );
       if (fallbackSection) {
         overlayContent.innerHTML = fallbackSection.innerHTML;
         var editorialSection = overlayContent.querySelector('.immersive-editorial');
@@ -3894,12 +3908,12 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
 var editorialData = {
   currentRoom: null,
   previousRoom: null,
-  viewedProducts: [],      // product handles seen across rooms
-  viewedCollections: [],   // collection handles seen across rooms
-  navigationHistory: [],   // room keys visited in this editorial session
-  wishlistHandles: null,   // cache of wishlist handles (synced from global wishlistItems)
+  viewedProducts: [], // product handles seen across rooms
+  viewedCollections: [], // collection handles seen across rooms
+  navigationHistory: [], // room keys visited in this editorial session
+  wishlistHandles: null, // cache of wishlist handles (synced from global wishlistItems)
 
-  enterRoom: function(roomKey) {
+  enterRoom: function (roomKey) {
     if (this.currentRoom) {
       this.previousRoom = this.currentRoom;
     }
@@ -3908,47 +3922,47 @@ var editorialData = {
     this.refreshWishlist();
   },
 
-  exitRoom: function() {
+  exitRoom: function () {
     this.previousRoom = this.currentRoom;
     this.currentRoom = null;
   },
 
-  getViewedProducts: function() {
+  getViewedProducts: function () {
     return this.viewedProducts.slice();
   },
 
-  addViewedProduct: function(handle) {
+  addViewedProduct: function (handle) {
     if (handle && this.viewedProducts.indexOf(handle) === -1) {
       this.viewedProducts.push(handle);
     }
   },
 
-  addViewedCollection: function(handle) {
+  addViewedCollection: function (handle) {
     if (handle && this.viewedCollections.indexOf(handle) === -1) {
       this.viewedCollections.push(handle);
     }
   },
 
-  refreshWishlist: function() {
+  refreshWishlist: function () {
     if (typeof wishlistItems !== 'undefined') {
-      this.wishlistHandles = wishlistItems.map(function(item) {
+      this.wishlistHandles = wishlistItems.map(function (item) {
         return typeof item === 'string' ? item : item.handle;
       });
     }
   },
 
-  isInWishlist: function(productHandle) {
+  isInWishlist: function (productHandle) {
     if (!this.wishlistHandles) this.refreshWishlist();
     return this.wishlistHandles && this.wishlistHandles.indexOf(productHandle) !== -1;
   },
 
-  getNavigationHistory: function() {
+  getNavigationHistory: function () {
     return this.navigationHistory.slice();
   },
 
-  hasVisitedRoom: function(roomKey) {
+  hasVisitedRoom: function (roomKey) {
     return this.navigationHistory.indexOf(roomKey) !== -1;
-  }
+  },
 };
 
 // ---------------------------------------------------------------------------
