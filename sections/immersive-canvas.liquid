@@ -53,6 +53,12 @@
     >
       <!-- ARIA live region for hotspot announcements -->
       <div id="immersive-hotspot-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+      <!-- InfiniteGallery hover label -->
+      <div class="infinite-gallery-label" data-infinite-gallery-label hidden aria-hidden="true">
+        <span class="infinite-gallery-label__text"></span>
+      </div>
+
       {%- for block in section.blocks -%}
         {%- if block.type == 'flash_sale' and block.settings.enabled -%}
           <div
@@ -1034,6 +1040,27 @@
   box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.2); }
 
   #ui-layer .immersive-hotspot:hover::after { background: rgba(212, 175, 55, 1); left: 0; width: 100%; }
+
+  /* ── Infinite Gallery hover label ── */
+  #ui-layer .infinite-gallery-label {
+    position: absolute;
+    bottom: 6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 1.25rem;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 4px;
+    color: #d4af37;
+    font-family: serif;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 30;
+  }
 
   @media (prefers-reduced-motion: reduce) { #ui-layer .immersive-hotspot, #ui-layer .immersive-hotspot::after {
   transition: none; } }

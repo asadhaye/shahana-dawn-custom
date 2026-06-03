@@ -1311,8 +1311,14 @@ function safeBindImmersiveInit() {
     if (typeof window.ImmersiveCarousel !== 'undefined' && window.ImmersiveCarousel.init) {
       window.ImmersiveCarousel.init();
     }
-    if (typeof window.CodexCollectionsGrid !== 'undefined' && window.CodexCollectionsGrid.init) {
-      window.CodexCollectionsGrid.init();
+
+    // Initialize InfiniteGallery for gallery rooms
+    if (typeof window.InfiniteGallery !== 'undefined') {
+      var _igRoom = (typeof currentRoomKey !== 'undefined') ? currentRoomKey : '';
+      if (_igRoom === 'designer_houses' || _igRoom === 'occasions' || _igRoom === 'featured_collections') {
+        window._infiniteGallery = new window.InfiniteGallery({ columns: 4, spacing: 0.08, cardWidth: 0.7, cardHeight: 1.05, friction: 0.95 });
+        window._infiniteGallery.init();
+      }
     }
 
     setTimeout(function () {
