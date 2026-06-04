@@ -812,6 +812,15 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   var near = cfg.near || 0.1;
   var far = cfg.far || 100;
 
+  // ── Create PerspectiveCamera for tunnel depth effect ──
+  // Replace the global OrthographicCamera with a PerspectiveCamera
+  // so that cards at different Z depths appear with proper foreshortening
+  var size = renderer.getSize ? renderer.getSize({x:0,y:0}) : {x: window.innerWidth, y: window.innerHeight};
+  var aspect = size.x / size.y;
+  var tunnelCam = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  tunnelCam.position.z = 0;
+  camera = tunnelCam;  // replace global camera ref
+
   group.userData.scrollZ = 0;
   group.userData.targetScrollZ = 0;
   group.userData.tunnelLength = tunnelLength;
@@ -986,219 +995,6 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCROLL TUNNEL — PerspectiveCamera scroll-driven Z-axis depth layout
-// ─────────────────────────────────────────────────────────────────────────────
-function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
-  var cfg = options.layoutConfig || {};
-  var isScrollTunnel = (options.layout === 'scroll-tunnel');
-  var cardH = options.cardHeight || (isScrollTunnel ? 0.5 : 0.4);
-  var cardAspect = options.cardAspect || (isScrollTunnel ? (3/4) : (2/3));
-  var cardW = cardH * cardAspect;
-  var tunnelLength = cfg.tunnelLength || 15;        // total Z depth of tunnel
-  var tunnelRadius = cfg.tunnelRadius || 0.8;       // radial spread for helix fallback
-  var fov = cfg.fov || 60;                          // PerspectiveCamera FOV
-  var near = cfg.near || 0.1;
-  var far = cfg.far || 100;
-  var isHelix = !isScrollTunnel;
-
-  // ── Scroll state ──
-  group.userData.scrollZ = 0;        // current camera Z position
-  group.userData.targetScrollZ = 0;  // target Z from scroll/drag
-  group.userData.tunnelLength = tunnelLength;
-  group.userData.isScrollTunnel = isScrollTunnel;
-  group.userData.fov = fov;
-
-  var count = items.length;
-  var loadedItems = [];
-  var texCache = {};
-
-  items.forEach(function (item, index) {
-    if (!item.imageSrc) return;
-    if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(item.imageSrc, function (texture) {
-        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        texture.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Tunnel texture error:', err);
-      });
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      tex.anisotropy = 8;
-      texCache[item.imageSrc] = tex;
-      textures.push(tex);
-    }
-    loadedItems.push({ item: item, tex: texCache[item.imageSrc], index: index });
-  });
-
-  if (loadedItems.length === 0) {
-    scene.add(group);
-    galleryStageRegistry[roomKey] = {
-      group: group, planes: [], labels: [], textures: textures,
-      layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
-      cardCount: 0, tunnelLength: tunnelLength, isScrollTunnel: isScrollTunnel,
-      scrollZ: 0, targetScrollZ: 0, fov: fov,
-    };
-    return;
-  }
-
-  // ── Shared shader uniforms ──
-  var sharedUniforms = isScrollTunnel ? {
-    uTime:     { value: 0 },
-    uScrollZ:  { value: 0 },
-    uFov:      { value: fov },
-  } : null;
-
-  // ── Vertex shader: wave bend from scroll velocity ──
-  var vertSrc = [
-    'varying vec2 vUv;',
-    'varying float vDist;',
-    'uniform float uTime;',
-    'uniform float uScrollZ;',
-    'uniform float uFov;',
-    'void main() {',
-    '  vUv = uv;',
-    '  vec3 pos = position;',
-    '  float wave = sin(pos.y * 2.0 + uTime * 3.0) * uFov * 0.001;',
-    '  pos.x += wave;',
-    '  pos.z += abs(wave) * 0.3;',
-    '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
-    '  vDist = -mv.z;',
-    '  gl_Position = projectionMatrix * mv;',
-    '}',
-  ].join('\n');
-
-  // ── Fragment shader: chromatic aberration + vignette ──
-  var fragSrc = [
-    'precision highp float;',
-    'uniform sampler2D uTexture;',
-    'uniform float uTime;',
-    'uniform float uScrollZ;',
-    'uniform float uFov;',
-    'varying vec2 vUv;',
-    'varying float vDist;',
-    'void main() {',
-    '  float aberration = smoothstep(1.0, 12.0, vDist) * 0.004;',
-    '  vec2 dir = vUv - 0.5;',
-    '  float edge = smoothstep(0.0, 0.5, length(dir));',
-    '  float shift = aberration * edge;',
-    '  vec2 rUV = clamp(vUv + dir * shift, 0.001, 0.999);',
-    '  vec2 gUV = vUv;',
-    '  vec2 bUV = clamp(vUv - dir * shift, 0.001, 0.999);',
-    '  float r = texture2D(uTexture, rUV).r;',
-    '  float g = texture2D(uTexture, gUV).g;',
-    '  float b = texture2D(uTexture, bUV).b;',
-    '  float a = texture2D(uTexture, gUV).a;',
-    '  float vig = 1.0 - smoothstep(0.3, 0.9, length(vUv - 0.5));',
-    '  float fade = smoothstep(0.0, 1.0, clamp(vDist * 0.08, 0.0, 1.0));',
-    '  gl_FragColor = vec4(r, g, b, a * vig * fade);',
-    '}',
-  ].join('\n');
-
-  loadedItems.forEach(function (entry, idx) {
-    if (!entry) return;
-    var item = entry.item;
-    var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
-
-    var mat;
-    if (isScrollTunnel) {
-      mat = new THREE.ShaderMaterial({
-        vertexShader: vertSrc,
-        fragmentShader: fragSrc,
-        uniforms: {
-          uTexture:  { value: entry.tex },
-          uTime:     sharedUniforms.uTime,
-          uScrollZ:  sharedUniforms.uScrollZ,
-          uFov:      sharedUniforms.uFov,
-        },
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-    } else {
-      mat = new THREE.MeshBasicMaterial({
-        map: entry.tex, transparent: true, opacity: 0.95, side: THREE.DoubleSide,
-      });
-    }
-
-    var mesh = new THREE.Mesh(geom, mat);
-
-    if (isScrollTunnel) {
-      // ── Z-axis depth placement: cards spread through tunnel ──
-      var zPos = - (idx / Math.max(count - 1, 1)) * tunnelLength;
-      // Alternating X offset for organic feel
-      var xOff = (idx % 2 === 0 ? -1 : 1) * (0.2 + (idx % 3) * 0.1);
-      var yOff = Math.sin(idx * 0.7) * 0.15;
-      mesh.position.set(xOff, yOff, zPos);
-      mesh.lookAt(0, yOff, zPos - 1);
-    } else {
-      // ── Helix fallback ──
-      var angle = (idx / count) * Math.PI * 2 * 2.5;
-      var y = (idx - count / 2) * 0.6;
-      mesh.position.set(Math.cos(angle) * tunnelRadius, y, Math.sin(angle) * tunnelRadius);
-      mesh.lookAt(0, y, 0);
-      mesh.rotateY(Math.PI);
-    }
-
-    mesh.userData = {
-      roomKey: roomKey,
-      galleryIndex: entry.index,
-      title: item.title || '',
-      productHandle: item.productHandle || null,
-      collectionHandle: item.collectionHandle || null,
-      layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
-      baseZ: mesh.position.z,
-      baseY: mesh.position.y,
-    };
-
-    group.add(mesh);
-    planes.push(mesh);
-
-    // ── Canvas title label ──
-    if (item.title) {
-      var labelCanvas = document.createElement('canvas');
-      var lCtx = labelCanvas.getContext('2d');
-      labelCanvas.width = 768;
-      labelCanvas.height = 120;
-      lCtx.clearRect(0, 0, 768, 120);
-      lCtx.font = 'bold 48px Georgia, serif';
-      lCtx.textAlign = 'center';
-      lCtx.textBaseline = 'middle';
-      lCtx.fillStyle = '#ece3c2';
-      lCtx.fillText(item.title.toUpperCase(), 384, 40);
-      lCtx.font = '500 12px Arial, sans-serif';
-      lCtx.fillStyle = 'rgba(255,255,255,0.5)';
-      lCtx.fillText('[ TAP TO EXPLORE ]', 384, 90);
-
-      var labelTex = new THREE.CanvasTexture(labelCanvas);
-      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      var labelMat = new THREE.MeshBasicMaterial({
-        map: labelTex, transparent: true, depthTest: false, side: THREE.DoubleSide,
-      });
-      var labelW = cardW * 0.9;
-      var labelH = labelW * (120 / 768);
-      var labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(labelW, labelH), labelMat);
-      labelMesh.position.set(mesh.position.x, mesh.position.y - cardH * 0.55, mesh.position.z - 0.05);
-      labelMesh.renderOrder = 999;
-      group.add(labelMesh);
-      labels.push(labelMesh);
-    }
-  });
-
-  scene.add(group);
-
-  galleryStageRegistry[roomKey] = {
-    group: group, planes: planes, labels: labels, textures: textures,
-    layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
-    isScrollTunnel: isScrollTunnel,
-    isScrollDriven: isScrollTunnel,
-    tunnelLength: tunnelLength,
-    fov: fov,
-    scrollZ: 0, targetScrollZ: 0,
-    cardCount: count,
-    sharedUniforms: sharedUniforms,
-  };
-}
-
 function buildGalleryStageForRoom(roomKey, scene, options) {
   // Dispose old gallery stage before creating new one
   if (currentRoomKey && galleryStageRegistry[currentRoomKey]) {
@@ -1212,6 +1008,16 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   options = options || {};
   var layout = options.layout || 'arc';
+
+  // Restore OrthographicCamera if switching away from scroll-tunnel
+  if (layout !== 'scroll-tunnel' && camera instanceof THREE.PerspectiveCamera) {
+    var size = renderer.getSize ? renderer.getSize({x:0,y:0}) : {x: window.innerWidth, y: window.innerHeight};
+    var aspect = size.x / size.y;
+    camera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0, 2);
+    camera.position.z = 1;
+    camera.updateProjectionMatrix();
+  }
+
   var radius = options.radius || 7;
   var arcDegrees = options.arcDegrees || 140;
   var verticalOffset = options.verticalOffset || 0.2;
@@ -3429,12 +3235,16 @@ function handleResize(roomKeyOverride) {
 
   renderer.setSize(width, height, false);
 
-  // Update orthographic camera to match new aspect ratio
+  // Update camera to match new aspect ratio
   var aspect = width / height;
-  camera.left   = -aspect;
-  camera.right  =  aspect;
-  camera.top    =  1;
-  camera.bottom = -1;
+  if (camera instanceof THREE.PerspectiveCamera) {
+    camera.aspect = aspect;
+  } else {
+    camera.left   = -aspect;
+    camera.right  =  aspect;
+    camera.top    = 1;
+    camera.bottom = -1;
+  }
   camera.updateProjectionMatrix();
 
   if (planeMesh) {
