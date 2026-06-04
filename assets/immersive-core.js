@@ -1884,7 +1884,7 @@ function getGalleryLayout(roomKey) {
   if (!sectionEl) {
     // Fallback per room — use new 3D layout names
     if (roomKey === 'designer_houses') return 'asymmetric-gallery';
-    if (roomKey === 'occasions') return 'scroll-narrative';
+    if (roomKey === 'occasions') return 'scroll-story';
     if (roomKey === 'featured_collections') return 'masonry-featured';
     return 'arc';
   }
