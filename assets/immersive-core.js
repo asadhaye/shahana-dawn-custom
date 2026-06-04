@@ -399,15 +399,15 @@ var LAYOUT_REGISTRY = {
       shaderEffects: true,
     },
   },
-  'scroll-tunnel': {
-    name: 'Scroll Tunnel',
-    description: 'PerspectiveCamera scroll-driven 3D tunnel story layout',
+  'scroll-story': {
+    name: 'Scroll Story',
+    description: 'Native RAF infinite scroll list with LERP + modulo recycling + shaders',
     rooms: ['designer_houses', 'occasions', 'featured_collections'],
     config: {
-      tunnelLength: 12,
-      tunnelRadius: 0.8,
-      verticalSpacing: 3.5,
-      parallaxStrength: 0.04,
+      itemSpacing: 2.5,
+      lerpFactor: 0.1,
+      cardHeight: 0.5,
+      cardAspect: 3/4,
       draggable: true,
       physics: true,
       scrollDriven: true,
@@ -574,25 +574,25 @@ function disposeGalleryStage(roomKey) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCROLL TUNNEL — PerspectiveCamera scroll-driven 3D story layout
+// SCROLL STORY — Native RAF infinite scroll list with LERP + modulo recycling
 // ─────────────────────────────────────────────────────────────────────────────
-function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
+function _buildScrollStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
-  var isScrollTunnel = (options.layout === 'scroll-tunnel');
-  var parallaxStrength = cfg.parallaxStrength || 0.04;
-  var cardH = options.cardHeight || (isScrollTunnel ? 0.45 : 0.4);
-  var cardAspect = options.cardAspect || (isScrollTunnel ? (3/4) : (2/3));
+  var isScrollStory = (options.layout === 'scroll-story');
+  var cardH = options.cardHeight || (isScrollStory ? 0.5 : 0.4);
+  var cardAspect = options.cardAspect || (isScrollStory ? (3/4) : (2/3));
   var cardW = cardH * cardAspect;
-  var tunnelLength = cfg.tunnelLength || 12;       // total Z depth of the tunnel
-  var tunnelRadius = cfg.tunnelRadius || 0.8;      // radial spread for non-tunnel helix
-  var verticalSpacing = cfg.verticalSpacing || 3.5; // Y gap between cards
-  var isHelix = !isScrollTunnel;
+  var itemSpacing = cfg.itemSpacing || 2.5;       // Y gap between items (world units)
+  var lerpFactor = cfg.lerpFactor || 0.1;         // LERP smoothing (lower = smoother)
+  var isHelix = !isScrollStory;
 
-  // ── Scroll state (persisted on the group for animation) ──
-  group.userData.scrollZ = 0;       // current camera Z position in tunnel
-  group.userData.targetScrollZ = 0; // target Z from scroll input
-  group.userData.tunnelLength = tunnelLength;
-  group.userData.isScrollTunnel = isScrollTunnel;
+  // ── Scroll state ──
+  group.userData.currentScrollY = 0;
+  group.userData.targetScrollY = 0;
+  group.userData.itemSpacing = itemSpacing;
+  group.userData.totalHeight = items.length * itemSpacing;
+  group.userData.lerpFactor = lerpFactor;
+  group.userData.isScrollStory = isScrollStory;
 
   var count = items.length;
   var loadedItems = [];
@@ -605,7 +605,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
         texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
         texture.anisotropy = 8;
       }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Tunnel texture load error:', err);
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Story texture load error:', err);
       });
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       tex.anisotropy = 8;
@@ -619,43 +619,51 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
     scene.add(group);
     galleryStageRegistry[roomKey] = {
       group: group, planes: [], labels: [], textures: textures,
-      layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
-      cardCount: 0, tunnelLength: tunnelLength, isScrollTunnel: isScrollTunnel,
-      scrollZ: 0, targetScrollZ: 0, parallaxStrength: parallaxStrength,
+      layout: isScrollStory ? 'scroll-story' : 'helix',
+      cardCount: 0, itemSpacing: itemSpacing, isScrollStory: isScrollStory,
+      currentScrollY: 0, targetScrollY: 0, lerpFactor: lerpFactor,
     };
     return;
   }
 
-  // ── Build shader material for scroll-tunnel ──
-  var sharedUniforms = isScrollTunnel ? {
-    uTime:     { value: 0 },
-    uScrollZ:  { value: 0 },
-    uFov:      { value: 60 },
+  // ── Shared shader uniforms ──
+  var sharedUniforms = isScrollStory ? {
+    uTime:        { value: 0 },
+    uScrollY:     { value: 0 },
+    uVelocity:    { value: 0 },
   } : null;
 
+  // ── Vertex shader: wave bend from scroll velocity ──
   var vertSrc = [
     'varying vec2 vUv;',
     'varying float vDist;',
-    'uniform float uScrollZ;',
+    'uniform float uTime;',
+    'uniform float uScrollY;',
+    'uniform float uVelocity;',
     'void main() {',
     '  vUv = uv;',
-    '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
+    '  vec3 pos = position;',
+    // Wave bend: skew geometry based on scroll velocity
+    '  float wave = sin(pos.y * 2.0 + uTime * 3.0) * uVelocity * 0.02;',
+    '  pos.x += wave;',
+    '  pos.z += abs(wave) * 0.5;',
+    '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
     '  vDist = -mv.z;',
     '  gl_Position = projectionMatrix * mv;',
     '}',
   ].join('\n');
 
+  // ── Fragment shader: chromatic aberration + vignette ──
   var fragSrc = [
     'precision highp float;',
     'uniform sampler2D uTexture;',
     'uniform float uTime;',
-    'uniform float uScrollZ;',
-    'uniform float uFov;',
+    'uniform float uScrollY;',
+    'uniform float uVelocity;',
     'varying vec2 vUv;',
     'varying float vDist;',
     'void main() {',
-    // Chromatic aberration: increases with distance from camera
-    '  float aberration = smoothstep(2.0, 10.0, vDist) * 0.004;',
+    '  float aberration = smoothstep(1.0, 8.0, vDist) * 0.003 * (1.0 + abs(uVelocity) * 0.5);',
     '  vec2 dir = vUv - 0.5;',
     '  float edge = smoothstep(0.0, 0.5, length(dir));',
     '  float shift = aberration * edge;',
@@ -666,11 +674,8 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
     '  float g = texture2D(uTexture, gUV).g;',
     '  float b = texture2D(uTexture, bUV).b;',
     '  float a = texture2D(uTexture, gUV).a;',
-    // Vignette
-    '  float vig = 1.0 - smoothstep(0.4, 0.9, length(vUv - 0.5));',
-    // Fade based on scroll distance
-    '  float fade = smoothstep(0.0, 1.0, clamp(vDist * 0.15, 0.0, 1.0));',
-    '  gl_FragColor = vec4(r, g, b, a * vig * fade);',
+    '  float vig = 1.0 - smoothstep(0.3, 0.8, length(vUv - 0.5));',
+    '  gl_FragColor = vec4(r, g, b, a * vig);',
     '}',
   ].join('\n');
 
@@ -680,15 +685,15 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
     var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
 
     var mat;
-    if (isScrollTunnel) {
+    if (isScrollStory) {
       mat = new THREE.ShaderMaterial({
         vertexShader: vertSrc,
         fragmentShader: fragSrc,
         uniforms: {
-          uTexture:  { value: entry.tex },
-          uTime:     sharedUniforms.uTime,
-          uScrollZ:  sharedUniforms.uScrollZ,
-          uFov:      sharedUniforms.uFov,
+          uTexture:   { value: entry.tex },
+          uTime:      sharedUniforms.uTime,
+          uScrollY:   sharedUniforms.uScrollY,
+          uVelocity:  sharedUniforms.uVelocity,
         },
         transparent: true,
         side: THREE.DoubleSide,
@@ -702,25 +707,16 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
 
     var mesh = new THREE.Mesh(geom, mat);
 
-    if (isScrollTunnel) {
-      // ── Tunnel layout: cards placed along Z-axis at varying depths ──
-      // Evenly space cards through the tunnel length
-      var zPos = - (idx / Math.max(count - 1, 1)) * tunnelLength;
-      // Slight horizontal offset for organic feel (alternating left/right)
-      var xOff = (idx % 2 === 0 ? -1 : 1) * (0.15 + (idx % 3) * 0.08);
-      var yOff = (idx % 2 === 0 ? 0.1 : -0.1);
-      mesh.position.set(xOff, yOff, zPos);
-      // Face the camera (which looks down -Z)
-      mesh.lookAt(0, yOff, zPos - 1);
+    if (isScrollStory) {
+      // ── Flat Y-axis list ──
+      var yPos = -(idx * itemSpacing);
+      mesh.position.set(0, yPos, 0);
+      mesh.userData.initialY = yPos;
     } else {
-      // ── Helix layout: cards on a spiral ──
+      // ── Helix fallback ──
       var angle = (idx / count) * Math.PI * 2 * 2.5;
       var y = (idx - count / 2) * 0.6;
-      mesh.position.set(
-        Math.cos(angle) * tunnelRadius,
-        y,
-        Math.sin(angle) * tunnelRadius,
-      );
+      mesh.position.set(Math.cos(angle) * 0.8, y, Math.sin(angle) * 0.8);
       mesh.lookAt(0, y, 0);
       mesh.rotateY(Math.PI);
     }
@@ -731,10 +727,9 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       title: item.title || '',
       productHandle: item.productHandle || null,
       collectionHandle: item.collectionHandle || null,
-      layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
-      baseZ: mesh.position.z,
+      layout: isScrollStory ? 'scroll-story' : 'helix',
+      initialY: mesh.position.y,
       baseY: mesh.position.y,
-      parallaxFactor: 1.0 + (idx % 5) * 0.15,
     };
 
     group.add(mesh);
@@ -764,11 +759,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
       var labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(labelW, labelH), labelMat);
-      labelMesh.position.set(
-        mesh.position.x,
-        mesh.position.y - cardH * 0.55,
-        mesh.position.z + (isScrollTunnel ? -0.05 : 0),
-      );
+      labelMesh.position.set(0, mesh.position.y - cardH * 0.55, isScrollStory ? 0.05 : 0);
       labelMesh.renderOrder = 999;
       group.add(labelMesh);
       labels.push(labelMesh);
@@ -779,13 +770,14 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
 
   galleryStageRegistry[roomKey] = {
     group: group, planes: planes, labels: labels, textures: textures,
-    layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
-    isScrollTunnel: isScrollTunnel,
-    isScrollDriven: isScrollTunnel,
-    parallaxStrength: parallaxStrength,
-    tunnelLength: tunnelLength,
-    scrollZ: 0, targetScrollZ: 0,
-    currentRotationY: 0, targetRotationY: 0,
+    layout: isScrollStory ? 'scroll-story' : 'helix',
+    isScrollStory: isScrollStory,
+    isScrollDriven: isScrollStory,
+    itemSpacing: itemSpacing,
+    totalHeight: count * itemSpacing,
+    lerpFactor: lerpFactor,
+    currentScrollY: 0, targetScrollY: 0,
+    prevScrollY: 0,
     cardCount: count,
     sharedUniforms: sharedUniforms,
   };
@@ -818,8 +810,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   var count = items.length;
 
-  if (layout === 'scroll-tunnel' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
-    _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
+  if (layout === 'scroll-story' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
+    _buildScrollStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
   } else if (layout === 'masonry-featured' || (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)) {
     // ── Masonry Featured layout ──
     // First item (featuredIndex) is a large hero card, centered, closer to camera.
@@ -1383,11 +1375,11 @@ function initGalleryCarousel(canvas) {
   if (!canvas) return;
   var state = galleryStageRegistry[currentRoomKey];
   var layout = state ? state.layout : 'arc';
-  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'infinite-drag-gallery' || layout === 'scroll-tunnel');
+  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'infinite-drag-gallery' || layout === 'scroll-story');
   var isHelixLayout = (layout === 'helix' || layout === 'scroll-narrative');
   var isGridLayout = (layout === 'grid' || layout === 'masonry-featured');
   var isInfiniteDrag = (layout === 'infinite-drag-gallery');
-  var isScrollTunnel = (layout === 'scroll-tunnel');
+  var isScrollStory = (layout === 'scroll-story');
 
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
@@ -1452,10 +1444,10 @@ function initGalleryCarousel(canvas) {
         s.group.position.x += dx * 0.008;
         s.group.position.y -= dy * 0.008;
       }
-    } else if (isScrollTunnel) {
-      // Scroll tunnel: drag Y moves through tunnel (Z-axis)
-      s.targetScrollZ -= dy * 0.02;
-      s.targetScrollZ = Math.max(-s.tunnelLength, Math.min(0, s.targetScrollZ));
+    } else if (isScrollStory) {
+      // Scroll story: drag Y moves through list (Y-axis)
+      s.targetScrollY -= dy * 0.02;
+      // No clamp — infinite scroll via modulo
       // Subtle X parallax
       s.group.position.x += dx * 0.003;
       galleryDragState.velocityY = dy * 0.5;
@@ -1490,10 +1482,10 @@ function initGalleryCarousel(canvas) {
       // Wheel adds to velocity for infinite drag
       galleryDragState.velocityY += e.deltaY * 0.05;
       galleryDragState.velocityX += e.deltaX * 0.05;
-    } else if (isScrollTunnel) {
-      // Wheel scrolls through tunnel (Z-axis)
-      s.targetScrollZ -= e.deltaY * 0.015;
-      s.targetScrollZ = Math.max(-s.tunnelLength, Math.min(0, s.targetScrollZ));
+    } else if (isScrollStory) {
+      // Wheel scrolls through story list (Y-axis)
+      s.targetScrollY -= e.deltaY * 0.015;
+      // No clamp — infinite scroll via modulo
     } else if (isHelixLayout) {
       s.targetRotationY += e.deltaY * 0.003;
     } else if (isGridLayout) {
@@ -1524,13 +1516,13 @@ function animateGalleryCarousel() {
   if (!state || !state.group) return;
 
   var layout = state.layout;
-  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'scroll-tunnel');
+  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'scroll-story');
   var isInfiniteDrag = (layout === 'infinite-drag-gallery');
-  var isScrollTunnel = (layout === 'scroll-tunnel');
+  var isScrollStory = (layout === 'scroll-story');
 
   if (isScrollAnim) {
-    // ── Scroll-driven animation: scroll-narrative, vertical, scroll-tunnel ──
-    var scrollSpacing = (layout === 'scroll-tunnel') ? (state.tunnelLength || 12) : (state.cardSpacing || 3.5);
+    // ── Scroll-driven animation: scroll-narrative, vertical, scroll-story ──
+    var scrollSpacing = (layout === 'scroll-story') ? (state.itemSpacing || 2.5) : (state.cardSpacing || 3.5);
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1565,30 +1557,39 @@ function animateGalleryCarousel() {
       }
     });
 
-    // ── Scroll-tunnel specific: move group along Z, update shader uniforms ──
-    if (isScrollTunnel) {
-      // Smooth Z interpolation
-      state.scrollZ += (state.targetScrollZ - state.scrollZ) * 0.08;
-      state.group.position.z = state.scrollZ;
-      // Subtle floating animation
-      var time = performance.now() * 0.001;
-      state.group.position.y = Math.sin(time * 0.5) * 0.05;
-      // Update shader uniforms
-      if (state.sharedUniforms) {
-        state.sharedUniforms.uTime.value = time;
-        state.sharedUniforms.uScrollZ.value = state.scrollZ;
-      }
-      // Parallax: cards closer to camera are more visible
+    // ── Scroll-story specific: LERP scroll + modulo recycling + opacity ──
+    if (isScrollStory) {
+      var lerp = state.lerpFactor || 0.1;
+      var prev = state.currentScrollY;
+      // Core LERP: current += (target - current) * factor
+      state.currentScrollY += (state.targetScrollY - state.currentScrollY) * lerp;
+      // Scroll velocity for shader
+      var velocity = state.currentScrollY - prev;
+      // Apply scroll to group Y position
+      state.group.position.y = state.currentScrollY;
+      // Modulo recycling: wrap items that exit viewport
+      var totalH = state.totalHeight;
+      var halfH = totalH / 2;
       state.planes.forEach(function (plane) {
         if (!plane.userData) return;
-        var relZ = plane.userData.baseZ - state.scrollZ;
-        var dist = Math.abs(relZ);
-        var t = Math.min(dist / (state.tunnelLength * 0.4), 1.0);
+        var y = plane.userData.initialY + state.currentScrollY;
+        // Modulo wrap for infinite scroll
+        y = ((y + halfH) % totalH) - halfH;
+        plane.position.y = y;
+        // Opacity based on distance from center (hover revelation)
+        var dist = Math.abs(y);
+        var t = Math.min(dist / (state.itemSpacing * 2.0), 1.0);
         var opacity = 1.0 - (t * t * (3.0 - 2.0 * t)); // smoothstep
         if (plane.material && plane.material.opacity !== undefined) {
           plane.material.opacity = opacity;
         }
       });
+      // Update shader uniforms
+      if (state.sharedUniforms) {
+        state.sharedUniforms.uTime.value = performance.now() * 0.001;
+        state.sharedUniforms.uScrollY.value = state.currentScrollY;
+        state.sharedUniforms.uVelocity.value = velocity;
+      }
     }
   } else if (isInfiniteDrag) {
     // ── Infinite drag gallery: X + Y velocity with friction, infinite wrap ──
@@ -1900,7 +1901,7 @@ function getGalleryLayout(roomKey) {
   // Valid semantic layout names (passthrough to buildGalleryStageForRoom)
   var validLayouts = {
     'asymmetric-gallery': 1,
-    'scroll-tunnel': 1,
+    'scroll-story': 1,
     'masonry-featured': 1,
     // Legacy/internal names still supported
     'vertical': 1,
@@ -1914,7 +1915,7 @@ function getGalleryLayout(roomKey) {
 
   // Per-room fallback when setting is missing/invalid — use new 3D layouts
   if (roomKey === 'designer_houses') return 'asymmetric-gallery';
-  if (roomKey === 'occasions') return 'scroll-tunnel';
+  if (roomKey === 'occasions') return 'scroll-story';
   if (roomKey === 'featured_collections') return 'masonry-featured';
   return 'arc';
 }
