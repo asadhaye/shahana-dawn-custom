@@ -820,7 +820,7 @@
             {%- else -%}
               {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- endif -%}
-            {%- assign _dh_items = _dh_items | push: _item -%}
+            {%- assign _dh_items = _dh_items | append: _item -%}
           {%- endif -%}
         {%- endfor -%}
         {{ _dh_items | join: "," }}
@@ -838,7 +838,7 @@
             {%- else -%}
               {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- endif -%}
-            {%- assign _oc_items = _oc_items | push: _item -%}
+            {%- assign _oc_items = _oc_items | append: _item -%}
           {%- endif -%}
         {%- endfor -%}
         {{ _oc_items | join: "," }}
@@ -856,7 +856,7 @@
             {%- else -%}
               {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- endif -%}
-            {%- assign _fc_items = _fc_items | push: _item -%}
+            {%- assign _fc_items = _fc_items | append: _item -%}
           {%- endif -%}
         {%- endfor -%}
         {{ _fc_items | join: "," }}
@@ -2718,6 +2718,7 @@
       "options": [
         { "value": "asymmetric-gallery", "label": "Asymmetric Gallery (Indrajaal-style)" },
         { "value": "scroll-story", "label": "Scroll Story (Infinite List)" },
+        { "value": "scroll-tunnel", "label": "Scroll Tunnel (3D Depth)" },
         { "value": "masonry-featured", "label": "Masonry Featured" },
         { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery (2D Grid)" }
       ]
@@ -2730,6 +2731,7 @@
       "options": [
         { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
         { "value": "scroll-story", "label": "Scroll Story (Infinite List)" },
+        { "value": "scroll-tunnel", "label": "Scroll Tunnel (3D Depth)" },
         { "value": "masonry-featured", "label": "Masonry Featured" },
         { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery (2D Grid)" }
       ]
@@ -2742,6 +2744,7 @@
       "options": [
         { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
         { "value": "scroll-story", "label": "Scroll Story (Infinite List)" },
+        { "value": "scroll-tunnel", "label": "Scroll Tunnel (3D Depth)" },
         { "value": "masonry-featured", "label": "Masonry Featured (Curated)" },
         { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery (2D Grid)" }
       ]
