@@ -399,6 +399,21 @@ var LAYOUT_REGISTRY = {
       shaderEffects: true,
     },
   },
+  'scroll-tunnel': {
+    name: 'Scroll Tunnel',
+    description: 'PerspectiveCamera scroll-driven 3D tunnel story layout',
+    rooms: ['designer_houses', 'occasions', 'featured_collections'],
+    config: {
+      tunnelLength: 12,
+      tunnelRadius: 0.8,
+      verticalSpacing: 3.5,
+      parallaxStrength: 0.04,
+      draggable: true,
+      physics: true,
+      scrollDriven: true,
+      shaderEffects: true,
+    },
+  },
 };
 
 function getLayoutForRoom(roomKey) {
@@ -558,6 +573,224 @@ function disposeGalleryStage(roomKey) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SCROLL TUNNEL — PerspectiveCamera scroll-driven 3D story layout
+// ─────────────────────────────────────────────────────────────────────────────
+function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
+  var cfg = options.layoutConfig || {};
+  var isScrollTunnel = (options.layout === 'scroll-tunnel');
+  var parallaxStrength = cfg.parallaxStrength || 0.04;
+  var cardH = options.cardHeight || (isScrollTunnel ? 0.45 : 0.4);
+  var cardAspect = options.cardAspect || (isScrollTunnel ? (3/4) : (2/3));
+  var cardW = cardH * cardAspect;
+  var tunnelLength = cfg.tunnelLength || 12;       // total Z depth of the tunnel
+  var tunnelRadius = cfg.tunnelRadius || 0.8;      // radial spread for non-tunnel helix
+  var verticalSpacing = cfg.verticalSpacing || 3.5; // Y gap between cards
+  var isHelix = !isScrollTunnel;
+
+  // ── Scroll state (persisted on the group for animation) ──
+  group.userData.scrollZ = 0;       // current camera Z position in tunnel
+  group.userData.targetScrollZ = 0; // target Z from scroll input
+  group.userData.tunnelLength = tunnelLength;
+  group.userData.isScrollTunnel = isScrollTunnel;
+
+  var count = items.length;
+  var loadedItems = [];
+  var texCache = {};
+
+  items.forEach(function (item, index) {
+    if (!item.imageSrc) return;
+    if (!texCache[item.imageSrc]) {
+      var tex = textureLoader.load(item.imageSrc, function (texture) {
+        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        texture.anisotropy = 8;
+      }, undefined, function (err) {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Tunnel texture load error:', err);
+      });
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      texCache[item.imageSrc] = tex;
+      textures.push(tex);
+    }
+    loadedItems.push({ item: item, tex: texCache[item.imageSrc], index: index });
+  });
+
+  if (loadedItems.length === 0) {
+    scene.add(group);
+    galleryStageRegistry[roomKey] = {
+      group: group, planes: [], labels: [], textures: textures,
+      layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
+      cardCount: 0, tunnelLength: tunnelLength, isScrollTunnel: isScrollTunnel,
+      scrollZ: 0, targetScrollZ: 0, parallaxStrength: parallaxStrength,
+    };
+    return;
+  }
+
+  // ── Build shader material for scroll-tunnel ──
+  var sharedUniforms = isScrollTunnel ? {
+    uTime:     { value: 0 },
+    uScrollZ:  { value: 0 },
+    uFov:      { value: 60 },
+  } : null;
+
+  var vertSrc = [
+    'varying vec2 vUv;',
+    'varying float vDist;',
+    'uniform float uScrollZ;',
+    'void main() {',
+    '  vUv = uv;',
+    '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
+    '  vDist = -mv.z;',
+    '  gl_Position = projectionMatrix * mv;',
+    '}',
+  ].join('\n');
+
+  var fragSrc = [
+    'precision highp float;',
+    'uniform sampler2D uTexture;',
+    'uniform float uTime;',
+    'uniform float uScrollZ;',
+    'uniform float uFov;',
+    'varying vec2 vUv;',
+    'varying float vDist;',
+    'void main() {',
+    // Chromatic aberration: increases with distance from camera
+    '  float aberration = smoothstep(2.0, 10.0, vDist) * 0.004;',
+    '  vec2 dir = vUv - 0.5;',
+    '  float edge = smoothstep(0.0, 0.5, length(dir));',
+    '  float shift = aberration * edge;',
+    '  vec2 rUV = clamp(vUv + dir * shift, 0.001, 0.999);',
+    '  vec2 gUV = vUv;',
+    '  vec2 bUV = clamp(vUv - dir * shift, 0.001, 0.999);',
+    '  float r = texture2D(uTexture, rUV).r;',
+    '  float g = texture2D(uTexture, gUV).g;',
+    '  float b = texture2D(uTexture, bUV).b;',
+    '  float a = texture2D(uTexture, gUV).a;',
+    // Vignette
+    '  float vig = 1.0 - smoothstep(0.4, 0.9, length(vUv - 0.5));',
+    // Fade based on scroll distance
+    '  float fade = smoothstep(0.0, 1.0, clamp(vDist * 0.15, 0.0, 1.0));',
+    '  gl_FragColor = vec4(r, g, b, a * vig * fade);',
+    '}',
+  ].join('\n');
+
+  loadedItems.forEach(function (entry, idx) {
+    if (!entry) return;
+    var item = entry.item;
+    var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
+
+    var mat;
+    if (isScrollTunnel) {
+      mat = new THREE.ShaderMaterial({
+        vertexShader: vertSrc,
+        fragmentShader: fragSrc,
+        uniforms: {
+          uTexture:  { value: entry.tex },
+          uTime:     sharedUniforms.uTime,
+          uScrollZ:  sharedUniforms.uScrollZ,
+          uFov:      sharedUniforms.uFov,
+        },
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+    } else {
+      mat = new THREE.MeshBasicMaterial({
+        map: entry.tex, transparent: true, opacity: 0.95, side: THREE.DoubleSide,
+      });
+    }
+
+    var mesh = new THREE.Mesh(geom, mat);
+
+    if (isScrollTunnel) {
+      // ── Tunnel layout: cards placed along Z-axis at varying depths ──
+      // Evenly space cards through the tunnel length
+      var zPos = - (idx / Math.max(count - 1, 1)) * tunnelLength;
+      // Slight horizontal offset for organic feel (alternating left/right)
+      var xOff = (idx % 2 === 0 ? -1 : 1) * (0.15 + (idx % 3) * 0.08);
+      var yOff = (idx % 2 === 0 ? 0.1 : -0.1);
+      mesh.position.set(xOff, yOff, zPos);
+      // Face the camera (which looks down -Z)
+      mesh.lookAt(0, yOff, zPos - 1);
+    } else {
+      // ── Helix layout: cards on a spiral ──
+      var angle = (idx / count) * Math.PI * 2 * 2.5;
+      var y = (idx - count / 2) * 0.6;
+      mesh.position.set(
+        Math.cos(angle) * tunnelRadius,
+        y,
+        Math.sin(angle) * tunnelRadius,
+      );
+      mesh.lookAt(0, y, 0);
+      mesh.rotateY(Math.PI);
+    }
+
+    mesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: entry.index,
+      title: item.title || '',
+      productHandle: item.productHandle || null,
+      collectionHandle: item.collectionHandle || null,
+      layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
+      baseZ: mesh.position.z,
+      baseY: mesh.position.y,
+      parallaxFactor: 1.0 + (idx % 5) * 0.15,
+    };
+
+    group.add(mesh);
+    planes.push(mesh);
+
+    // ── Canvas title label ──
+    if (item.title) {
+      var labelCanvas = document.createElement('canvas');
+      var lCtx = labelCanvas.getContext('2d');
+      labelCanvas.width = 768;
+      labelCanvas.height = 120;
+      lCtx.clearRect(0, 0, 768, 120);
+      lCtx.font = 'bold 48px Georgia, serif';
+      lCtx.textAlign = 'center';
+      lCtx.textBaseline = 'middle';
+      lCtx.fillStyle = '#ece3c2';
+      lCtx.fillText(item.title.toUpperCase(), 384, 40);
+      lCtx.font = '500 12px Arial, sans-serif';
+      lCtx.fillStyle = 'rgba(255,255,255,0.5)';
+      lCtx.fillText('[ TAP TO EXPLORE ]', 384, 90);
+
+      var labelTex = new THREE.CanvasTexture(labelCanvas);
+      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      var labelMat = new THREE.MeshBasicMaterial({
+        map: labelTex, transparent: true, depthTest: false, side: THREE.DoubleSide,
+      });
+      var labelW = cardW * 0.9;
+      var labelH = labelW * (120 / 768);
+      var labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(labelW, labelH), labelMat);
+      labelMesh.position.set(
+        mesh.position.x,
+        mesh.position.y - cardH * 0.55,
+        mesh.position.z + (isScrollTunnel ? -0.05 : 0),
+      );
+      labelMesh.renderOrder = 999;
+      group.add(labelMesh);
+      labels.push(labelMesh);
+    }
+  });
+
+  scene.add(group);
+
+  galleryStageRegistry[roomKey] = {
+    group: group, planes: planes, labels: labels, textures: textures,
+    layout: isScrollTunnel ? 'scroll-tunnel' : 'helix',
+    isScrollTunnel: isScrollTunnel,
+    isScrollDriven: isScrollTunnel,
+    parallaxStrength: parallaxStrength,
+    tunnelLength: tunnelLength,
+    scrollZ: 0, targetScrollZ: 0,
+    currentRotationY: 0, targetRotationY: 0,
+    cardCount: count,
+    sharedUniforms: sharedUniforms,
+  };
+}
+
 function buildGalleryStageForRoom(roomKey, scene, options) {
   // Dispose old gallery stage before creating new one
   if (currentRoomKey && galleryStageRegistry[currentRoomKey]) {
@@ -585,157 +818,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   var count = items.length;
 
-  if (layout === 'scroll-narrative' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
-    // ── Scroll Narrative / Helix layout ──
-    // Cards arranged along a 3D helix curve. Scroll/drag rotates around
-    // the vertical axis and translates up/down through the spiral.
-    // For scroll-narrative mode, adds parallax depth and scroll-driven animation.
-    var isScrollNarrative = layout === 'scroll-narrative';
-    var parallaxStrength = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.04;
-    var cardH = options.cardHeight || (isScrollNarrative ? 0.45 : 0.4);
-    var cardAspect = options.cardAspect || (isScrollNarrative ? (3/4) : (2/3));
-    var cardW = cardH * cardAspect;
-    // Helix radius: keep within camera frustum (near=0, far=2, center at Z=1)
-    var helixRadius = options.helixRadius || (isScrollNarrative ? 0.8 : 0.6);
-    var helixPitch = options.helixPitch || (isScrollNarrative ? 3.5 : 2.8);
-    var helixRevolutions = options.helixRevolutions || (isScrollNarrative ? 1.5 : 2.5);
-
-    var totalAngle = helixRevolutions * Math.PI * 2;
-    var angleStep = count > 1 ? totalAngle / (count - 1) : 0;
-    var startAngle = -totalAngle / 2;
-
-    items.forEach(function (item, index) {
-      if (!item.imageSrc) return;
-
-      var tex = textureLoader.load(
-        item.imageSrc,
-        function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-          texture.anisotropy = 8;
-        },
-        undefined,
-        function (err) {
-          if (window.__IMMERSIVE_DEV__) {
-            console.warn('[Immersive] Gallery texture load error:', err);
-          }
-        },
-      );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      tex.anisotropy = 8;
-      textures.push(tex);
-
-      var geom = new THREE.PlaneGeometry(cardW, cardH, 1, 1);
-      var mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0.95,
-        side: THREE.DoubleSide,
-      });
-
-      var angle = startAngle + angleStep * index;
-      var y = (angle / (Math.PI * 2)) * helixPitch;
-
-      // Scroll-narrative: add depth parallax offset for story-driven feel
-      var depthOffset = 0;
-      if (isScrollNarrative) {
-        // Cards further from center angle get pushed deeper (more parallax)
-        var normalizedAngle = (angle - startAngle) / totalAngle; // 0..1
-        depthOffset = (normalizedAngle - 0.5) * parallaxStrength * 20;
-      }
-
-      var mesh = new THREE.Mesh(geom, mat);
-      // Center Z around 1.0 (middle of camera frustum near=0, far=2)
-      mesh.position.set(
-        Math.cos(angle) * helixRadius,
-        y,
-        1.0 + Math.sin(angle) * helixRadius * 0.5 + depthOffset,
-      );
-      mesh.lookAt(new THREE.Vector3(0, y, 1.0 + depthOffset));
-      mesh.rotateY(Math.PI);
-
-      mesh.userData = {
-        roomKey: roomKey,
-        galleryIndex: item.index,
-        title: item.title || '',
-        productHandle: item.productHandle || null,
-        collectionHandle: item.collectionHandle || null,
-        layout: isScrollNarrative ? 'scroll-narrative' : 'helix',
-        baseAngle: angle,
-        baseY: y,
-        depthOffset: depthOffset,
-      };
-
-      group.add(mesh);
-      planes.push(mesh);
-
-      // Title label attached to card
-      if (item.title) {
-        var labelCanvas = document.createElement('canvas');
-        var lCtx = labelCanvas.getContext('2d');
-        labelCanvas.width = 768;
-        labelCanvas.height = 120;
-        lCtx.clearRect(0, 0, 768, 120);
-        lCtx.font = 'bold 48px Georgia, serif';
-        lCtx.textAlign = 'center';
-        lCtx.textBaseline = 'middle';
-        lCtx.fillStyle = '#ece3c2';
-        lCtx.letterSpacing = '-2px';
-        lCtx.fillText(item.title.toUpperCase(), 384, 40);
-
-        lCtx.font = '500 12px Arial, sans-serif';
-        lCtx.fillStyle = 'rgba(255,255,255,0.5)';
-        lCtx.letterSpacing = '2px';
-        lCtx.fillText('[ TAP TO EXPLORE ]', 384, 90);
-
-        var labelTex = new THREE.CanvasTexture(labelCanvas);
-        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        var labelMat = new THREE.MeshBasicMaterial({
-          map: labelTex,
-          transparent: true,
-          depthTest: false,
-          side: THREE.DoubleSide,
-        });
-        var labelW = cardW * 0.9;
-        var labelH = labelW * (120 / 768);
-        var labelGeom = new THREE.PlaneGeometry(labelW, labelH);
-        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        // Position below card, facing same direction as card
-        var la = angle;
-        var ly = y;
-        labelMesh.position.set(
-          Math.cos(la) * helixRadius,
-          ly - cardH * 0.55,
-          Math.sin(la) * helixRadius,
-        );
-        labelMesh.lookAt(new THREE.Vector3(0, ly - cardH * 0.55, 0));
-        labelMesh.rotateY(Math.PI);
-        labelMesh.renderOrder = 999;
-        group.add(labelMesh);
-        labels.push(labelMesh);
-      }
-    });
-
-    scene.add(group);
-
-    galleryStageRegistry[roomKey] = {
-      group: group,
-      planes: planes,
-      labels: labels,
-      textures: textures,
-      layout: isScrollNarrative ? 'scroll-narrative' : 'helix',
-      isScrollDriven: isScrollNarrative,
-      parallaxStrength: parallaxStrength,
-      currentRotationY: 0,
-      targetRotationY: 0,
-      currentScrollY: 0,
-      targetScrollY: 0,
-      helixRadius: helixRadius,
-      helixPitch: helixPitch,
-      helixRevolutions: helixRevolutions,
-      totalAngle: totalAngle,
-      cardCount: count,
-    };
-
+  if (layout === 'scroll-tunnel' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
+    _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
   } else if (layout === 'masonry-featured' || (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)) {
     // ── Masonry Featured layout ──
     // First item (featuredIndex) is a large hero card, centered, closer to camera.
@@ -1299,10 +1383,11 @@ function initGalleryCarousel(canvas) {
   if (!canvas) return;
   var state = galleryStageRegistry[currentRoomKey];
   var layout = state ? state.layout : 'arc';
-  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'infinite-drag-gallery');
+  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'infinite-drag-gallery' || layout === 'scroll-tunnel');
   var isHelixLayout = (layout === 'helix' || layout === 'scroll-narrative');
   var isGridLayout = (layout === 'grid' || layout === 'masonry-featured');
   var isInfiniteDrag = (layout === 'infinite-drag-gallery');
+  var isScrollTunnel = (layout === 'scroll-tunnel');
 
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
@@ -1367,6 +1452,13 @@ function initGalleryCarousel(canvas) {
         s.group.position.x += dx * 0.008;
         s.group.position.y -= dy * 0.008;
       }
+    } else if (isScrollTunnel) {
+      // Scroll tunnel: drag Y moves through tunnel (Z-axis)
+      s.targetScrollZ -= dy * 0.02;
+      s.targetScrollZ = Math.max(-s.tunnelLength, Math.min(0, s.targetScrollZ));
+      // Subtle X parallax
+      s.group.position.x += dx * 0.003;
+      galleryDragState.velocityY = dy * 0.5;
     } else {
       // Arc carousel: horizontal drag rotates
       var delta = dx * 0.008;
@@ -1398,6 +1490,10 @@ function initGalleryCarousel(canvas) {
       // Wheel adds to velocity for infinite drag
       galleryDragState.velocityY += e.deltaY * 0.05;
       galleryDragState.velocityX += e.deltaX * 0.05;
+    } else if (isScrollTunnel) {
+      // Wheel scrolls through tunnel (Z-axis)
+      s.targetScrollZ -= e.deltaY * 0.015;
+      s.targetScrollZ = Math.max(-s.tunnelLength, Math.min(0, s.targetScrollZ));
     } else if (isHelixLayout) {
       s.targetRotationY += e.deltaY * 0.003;
     } else if (isGridLayout) {
@@ -1428,12 +1524,13 @@ function animateGalleryCarousel() {
   if (!state || !state.group) return;
 
   var layout = state.layout;
-  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical');
+  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'scroll-tunnel');
   var isInfiniteDrag = (layout === 'infinite-drag-gallery');
+  var isScrollTunnel = (layout === 'scroll-tunnel');
 
   if (isScrollAnim) {
-    // ── Scroll-driven animation: scroll-narrative, vertical ──
-    var scrollSpacing = state.cardSpacing || 3.5;
+    // ── Scroll-driven animation: scroll-narrative, vertical, scroll-tunnel ──
+    var scrollSpacing = (layout === 'scroll-tunnel') ? (state.tunnelLength || 12) : (state.cardSpacing || 3.5);
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1467,6 +1564,32 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - normalizedDist * 0.7);
       }
     });
+
+    // ── Scroll-tunnel specific: move group along Z, update shader uniforms ──
+    if (isScrollTunnel) {
+      // Smooth Z interpolation
+      state.scrollZ += (state.targetScrollZ - state.scrollZ) * 0.08;
+      state.group.position.z = state.scrollZ;
+      // Subtle floating animation
+      var time = performance.now() * 0.001;
+      state.group.position.y = Math.sin(time * 0.5) * 0.05;
+      // Update shader uniforms
+      if (state.sharedUniforms) {
+        state.sharedUniforms.uTime.value = time;
+        state.sharedUniforms.uScrollZ.value = state.scrollZ;
+      }
+      // Parallax: cards closer to camera are more visible
+      state.planes.forEach(function (plane) {
+        if (!plane.userData) return;
+        var relZ = plane.userData.baseZ - state.scrollZ;
+        var dist = Math.abs(relZ);
+        var t = Math.min(dist / (state.tunnelLength * 0.4), 1.0);
+        var opacity = 1.0 - (t * t * (3.0 - 2.0 * t)); // smoothstep
+        if (plane.material && plane.material.opacity !== undefined) {
+          plane.material.opacity = opacity;
+        }
+      });
+    }
   } else if (isInfiniteDrag) {
     // ── Infinite drag gallery: X + Y velocity with friction, infinite wrap ──
     var friction = 0.95;
@@ -1777,7 +1900,7 @@ function getGalleryLayout(roomKey) {
   // Valid semantic layout names (passthrough to buildGalleryStageForRoom)
   var validLayouts = {
     'asymmetric-gallery': 1,
-    'scroll-narrative': 1,
+    'scroll-tunnel': 1,
     'masonry-featured': 1,
     // Legacy/internal names still supported
     'vertical': 1,
@@ -1791,7 +1914,7 @@ function getGalleryLayout(roomKey) {
 
   // Per-room fallback when setting is missing/invalid — use new 3D layouts
   if (roomKey === 'designer_houses') return 'asymmetric-gallery';
-  if (roomKey === 'occasions') return 'scroll-narrative';
+  if (roomKey === 'occasions') return 'scroll-tunnel';
   if (roomKey === 'featured_collections') return 'masonry-featured';
   return 'arc';
 }
