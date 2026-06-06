@@ -61,7 +61,11 @@ function initializeScrollZoomAnimationTrigger() {
 
     window.addEventListener(
       'scroll',
-      throttle(() => {
+      (typeof throttle === 'function' ? throttle(() => {
+        if (!elementIsVisible) return;
+
+        element.style.setProperty('--zoom-in-ratio', 1 + scaleAmount * percentageSeen(element));
+      }) : () => {
         if (!elementIsVisible) return;
 
         element.style.setProperty('--zoom-in-ratio', 1 + scaleAmount * percentageSeen(element));

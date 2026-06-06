@@ -17,6 +17,7 @@ class CartItems extends HTMLElement {
     super();
     this.lineItemStatusElement =
       document.getElementById('shopping-cart-line-item-status') || document.getElementById('CartDrawer-LineItemStatus');
+    this._pendingQuantityAbort = null;
 
     const debouncedOnChange = debounce((event) => {
       this.onChange(event);
@@ -44,6 +45,7 @@ class CartItems extends HTMLElement {
 
   resetQuantityInput(id) {
     const input = this.querySelector(`#Quantity-${id}`);
+    if (!input) return;
     input.value = input.getAttribute('value');
     this.isEnterPressed = false;
   }
@@ -60,7 +62,9 @@ class CartItems extends HTMLElement {
     const index = event.target.dataset.index;
     let message = '';
 
-    if (inputValue < event.target.dataset.min) {
+    if (isNaN(inputValue)) {
+      message = window.quickOrderListStrings.min_error ? window.quickOrderListStrings.min_error.replace('[min]', 1) : 'Please enter a valid number';
+    } else if (inputValue < event.target.dataset.min) {
       message = window.quickOrderListStrings.min_error.replace('[min]', event.target.dataset.min);
     } else if (inputValue > parseInt(event.target.max)) {
       message = window.quickOrderListStrings.max_error.replace('[max]', event.target.max);
@@ -152,6 +156,11 @@ class CartItems extends HTMLElement {
 
     this.enableLoading(line);
 
+    if (this._pendingQuantityAbort) {
+      this._pendingQuantityAbort.abort();
+    }
+    this._pendingQuantityAbort = new AbortController();
+
     const body = JSON.stringify({
       line,
       quantity,
@@ -159,8 +168,9 @@ class CartItems extends HTMLElement {
       sections_url: window.location.pathname,
     });
 
-    fetch(`${routes.cart_change_url}`, { ...fetchConfig(), ...{ body } })
+    fetch(`${routes.cart_change_url}`, { ...fetchConfig(), ...{ body }, signal: this._pendingQuantityAbort.signal })
       .then((response) => {
+        if (!response.ok) throw new Error('Cart update failed: ' + response.status);
         return response.text();
       })
       .then((state) => {
@@ -246,10 +256,11 @@ class CartItems extends HTMLElement {
       document.getElementById(`Line-item-error-${line}`) || document.getElementById(`CartDrawer-LineItemError-${line}`);
     if (lineItemError) lineItemError.querySelector('.cart-item__error-text').textContent = message;
 
-    this.lineItemStatusElement.setAttribute('aria-hidden', true);
+    if (this.lineItemStatusElement) this.lineItemStatusElement.setAttribute('aria-hidden', true);
 
     const cartStatus =
       document.getElementById('cart-live-region-text') || document.getElementById('CartDrawer-LiveRegionText');
+    if (!cartStatus) return;
     cartStatus.setAttribute('aria-hidden', false);
 
     setTimeout(() => {
@@ -260,7 +271,17 @@ class CartItems extends HTMLElement {
   getSectionInnerHTML(html, selector) {
     const parsed = new DOMParser().parseFromString(html, 'text/html');
     const element = parsed.querySelector(selector);
-    return element ? element.innerHTML : '';
+    if (!element) return '';
+    element.querySelectorAll('[onclick], [onload], [onerror], [onmouseover]').forEach((el) => {
+      el.removeAttribute('onclick');
+      el.removeAttribute('onload');
+      el.removeAttribute('onerror');
+      el.removeAttribute('onmouseover');
+    });
+    element.querySelectorAll('a[href^="javascript:"]').forEach((el) => {
+      el.setAttribute('href', '#');
+    });
+    return element.innerHTML;
   }
 
   enableLoading(line) {
@@ -301,9 +322,13 @@ if (!customElements.get('cart-note')) {
           'input',
           debounce((event) => {
             const body = JSON.stringify({ note: event.target.value });
-            fetch(`${routes.cart_update_url}`, { ...fetchConfig(), ...{ body } }).then(() =>
-              CartPerformance.measureFromEvent('note-update:user-action', event)
-            );
+            fetch(`${routes.cart_update_url}`, { ...fetchConfig(), ...{ body } })
+              .then(() =>
+                CartPerformance.measureFromEvent('note-update:user-action', event)
+              )
+              .catch((e) => {
+                if (window.__IMMERSIVE_DEV__) console.warn('[Cart] Note update failed:', e);
+              });
           }, ON_CHANGE_DEBOUNCE_TIMER)
         );
       }

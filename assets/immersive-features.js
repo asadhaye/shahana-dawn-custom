@@ -1,4 +1,17 @@
 // ─────────────────────────────────────────────────────────────
+// Global HTML-escaping utility — used by wishlist panel, artifact study,
+// product grid, and any innerHTML construction that interpolates data.
+// ─────────────────────────────────────────────────────────────
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ─────────────────────────────────────────────────────────────
 // Skeleton Loaders for Panel Content
 // ─────────────────────────────────────────────────────────────
 
@@ -36,8 +49,46 @@ function renderSkeletonProduct() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Error feedback UI for panel surfaces
+// ─────────────────────────────────────────────────────────────
+
+function showErrorFeedback(panel, message) {
+  if (!panel) return;
+  var contentArea = panel.querySelector('.immersive-store__panel-content');
+  var target = contentArea || panel;
+  target.innerHTML =
+    '<div class="immersive-store__error-feedback">' +
+    '<p class="immersive-store__error-feedback__message">' +
+    escapeHtml(message) +
+    '</p>' +
+    '<button type="button" class="immersive-store__error-feedback__close" data-close-panel>Close</button>' +
+    '</div>';
+  target.style.opacity = '1';
+  panel.onclick = function (e) {
+    if (e.target === panel || e.target.closest('[data-close-panel]')) {
+      closePanel(panel);
+    }
+  };
+  LoadingState.complete();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Wishlist item storage (consolidated with immersive-core.js)
+// ─────────────────────────────────────────────────────────────
+
+var _wishlistItems = [];
+
+// ─────────────────────────────────────────────────────────────
 // Content Transition Helpers
 // ─────────────────────────────────────────────────────────────
+
+/* OVERRIDE NOTICE: Several functions defined in this file (e.g., showNextActions,
+ * dismissNextActions, _nextActionsTimer, _nextActionsBar) are intentionally
+ * minimal stubs that get overridden by immersive-init.js when all three files
+ * load together. Additionally, this file overrides stubs from immersive-core.js
+ * (e.g., getRecommendation, showRoomRecommendation, activateGuidedMode,
+ * exitGuidedMode). Do NOT remove these stubs — they serve as fallbacks if
+ * init.js is absent. */
 
 function fadeInContent(container, html) {
   if (!container) return;
@@ -130,7 +181,8 @@ function openProductPanel(productHandle, collectionHandle) {
             collection_handle: collectionHandle || null,
           });
 
-          // Panel click handler
+          // Exclusive panel click handler — replaces any previous handler when panel content changes.
+          // Do not set panel.onclick elsewhere; use addEventListener if co-handlers are needed.
           panel.onclick = function (event) {
           if (event.target === panel) {
             closePanel(panel);
@@ -247,6 +299,12 @@ function openProductPanel(productHandle, collectionHandle) {
 // Browsing signals — personalized room suggestions (Feature 6)
 // ─────────────────────────────────────────────────────────────
 function openCollectionPanel(collectionHandle) {
+  // Validate that the collection handle looks like a valid slug
+  // (non-empty, alphanumeric with hyphens, no spaces or special chars)
+  if (!collectionHandle || !/^[\w-]+$/.test(collectionHandle)) {
+    console.warn('[immersive] Invalid collection handle skipped:', collectionHandle);
+    return;
+  }
   try {
     exitGuidedMode();
     recordBrowsingSignal(immersiveState.currentRoom);
@@ -314,7 +372,8 @@ function openCollectionPanel(collectionHandle) {
           initImmersiveFilters(panel, collHandle || collectionHandle, currentRoomForFilters, 'glass-panel');
         }
 
-        // Panel click handler
+        // Exclusive panel click handler — replaces any previous handler when panel content changes.
+        // Do not set panel.onclick elsewhere; use addEventListener if co-handlers are needed.
         panel.onclick = function (event) {
           if (event.target === panel) {
             closePanel(panel);
@@ -1020,8 +1079,8 @@ function setupBuyNowForm(panel) {
             .catch(function () {});
 
           // Publish cart-update event so Dawn's own CartItems can react
-          if (typeof publish === 'function') {
-            publish('cart-update', { source: 'immersive-store' });
+          if (typeof publish === 'function' && typeof PUB_SUB_EVENTS !== 'undefined') {
+            publish(PUB_SUB_EVENTS.cartUpdate, { source: 'immersive-store' });
           }
         })
         .catch(function (error) {
@@ -1688,6 +1747,18 @@ function isWishlistCacheStale(handle) {
   return (Date.now() - cached._cachedAt) > 30 * 60 * 1000; // 30 minutes
 }
 
+function renderEmptyState(type) {
+  if (type === 'wishlist') {
+    return (
+      '<div class="immersive-wishlist-empty">' +
+      '<p>' + escapeHtml('Your wishlist is empty') + '</p>' +
+      '<button type="button" class="immersive-wishlist-empty__browse" data-wishlist-browse>Browse Collections</button>' +
+      '</div>'
+    );
+  }
+  return '<div class="immersive-empty-state"><p>No items found.</p></div>';
+}
+
 function renderWishlistPanel() {
   var body = document.querySelector('[data-wishlist-body]');
   var panelEl = document.getElementById('immersive-wishlist-panel');
@@ -1735,7 +1806,7 @@ function renderWishlistPanel() {
       roomLabel = (roomBadgeEl && roomBadgeEl.getAttribute('data-room-name-' + groupKey)) || groupKey;
     }
 
-    html += '<h3 class="immersive-wishlist__room-label">Found in: ' + roomLabel + '</h3>';
+    html += '<h3 class="immersive-wishlist__room-label">Found in: ' + escapeHtml(roomLabel) + '</h3>';
 
     for (var j = 0; j < handles.length; j++) {
       var handle = handles[j];
@@ -1745,41 +1816,41 @@ function renderWishlistPanel() {
       var imgSrc = cached.imageSrc || '';
       var imgHtml = imgSrc
         ? '<img src="' +
-          imgSrc +
+          escapeHtml(imgSrc) +
           '" alt="' +
-          title.replace(/"/g, '&quot;') +
+          escapeHtml(title) +
           '" loading="lazy" width="80" height="107">'
         : '<div style="width:80px;height:107px;background:rgba(255,255,255,0.05);border-radius:0.25rem;"></div>';
 
       html +=
         '<article class="immersive-wishlist-card" data-wishlist-card data-product-handle="' +
-        handle +
+        escapeHtml(handle) +
         '">' +
         imgHtml +
         '<div class="immersive-wishlist-card__info">' +
         '<p class="immersive-wishlist-card__title">' +
-        title +
+        escapeHtml(title) +
         '</p>' +
         '<p class="immersive-wishlist-card__price">' +
-        price +
+        escapeHtml(price) +
         '</p>' +
         '</div>' +
         '<div class="immersive-wishlist-card__actions">' +
         '<button type="button" data-wishlist-view data-product-handle="' +
-        handle +
+        escapeHtml(handle) +
         '" aria-label="' +
-        viewMsg +
+        escapeHtml(viewMsg) +
         ' ' +
-        title.replace(/"/g, '&quot;') +
+        escapeHtml(title) +
         '">' +
-        viewMsg +
+        escapeHtml(viewMsg) +
         '</button>' +
         '<button type="button" data-wishlist-remove data-product-handle="' +
-        handle +
+        escapeHtml(handle) +
         '" aria-label="' +
-        removeMsg +
+        escapeHtml(removeMsg) +
         '">' +
-        removeMsg +
+        escapeHtml(removeMsg) +
         '</button>' +
         '</div>' +
         '</article>';
@@ -1864,11 +1935,15 @@ function initWishlist() {
   try {
     var stored = JSON.parse(localStorage.getItem(WISHLIST_KEY) || '[]');
     var raw = Array.isArray(stored) ? stored : [];
-    // Migrate old string-format items to object format
+    var needsMigration = !localStorage.getItem(WISHLIST_KEY + '_v2');
+    // Migrate old string-format items to object format (only once)
     _wishlistItems = raw.map(function (item) {
       if (typeof item === 'string') return { handle: item, discoveryRoom: null };
       return item;
     });
+    if (needsMigration) {
+      localStorage.setItem(WISHLIST_KEY + '_v2', '1');
+    }
   } catch (e) {
     _wishlistItems = [];
   }
@@ -2475,15 +2550,15 @@ function bindCookieBanner() {
     }
     study.innerHTML =
       '<button type="button" class="immersive-artifact-study__close" data-artifact-close>Close</button>' +
-      (data.image ? '<img class="immersive-artifact-study__image" src="' + data.image + '" alt="">' : '') +
+      (data.image ? '<img class="immersive-artifact-study__image" src="' + escapeHtml(data.image) + '" alt="">' : '') +
       '<div class="immersive-artifact-study__meta">Artifact study</div>' +
       '<h3 class="immersive-artifact-study__title">' +
-      data.title +
+      escapeHtml(data.title) +
       '</h3>' +
-      (data.body ? '<p class="immersive-artifact-study__body">' + data.body + '</p>' : '') +
+      (data.body ? '<p class="immersive-artifact-study__body">' + escapeHtml(data.body) + '</p>' : '') +
       (data.collection
         ? '<button type="button" class="immersive-artifact-study__cta" data-artifact-collection="' +
-          data.collection +
+          escapeHtml(data.collection) +
           '">View collection</button>'
         : '');
     root.classList.add('is-studying-artifact');
@@ -3084,6 +3159,73 @@ function buildFilterUrl(baseUrl, state) {
     url.searchParams.set('sort_by', state.sortBy);
   }
   return url.pathname + url.search;
+}
+
+function renderActiveFilterChips(state) {
+  var chips = '';
+  if (state.colors && state.colors.length > 0) {
+    for (var i = 0; i < state.colors.length; i++) {
+      chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="color:' + escapeHtml(state.colors[i]) + '">' +
+        '<span class="immersive-filter-chip__label">' + escapeHtml(state.colors[i]) + '</span>' +
+        '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
+        '</button>';
+    }
+  }
+  if (state.designers && state.designers.length > 0) {
+    for (var j = 0; j < state.designers.length; j++) {
+      chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="designer:' + escapeHtml(state.designers[j]) + '">' +
+        '<span class="immersive-filter-chip__label">' + escapeHtml(state.designers[j]) + '</span>' +
+        '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
+        '</button>';
+    }
+  }
+  if (state.priceMin !== null && state.priceMin !== undefined && state.priceMin !== '') {
+    chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="priceMin">' +
+      '<span class="immersive-filter-chip__label">Min: $' + state.priceMin + '</span>' +
+      '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
+      '</button>';
+  }
+  if (state.priceMax !== null && state.priceMax !== undefined && state.priceMax !== '') {
+    chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="priceMax">' +
+      '<span class="immersive-filter-chip__label">Max: $' + state.priceMax + '</span>' +
+      '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
+      '</button>';
+  }
+  if (state.sortBy && state.sortBy !== 'manual') {
+    chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="sortBy">' +
+      '<span class="immersive-filter-chip__label">Sort: ' + escapeHtml(state.sortBy) + '</span>' +
+      '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
+      '</button>';
+  }
+  chips += '<button type="button" class="immersive-filter-chip immersive-filter-chip--clear" data-clear-all-filters>Clear All</button>';
+  return chips;
+}
+
+function removeFilterChip(filterKey, currentState, applyFilters) {
+  var parts = filterKey.split(':');
+  var category = parts[0];
+  var value = parts.length > 1 ? parts[1] : null;
+  var newState = {
+    colors: currentState.colors.slice(),
+    priceMin: currentState.priceMin,
+    priceMax: currentState.priceMax,
+    designers: currentState.designers.slice(),
+    sortBy: currentState.sortBy,
+  };
+
+  if (category === 'color') {
+    newState.colors = newState.colors.filter(function (c) { return c !== value; });
+  } else if (category === 'designer') {
+    newState.designers = newState.designers.filter(function (d) { return d !== value; });
+  } else if (category === 'priceMin') {
+    newState.priceMin = null;
+  } else if (category === 'priceMax') {
+    newState.priceMax = null;
+  } else if (category === 'sortBy') {
+    newState.sortBy = 'manual';
+  }
+
+  applyFilters(newState);
 }
 
 function initImmersiveFilters(panelEl, collectionHandle, roomKey, sectionId) {

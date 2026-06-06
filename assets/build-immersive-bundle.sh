@@ -1,15 +1,17 @@
 #!/bin/bash
 # build-immersive-bundle.sh
-# Concatenates immersive-core.js + immersive-features.js + infinite-gallery.js into immersive-bundle.js
+# Concatenates immersive-core.js + immersive-features.js into immersive-bundle.js
+# Optionally minifies if terser is available.
 # Run this after any change to any source file.
+# Note: infinite-gallery.js has been inlined into immersive-core.js and is no longer separate.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CORE="$SCRIPT_DIR/immersive-core.js"
 FEATURES="$SCRIPT_DIR/immersive-features.js"
-GALLERY="$SCRIPT_DIR/infinite-gallery.js"
 OUTPUT="$SCRIPT_DIR/immersive-bundle.js"
+OUTPUT_MIN="$SCRIPT_DIR/immersive-bundle.min.js"
 
 if [ ! -f "$CORE" ]; then
   echo "ERROR: $CORE not found"
@@ -24,16 +26,35 @@ fi
 echo "Building immersive-bundle.js..."
 echo "  + $(basename "$CORE") ($(wc -l < "$CORE") lines)"
 echo "  + $(basename "$FEATURES") ($(wc -l < "$FEATURES") lines)"
-if [ -f "$GALLERY" ]; then
-  echo "  + $(basename "$GALLERY") ($(wc -l < "$GALLERY") lines)"
-fi
 
-cat "$CORE" "$FEATURES" > "$OUTPUT"
+# Use printf to ensure a newline separator between files
+cat "$CORE" > "$OUTPUT"
+printf '\n' >> "$OUTPUT"
+cat "$FEATURES" >> "$OUTPUT"
 
-# Append infinite-gallery if it exists
-if [ -f "$GALLERY" ]; then
-  cat "$GALLERY" >> "$OUTPUT"
+# Validate output is valid JavaScript
+if command -v node &>/dev/null; then
+  if ! node -c "$OUTPUT" 2>/dev/null; then
+    echo "ERROR: Output bundle is not valid JavaScript — check concatenation"
+    exit 1
+  fi
+  echo "  [validated: syntax check passed]"
 fi
 
 echo "  -> $(basename "$OUTPUT") ($(wc -l < "$OUTPUT") lines)"
+
+# Optional minification step — produces immersive-bundle.min.js if terser is available
+if command -v terser &>/dev/null || npx terser --version &>/dev/null 2>&1; then
+  echo "  Minifying with terser..."
+  if command -v terser &>/dev/null; then
+    terser "$OUTPUT" --compress --mangle --keep-fnames -o "$OUTPUT_MIN"
+  else
+    npx terser "$OUTPUT" --compress --mangle --keep-fnames -o "$OUTPUT_MIN"
+  fi
+  echo "  -> $(basename "$OUTPUT_MIN") ($(wc -c < "$OUTPUT_MIN") bytes, $(wc -l < "$OUTPUT_MIN") lines)"
+  echo "  NOTE: To use the minified bundle, update theme.liquid to load immersive-bundle.min.js instead of immersive-bundle.js"
+else
+  echo "  [minification skipped: terser not installed. Install with: npm install -g terser or npm install terser --save-dev]"
+fi
+
 echo "Done."

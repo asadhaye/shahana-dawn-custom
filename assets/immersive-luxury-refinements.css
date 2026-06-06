@@ -16,6 +16,15 @@
   --lux-text-muted: rgba(245, 240, 232, 0.6);
 }
 
+/* ── Focus-visible for interactive elements ──────────────────────────────── */
+
+.immersive-luxury-section button:focus-visible,
+.immersive-luxury-section a:focus-visible,
+.immersive-luxury-section [tabindex]:focus-visible {
+  outline: 2px solid var(--color-foreground, #333);
+  outline-offset: 2px;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PRIORITY 1 — TIMELINE UX REFINEMENT
@@ -112,6 +121,13 @@
 .immersive-designers__hero-state.is-active .immersive-designers__hero-bg {
   animation: immersive-hero-breathe 25s ease-in-out infinite;
   transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-hero-breathe { animation: none; }
+  .immersive-designers__hero-state.is-active .immersive-designers__hero-bg {
+    animation: none;
+  }
 }
 
 /* ── Staggered Layer Transitions ─────────────────────────────────────────── */

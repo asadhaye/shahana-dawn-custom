@@ -58,11 +58,6 @@
 }
 
 /* Header overrides */
-.custom-logo-link {
-  z-index: var(--z-header);
-  /* Hide Dawn's announcement bar on the immersive template — the notification bar replaces it */
-  display: none !important;
-}
 
 .template-page-immersive .announcement-bar-section .utility-bar {
   background: rgba(212, 175, 55, 0.12) !important;
@@ -1185,7 +1180,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: var(--z-header);
+  z-index: var(--z-modal);
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -2386,28 +2381,7 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   }
 
-  /* Quick actions: lower opacity, softer appearance */
-  .immersive-product-card__quick-actions {
-    opacity: 0.5;
-    transition: opacity 0.2s var(--motion-curve);
   }
-
-  .immersive-product-card__quick-actions:hover {
-    opacity: 0.8;
-  }
-
-  .immersive-product-card__quick-action {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid rgba(212, 175, 55, 0.2);
-    color: rgba(212, 175, 55, 0.8);
-    transition: all 0.2s var(--motion-curve);
-  }
-
-  .immersive-product-card__quick-action:hover {
-    background: rgba(212, 175, 55, 0.15);
-    border-color: rgba(212, 175, 55, 0.3);
-  }
-}
 
 /* Desktop hover refinement */
 @media (min-width: 769px) {
@@ -2430,16 +2404,6 @@
   background: rgba(15, 23, 42, 0.6);
   border-radius: 12px;
   overflow: hidden;
-}
-
-/* Shimmer animation */
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
 }
 
 .immersive-skeleton__shimmer {

@@ -90,7 +90,19 @@ class CartDrawer extends HTMLElement {
   }
 
   getSectionInnerHTML(html, selector = '.shopify-section') {
-    return new DOMParser().parseFromString(html, 'text/html').querySelector(selector).innerHTML;
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const element = parsed.querySelector(selector);
+    if (!element) return '';
+    element.querySelectorAll('[onclick], [onload], [onerror], [onmouseover]').forEach((el) => {
+      el.removeAttribute('onclick');
+      el.removeAttribute('onload');
+      el.removeAttribute('onerror');
+      el.removeAttribute('onmouseover');
+    });
+    element.querySelectorAll('a[href^="javascript:"]').forEach((el) => {
+      el.setAttribute('href', '#');
+    });
+    return element.innerHTML;
   }
 
   getSectionsToRender() {

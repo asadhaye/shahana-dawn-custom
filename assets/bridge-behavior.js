@@ -62,7 +62,7 @@
     el.className = 'immersive-bridge-btn__connection-note';
     el.textContent = message;
     if (bridge.parentNode) {
-      bridge.parentNode.insertBefore(el, bridge.nextSibling);
+      bridge.parentNode.insertBefore(el, bridge.nextElementSibling);
     }
   }
 
@@ -116,16 +116,18 @@
         var rtt = getRoundTripTime();
         
         // Log connection metrics for analytics
-        console.log('[Bridge] Connection changed:', {
-          type: updated,
-          downlink: speed ? speed + ' Mbps' : 'unknown',
-          rtt: rtt ? rtt + 'ms' : 'unknown',
-          saveData: getDataSaverStatus()
-        });
+        if (window.__IMMERSIVE_DEV__) {
+          console.log('[Bridge] Connection changed:', {
+            type: updated,
+            downlink: speed ? speed + ' Mbps' : 'unknown',
+            rtt: rtt ? rtt + 'ms' : 'unknown',
+            saveData: getDataSaverStatus()
+          });
+        }
         
         bridges.forEach(function (b) {
           b.classList.remove('immersive-bridge-btn--slow-connection', 'immersive-bridge-btn--medium-connection');
-          var note = b.nextSibling;
+          var note = b.nextElementSibling;
           if (note && note.classList && note.classList.contains('immersive-bridge-btn__connection-note')) {
             note.parentNode.removeChild(note);
           }

@@ -47,6 +47,13 @@ if (typeof window.trackImmersiveEvent === 'undefined') {
   }
 })();
 
+/* OVERRIDE NOTICE: Several functions defined in this file (e.g., getRecommendation,
+ * evaluateRoomRecommendation, showRoomRecommendation, trackRoomVisit,
+ * performEditorialUIActivation, exitGuidedMode, activateGuidedMode,
+ * updateCameraForMode, updateBackToLoungeVisibility) are intentionally minimal
+ * stubs that get overridden by immersive-features.js when both files load together.
+ * Do NOT remove these stubs — they serve as fallbacks if features.js is absent. */
+
 var STORE_ROOMS = {
   storefront: {
     baseTextureUrl:
@@ -180,7 +187,7 @@ var ListenerRegistry = {
     Object.keys(this.registry).forEach(function (key) {
       self.cleanup(key);
     });
-  }
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,58 +195,83 @@ var ListenerRegistry = {
 // ─────────────────────────────────────────────────────────────────────────────
 if (!window.ShahanaImmersive) {
   window.ShahanaImmersive = {
+    store: {
+      get: function (key, fallback) {
+        try {
+          var raw = localStorage.getItem(key);
+          if (raw === null) return fallback;
+          return JSON.parse(raw);
+        } catch (e) {
+          return fallback;
+        }
+      },
+      set: function (key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (e) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] localStorage write failed:', key, e);
+          return false;
+        }
+      },
+      remove: function (key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      },
+    },
     graphics: {
       renderer: null,
       scene: null,
       camera: null,
       planeMesh: null,
-      uniforms: null
+      uniforms: null,
     },
     room: {
       current: null,
       subMode: null,
-      transitioning: false
+      transitioning: false,
     },
     cache: {
       textures: [],
       content: {},
-      gallery: {}
+      gallery: {},
     },
     settings: {
       reduceMotion: false,
       isMobile: false,
       isTablet: false,
       textureQuality: 1.0,
-      targetFPS: 60
+      targetFPS: 60,
     },
     search: {
       activeIndex: -1,
       results: [],
       debounceTimer: null,
-      abortController: null
+      abortController: null,
     },
     gesture: {
       lastRoomTransition: 0,
       cooldown: 600,
-      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections']
+      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'],
     },
     quickAdd: {
       modal: null,
-      trigger: null
+      trigger: null,
     },
     hotspot: {
       elements: [],
-      focusedIndex: -1
+      focusedIndex: -1,
     },
     device: {
       isMobile: false,
       isTablet: false,
-      isLowEnd: false
+      isLowEnd: false,
     },
     layout: {
       registry: {},
-      current: {}
-    }
+      current: {},
+    },
   };
 }
 
@@ -276,7 +308,7 @@ function initDeviceOptimization() {
       isTablet: isTablet,
       isLowEnd: isLowEnd,
       textureQuality: window.ShahanaImmersive.settings.textureQuality,
-      targetFPS: window.ShahanaImmersive.settings.targetFPS
+      targetFPS: window.ShahanaImmersive.settings.targetFPS,
     });
   }
 }
@@ -312,7 +344,7 @@ var LoadingState = {
     if (typeof showFeedback === 'function') {
       showFeedback(message, 'error');
     }
-  }
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -324,8 +356,8 @@ var Analytics = {
       if (window.gtag) {
         gtag('event', event, data);
       }
-      if (window.shopifyAnalytics) {
-        shopifyAnalytics.publish('immersive:' + event, data);
+      if (window.shopifyAnalytics && typeof shopifyAnalytics.track === 'function') {
+        shopifyAnalytics.track('immersive:' + event, data);
       }
     } catch (e) {
       if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Analytics error:', e);
@@ -338,7 +370,7 @@ var Analytics = {
 
   trackError: function (errorType, message) {
     this.track('error', { type: errorType, message: message, timestamp: Date.now() });
-  }
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -354,8 +386,8 @@ var LAYOUT_REGISTRY = {
       maxItems: 12,
       draggable: true,
       physics: true,
-      parallaxStrength: 0.08
-    }
+      parallaxStrength: 0.08,
+    },
   },
   'scroll-narrative': {
     name: 'Scroll Narrative',
@@ -367,8 +399,8 @@ var LAYOUT_REGISTRY = {
       draggable: false,
       physics: false,
       parallaxStrength: 0.04,
-      scrollDriven: true
-    }
+      scrollDriven: true,
+    },
   },
   'masonry-featured': {
     name: 'Masonry Featured',
@@ -380,8 +412,8 @@ var LAYOUT_REGISTRY = {
       draggable: true,
       physics: false,
       parallaxStrength: 0.06,
-      featuredIndex: 0
-    }
+      featuredIndex: 0,
+    },
   },
   'infinite-drag-gallery': {
     name: 'Infinite Drag Gallery',
@@ -407,7 +439,7 @@ var LAYOUT_REGISTRY = {
       itemSpacing: 2.5,
       lerpFactor: 0.1,
       cardHeight: 0.5,
-      cardAspect: 3/4,
+      cardAspect: 3 / 4,
       draggable: true,
       physics: true,
       scrollDriven: true,
@@ -422,7 +454,7 @@ var LAYOUT_REGISTRY = {
       tunnelLength: 15,
       fov: 60,
       cardHeight: 0.5,
-      cardAspect: 3/4,
+      cardAspect: 3 / 4,
       draggable: true,
       physics: true,
       scrollDriven: true,
@@ -539,22 +571,38 @@ function disposeGalleryStage(roomKey) {
     state.group.traverse(function (obj) {
       if (obj.isMesh) {
         if (obj.geometry) {
-          try { obj.geometry.dispose(); } catch (e) {}
+          try {
+            obj.geometry.dispose();
+          } catch (e) {}
         }
         if (obj.material) {
           if (Array.isArray(obj.material)) {
             obj.material.forEach(function (m) {
-              if (m.map) { try { m.map.dispose(); } catch (e) {} }
-              try { m.dispose(); } catch (e) {}
+              if (m.map) {
+                try {
+                  m.map.dispose();
+                } catch (e) {}
+              }
+              try {
+                m.dispose();
+              } catch (e) {}
             });
           } else {
-            if (obj.material.map) { try { obj.material.map.dispose(); } catch (e) {} }
-            try { obj.material.dispose(); } catch (e) {}
+            if (obj.material.map) {
+              try {
+                obj.material.map.dispose();
+              } catch (e) {}
+            }
+            try {
+              obj.material.dispose();
+            } catch (e) {}
           }
         }
       }
     });
-    try { scene.remove(state.group); } catch (e) {}
+    try {
+      scene.remove(state.group);
+    } catch (e) {}
   }
 
   // Dispose all textures
@@ -593,12 +641,12 @@ function disposeGalleryStage(roomKey) {
 // ─────────────────────────────────────────────────────────────────────────────
 function _buildScrollStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
-  var isScrollStory = (options.layout === 'scroll-story');
+  var isScrollStory = options.layout === 'scroll-story';
   var cardH = options.cardHeight || (isScrollStory ? 0.5 : 0.4);
-  var cardAspect = options.cardAspect || (isScrollStory ? (3/4) : (2/3));
+  var cardAspect = options.cardAspect || (isScrollStory ? 3 / 4 : 2 / 3);
   var cardW = cardH * cardAspect;
-  var itemSpacing = cfg.itemSpacing || 2.5;       // Y gap between items (world units)
-  var lerpFactor = cfg.lerpFactor || 0.1;         // LERP smoothing (lower = smoother)
+  var itemSpacing = cfg.itemSpacing || 2.5; // Y gap between items (world units)
+  var lerpFactor = cfg.lerpFactor || 0.1; // LERP smoothing (lower = smoother)
   var isHelix = !isScrollStory;
 
   // ── Scroll state ──
@@ -616,12 +664,17 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
     if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(item.imageSrc, function (texture) {
-        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        texture.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Story texture load error:', err);
-      });
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Story texture load error:', err);
+        },
+      );
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       tex.anisotropy = 8;
       texCache[item.imageSrc] = tex;
@@ -631,22 +684,38 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
   });
 
   if (loadedItems.length === 0) {
+    var uiLayer = document.getElementById('ui-layer');
+    if (uiLayer) {
+      var emptyMsg = document.createElement('div');
+      emptyMsg.className = 'immersive-gallery-empty-msg';
+      emptyMsg.textContent = uiLayer.getAttribute('data-msg-empty-collection') || 'This collection is currently empty.';
+      uiLayer.appendChild(emptyMsg);
+    }
     scene.add(group);
     galleryStageRegistry[roomKey] = {
-      group: group, planes: [], labels: [], textures: textures,
+      group: group,
+      planes: [],
+      labels: [],
+      textures: textures,
       layout: isScrollStory ? 'scroll-story' : 'helix',
-      cardCount: 0, itemSpacing: itemSpacing, isScrollStory: isScrollStory,
-      currentScrollY: 0, targetScrollY: 0, lerpFactor: lerpFactor,
+      cardCount: 0,
+      itemSpacing: itemSpacing,
+      isScrollStory: isScrollStory,
+      currentScrollY: 0,
+      targetScrollY: 0,
+      lerpFactor: lerpFactor,
     };
     return;
   }
 
   // ── Shared shader uniforms ──
-  var sharedUniforms = isScrollStory ? {
-    uTime:        { value: 0 },
-    uScrollY:     { value: 0 },
-    uVelocity:    { value: 0 },
-  } : null;
+  var sharedUniforms = isScrollStory
+    ? {
+        uTime: { value: 0 },
+        uScrollY: { value: 0 },
+        uVelocity: { value: 0 },
+      }
+    : null;
 
   // ── Vertex shader: wave bend from scroll velocity ──
   var vertSrc = [
@@ -705,10 +774,10 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
         vertexShader: vertSrc,
         fragmentShader: fragSrc,
         uniforms: {
-          uTexture:   { value: entry.tex },
-          uTime:      sharedUniforms.uTime,
-          uScrollY:   sharedUniforms.uScrollY,
-          uVelocity:  sharedUniforms.uVelocity,
+          uTexture: { value: entry.tex },
+          uTime: sharedUniforms.uTime,
+          uScrollY: sharedUniforms.uScrollY,
+          uVelocity: sharedUniforms.uVelocity,
         },
         transparent: true,
         side: THREE.DoubleSide,
@@ -716,7 +785,10 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       });
     } else {
       mat = new THREE.MeshBasicMaterial({
-        map: entry.tex, transparent: true, opacity: 0.95, side: THREE.DoubleSide,
+        map: entry.tex,
+        transparent: true,
+        opacity: 0.95,
+        side: THREE.DoubleSide,
       });
     }
 
@@ -769,7 +841,10 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       var labelTex = new THREE.CanvasTexture(labelCanvas);
       labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       var labelMat = new THREE.MeshBasicMaterial({
-        map: labelTex, transparent: true, depthTest: false, side: THREE.DoubleSide,
+        map: labelTex,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide,
       });
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
@@ -784,20 +859,23 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
   scene.add(group);
 
   galleryStageRegistry[roomKey] = {
-    group: group, planes: planes, labels: labels, textures: textures,
+    group: group,
+    planes: planes,
+    labels: labels,
+    textures: textures,
     layout: isScrollStory ? 'scroll-story' : 'helix',
     isScrollStory: isScrollStory,
     isScrollDriven: isScrollStory,
     itemSpacing: itemSpacing,
     totalHeight: count * itemSpacing,
     lerpFactor: lerpFactor,
-    currentScrollY: 0, targetScrollY: 0,
+    currentScrollY: 0,
+    targetScrollY: 0,
     prevScrollY: 0,
     cardCount: count,
     sharedUniforms: sharedUniforms,
   };
 }
-
 
 // -----------------------------------------------------------------------------
 // SCROLL TUNNEL — PerspectiveCamera scroll-driven 3D tunnel
@@ -805,7 +883,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
 function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
   var cardH = options.cardHeight || 0.5;
-  var cardAspect = options.cardAspect || (3/4);
+  var cardAspect = options.cardAspect || 3 / 4;
   var cardW = cardH * cardAspect;
   var tunnelLength = cfg.tunnelLength || 15;
   var fov = cfg.fov || 60;
@@ -815,11 +893,12 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   // ── Create PerspectiveCamera for tunnel depth effect ──
   // Replace the global OrthographicCamera with a PerspectiveCamera
   // so that cards at different Z depths appear with proper foreshortening
-  var size = renderer.getSize ? renderer.getSize({x:0,y:0}) : {x: window.innerWidth, y: window.innerHeight};
+  var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
   var aspect = size.x / size.y;
   var tunnelCam = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  if (camera && camera.dispose) camera.dispose();
   tunnelCam.position.z = 0;
-  camera = tunnelCam;  // replace global camera ref
+  camera = tunnelCam; // replace global camera ref
 
   group.userData.scrollZ = 0;
   group.userData.targetScrollZ = 0;
@@ -834,12 +913,17 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
     if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(item.imageSrc, function (texture) {
-        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        texture.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Tunnel texture error:', err);
-      });
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Tunnel texture error:', err);
+        },
+      );
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       tex.anisotropy = 8;
       texCache[item.imageSrc] = tex;
@@ -849,20 +933,35 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   });
 
   if (loadedItems.length === 0) {
+    var uiLayer = document.getElementById('ui-layer');
+    if (uiLayer) {
+      var emptyMsg = document.createElement('div');
+      emptyMsg.className = 'immersive-gallery-empty-msg';
+      emptyMsg.textContent = uiLayer.getAttribute('data-msg-empty-collection') || 'This collection is currently empty.';
+      uiLayer.appendChild(emptyMsg);
+    }
     scene.add(group);
     galleryStageRegistry[roomKey] = {
-      group: group, planes: [], labels: [], textures: textures,
-      layout: 'scroll-tunnel', cardCount: 0, tunnelLength: tunnelLength,
-      scrollZ: 0, targetScrollZ: 0, fov: fov, isScrollTunnel: true,
+      group: group,
+      planes: [],
+      labels: [],
+      textures: textures,
+      layout: 'scroll-tunnel',
+      cardCount: 0,
+      tunnelLength: tunnelLength,
+      scrollZ: 0,
+      targetScrollZ: 0,
+      fov: fov,
+      isScrollTunnel: true,
       sharedUniforms: { uTime: { value: 0 }, uScrollZ: { value: 0 }, uFov: { value: fov } },
     };
     return;
   }
 
   var sharedUniforms = {
-    uTime:    { value: 0 },
+    uTime: { value: 0 },
     uScrollZ: { value: 0 },
-    uFov:     { value: fov },
+    uFov: { value: fov },
   };
 
   var vertSrc = [
@@ -918,10 +1017,10 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       vertexShader: vertSrc,
       fragmentShader: fragSrc,
       uniforms: {
-        uTexture:  { value: entry.tex },
-        uTime:     sharedUniforms.uTime,
-        uScrollZ:  sharedUniforms.uScrollZ,
-        uFov:      sharedUniforms.uFov,
+        uTexture: { value: entry.tex },
+        uTime: sharedUniforms.uTime,
+        uScrollZ: sharedUniforms.uScrollZ,
+        uFov: sharedUniforms.uFov,
       },
       transparent: true,
       side: THREE.DoubleSide,
@@ -969,7 +1068,10 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       var labelTex = new THREE.CanvasTexture(labelCanvas);
       labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       var labelMat = new THREE.MeshBasicMaterial({
-        map: labelTex, transparent: true, depthTest: false, side: THREE.DoubleSide,
+        map: labelTex,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide,
       });
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
@@ -984,10 +1086,16 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   scene.add(group);
 
   galleryStageRegistry[roomKey] = {
-    group: group, planes: planes, labels: labels, textures: textures,
+    group: group,
+    planes: planes,
+    labels: labels,
+    textures: textures,
     layout: 'scroll-tunnel',
-    tunnelLength: tunnelLength, fov: fov,
-    scrollZ: 0, targetScrollZ: 0, prevScrollZ: 0,
+    tunnelLength: tunnelLength,
+    fov: fov,
+    scrollZ: 0,
+    targetScrollZ: 0,
+    prevScrollZ: 0,
     cardCount: count,
     sharedUniforms: sharedUniforms,
     isScrollTunnel: true,
@@ -1011,7 +1119,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   // Restore OrthographicCamera if switching away from scroll-tunnel
   if (layout !== 'scroll-tunnel' && camera instanceof THREE.PerspectiveCamera) {
-    var size = renderer.getSize ? renderer.getSize({x:0,y:0}) : {x: window.innerWidth, y: window.innerHeight};
+    if (camera && camera.dispose) camera.dispose();
+    var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
     var aspect = size.x / size.y;
     camera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0, 2);
     camera.position.z = 1;
@@ -1032,25 +1141,31 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   var count = items.length;
 
-  if (layout === 'scroll-story' || (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))) {
+  if (
+    layout === 'scroll-story' ||
+    (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))
+  ) {
     _buildScrollStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
   } else if (layout === 'scroll-tunnel') {
     _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
-  } else if (layout === 'masonry-featured' || (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)) {
+  } else if (
+    layout === 'masonry-featured' ||
+    (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
+  ) {
     // ── Masonry Featured layout ──
     // First item (featuredIndex) is a large hero card, centered, closer to camera.
     // Remaining items arranged in masonry grid around it with varying sizes
     // and subtle 3D depth offsets for a curated editorial feel.
     var isMasonry = layout === 'masonry-featured';
-    var featuredIdx = (options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
-      ? options.layoutConfig.featuredIndex : 0;
+    var featuredIdx =
+      options.layoutConfig && options.layoutConfig.featuredIndex !== undefined ? options.layoutConfig.featuredIndex : 0;
     var masonrySpacing = (options.layoutConfig && options.layoutConfig.spacing) || 0.6;
     var parallaxStr = (options.layoutConfig && options.layoutConfig.parallaxStrength) || 0.06;
     var gridCols = options.gridCols || 3;
     var gridSpacingX = options.gridSpacingX || masonrySpacing;
-    var gridSpacingY = options.gridSpacingY || (masonrySpacing * 1.2);
+    var gridSpacingY = options.gridSpacingY || masonrySpacing * 1.2;
     var baseCardH = options.cardHeight || 0.5;
-    var gridCardAspect = options.cardAspect || (3 / 4);
+    var gridCardAspect = options.cardAspect || 3 / 4;
     var baseCardW = baseCardH * gridCardAspect;
 
     var startX = -((gridCols - 1) * gridSpacingX) / 2;
@@ -1076,11 +1191,11 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       tex.anisotropy = 8;
       textures.push(tex);
 
-      var isFeatured = (index === featuredIdx);
+      var isFeatured = index === featuredIdx;
 
       // Featured card: 2x size, centered, closer to camera
       var thisCardH = isFeatured ? baseCardH * 1.8 : baseCardH;
-      var thisCardAspect = isFeatured ? gridCardAspect : gridCardAspect * (0.9 + Math.random() * 0.2);
+      var thisCardAspect = isFeatured ? gridCardAspect : gridCardAspect * (0.9 + (index % 5) * 0.04);
       var thisCardW = thisCardH * thisCardAspect;
 
       var geom = new THREE.PlaneGeometry(thisCardW, thisCardH, 1, 1);
@@ -1104,8 +1219,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         var masonryIndex = index < featuredIdx ? index : index - 1;
         col = masonryIndex % gridCols;
         row = Math.floor(masonryIndex / gridCols);
-        x = startX + col * gridSpacingX + (isMasonry ? (Math.random() - 0.5) * 0.6 : 0);
-        y = startY - row * gridSpacingY + (isMasonry ? (Math.random() - 0.5) * 0.4 : 0);
+        x = startX + col * gridSpacingX + (isMasonry ? ((masonryIndex % 7) - 3) * 0.1 : 0);
+        y = startY - row * gridSpacingY + (isMasonry ? ((masonryIndex % 5) - 2) * 0.08 : 0);
         z = 1.0 + Math.abs(col - gridCols / 2) * parallaxStr * 0.3 + row * parallaxStr * 0.2;
       }
 
@@ -1183,13 +1298,12 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       featuredIndex: featuredIdx,
       parallaxStrength: parallaxStr,
     };
-
   } else if (layout === 'vertical') {
     // ── Vertical scroll layout (indrajaal-museum homepage style) ──
     // Items stacked vertically in 3D space, scroll-driven
     var cardSpacing = options.cardSpacing || 3.5;
     var cardH = options.cardHeight || 2.2;
-    var cardAspect = options.cardAspect || (2 / 3);
+    var cardAspect = options.cardAspect || 2 / 3;
     var cardW = cardH * cardAspect;
     var startY = ((count - 1) * cardSpacing) / 2;
 
@@ -1297,7 +1411,6 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       cardH: cardH,
       startY: startY,
     };
-
   } else if (layout === 'asymmetric-gallery') {
     // ── Asymmetric Gallery: delegated to infinite-drag-gallery builder ──
     options.layoutConfig = options.layoutConfig || {};
@@ -1439,12 +1552,17 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
     if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(item.imageSrc, function (texture) {
-        texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        texture.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Gallery texture load error:', err);
-      });
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Gallery texture load error:', err);
+        },
+      );
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       tex.anisotropy = 8;
       texCache[item.imageSrc] = tex;
@@ -1454,16 +1572,39 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
   });
 
   if (loadedItems.length === 0) {
+    var uiLayer = document.getElementById('ui-layer');
+    if (uiLayer) {
+      var emptyMsg = document.createElement('div');
+      emptyMsg.className = 'immersive-gallery-empty-msg';
+      emptyMsg.textContent = uiLayer.getAttribute('data-msg-empty-collection') || 'This collection is currently empty.';
+      uiLayer.appendChild(emptyMsg);
+    }
     scene.add(group);
-    galleryStageRegistry[roomKey] = { group: group, planes: [], labels: [], textures: textures, layout: 'infinite-drag-gallery', cardCount: 0, gridCols: COLS, gridTotalW: 0, gridTotalH: 0, cardW: cardW, cardH: cardH, spacing: GUTTER, velocityX: 0, velocityY: 0, useShader: useShader };
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: [],
+      labels: [],
+      textures: textures,
+      layout: 'infinite-drag-gallery',
+      cardCount: 0,
+      gridCols: COLS,
+      gridTotalW: 0,
+      gridTotalH: 0,
+      cardW: cardW,
+      cardH: cardH,
+      spacing: GUTTER,
+      velocityX: 0,
+      velocityY: 0,
+      useShader: useShader,
+    };
     return;
   }
 
   // Duplicate to fill 3 viewport widths + 3 viewport heights for infinite drag
   var vpH = camera.top - camera.bottom;
   var vpW = camera.right - camera.left;
-  var minRows = Math.max(6, Math.ceil(3 * vpH / (cardH + GUTTER)));
-  var minCols = Math.max(4, Math.ceil(3 * vpW / (cardW + GUTTER)));
+  var minRows = Math.max(6, Math.ceil((3 * vpH) / (cardH + GUTTER)));
+  var minCols = Math.max(4, Math.ceil((3 * vpW) / (cardW + GUTTER)));
   var totalCardsNeeded = minCols * minRows;
   var dupItems = [];
   var si = 0;
@@ -1541,20 +1682,44 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
     var x = startX + col * (cardW + GUTTER);
     var y = startY - row * (cardH + GUTTER);
     mesh.position.set(x, y, 1.0);
-    mesh.userData = { roomKey: roomKey, galleryIndex: entry.originalIndex, title: item.title || '', productHandle: item.productHandle || null, collectionHandle: item.collectionHandle || null, layout: 'infinite-drag-gallery', baseX: x, baseY: y, baseZ: 1.0, cardW: cardW, cardH: cardH, row: row, col: col };
+    mesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: entry.originalIndex,
+      title: item.title || '',
+      productHandle: item.productHandle || null,
+      collectionHandle: item.collectionHandle || null,
+      layout: 'infinite-drag-gallery',
+      baseX: x,
+      baseY: y,
+      baseZ: 1.0,
+      cardW: cardW,
+      cardH: cardH,
+      row: row,
+      col: col,
+    };
     group.add(mesh);
     planes.push(mesh);
   });
 
   scene.add(group);
   galleryStageRegistry[roomKey] = {
-    group: group, planes: planes, labels: labels, textures: textures,
+    group: group,
+    planes: planes,
+    labels: labels,
+    textures: textures,
     layout: 'infinite-drag-gallery',
-    cardCount: dupItems.length, gridCols: COLS, totalRows: totalRows,
-    cardW: cardW, cardH: cardH, spacing: GUTTER,
-    gridTotalW: gridTotalW, gridTotalH: gridTotalH,
-    velocityX: 0, velocityY: 0,
-    useShader: useShader, sharedUniforms: sharedUniforms,
+    cardCount: dupItems.length,
+    gridCols: COLS,
+    totalRows: totalRows,
+    cardW: cardW,
+    cardH: cardH,
+    spacing: GUTTER,
+    gridTotalW: gridTotalW,
+    gridTotalH: gridTotalH,
+    velocityX: 0,
+    velocityY: 0,
+    useShader: useShader,
+    sharedUniforms: sharedUniforms,
   };
 }
 
@@ -1567,7 +1732,7 @@ function showGalleryHint(roomKey) {
   if (existing) existing.remove();
 
   var l = getGalleryLayout(roomKey);
-  var isScrollLayout = (l === 'vertical' || l === 'asymmetric-gallery' || l === 'scroll-narrative');
+  var isScrollLayout = l === 'vertical' || l === 'asymmetric-gallery' || l === 'scroll-narrative';
   var hint = document.createElement('div');
   hint.id = 'immersive-gallery-hint';
   hint.className = 'immersive-gallery-hint';
@@ -1579,7 +1744,9 @@ function showGalleryHint(roomKey) {
 
   setTimeout(function () {
     hint.classList.add('is-fading');
-    setTimeout(function () { hint.remove(); }, 600);
+    setTimeout(function () {
+      hint.remove();
+    }, 600);
   }, 4000);
 }
 
@@ -1597,14 +1764,21 @@ var galleryDragState = {
 
 function initGalleryCarousel(canvas) {
   if (!canvas) return;
+  ListenerRegistry.cleanup('gallery-carousel');
   var state = galleryStageRegistry[currentRoomKey];
   var layout = state ? state.layout : 'arc';
-  var isScrollLayout = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'infinite-drag-gallery' || layout === 'scroll-story' || layout === 'scroll-tunnel');
-  var isHelixLayout = (layout === 'helix' || layout === 'scroll-narrative');
-  var isGridLayout = (layout === 'grid' || layout === 'masonry-featured');
-  var isInfiniteDrag = (layout === 'infinite-drag-gallery');
-  var isScrollStory = (layout === 'scroll-story');
-  var isScrollTunnel = (layout === 'scroll-tunnel');
+  var isScrollLayout =
+    layout === 'asymmetric-gallery' ||
+    layout === 'scroll-narrative' ||
+    layout === 'vertical' ||
+    layout === 'infinite-drag-gallery' ||
+    layout === 'scroll-story' ||
+    layout === 'scroll-tunnel';
+  var isHelixLayout = layout === 'helix' || layout === 'scroll-narrative';
+  var isGridLayout = layout === 'grid' || layout === 'masonry-featured';
+  var isInfiniteDrag = layout === 'infinite-drag-gallery';
+  var isScrollStory = layout === 'scroll-story';
+  var isScrollTunnel = layout === 'scroll-tunnel';
 
   var startHandler = function (e) {
     if (!galleryStageRegistry[currentRoomKey]) return;
@@ -1635,11 +1809,17 @@ function initGalleryCarousel(canvas) {
       var deltaX = dx * 0.003;
       if (layout === 'asymmetric-gallery') {
         // Asymmetric: parallax-driven Y scroll + subtle Y-axis rotation
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - deltaY));
+        s.targetScrollY = Math.max(
+          -(s.cardCount - 1) * s.asymSpacing * 0.5,
+          Math.min(s.asymSpacing * 0.5, s.targetScrollY - deltaY),
+        );
         s.targetRotationY += dx * 0.002;
       } else {
         // Vertical / scroll-narrative: standard scroll + tilt
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY));
+        s.targetScrollY = Math.max(
+          -(s.cardCount - 1) * s.cardSpacing * 0.5,
+          Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY),
+        );
         s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
       }
       galleryDragState.velocityX = dx * 0.5;
@@ -1647,7 +1827,7 @@ function initGalleryCarousel(canvas) {
     } else if (isHelixLayout) {
       // Helix: X drag rotates around spiral, Y drag scrolls up/down
       s.targetRotationY += dx * 0.006;
-      var _hh = (s.totalAngle || (2.5 * Math.PI * 2)) / (Math.PI * 2) * (s.helixPitch || 2.8) * 0.5;
+      var _hh = ((s.totalAngle || 2.5 * Math.PI * 2) / (Math.PI * 2)) * (s.helixPitch || 2.8) * 0.5;
       s.targetScrollY = Math.max(-_hh, Math.min(_hh, s.targetScrollY - dy * 0.01));
       galleryDragState.velocityX = dx * 0.5;
       galleryDragState.velocityY = dy * 0.5;
@@ -1705,9 +1885,15 @@ function initGalleryCarousel(canvas) {
 
     if (isScrollLayout) {
       if (layout === 'asymmetric-gallery') {
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.asymSpacing * 0.5, Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+        s.targetScrollY = Math.max(
+          -(s.cardCount - 1) * s.asymSpacing * 0.5,
+          Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
+        );
       } else {
-        s.targetScrollY = Math.max(-(s.cardCount - 1) * s.cardSpacing * 0.5, Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008));
+        s.targetScrollY = Math.max(
+          -(s.cardCount - 1) * s.cardSpacing * 0.5,
+          Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
+        );
       }
     } else if (isInfiniteDrag) {
       // Wheel adds to velocity for infinite drag
@@ -1735,15 +1921,15 @@ function initGalleryCarousel(canvas) {
   };
 
   canvas.style.cursor = 'grab';
-  canvas.addEventListener('mousedown', startHandler);
+  ListenerRegistry.add('gallery-carousel', canvas, 'mousedown', startHandler);
   // Issue 23: touchstart must be non-passive so the browser knows we may
   // call preventDefault on touchmove (needed for drag-to-rotate gallery).
-  canvas.addEventListener('touchstart', startHandler, { passive: false });
-  document.addEventListener('mousemove', moveHandler);
-  document.addEventListener('touchmove', moveHandler, { passive: false });
-  document.addEventListener('mouseup', endHandler);
-  document.addEventListener('touchend', endHandler);
-  canvas.addEventListener('wheel', wheelHandler, { passive: false });
+  ListenerRegistry.add('gallery-carousel', canvas, 'touchstart', startHandler, { passive: false });
+  ListenerRegistry.add('gallery-carousel', document, 'mousemove', moveHandler);
+  ListenerRegistry.add('gallery-carousel', document, 'touchmove', moveHandler, { passive: false });
+  ListenerRegistry.add('gallery-carousel', document, 'mouseup', endHandler);
+  ListenerRegistry.add('gallery-carousel', document, 'touchend', endHandler);
+  ListenerRegistry.add('gallery-carousel', canvas, 'wheel', wheelHandler, { passive: false });
 }
 
 function animateGalleryCarousel() {
@@ -1751,14 +1937,19 @@ function animateGalleryCarousel() {
   if (!state || !state.group) return;
 
   var layout = state.layout;
-  var isScrollAnim = (layout === 'asymmetric-gallery' || layout === 'scroll-narrative' || layout === 'vertical' || layout === 'scroll-story' || layout === 'scroll-tunnel');
-  var isInfiniteDrag = (layout === 'infinite-drag-gallery');
-  var isScrollStory = (layout === 'scroll-story');
-  var isScrollTunnel = (layout === 'scroll-tunnel');
+  var isScrollAnim =
+    layout === 'asymmetric-gallery' ||
+    layout === 'scroll-narrative' ||
+    layout === 'vertical' ||
+    layout === 'scroll-story' ||
+    layout === 'scroll-tunnel';
+  var isInfiniteDrag = layout === 'infinite-drag-gallery';
+  var isScrollStory = layout === 'scroll-story';
+  var isScrollTunnel = layout === 'scroll-tunnel';
 
   if (isScrollAnim) {
     // ── Scroll-driven animation: scroll-narrative, vertical, scroll-story ──
-    var scrollSpacing = (layout === 'scroll-story') ? (state.itemSpacing || 2.5) : (state.cardSpacing || 3.5);
+    var scrollSpacing = layout === 'scroll-story' ? state.itemSpacing || 2.5 : state.cardSpacing || 3.5;
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1815,7 +2006,7 @@ function animateGalleryCarousel() {
         // Opacity based on distance from center (hover revelation)
         var dist = Math.abs(y);
         var t = Math.min(dist / (state.itemSpacing * 2.0), 1.0);
-        var opacity = 1.0 - (t * t * (3.0 - 2.0 * t)); // smoothstep
+        var opacity = 1.0 - t * t * (3.0 - 2.0 * t); // smoothstep
         if (plane.material && plane.material.opacity !== undefined) {
           plane.material.opacity = opacity;
         }
@@ -1852,7 +2043,7 @@ function animateGalleryCarousel() {
         if (!plane.userData) return;
         var relZ = Math.abs(plane.userData.baseZ - state.scrollZ);
         var t = Math.min(relZ / (state.tunnelLength * 0.35), 1.0);
-        var opacity = 1.0 - (t * t * (3.0 - 2.0 * t));
+        var opacity = 1.0 - t * t * (3.0 - 2.0 * t);
         if (plane.material && plane.material.opacity !== undefined) {
           plane.material.opacity = opacity;
         }
@@ -1910,7 +2101,10 @@ function animateGalleryCarousel() {
 
     // Update shader uniforms
     if (state.useShader && state.sharedUniforms) {
-      var speed = Math.sqrt(galleryDragState.velocityX * galleryDragState.velocityX + galleryDragState.velocityY * galleryDragState.velocityY);
+      var speed = Math.sqrt(
+        galleryDragState.velocityX * galleryDragState.velocityX +
+          galleryDragState.velocityY * galleryDragState.velocityY,
+      );
       state.sharedUniforms.uTime.value = performance.now() * 0.001;
       state.sharedUniforms.uVelocity.value = speed;
     }
@@ -1921,7 +2115,7 @@ function animateGalleryCarousel() {
     // Drag X rotates around the helix, drag Y scrolls up/down through spiral.
     var _hr = state.helixRadius || 5;
     var _hp = state.helixPitch || 2.8;
-    var _ht = state.totalAngle || (2.5 * Math.PI * 2);
+    var _ht = state.totalAngle || 2.5 * Math.PI * 2;
 
     // Inertia
     if (!galleryDragState.isDragging) {
@@ -1961,7 +2155,6 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - _norm * 0.6);
       }
     });
-
   } else if (layout === 'grid' || layout === 'masonry-featured') {
     // ── Grid / masonry-featured animation ──
     // Horizontal drag/scroll pages through the grid.
@@ -1995,7 +2188,6 @@ function animateGalleryCarousel() {
         plane.material.opacity = 0.95 * (1 - _gridNorm * 0.85);
       }
     });
-
   } else {
     // ── Arc carousel animation (original) ──
     // Apply inertia when not dragging
@@ -2028,7 +2220,13 @@ var galleryMouse = new (window.THREE ? window.THREE.Vector2 : function () {})();
 
 function handleGalleryStageClick(event, camera, canvas) {
   // Issue 9: Don't process gallery clicks if user clicked a hotspot or UI element
-  if (event.target && event.target.closest('[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner')) return;
+  if (
+    event.target &&
+    event.target.closest(
+      '[data-hotspot-btn], .immersive-header, .immersive-fab, .immersive-guided-prompt, .immersive-room-badge, .immersive-flash-sale-banner',
+    )
+  )
+    return;
   if (!currentRoomKey || !galleryStageRegistry[currentRoomKey]) return;
   if (!window.THREE) return;
 
@@ -2131,7 +2329,9 @@ function scheduleRaf(callback) {
   return id;
 }
 function cancelAllRafs() {
-  _rafIds.forEach(function(id) { cancelAnimationFrame(id); });
+  _rafIds.forEach(function (id) {
+    cancelAnimationFrame(id);
+  });
   _rafIds = [];
 }
 
@@ -2172,17 +2372,17 @@ function getGalleryLayout(roomKey) {
     'scroll-tunnel': 1,
     'masonry-featured': 1,
     // Legacy/internal names still supported
-    'vertical': 1,
-    'arc': 1,
-    'helix': 1,
-    'grid': 1,
+    vertical: 1,
+    arc: 1,
+    helix: 1,
+    grid: 1,
     'infinite-drag-gallery': 1,
   };
 
   if (validLayouts[setting]) return setting;
 
   // Per-room fallback when setting is missing/invalid — use new 3D layouts
-  if (roomKey === 'designer_houses') return 'asymmetric-gallery';
+  if (roomKey === 'designer_houses') return 'infinite-drag-gallery';
   if (roomKey === 'occasions') return 'scroll-story';
   if (roomKey === 'featured_collections') return 'masonry-featured';
   return 'arc';
@@ -2207,11 +2407,11 @@ function loadGalleryConfigsFromDOM() {
     if (!window.immersiveWebglGalleryConfigs) {
       window.immersiveWebglGalleryConfigs = {};
     }
-    configEls.forEach(function(configEl) {
+    configEls.forEach(function (configEl) {
       var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
       var items = Array.prototype.slice
         .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
-        .map(function(itemEl) {
+        .map(function (itemEl) {
           var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
           return {
             index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
@@ -2223,7 +2423,7 @@ function loadGalleryConfigsFromDOM() {
             collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
             imageSrc: imgEl ? imgEl.src : null,
             imageWidth: imgEl ? parseInt(imgEl.getAttribute('width'), 10) || 1920 : 1920,
-            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080
+            imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080,
           };
         });
       window.immersiveWebglGalleryConfigs[roomKey] = items;
@@ -2233,7 +2433,7 @@ function loadGalleryConfigsFromDOM() {
   if (window.__IMMERSIVE_DEV__ && window.immersiveWebglGalleryConfigs) {
     var rooms = Object.keys(window.immersiveWebglGalleryConfigs).join(', ');
     var counts = {};
-    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function(k) {
+    Object.keys(window.immersiveWebglGalleryConfigs).forEach(function (k) {
       counts[k] = window.immersiveWebglGalleryConfigs[k].length;
     });
     console.log('[Immersive] Gallery configs loaded for rooms:', rooms, 'counts:', JSON.stringify(counts));
@@ -2254,7 +2454,10 @@ var _immersiveInitBound = false;
 var contentCache = {};
 var contentCacheOrder = [];
 var MAX_CACHE_ENTRIES = 20;
+var CACHE_TTL_MS = 5 * 60 * 1000; // 5-minute TTL for cached entries
 
+// Runtime state — mirrors ShahanaImmersive.room for backward compatibility.
+// Prefer ShahanaImmersive.room for new code; immersiveState is kept for existing callers.
 var immersiveState = {
   currentRoom: 'lounge',
   mode: 'showroom',
@@ -2278,10 +2481,10 @@ function evaluateDeviceFlags() {
   // This prevents loading mobile images on desktop browsers with narrow windows
   var actualDeviceIsMobile = /iPhone|iPad|Android|Mobile/.test(navigator.userAgent);
   var actualDeviceIsTablet = /iPad|Android/.test(navigator.userAgent) && !/Mobile/.test(navigator.userAgent);
-  
+
   // Only use viewport width as a secondary factor for responsive layout
   // but don't override the actual device type detection
-  isMobile = actualDeviceIsMobile || (window.innerWidth < 480);
+  isMobile = actualDeviceIsMobile || window.innerWidth < 480;
   isTablet = actualDeviceIsTablet || (window.innerWidth >= 480 && window.innerWidth < 768);
 
   var connectionQuality = 1.0;
@@ -2320,10 +2523,13 @@ var parallaxStrength = usesMobileImg ? 0.03 : 0.08;
 var STATE_KEY = 'immersive_state';
 var ONBOARDING_KEY = 'immersive_onboarding_seen';
 var WISHLIST_KEY = 'immersive_wishlist';
+// NOTE: localStorage stores UI state only (wishlist handles, browsing signals).
+// No authentication tokens, personal data, or payment information is stored.
+// These stores are accessible to any same-origin script per browser security model.
 var PREFERRED_MODE_KEY = 'immersive_preferred_mode';
 var NAVIGATION_HISTORY_KEY = 'immersive_nav_history';
 
-var wishlistItems = [];
+var _wishlistItems = [];
 var _wishlistProductCache = {};
 var wishlistPanelTrigger = null;
 var activeHotspots = [];
@@ -2780,16 +2986,24 @@ function showWelcomeToast() {
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
   if (!reduceMotion) toast.classList.add('immersive-welcome-toast--animate-in');
-  toast.innerHTML =
-    '<span class="immersive-welcome-toast__text">' +
-    msg +
-    '</span>' +
-    '<button type="button" class="immersive-welcome-toast__close" aria-label="Close">×</button>';
+
+  var textSpan = document.createElement('span');
+  textSpan.className = 'immersive-welcome-toast__text';
+  textSpan.textContent = msg;
+
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'immersive-welcome-toast__close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.textContent = '×';
+
+  toast.appendChild(textSpan);
+  toast.appendChild(closeBtn);
   wrapper.appendChild(toast);
   var timer = setTimeout(function () {
     _dismissWelcomeToast(toast);
   }, 5000);
-  toast.querySelector('.immersive-welcome-toast__close').addEventListener('click', function () {
+  closeBtn.addEventListener('click', function () {
     clearTimeout(timer);
     _dismissWelcomeToast(toast);
   });
@@ -2814,7 +3028,7 @@ function initImmersiveScene() {
   if (!canvas || !uiLayer) return;
 
   // Listen for gallery config ready events from data provider sections
-  document.addEventListener('immersive:galleryConfigReady', function(evt) {
+  document.addEventListener('immersive:galleryConfigReady', function (evt) {
     var roomKey = evt.detail && evt.detail.roomKey;
     if (!roomKey || roomKey !== currentRoomKey) return;
     if (!getGalleryStageConfig(roomKey).length) return;
@@ -2827,9 +3041,10 @@ function initImmersiveScene() {
     var sectionEl = document.querySelector('.immersive-store');
     var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
     var semanticLayout = sectionEl ? sectionEl.getAttribute(perRoomAttr) : null;
-    var layoutConfig = (semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[semanticLayout])
-      ? LAYOUT_REGISTRY[semanticLayout].config
-      : {};
+    var layoutConfig =
+      semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[semanticLayout]
+        ? LAYOUT_REGISTRY[semanticLayout].config
+        : {};
     buildGalleryStageForRoom(roomKey, scene, {
       layout: layout,
       radius: 6,
@@ -2847,7 +3062,7 @@ function initImmersiveScene() {
     // Hide hotspot buttons — gallery cards are the interaction
     var _uiLayer2 = document.getElementById('ui-layer');
     if (_uiLayer2) {
-      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function(btn) {
+      _uiLayer2.querySelectorAll('.immersive-hotspot').forEach(function (btn) {
         btn.style.display = 'none';
       });
     }
@@ -2864,9 +3079,21 @@ function initImmersiveScene() {
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 
-  var initWidth = canvas.clientWidth || canvas.offsetWidth || window.innerWidth;
-  var initHeight = canvas.clientHeight || canvas.offsetHeight || window.innerHeight;
+  // Use viewport width to ensure canvas matches header width (handles scrollbar differences)
+  var initWidth = window.innerWidth || canvas.clientWidth || canvas.offsetWidth;
+  var initHeight = window.innerHeight || canvas.clientHeight || canvas.offsetHeight;
   renderer.setSize(initWidth, initHeight, false);
+
+  // WebGL context loss recovery
+  canvas.addEventListener('webglcontextlost', function (e) {
+    e.preventDefault();
+    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] WebGL context lost');
+    showWebGLFallback(canvas);
+  });
+  canvas.addEventListener('webglcontextrestored', function () {
+    if (window.__IMMERSIVE_DEV__) console.log('[Immersive] WebGL context restored — reinitializing');
+    initImmersiveScene();
+  });
 
   scene = new THREE.Scene();
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 2);
@@ -2936,7 +3163,7 @@ function initImmersiveScene() {
   loadGalleryConfigsFromDOM();
 
   // Also re-read after a short delay to catch sections that render late
-  setTimeout(function() {
+  setTimeout(function () {
     loadGalleryConfigsFromDOM();
   }, 100);
 
@@ -2970,14 +3197,18 @@ function showWebGLFallback(canvas) {
   var wrapper = canvas.parentElement;
   if (!wrapper) return;
   var img = document.createElement('img');
-  var _fallbackImgTimeout = setTimeout(function() {
+  var _fallbackImgTimeout = setTimeout(function () {
     if (!img.complete) {
       console.warn('[Immersive] Fallback image load timeout:', room.baseTextureUrl);
       img.style.display = 'none';
     }
   }, 30000);
-  img.onload = function() { clearTimeout(_fallbackImgTimeout); };
-  img.onerror = function() { clearTimeout(_fallbackImgTimeout); };
+  img.onload = function () {
+    clearTimeout(_fallbackImgTimeout);
+  };
+  img.onerror = function () {
+    clearTimeout(_fallbackImgTimeout);
+  };
   img.src = room.baseTextureUrl;
   img.alt = '';
   img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
@@ -2991,7 +3222,7 @@ function showWebGLFallback(canvas) {
 // ---------------------------------------------------------------------------
 
 var transitionLogoMesh = null;
-var transitionLogoTex  = null;
+var transitionLogoTex = null;
 
 function showLoader() {
   if (!scene || !window.THREE) return;
@@ -3006,39 +3237,34 @@ function showLoader() {
   if (!logoUrl) return;
 
   // Load logo texture
-  transitionLogoTex = new THREE.TextureLoader().load(
-    logoUrl,
-    function (tex) {
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      tex.anisotropy   = 8;
-    }
-  );
+  transitionLogoTex = new THREE.TextureLoader().load(logoUrl, function (tex) {
+    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+    tex.anisotropy = 8;
+  });
   transitionLogoTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
 
   // Compute aspect-corrected plane that covers the full viewport in screen-space.
   // We place the plane at z = -1 (just in front of the camera) and size it so
   // it spans the full frustum at that depth — effectively a fullscreen quad.
-  var aspect = camera ? camera.aspect : (window.innerWidth / window.innerHeight);
-  var vFov  = camera ? camera.fov * Math.PI / 180 : 70 * Math.PI / 180;
-  var h = 2 * Math.tan(vFov / 2) * 1.05;  // z = 1
+  var aspect = camera ? camera.aspect : window.innerWidth / window.innerHeight;
+  var vFov = camera ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
+  var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
   var w = h * aspect;
 
   // Logo plane: use a larger plane scaled down so the logo sits in the centre
   // with plenty of black around it.
-  var logoH = h * 0.35;  // logo fills 35 % of viewport height
-  var imgAspect = transitionLogoTex.image
-    ? transitionLogoTex.image.width / transitionLogoTex.image.height
-    : 1;
+  var logoH = h * 0.35; // logo fills 35 % of viewport height
+  var imgAspect = transitionLogoTex.image ? transitionLogoTex.image.width / transitionLogoTex.image.height : 1;
   var logoW = logoH * Math.max(imgAspect, 0.5);
 
-  var geom  = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
-  var mat   = new THREE.MeshBasicMaterial({
-    map:         transitionLogoTex,
+  var geom = new THREE.PlaneGeometry(logoW, logoH, 1, 1);
+  var mat = new THREE.MeshBasicMaterial({
+    map: transitionLogoTex,
     transparent: true,
-    opacity:     0,
-    side:        THREE.DoubleSide,
-    depthTest:   false,
-    depthWrite:  false,
+    opacity: 0,
+    side: THREE.DoubleSide,
+    depthTest: false,
+    depthWrite: false,
   });
 
   transitionLogoMesh = new THREE.Mesh(geom, mat);
@@ -3050,7 +3276,7 @@ function showLoader() {
       shader.fragmentShader.replace(
         'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
         'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
-        'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);'
+          'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
       );
     transitionLogoMesh.userData.shader = shader;
   };
@@ -3067,7 +3293,7 @@ function showLoader() {
 
 function hideLoader() {
   if (!transitionLogoMesh) return;
-  transitionLogoMesh.userData.fadeIn  = false;
+  transitionLogoMesh.userData.fadeIn = false;
   transitionLogoMesh.userData.fadeOut = true;
   transitionLogoMesh.userData.fadeStart = performance.now();
 }
@@ -3077,20 +3303,25 @@ function updateTransitionLogo(timeNow) {
   if (!transitionLogoMesh) return;
 
   var mesh = transitionLogoMesh;
-  var mat  = mesh.material;
-  var ud   = mesh.userData;
-  var elapsed = (timeNow - ud.fadeStart) / 1000;  // seconds
+  var mat = mesh.material;
+  var ud = mesh.userData;
+  var elapsed = (timeNow - ud.fadeStart) / 1000; // seconds
 
   if (ud.fadeIn && !ud.fadeOut) {
     // Fade in over 0.35 s
     mat.opacity = Math.min(elapsed / 0.35, 1.0);
-    if (mat.opacity >= 1) { ud.fadeIn = false; }
+    if (mat.opacity >= 1) {
+      ud.fadeIn = false;
+    }
   } else if (ud.fadeOut) {
     // Fade out over 0.35 s, then dispose
     mat.opacity = Math.max(1.0 - elapsed / 0.35, 0.0);
     if (mat.opacity <= 0) {
       // Clean up
-      if (transitionLogoTex) { transitionLogoTex.dispose(); transitionLogoTex = null; }
+      if (transitionLogoTex) {
+        transitionLogoTex.dispose();
+        transitionLogoTex = null;
+      }
       scene.remove(mesh);
       if (mesh.geometry) mesh.geometry.dispose();
       if (mesh.material) mesh.material.dispose();
@@ -3144,7 +3375,10 @@ function onWindowResize() {
       if (currentRoomKey) renderHotspots(currentRoomKey);
 
       // Reload room texture if device type, orientation, or mobile-image flag changed
-      if ((wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) && currentRoomKey) {
+      if (
+        (wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) &&
+        currentRoomKey
+      ) {
         var roomData = getRoomTextureUrls(currentRoomKey);
         if (roomData) {
           showLoader();
@@ -3164,8 +3398,10 @@ function onWindowResize() {
               var _sectionEl = document.querySelector('.immersive-store');
               var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
               var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
-              var _layoutConfig = (_semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout])
-                ? LAYOUT_REGISTRY[_semanticLayout].config : {};
+              var _layoutConfig =
+                _semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout]
+                  ? LAYOUT_REGISTRY[_semanticLayout].config
+                  : {};
               buildGalleryStageForRoom(currentRoomKey, scene, {
                 layout: getGalleryLayout(currentRoomKey),
                 radius: 6,
@@ -3191,19 +3427,15 @@ var orientationMediaQuery = null;
 var orientationListener = null;
 
 function bindResizeHandling() {
-  if (!renderer || !renderer.domElement) {
-    window.addEventListener('resize', onWindowResize);
-    return;
-  }
-
-  var canvas = renderer.domElement;
-  window.addEventListener('resize', onWindowResize);
-
-  if ('ResizeObserver' in window) {
+  // Use ResizeObserver for canvas size changes when available (more accurate)
+  // Fall back to window resize listener for broader compatibility
+  if ('ResizeObserver' in window && renderer && renderer.domElement) {
     resizeObserver = new ResizeObserver(function () {
       onWindowResize();
     });
-    resizeObserver.observe(canvas);
+    resizeObserver.observe(renderer.domElement);
+  } else {
+    window.addEventListener('resize', onWindowResize);
   }
   // Issue 13: Removed separate orientation matchMedia listener.
   // Orientation changes always fire a resize event too, and our RAF
@@ -3213,10 +3445,12 @@ function bindResizeHandling() {
 }
 
 function unbindResizeHandling() {
-  window.removeEventListener('resize', onWindowResize);
+  // Clean up whichever resize mechanism was used
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
+  } else {
+    window.removeEventListener('resize', onWindowResize);
   }
   if (orientationMediaQuery && orientationListener) {
     orientationMediaQuery.removeEventListener('change', orientationListener);
@@ -3229,8 +3463,9 @@ function handleResize(roomKeyOverride) {
   if (!renderer || !camera) return;
   evaluateDeviceFlags();
   var canvas = renderer.domElement;
-  var width = canvas.clientWidth || window.innerWidth;
-  var height = canvas.clientHeight || window.innerHeight;
+  // Use viewport width to ensure canvas matches header width (handles scrollbar differences)
+  var width = window.innerWidth || canvas.clientWidth;
+  var height = window.innerHeight || canvas.clientHeight;
   if (width === 0 || height === 0) return;
 
   renderer.setSize(width, height, false);
@@ -3240,9 +3475,9 @@ function handleResize(roomKeyOverride) {
   if (camera instanceof THREE.PerspectiveCamera) {
     camera.aspect = aspect;
   } else {
-    camera.left   = -aspect;
-    camera.right  =  aspect;
-    camera.top    = 1;
+    camera.left = -aspect;
+    camera.right = aspect;
+    camera.top = 1;
     camera.bottom = -1;
   }
   camera.updateProjectionMatrix();
@@ -3481,6 +3716,10 @@ function updateRoomBadge(roomKey) {
 }
 
 function goToRoom(roomKey, initial, skipHistory) {
+  galleryDragState.isDragging = false;
+  galleryDragState.velocity = 0;
+  galleryDragState.velocityX = 0;
+  galleryDragState.velocityY = 0;
   if (transitioning && !initial) return;
   var roomData = getRoomTextureUrls(roomKey);
   if (!roomData) return;
@@ -3521,6 +3760,8 @@ function goToRoom(roomKey, initial, skipHistory) {
   } else {
     _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
   }
+  // Clear any pending rAF IDs from previous room transition
+  _rafIds = [];
 }
 
 function focusCodexSection() {
@@ -3549,7 +3790,11 @@ function focusStoryRailSection() {
 }
 
 function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
+  // Capture expected room at time of request; reject stale loads
+  var expectedRoom = roomKey;
   loadRoomTextures(roomData, function (baseTexture, depthTexture) {
+    // Guard: skip stale texture loads if room changed since this request started
+    if (!initial && currentRoomKey !== null && currentRoomKey !== expectedRoom) return;
     if (initial || currentRoomKey === null) {
       uniforms.uTexture1.value = baseTexture;
       uniforms.uDepth1.value = depthTexture;
@@ -3600,8 +3845,10 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
           var _sectionEl2 = document.querySelector('.immersive-store');
           var _perRoomAttr2 = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
           var _semanticLayout2 = _sectionEl2 ? _sectionEl2.getAttribute(_perRoomAttr2) : null;
-          var _layoutConfig2 = (_semanticLayout2 && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout2])
-            ? LAYOUT_REGISTRY[_semanticLayout2].config : {};
+          var _layoutConfig2 =
+            _semanticLayout2 && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout2]
+              ? LAYOUT_REGISTRY[_semanticLayout2].config
+              : {};
           buildGalleryStageForRoom(roomKey, scene, {
             layout: getGalleryLayout(roomKey),
             radius: 6,
@@ -3698,8 +3945,11 @@ function loadRoomTextures(roomData, callback) {
         var oldest = textureCache.pop();
         if (oldest && oldest.key) {
           textureRefCount[oldest.key] = (textureRefCount[oldest.key] || 1) - 1;
-          var isActive = (uniforms && uniforms.uTexture1 && uniforms.uDepth1) &&
-                         (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
+          var isActive =
+            uniforms &&
+            uniforms.uTexture1 &&
+            uniforms.uDepth1 &&
+            (uniforms.uTexture1.value === oldest.base || uniforms.uDepth1.value === oldest.depth);
           if (!isActive && textureRefCount[oldest.key] <= 0) {
             try {
               if (oldest.base) oldest.base.dispose();
@@ -3999,21 +4249,33 @@ function setPanelRoomLabel(panel) {
 }
 
 function fetchWithCache(url) {
-  if (contentCache[url]) {
+  var cached = contentCache[url];
+  if (cached) {
+    // Check staleness — evict entries older than CACHE_TTL_MS
+    if (cached.timestamp && (Date.now() - cached.timestamp) > CACHE_TTL_MS) {
+      delete contentCache[url];
+      var staleIdx = contentCacheOrder.indexOf(url);
+      if (staleIdx > -1) contentCacheOrder.splice(staleIdx, 1);
+      cached = null;
+    }
+  }
+  if (cached) {
     var idx = contentCacheOrder.indexOf(url);
     if (idx > -1) contentCacheOrder.splice(idx, 1);
     contentCacheOrder.push(url);
-    return Promise.resolve(contentCache[url]);
+    return Promise.resolve(cached.html);
   }
   var _ctrl = new AbortController();
-  var _fetchTimeout = setTimeout(function() { _ctrl.abort(); }, 30000);
+  var _fetchTimeout = setTimeout(function () {
+    _ctrl.abort();
+  }, 30000);
   return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl.signal })
     .then(function (response) {
       clearTimeout(_fetchTimeout);
       if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
       return response.text();
     })
-    .catch(function(_fetchErr) {
+    .catch(function (_fetchErr) {
       clearTimeout(_fetchTimeout);
       if (_fetchErr.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
       throw _fetchErr;
@@ -4023,7 +4285,7 @@ function fetchWithCache(url) {
         var oldest = contentCacheOrder.shift();
         delete contentCache[oldest];
       }
-      contentCache[url] = html;
+      contentCache[url] = { html: html, timestamp: Date.now() };
       contentCacheOrder.push(url);
       return html;
     });
@@ -4043,14 +4305,16 @@ function fetchSectionHtml(path, sectionId, extraParams) {
   }
 
   var _ctrl2 = new AbortController();
-  var _fetchTimeout2 = setTimeout(function() { _ctrl2.abort(); }, 30000);
+  var _fetchTimeout2 = setTimeout(function () {
+    _ctrl2.abort();
+  }, 30000);
   return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _ctrl2.signal })
     .then(function (response) {
       clearTimeout(_fetchTimeout2);
       if (!response.ok) return null;
       return response.json();
     })
-    .catch(function(err) {
+    .catch(function (err) {
       clearTimeout(_fetchTimeout2);
       if (err.name === 'AbortError') console.warn('[Immersive] Fetch timed out:', url);
       return null;
@@ -4275,7 +4539,8 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
   overlayContent.innerHTML = '';
 
   if (!contentCache[fetchUrl]) {
-    overlayContent.innerHTML = '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
+    overlayContent.innerHTML =
+      '<div style="height:60vh;display:flex;align-items:center;justify-content:center;color:#d4af37;">Loading...</div>';
   }
 
   var performUIActivation = function () {
@@ -4332,13 +4597,17 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
       // Initialize quick view buttons on any product cards in the overlay
       var cards = overlayContent.querySelectorAll('.immersive-product-card');
       cards.forEach(function (card) {
-        initQuickViewButtons(card);
+        if (typeof initQuickViewButtons === 'function') initQuickViewButtons(card);
       });
     })
     .catch(function (err) {
       console.error('[Immersive] Overlay fetch failed:', err);
       // Fallback: use the source section's innerHTML which is already in the DOM
-      var fallbackSection = document.querySelector('.immersive-editorial[data-room-key="' + (window.immersiveState && window.immersiveState.editorialRoom || '') + '"]');
+      var fallbackSection = document.querySelector(
+        '.immersive-editorial[data-room-key="' +
+          ((window.immersiveState && window.immersiveState.editorialRoom) || '') +
+          '"]',
+      );
       if (fallbackSection) {
         overlayContent.innerHTML = fallbackSection.innerHTML;
         var editorialSection = overlayContent.querySelector('.immersive-editorial');
@@ -4364,12 +4633,12 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
 var editorialData = {
   currentRoom: null,
   previousRoom: null,
-  viewedProducts: [],      // product handles seen across rooms
-  viewedCollections: [],   // collection handles seen across rooms
-  navigationHistory: [],   // room keys visited in this editorial session
-  wishlistHandles: null,   // cache of wishlist handles (synced from global wishlistItems)
+  viewedProducts: [], // product handles seen across rooms
+  viewedCollections: [], // collection handles seen across rooms
+  navigationHistory: [], // room keys visited in this editorial session
+  wishlistHandles: null, // cache of wishlist handles (synced from global _wishlistItems)
 
-  enterRoom: function(roomKey) {
+  enterRoom: function (roomKey) {
     if (this.currentRoom) {
       this.previousRoom = this.currentRoom;
     }
@@ -4378,47 +4647,47 @@ var editorialData = {
     this.refreshWishlist();
   },
 
-  exitRoom: function() {
+  exitRoom: function () {
     this.previousRoom = this.currentRoom;
     this.currentRoom = null;
   },
 
-  getViewedProducts: function() {
+  getViewedProducts: function () {
     return this.viewedProducts.slice();
   },
 
-  addViewedProduct: function(handle) {
+  addViewedProduct: function (handle) {
     if (handle && this.viewedProducts.indexOf(handle) === -1) {
       this.viewedProducts.push(handle);
     }
   },
 
-  addViewedCollection: function(handle) {
+  addViewedCollection: function (handle) {
     if (handle && this.viewedCollections.indexOf(handle) === -1) {
       this.viewedCollections.push(handle);
     }
   },
 
-  refreshWishlist: function() {
-    if (typeof wishlistItems !== 'undefined') {
-      this.wishlistHandles = wishlistItems.map(function(item) {
+  refreshWishlist: function () {
+    if (typeof _wishlistItems !== 'undefined') {
+      this.wishlistHandles = _wishlistItems.map(function (item) {
         return typeof item === 'string' ? item : item.handle;
       });
     }
   },
 
-  isInWishlist: function(productHandle) {
+  isInWishlist: function (productHandle) {
     if (!this.wishlistHandles) this.refreshWishlist();
     return this.wishlistHandles && this.wishlistHandles.indexOf(productHandle) !== -1;
   },
 
-  getNavigationHistory: function() {
+  getNavigationHistory: function () {
     return this.navigationHistory.slice();
   },
 
-  hasVisitedRoom: function(roomKey) {
+  hasVisitedRoom: function (roomKey) {
     return this.navigationHistory.indexOf(roomKey) !== -1;
-  }
+  },
 };
 
 // ---------------------------------------------------------------------------

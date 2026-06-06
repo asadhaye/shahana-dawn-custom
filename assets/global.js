@@ -55,6 +55,8 @@ class HTMLUpdateUtility {
   }
 
   // Sets inner HTML and reinjects the script tags to allow execution. By default, scripts are disabled when using element.innerHTML.
+  // SECURITY NOTE: Ensure Liquid templates escape all user-controlled values before they reach this path.
+  // Adding a Content Security Policy (script-src) header is recommended as defense-in-depth.
   static setInnerHTML(element, html) {
     element.innerHTML = html;
     element.querySelectorAll('script').forEach((oldScriptTag) => {
@@ -183,10 +185,10 @@ function focusVisiblePolyfill() {
 
 function pauseAllMedia() {
   document.querySelectorAll('.js-youtube').forEach((video) => {
-    video.contentWindow.postMessage('{"event":"command","func":"' + 'pauseVideo' + '","args":""}', '*');
+    video.contentWindow.postMessage('{"event":"command","func":"' + 'pauseVideo' + '","args":""}', 'https://www.youtube.com');
   });
   document.querySelectorAll('.js-vimeo').forEach((video) => {
-    video.contentWindow.postMessage('{"method":"pause"}', '*');
+    video.contentWindow.postMessage('{"method":"pause"}', 'https://player.vimeo.com');
   });
   document.querySelectorAll('video').forEach((video) => video.pause());
   document.querySelectorAll('product-model').forEach((model) => {
@@ -1134,6 +1136,13 @@ class ProductRecommendations extends HTMLElement {
 
   connectedCallback() {
     this.initializeRecommendations(this.dataset.productId);
+  }
+
+  disconnectedCallback() {
+    if (this.observer) {
+      this.observer.unobserve(this);
+      this.observer.disconnect();
+    }
   }
 
   initializeRecommendations(productId) {

@@ -48,14 +48,12 @@
     {%- if product.available -%}
       <span
         class="immersive-product-card__availability-badge immersive-product-card__availability-badge--in-stock"
-        aria-hidden="true"
       >
         {{ 'products.product.in_stock' | t }}
       </span>
     {%- else -%}
       <span
         class="immersive-product-card__availability-badge immersive-product-card__availability-badge--sold-out"
-        aria-hidden="true"
       >
         {{ 'products.product.sold_out' | t }}
       </span>
@@ -63,6 +61,7 @@
   </div>
 
   {%- if product.featured_image -%}
+    <div role="group" aria-label="{{ 'sections.immersive.product_card.product_area' | t: title: product.title | escape }}">
     <a
       href="{{ product.url }}"
       class="immersive-product-link"
@@ -151,6 +150,7 @@
         {{ 'sections.immersive_store.quick_add.button_label' | t }}
       </button>
     {%- endif -%}
+    </div>
   {%- else -%}
     <div class="immersive-product-image immersive-product-image-placeholder">
       {{ 'products.product.no_image' | t }}
@@ -189,7 +189,7 @@
 
     {%- if product.metafields.custom.short_description != blank -%}
       <p class="immersive-product-description">
-        {{ product.metafields.custom.short_description | truncate: 80 }}
+        {{ product.metafields.custom.short_description | truncate: 80 | escape }}
       </p>
     {%- endif -%}
 

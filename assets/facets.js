@@ -64,7 +64,10 @@ class FacetFiltersForm extends HTMLElement {
 
   static renderSectionFromFetch(url, event) {
     fetch(url)
-      .then((response) => response.text())
+      .then((response) => {
+        if (!response.ok) throw new Error('Filter fetch failed: ' + response.status);
+        return response.text();
+      })
       .then((responseText) => {
         const html = responseText;
         FacetFiltersForm.filterData = [...FacetFiltersForm.filterData, { html, url }];
@@ -217,7 +220,9 @@ class FacetFiltersForm extends HTMLElement {
       document.querySelector(selector).innerHTML = html.querySelector(selector).innerHTML;
     });
 
-    document.getElementById('FacetFiltersFormMobile').closest('menu-drawer').bindEvents();
+    var mobileDrawer = document.getElementById('FacetFiltersFormMobile');
+    var menuDrawer = mobileDrawer ? mobileDrawer.closest('menu-drawer') : null;
+    if (menuDrawer && typeof menuDrawer.bindEvents === 'function') menuDrawer.bindEvents();
   }
 
   static renderCounts(source, target) {
@@ -379,8 +384,8 @@ class FacetRemove extends HTMLElement {
 
   closeFilter(event) {
     event.preventDefault();
-    const form = this.closest('facet-filters-form') || document.querySelector('facet-filters-form');
-    form.onActiveFilterClick(event);
+    var form = this.closest('facet-filters-form') || document.querySelector('facet-filters-form');
+    if (form && typeof form.onActiveFilterClick === 'function') form.onActiveFilterClick(event);
   }
 }
 

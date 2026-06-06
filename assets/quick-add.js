@@ -23,13 +23,19 @@ if (!customElements.get('quick-add-modal')) {
       show(opener) {
         opener.setAttribute('aria-disabled', true);
         opener.classList.add('loading');
-        opener.querySelector('.loading__spinner').classList.remove('hidden');
+        var openerSpinner = opener.querySelector('.loading__spinner');
+        if (openerSpinner) openerSpinner.classList.remove('hidden');
 
         fetch(opener.getAttribute('data-product-url'))
-          .then((response) => response.text())
+          .then((response) => {
+            if (!response.ok) throw new Error('Product fetch failed: ' + response.status);
+            return response.text();
+          })
           .then((responseText) => {
             const responseHTML = new DOMParser().parseFromString(responseText, 'text/html');
             const productElement = responseHTML.querySelector('product-info');
+
+            if (!productElement) throw new Error('Product info not found in response');
 
             this.preprocessHTML(productElement);
             HTMLUpdateUtility.setInnerHTML(this.modalContent, productElement.outerHTML);
@@ -41,10 +47,16 @@ if (!customElements.get('quick-add-modal')) {
 
             super.show(opener);
           })
+          .catch((e) => {
+            console.error('[QuickAdd] Modal fetch failed:', e);
+            this.modalContent.innerHTML = '<p class="product-form__error-message">Unable to load product. Please try again.</p>';
+            super.show(opener);
+          })
           .finally(() => {
             opener.removeAttribute('aria-disabled');
             opener.classList.remove('loading');
-            opener.querySelector('.loading__spinner').classList.add('hidden');
+            var openerSpinner = opener.querySelector('.loading__spinner');
+            if (openerSpinner) openerSpinner.classList.add('hidden');
           });
       }
 
@@ -80,7 +92,13 @@ if (!customElements.get('quick-add-modal')) {
 
         const oldId = sectionId;
         const newId = `quickadd-${sectionId}`;
-        productElement.innerHTML = productElement.innerHTML.replaceAll(oldId, newId);
+        productElement.querySelectorAll('[id]').forEach((el) => {
+          if (el.id.includes(oldId)) el.id = el.id.replace(oldId, newId);
+        });
+        productElement.querySelectorAll('[form]').forEach((el) => {
+          var formId = el.getAttribute('form');
+          if (formId && formId.includes(oldId)) el.setAttribute('form', formId.replace(oldId, newId));
+        });
         Array.from(productElement.attributes).forEach((attribute) => {
           if (attribute.value.includes(oldId)) {
             productElement.setAttribute(attribute.name, attribute.value.replace(oldId, newId));

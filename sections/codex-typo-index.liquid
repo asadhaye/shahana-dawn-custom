@@ -26,7 +26,10 @@
           {%- assign entry_collection = block.settings.collection -%}
           {%- if entry_collection -%}
             {%- assign has_entries = true -%}
-            {%- assign bridge_url = '/pages/immersive?open_collection=' | append: entry_collection.handle -%}
+            {%- assign bridge_url = pages.immersive.url
+              | append: '?open_collection='
+              | append: entry_collection.handle
+            -%}
             {%- assign peek_img = null -%}
             {%- if block.settings.image != blank -%}
               {%- assign peek_img = block.settings.image | image_url: width: 600, height: 800 -%}
@@ -82,7 +85,7 @@
                     <img
                       class="codex-typo-index__peek-img"
                       src="{{ peek_img }}"
-                      alt=""
+                      alt="{{ entry_collection.title | escape }}"
                       width="300"
                       height="400"
                       loading="lazy"

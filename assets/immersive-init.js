@@ -7,6 +7,14 @@
  *   - Entirely missing features ported from legacy (search, gestures, quick-add, etc.)
  *   - Full FAB
  *   - safeBindImmersiveInit() + Shopify theme editor re-init handlers
+ *
+ * OVERRIDE NOTICE: Several functions defined in this file (e.g., showNextActions,
+ * dismissNextActions, _nextActionsTimer, _nextActionsBar) override stubs
+ * from immersive-features.js. This file also re-declares some functions that
+ * exist in immersive-core.js or immersive-features.js; those are intentional
+ * overrides — the init.js version is the authoritative implementation when
+ * all three files load together. Do NOT remove these — the override chain
+ * (core stub → features override → init override) is the designed loading order.
  */
 
 // ---------------------------------------------------------------------------
@@ -18,6 +26,7 @@ var _searchActiveIndex = -1;
 var _searchResults = [];
 var _searchDebounceTimer = null;
 var _searchAbortController = null;
+var _searchTimeoutId = null;
 var _gestureLastRoomTransition = 0;
 var _gestureCooldown = 600;
 var SWIPE_ROOM_SEQUENCE = ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'];
@@ -377,11 +386,13 @@ function initImmersiveSearch() {
         _searchAbortController.abort();
       } catch (e) {}
     }
+    if (_searchTimeoutId) clearTimeout(_searchTimeoutId);
     var timeoutId = setTimeout(function () {
       dropdown.innerHTML = '<div class="immersive-search__unavailable">' + msgUnavailable + '</div>';
       dropdown.hidden = false;
       input.setAttribute('aria-expanded', 'true');
     }, 3000);
+    _searchTimeoutId = timeoutId;
     var url =
       '/search/suggest?q=' + encodeURIComponent(term) + '&resources[type]=product,collection&resources[limit]=5';
     fetch(url, {
@@ -393,6 +404,7 @@ function initImmersiveSearch() {
         return res.json();
       })
       .then(function (data) {
+        if (_searchTimeoutId) { clearTimeout(_searchTimeoutId); _searchTimeoutId = null; }
         var resources = (data.resources && data.resources.results) || {};
         renderResults(
           {
@@ -478,21 +490,26 @@ function initImmersiveGestures() {
   var touchStartY = 0;
   var touchStartTime = 0;
 
-  ListenerRegistry.add('gesture-touchstart', canvasWrapper,
-    'touchstart', function (e) {
+  ListenerRegistry.add(
+    'gesture-touchstart',
+    canvasWrapper,
+    'touchstart',
+    function (e) {
       var touch = e.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
       touchStartTime = Date.now();
-    }, { passive: true }
+    },
+    { passive: true },
   );
 
-  ListenerRegistry.add('gesture-touchmove', canvasWrapper,
-    'touchmove', function () {}, { passive: true }
-  );
+  ListenerRegistry.add('gesture-touchmove', canvasWrapper, 'touchmove', function () {}, { passive: true });
 
-  ListenerRegistry.add('gesture-touchend', canvasWrapper,
-    'touchend', function (e) {
+  ListenerRegistry.add(
+    'gesture-touchend',
+    canvasWrapper,
+    'touchend',
+    function (e) {
       var target = e.target;
       if (
         target &&
@@ -696,7 +713,7 @@ function renderQuickAddModal(product, triggerEl) {
     if (!selectedVariantId) return;
     cta.disabled = true;
     cta.textContent = 'Adding...';
-    fetch(window.routes.cart_add_url, {
+    fetch((window.routes && window.routes.cart_add_url) || '/cart/add.js', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ id: selectedVariantId, quantity: 1 }),
@@ -766,7 +783,9 @@ function openQuickAdd(handle, triggerEl) {
       var glassPanel = document.getElementById('glass-panel');
       // Issue 22: Try both attribute names for consistent error messaging
       var errorMsg =
-        (glassPanel && (glassPanel.getAttribute('data-msg-load-product-error') || glassPanel.getAttribute('data-msg-load-error'))) || 'Unable to load product.';
+        (glassPanel &&
+          (glassPanel.getAttribute('data-msg-load-product-error') || glassPanel.getAttribute('data-msg-load-error'))) ||
+        'Unable to load product.';
       if (typeof showFeedback === 'function') {
         showFeedback(errorMsg, 'error');
       }
@@ -838,7 +857,10 @@ function initHotspotKeyboardNav() {
   // container, Shift+TAB reverses, Escape exits to the canvas.
   canvas.setAttribute('tabindex', '-1');
   canvas.setAttribute('role', 'group');
-  canvas.setAttribute('aria-label', 'Immersive 3D store hotspots. Use Tab to move between hotspots, Enter to activate, Escape to leave.');
+  canvas.setAttribute(
+    'aria-label',
+    'Immersive 3D store hotspots. Use Tab to move between hotspots, Enter to activate, Escape to leave.',
+  );
 
   // Global keydown on the UI layer container, so it works even when focus
   // is on the canvas wrapper (which sits behind hotspot buttons).
@@ -1251,6 +1273,27 @@ function initImmersiveBottomNav() {
 // Master Init + Section Handlers
 // ---------------------------------------------------------------------------
 
+function initHomeButton() {
+  var homeBtn = document.querySelector('[data-immersive-home-btn]');
+  if (homeBtn) {
+    homeBtn.addEventListener('click', function () {
+      if (typeof goToRoom === 'function') {
+        goToRoom('storefront');
+      } else {
+        window.location.href = '/pages/immersive';
+      }
+    });
+  }
+}
+
+function initSearchShortcut() {
+  var shortcutEl = document.querySelector('[data-search-shortcut]');
+  if (shortcutEl) {
+    var isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    shortcutEl.textContent = isMac ? '⌘K' : 'Ctrl+K';
+  }
+}
+
 function safeBindImmersiveInit() {
   if (_immersiveInitBound) return;
   if (!document.getElementById('immersive-canvas')) return;
@@ -1308,15 +1351,24 @@ function safeBindImmersiveInit() {
 
     if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
 
+    if (typeof initHomeButton === 'function') initHomeButton();
+    if (typeof initSearchShortcut === 'function') initSearchShortcut();
+
     if (typeof window.ImmersiveCarousel !== 'undefined' && window.ImmersiveCarousel.init) {
       window.ImmersiveCarousel.init();
     }
 
     // Initialize InfiniteGallery for gallery rooms
     if (typeof window.InfiniteGallery !== 'undefined') {
-      var _igRoom = (typeof currentRoomKey !== 'undefined') ? currentRoomKey : '';
+      var _igRoom = typeof currentRoomKey !== 'undefined' ? currentRoomKey : '';
       if (_igRoom === 'designer_houses' || _igRoom === 'occasions' || _igRoom === 'featured_collections') {
-        window._infiniteGallery = new window.InfiniteGallery({ columns: 4, spacing: 0.08, cardWidth: 0.7, cardHeight: 1.05, friction: 0.95 });
+        window._infiniteGallery = new window.InfiniteGallery({
+          columns: 4,
+          spacing: 0.08,
+          cardWidth: 0.7,
+          cardHeight: 1.05,
+          friction: 0.95,
+        });
         window._infiniteGallery.init();
       }
     }
@@ -1368,5 +1420,13 @@ document.addEventListener('shopify:section:select', function (e) {
 document.addEventListener('shopify:section:unload', function (e) {
   if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
     _immersiveInitBound = false;
+    // Teardown: clean up all ListenerRegistry entries + dispose GPU resources
+    if (typeof ListenerRegistry !== 'undefined') ListenerRegistry.cleanupAll();
+    if (typeof unbindResizeHandling === 'function') unbindResizeHandling();
+    if (typeof disposeGalleryStage === 'function') { Object.keys(galleryStageRegistry || {}).forEach(function(k) { disposeGalleryStage(k); }); }
+    if (typeof renderer !== 'undefined' && renderer) {
+      renderer.dispose();
+      renderer.forceContextLoss();
+    }
   }
 });

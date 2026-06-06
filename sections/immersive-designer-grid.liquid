@@ -45,6 +45,28 @@
 
 {% schema %}
 {
-  "name": "Designer Grid"
+  "name": "Designer Grid",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "default": 3,
+      "label": "Columns on desktop"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Designer Grid"
+    }
+  ]
 }
 {% endschema %}

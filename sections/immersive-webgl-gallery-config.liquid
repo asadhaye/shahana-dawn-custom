@@ -11,12 +11,18 @@
 
   This is intentionally "headless" and room-scoped.
   Adapted for Shahana Collection — Pakistani luxury fashion.
+
+  TODO: Schema label strings (e.g., "Gallery Layout for this room", "Default",
+  "Asymmetric Gallery") are currently hardcoded English. In a future iteration,
+  these should be converted to Liquid `| t` translation keys (e.g.,
+  "t:sections.immersive_webgl_gallery.layout_label") for multi-language support.
+  This is deferred to avoid breaking existing theme editor configurations.
 {%- endcomment -%}
 
 <section
   id="immersive-webgl-gallery-config-{{ section.id }}"
   class="immersive-webgl-gallery-config"
-  aria-label="{{ 'sections.immersive_webgl_gallery.aria_section_label' | t }}"
+  aria-hidden="true"
   data-immersive-webgl-gallery-config
   data-room-key="{{ section.settings.room_key }}"
   data-layout="{{ section.settings.layout | default: 'default' }}"

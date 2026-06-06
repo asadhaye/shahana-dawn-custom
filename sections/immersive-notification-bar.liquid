@@ -1,4 +1,11 @@
 {%- if section.settings.enabled -%}
+  {%- comment -%}
+    TODO: Schema label strings (e.g., "Bar height (px)", "Seconds each message
+    is shown", "Icon (emoji or symbol)") are currently hardcoded English. In a
+    future iteration, these should be converted to Liquid `| t` translation keys
+    for multi-language support. This is deferred to avoid breaking existing theme
+    editor configurations.
+  {%- endcomment -%}
   {%- liquid
     assign bar_height = section.settings.bar_height | default: 48
     assign display_duration = section.settings.display_duration | default: 4
@@ -38,14 +45,16 @@
                   {% endif %}
                 >
                   {%- if block.settings.icon != blank -%}
-                    <span class="immersive-notif-bar__icon" aria-hidden="true">{{ block.settings.icon }}</span>
+                    <span class="immersive-notif-bar__icon" aria-hidden="true">{{ block.settings.icon | escape }}</span>
                   {%- endif -%}
-                  {%- if block.settings.url != blank -%}
-                    <a href="{{ block.settings.url }}" class="immersive-notif-bar__link">
+                  {%- if block.settings.url and block.settings.url contains 'http' or block.settings.url contains '/' -%}
+                    <a href="{{ block.settings.url | escape }}" class="immersive-notif-bar__link">
                       {{- block.settings.text | escape -}}
                     </a>
                   {%- else -%}
-                    {{- block.settings.text | escape -}}
+                    <span>
+                      {{- block.settings.text | escape -}}
+                    </span>
                   {%- endif -%}
                 </span>
               {%- endfor -%}

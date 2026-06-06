@@ -1,0 +1,68 @@
+{
+  "env": {
+    "browser": true,
+    "es2020": true
+  },
+  "extends": "eslint:recommended",
+  "globals": {
+    "window": "readonly",
+    "document": "readonly",
+    "console": "readonly",
+    "performance": "readonly",
+    "navigator": "readonly",
+    "requestAnimationFrame": "readonly",
+    "cancelAnimationFrame": "readonly",
+    "ResizeObserver": "readonly",
+    "THREE": "readonly",
+    "Shopify": "readonly",
+    "trapFocus": "readonly",
+    "removeTrapFocus": "readonly",
+    "onKeyUpEscape": "readonly",
+    "CartItems": "readonly",
+    "debounce": "readonly",
+    "throttle": "readonly",
+    "initializeScrollAnimationTrigger": "readonly",
+    "gtag": "readonly",
+    "shopifyAnalytics": "readonly",
+    "showFeedback": "readonly",
+    "showErrorFeedback": "readonly",
+    "trackImmersiveEvent": "readonly",
+    "handleEmptyStateAction": "readonly",
+    "initCoverflow": "readonly",
+    "initStacked": "readonly",
+    "initPerspective": "readonly",
+    "initQuickViewButtons": "readonly"
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "script"
+  },
+  "rules": {
+    "no-unused-vars": "off",
+    "no-console": "off",
+    "no-undef": "off",
+    "no-var": "off",
+    "prefer-const": "off",
+    "curly": "off",
+    "indent": "off",
+    "eqeqeq": "off",
+    "no-empty": "off",
+    "no-redeclare": "off",
+    "no-tabs": "off",
+    "no-inner-declarations": "off",
+    "no-self-assign": "off",
+    "no-cond-assign": "off",
+    "no-useless-escape": "off",
+    "no-case-declarations": "off"
+  },
+  "ignorePatterns": [
+    "assets/cart.js",
+    "assets/customer.js",
+    "assets/global.js",
+    "assets/three.min.js",
+    "assets/price-per-item.js",
+    "assets/product-info.js",
+    "assets/quick-order-list.js",
+    "assets/recipient-form.js"
+  ]
+}

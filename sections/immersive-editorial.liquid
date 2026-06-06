@@ -18,10 +18,10 @@
   {%- if section.settings.layout == 'designers' -%}
     <div class="immersive-designers" data-editorial-layout="designers">
       {%- if section.settings.hero_heading != blank -%}
-        <h2 class="immersive-designers__heading">{{ section.settings.hero_heading }}</h2>
+        <h2 class="immersive-designers__heading">{{ section.settings.hero_heading | escape }}</h2>
       {%- endif -%}
       {%- if section.settings.hero_eyebrow != blank -%}
-        <p class="immersive-designers__eyebrow">{{ section.settings.hero_eyebrow }}</p>
+        <p class="immersive-designers__eyebrow">{{ section.settings.hero_eyebrow | escape }}</p>
       {%- endif -%}
       <div class="immersive-designers__timeline">
         {%- for block in section.blocks -%}
@@ -54,10 +54,10 @@
     {%- comment -%}── Occasions layout: chapter CTAs with data-collection-handle ──{%- endcomment -%}
     <div class="immersive-occasions" data-editorial-layout="occasions">
       {%- if section.settings.hero_heading != blank -%}
-        <h2 class="immersive-occasions__heading">{{ section.settings.hero_heading }}</h2>
+        <h2 class="immersive-occasions__heading">{{ section.settings.hero_heading | escape }}</h2>
       {%- endif -%}
       {%- if section.settings.hero_eyebrow != blank -%}
-        <p class="immersive-occasions__eyebrow">{{ section.settings.hero_eyebrow }}</p>
+        <p class="immersive-occasions__eyebrow">{{ section.settings.hero_eyebrow | escape }}</p>
       {%- endif -%}
       <div class="immersive-occasions__chapters">
         {%- for block in section.blocks -%}
@@ -90,10 +90,10 @@
     {%- comment -%}── Featured Collections layout: cards with data-collection-handle ──{%- endcomment -%}
     <div class="immersive-featured" data-editorial-layout="featured_collections">
       {%- if section.settings.hero_heading != blank -%}
-        <h2 class="immersive-featured__heading">{{ section.settings.hero_heading }}</h2>
+        <h2 class="immersive-featured__heading">{{ section.settings.hero_heading | escape }}</h2>
       {%- endif -%}
       {%- if section.settings.hero_eyebrow != blank -%}
-        <p class="immersive-featured__eyebrow">{{ section.settings.hero_eyebrow }}</p>
+        <p class="immersive-featured__eyebrow">{{ section.settings.hero_eyebrow | escape }}</p>
       {%- endif -%}
       <div class="immersive-featured__grid">
         {%- for block in section.blocks -%}

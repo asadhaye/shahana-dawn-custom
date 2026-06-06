@@ -48,6 +48,12 @@
 
     {%- comment -%}Three.js + immersive scene manager on immersive templates{%- endcomment -%}
     {%- if template == 'page.immersive' -%}
+      {%- comment -%}
+      Immersive storefront script loading — CANONICAL PATH.
+      immersive-bundle.js is the concatenated output of immersive-core.js + immersive-features.js.
+      Do NOT load the individual source files alongside the bundle; that causes double-execution.
+      To rebuild the bundle after source changes: bash assets/build-immersive-bundle.sh
+    {%- endcomment -%}
       <script src="{{ 'three.min.js' | asset_url }}" defer></script>
       <script src="{{ 'immersive-bundle.js' | asset_url }}" defer></script>
       <script src="{{ 'immersive-init.js' | asset_url }}" defer></script>
@@ -404,7 +410,7 @@
           {{ 'sections.immersive_journey_bridges.preference_banner_text' | t }}
         </p>
         <div class="immersive-preference-banner__actions">
-          <a href="/pages/immersive" class="immersive-preference-banner__cta">
+          <a href="{{ pages.immersive.url }}" class="immersive-preference-banner__cta">
             {{ 'sections.immersive_journey_bridges.preference_banner_cta' | t }}
           </a>
           <button

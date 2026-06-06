@@ -556,7 +556,10 @@
     }
   },
   "immersive_canvas": {
-    "close_panel": "Close panel"
+    "close_panel": "Close panel",
+    "fab_story_rail": "Our Story",
+    "fab_typo_index": "Typography",
+    "logo_home": "{{ name }} — Home"
   },
   "immersive_editorial": {
       "name": "Immersive Editorial",
@@ -580,6 +583,7 @@
       "back_to_collection": "Back to collection"
     },
     "product_card": {
+      "product_area": "{{ title }} product area",
       "view_product": "View {{ title }}",
       "select_variant": "Select variant",
       "add_to_cart_aria": "Add {{ title }} to cart",
