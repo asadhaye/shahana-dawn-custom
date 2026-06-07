@@ -97,6 +97,8 @@
     }
   }
 
+  var connectionChangeHandler = null;
+
   function init() {
     var bridges = document.querySelectorAll('[data-immersive-bridge]');
     if (!bridges.length) return;
@@ -110,11 +112,16 @@
 
     // Re-evaluate if connection changes mid-session
     if (navigator.connection && navigator.connection.addEventListener) {
-      navigator.connection.addEventListener('change', function () {
+      // Clean up any existing listener to prevent duplicates
+      if (connectionChangeHandler) {
+        navigator.connection.removeEventListener('change', connectionChangeHandler);
+      }
+
+      connectionChangeHandler = function () {
         var updated = classifyConnection();
         var speed = getConnectionSpeed();
         var rtt = getRoundTripTime();
-        
+
         // Log connection metrics for analytics
         if (window.__IMMERSIVE_DEV__) {
           console.log('[Bridge] Connection changed:', {
@@ -124,7 +131,7 @@
             saveData: getDataSaverStatus()
           });
         }
-        
+
         bridges.forEach(function (b) {
           b.classList.remove('immersive-bridge-btn--slow-connection', 'immersive-bridge-btn--medium-connection');
           var note = b.nextElementSibling;
@@ -134,9 +141,27 @@
           b._warningAdded = false;
           wireBridge(b, updated, reducedMotion);
         });
-      });
+      };
+
+      navigator.connection.addEventListener('change', connectionChangeHandler);
     }
   }
+
+  function destroy() {
+    if (navigator.connection && navigator.connection.removeEventListener && connectionChangeHandler) {
+      navigator.connection.removeEventListener('change', connectionChangeHandler);
+      connectionChangeHandler = null;
+    }
+  }
+
+  // Expose the destroy function globally so it can be called during section unload
+  if (!window.ShahanaImmersive) {
+    window.ShahanaImmersive = {};
+  }
+  if (!window.ShahanaImmersive.bridgeBehavior) {
+    window.ShahanaImmersive.bridgeBehavior = {};
+  }
+  window.ShahanaImmersive.bridgeBehavior.destroy = destroy;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

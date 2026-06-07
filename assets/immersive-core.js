@@ -3085,12 +3085,12 @@ function initImmersiveScene() {
   renderer.setSize(initWidth, initHeight, false);
 
   // WebGL context loss recovery
-  canvas.addEventListener('webglcontextlost', function (e) {
+  ListenerRegistry.add('webgl-context-lost', canvas, 'webglcontextlost', function (e) {
     e.preventDefault();
     if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] WebGL context lost');
     showWebGLFallback(canvas);
   });
-  canvas.addEventListener('webglcontextrestored', function () {
+  ListenerRegistry.add('webgl-context-restored', canvas, 'webglcontextrestored', function () {
     if (window.__IMMERSIVE_DEV__) console.log('[Immersive] WebGL context restored — reinitializing');
     initImmersiveScene();
   });
@@ -3435,7 +3435,7 @@ function bindResizeHandling() {
     });
     resizeObserver.observe(renderer.domElement);
   } else {
-    window.addEventListener('resize', onWindowResize);
+    ListenerRegistry.add('window-resize', window, 'resize', onWindowResize);
   }
   // Issue 13: Removed separate orientation matchMedia listener.
   // Orientation changes always fire a resize event too, and our RAF

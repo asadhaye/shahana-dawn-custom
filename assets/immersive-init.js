@@ -1581,5 +1581,34 @@ document.addEventListener('shopify:section:unload', function (e) {
       renderer.dispose();
       renderer.forceContextLoss();
     }
+    // Clean up bridge behavior resources
+    if (typeof window.ShahanaImmersive !== 'undefined' && 
+        typeof window.ShahanaImmersive.bridgeBehavior !== 'undefined' && 
+        typeof window.ShahanaImmersive.bridgeBehavior.destroy === 'function') {
+      window.ShahanaImmersive.bridgeBehavior.destroy();
+    }
+    // Clean up editorial hero parallax resources
+    if (typeof window.ShahanaImmersive !== 'undefined' && 
+        typeof window.ShahanaImmersive.editorialFeatures !== 'undefined' && 
+        typeof window.ShahanaImmersive.editorialFeatures.destroyEditorialHeroParallax === 'function') {
+      window.ShahanaImmersive.editorialFeatures.destroyEditorialHeroParallax();
+    }
+    // Clean up guided mode timers
+    if (typeof window.ShahanaImmersive !== 'undefined' && 
+        typeof window.ShahanaImmersive.editorialFeatures !== 'undefined' && 
+        typeof window.ShahanaImmersive.editorialFeatures.cleanupGuidedModeTimers === 'function') {
+      window.ShahanaImmersive.editorialFeatures.cleanupGuidedModeTimers();
+    }
+    // Clean up codex typo index resources
+    if (typeof window.ShahanaImmersive !== 'undefined' &&
+        typeof window.ShahanaImmersive.codexFeatures !== 'undefined' &&
+        typeof window.ShahanaImmersive.codexFeatures.destroyCodexTypoIndex === 'function') {
+      window.ShahanaImmersive.codexFeatures.destroyCodexTypoIndex();
+    }
+    // Clean up search timeout
+    if (_searchTimeoutId) {
+      clearTimeout(_searchTimeoutId);
+      _searchTimeoutId = null;
+    }
   }
 });

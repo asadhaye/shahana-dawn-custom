@@ -2428,7 +2428,7 @@ function bindCookieBanner() {
 
     // Re-position thumb on resize (font/layout changes can shift markers)
     var resizeTimer;
-    window.addEventListener('resize', function () {
+    ListenerRegistry.add('rail-resize', window, 'resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
         var active = markers[activeIndex];
@@ -3115,6 +3115,14 @@ function bindCookieBanner() {
   }
 
   window.CodexTypoIndex = { init: initAll, initTypoIndex: initTypoIndex, destroy: destroyAll };
+
+  // Expose destroy function globally so it can be called during section unload
+  if (typeof window.ShahanaImmersive !== 'undefined') {
+    if (!window.ShahanaImmersive.codexFeatures) {
+      window.ShahanaImmersive.codexFeatures = {};
+    }
+    window.ShahanaImmersive.codexFeatures.destroyCodexTypoIndex = destroyAll;
+  }
 
   if (typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
     document.addEventListener('shopify:section:load', function (e) {
@@ -3941,6 +3949,15 @@ function destroyEditorialHeroParallax() {
   _ehpScrollCurrent = 0;
 }
 
+// Expose the destroy function globally so it can be called during section unload
+if (typeof window.ShahanaImmersive !== 'undefined') {
+  if (!window.ShahanaImmersive.editorialFeatures) {
+    window.ShahanaImmersive.editorialFeatures = {};
+  }
+  window.ShahanaImmersive.editorialFeatures.destroyEditorialHeroParallax = destroyEditorialHeroParallax;
+  window.ShahanaImmersive.editorialFeatures.cleanupGuidedModeTimers = cleanupGuidedModeTimers;
+}
+
 // ============================================================
 // ProductCardTilt
 // ============================================================
@@ -4021,6 +4038,16 @@ function _guidedStartIdleTimer() {
       _guidedAdvance();
     }
   }, GUIDED_IDLE_MS);
+}
+
+// Global cleanup function for guided mode timers that can be called during section unload
+function cleanupGuidedModeTimers() {
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+  _guidedIdleTimer = null;
+  _guidedPromptTimer = null;
+  hideGuidedPrompt();
+  _hideGuidedProgress();
 }
 
 function _guidedResetIdleTimer() {
