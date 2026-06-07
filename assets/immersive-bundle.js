@@ -3085,12 +3085,12 @@ function initImmersiveScene() {
   renderer.setSize(initWidth, initHeight, false);
 
   // WebGL context loss recovery
-  canvas.addEventListener('webglcontextlost', function (e) {
+  ListenerRegistry.add('webgl-context-lost', canvas, 'webglcontextlost', function (e) {
     e.preventDefault();
     if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] WebGL context lost');
     showWebGLFallback(canvas);
   });
-  canvas.addEventListener('webglcontextrestored', function () {
+  ListenerRegistry.add('webgl-context-restored', canvas, 'webglcontextrestored', function () {
     if (window.__IMMERSIVE_DEV__) console.log('[Immersive] WebGL context restored — reinitializing');
     initImmersiveScene();
   });
@@ -3435,7 +3435,7 @@ function bindResizeHandling() {
     });
     resizeObserver.observe(renderer.domElement);
   } else {
-    window.addEventListener('resize', onWindowResize);
+    ListenerRegistry.add('window-resize', window, 'resize', onWindowResize);
   }
   // Issue 13: Removed separate orientation matchMedia listener.
   // Orientation changes always fire a resize event too, and our RAF
@@ -3711,24 +3711,8 @@ function updateRoomBadge(roomKey) {
   var guidanceEl = badge.querySelector('[data-room-badge-guidance]');
   var name = badge.getAttribute('data-room-name-' + roomKey) || roomKey;
   var guidance = badge.getAttribute('data-room-guidance-' + roomKey) || '';
-  if (nameEl && nameEl.textContent !== name) {
-    nameEl.classList.add('is-fading');
-    setTimeout(function () {
-      nameEl.textContent = name;
-      nameEl.classList.remove('is-fading');
-    }, 200);
-  } else if (nameEl) {
-    nameEl.textContent = name;
-  }
-  if (guidanceEl && guidanceEl.textContent !== guidance) {
-    guidanceEl.classList.add('is-fading');
-    setTimeout(function () {
-      guidanceEl.textContent = guidance;
-      guidanceEl.classList.remove('is-fading');
-    }, 200);
-  } else if (guidanceEl) {
-    guidanceEl.textContent = guidance;
-  }
+  if (nameEl) nameEl.textContent = name;
+  if (guidanceEl) guidanceEl.textContent = guidance;
 }
 
 function goToRoom(roomKey, initial, skipHistory) {
@@ -3825,14 +3809,6 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       var tagline = document.getElementById('immersive-tagline');
       if (tagline) tagline.classList.remove('is-visible');
       hideLoader();
-      // Hide the DOM initial loader when the first room renders
-      var initialLoader = document.getElementById('immersive-initial-loader');
-      if (initialLoader) {
-        initialLoader.classList.add('is-hidden');
-        setTimeout(function () {
-          if (initialLoader.parentNode) initialLoader.remove();
-        }, 400);
-      }
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
       return;
@@ -4008,14 +3984,6 @@ function loadRoomTextures(roomData, callback) {
       var canvas = document.getElementById(immersiveCanvasId);
       if (canvas) showWebGLFallback(canvas);
     }
-    // Dismiss the initial DOM loader on error
-    var initialLoader = document.getElementById('immersive-initial-loader');
-    if (initialLoader) {
-      initialLoader.classList.add('is-hidden');
-      setTimeout(function () {
-        if (initialLoader.parentNode) initialLoader.remove();
-      }, 400);
-    }
     // Issue 4: Mid-session texture failure -- show user-facing error and let them retry
     if (typeof showFeedback === 'function') {
       showFeedback('Unable to load scene. Please check your connection and try again.', 'error');
@@ -4104,14 +4072,13 @@ function renderHotspots(roomKey) {
       return ax - bx;
     });
 
-    sortedHotspots.forEach(function (hotspot, index) {
+    sortedHotspots.forEach(function (hotspot) {
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'immersive-hotspot';
       button.setAttribute('tabindex', '0');
       button.setAttribute('aria-label', hotspot.label);
       button.setAttribute('data-hotspot-btn', '');
-      button.style.animationDelay = (index * 0.08) + 's';
       var srSpan = document.createElement('span');
       srSpan.className = 'visually-hidden';
       srSpan.textContent = hotspot.label;
@@ -5837,6 +5804,14 @@ function setupBuyNowForm(panel) {
       formData.set('sections', 'cart-drawer,cart-icon-bubble');
       formData.set('sections_url', window.location.pathname);
 
+      var submitBtn = form.querySelector('[type="submit"][name="add"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('is-adding');
+        submitBtn.dataset.originalText = submitBtn.textContent;
+        submitBtn.textContent = msgAdding || 'Adding\u2026';
+      }
+
       fetch(shopRoot + 'cart/add.js', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -5851,6 +5826,12 @@ function setupBuyNowForm(panel) {
           return response.json();
         })
         .then(function () {
+          // Reset submit button state
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('is-adding');
+            if (submitBtn.dataset.originalText) submitBtn.textContent = submitBtn.dataset.originalText;
+          }
           showCartFeedback(panel);
 
           try {
@@ -5929,6 +5910,12 @@ function setupBuyNowForm(panel) {
         })
         .catch(function (error) {
           console.error('Error adding to cart:', error);
+          // Reset submit button state on error
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('is-adding');
+            if (submitBtn.dataset.originalText) submitBtn.textContent = submitBtn.dataset.originalText;
+          }
           showErrorFeedback(panel, error.message || msgAddToCart);
         });
     });
@@ -6436,22 +6423,15 @@ function showImmersiveOnboardingIfNeeded() {
           localStorage.setItem(ONBOARDING_KEY, '1');
         } catch (e) {}
       }
-      overlay.classList.add('is-dismissing');
-      var dismissDuration = 260;
-      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReducedMotion) dismissDuration = 0;
-      setTimeout(function () {
-        overlay.classList.remove('is-dismissing');
-        overlay.setAttribute('hidden', '');
-        // Use Dawn's removeTrapFocus to restore focus properly
-        if (previousFocus && typeof previousFocus.focus === 'function') {
-          removeTrapFocus(previousFocus);
-        }
-        // Clear the live region so the announcement doesn't repeat
-        if (onboardingAnnouncer) {
-          onboardingAnnouncer.textContent = '';
-        }
-      }, dismissDuration);
+      overlay.setAttribute('hidden', '');
+      // Use Dawn's removeTrapFocus to restore focus properly
+      if (previousFocus && typeof previousFocus.focus === 'function') {
+        removeTrapFocus(previousFocus);
+      }
+      // Clear the live region so the announcement doesn't repeat
+      if (onboardingAnnouncer) {
+        onboardingAnnouncer.textContent = '';
+      }
     });
   }
 }
@@ -6773,20 +6753,13 @@ function closeWishlistPanel() {
   if (panel._wlTrapFocus) panel.removeEventListener('keydown', panel._wlTrapFocus);
   if (panel._wlEscape) panel.removeEventListener('keydown', panel._wlEscape);
   if (panel._wlClickHandler) panel.removeEventListener('click', panel._wlClickHandler);
-  panel.classList.add('is-closing');
-  var closeDuration = 300;
-  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (prefersReducedMotion) closeDuration = 0;
-  setTimeout(function () {
-    panel.classList.remove('is-closing');
-    panel.setAttribute('hidden', '');
-    if (_wishlistPanelTrigger && typeof _wishlistPanelTrigger.focus === 'function') {
-      requestAnimationFrame(function () {
-        _wishlistPanelTrigger.focus();
-      });
-    }
-    _wishlistPanelTrigger = null;
-  }, closeDuration);
+  panel.setAttribute('hidden', '');
+  if (_wishlistPanelTrigger && typeof _wishlistPanelTrigger.focus === 'function') {
+    requestAnimationFrame(function () {
+      _wishlistPanelTrigger.focus();
+    });
+  }
+  _wishlistPanelTrigger = null;
 }
 
 function initWishlist() {
@@ -7266,7 +7239,7 @@ function bindCookieBanner() {
 
     // Re-position thumb on resize (font/layout changes can shift markers)
     var resizeTimer;
-    window.addEventListener('resize', function () {
+    ListenerRegistry.add('rail-resize', window, 'resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
         var active = markers[activeIndex];
@@ -7953,6 +7926,14 @@ function bindCookieBanner() {
   }
 
   window.CodexTypoIndex = { init: initAll, initTypoIndex: initTypoIndex, destroy: destroyAll };
+
+  // Expose destroy function globally so it can be called during section unload
+  if (typeof window.ShahanaImmersive !== 'undefined') {
+    if (!window.ShahanaImmersive.codexFeatures) {
+      window.ShahanaImmersive.codexFeatures = {};
+    }
+    window.ShahanaImmersive.codexFeatures.destroyCodexTypoIndex = destroyAll;
+  }
 
   if (typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
     document.addEventListener('shopify:section:load', function (e) {
@@ -8779,6 +8760,15 @@ function destroyEditorialHeroParallax() {
   _ehpScrollCurrent = 0;
 }
 
+// Expose the destroy function globally so it can be called during section unload
+if (typeof window.ShahanaImmersive !== 'undefined') {
+  if (!window.ShahanaImmersive.editorialFeatures) {
+    window.ShahanaImmersive.editorialFeatures = {};
+  }
+  window.ShahanaImmersive.editorialFeatures.destroyEditorialHeroParallax = destroyEditorialHeroParallax;
+  window.ShahanaImmersive.editorialFeatures.cleanupGuidedModeTimers = cleanupGuidedModeTimers;
+}
+
 // ============================================================
 // ProductCardTilt
 // ============================================================
@@ -8859,6 +8849,16 @@ function _guidedStartIdleTimer() {
       _guidedAdvance();
     }
   }, GUIDED_IDLE_MS);
+}
+
+// Global cleanup function for guided mode timers that can be called during section unload
+function cleanupGuidedModeTimers() {
+  clearTimeout(_guidedIdleTimer);
+  clearTimeout(_guidedPromptTimer);
+  _guidedIdleTimer = null;
+  _guidedPromptTimer = null;
+  hideGuidedPrompt();
+  _hideGuidedProgress();
 }
 
 function _guidedResetIdleTimer() {
