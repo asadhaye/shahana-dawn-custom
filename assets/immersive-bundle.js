@@ -3711,8 +3711,24 @@ function updateRoomBadge(roomKey) {
   var guidanceEl = badge.querySelector('[data-room-badge-guidance]');
   var name = badge.getAttribute('data-room-name-' + roomKey) || roomKey;
   var guidance = badge.getAttribute('data-room-guidance-' + roomKey) || '';
-  if (nameEl) nameEl.textContent = name;
-  if (guidanceEl) guidanceEl.textContent = guidance;
+  if (nameEl && nameEl.textContent !== name) {
+    nameEl.classList.add('is-fading');
+    setTimeout(function () {
+      nameEl.textContent = name;
+      nameEl.classList.remove('is-fading');
+    }, 200);
+  } else if (nameEl) {
+    nameEl.textContent = name;
+  }
+  if (guidanceEl && guidanceEl.textContent !== guidance) {
+    guidanceEl.classList.add('is-fading');
+    setTimeout(function () {
+      guidanceEl.textContent = guidance;
+      guidanceEl.classList.remove('is-fading');
+    }, 200);
+  } else if (guidanceEl) {
+    guidanceEl.textContent = guidance;
+  }
 }
 
 function goToRoom(roomKey, initial, skipHistory) {
@@ -3809,6 +3825,14 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       var tagline = document.getElementById('immersive-tagline');
       if (tagline) tagline.classList.remove('is-visible');
       hideLoader();
+      // Hide the DOM initial loader when the first room renders
+      var initialLoader = document.getElementById('immersive-initial-loader');
+      if (initialLoader) {
+        initialLoader.classList.add('is-hidden');
+        setTimeout(function () {
+          if (initialLoader.parentNode) initialLoader.remove();
+        }, 400);
+      }
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
       return;
@@ -3984,6 +4008,14 @@ function loadRoomTextures(roomData, callback) {
       var canvas = document.getElementById(immersiveCanvasId);
       if (canvas) showWebGLFallback(canvas);
     }
+    // Dismiss the initial DOM loader on error
+    var initialLoader = document.getElementById('immersive-initial-loader');
+    if (initialLoader) {
+      initialLoader.classList.add('is-hidden');
+      setTimeout(function () {
+        if (initialLoader.parentNode) initialLoader.remove();
+      }, 400);
+    }
     // Issue 4: Mid-session texture failure -- show user-facing error and let them retry
     if (typeof showFeedback === 'function') {
       showFeedback('Unable to load scene. Please check your connection and try again.', 'error');
@@ -4072,13 +4104,14 @@ function renderHotspots(roomKey) {
       return ax - bx;
     });
 
-    sortedHotspots.forEach(function (hotspot) {
+    sortedHotspots.forEach(function (hotspot, index) {
       var button = document.createElement('button');
       button.type = 'button';
       button.className = 'immersive-hotspot';
       button.setAttribute('tabindex', '0');
       button.setAttribute('aria-label', hotspot.label);
       button.setAttribute('data-hotspot-btn', '');
+      button.style.animationDelay = (index * 0.08) + 's';
       var srSpan = document.createElement('span');
       srSpan.className = 'visually-hidden';
       srSpan.textContent = hotspot.label;
@@ -6403,15 +6436,22 @@ function showImmersiveOnboardingIfNeeded() {
           localStorage.setItem(ONBOARDING_KEY, '1');
         } catch (e) {}
       }
-      overlay.setAttribute('hidden', '');
-      // Use Dawn's removeTrapFocus to restore focus properly
-      if (previousFocus && typeof previousFocus.focus === 'function') {
-        removeTrapFocus(previousFocus);
-      }
-      // Clear the live region so the announcement doesn't repeat
-      if (onboardingAnnouncer) {
-        onboardingAnnouncer.textContent = '';
-      }
+      overlay.classList.add('is-dismissing');
+      var dismissDuration = 260;
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) dismissDuration = 0;
+      setTimeout(function () {
+        overlay.classList.remove('is-dismissing');
+        overlay.setAttribute('hidden', '');
+        // Use Dawn's removeTrapFocus to restore focus properly
+        if (previousFocus && typeof previousFocus.focus === 'function') {
+          removeTrapFocus(previousFocus);
+        }
+        // Clear the live region so the announcement doesn't repeat
+        if (onboardingAnnouncer) {
+          onboardingAnnouncer.textContent = '';
+        }
+      }, dismissDuration);
     });
   }
 }
@@ -6733,13 +6773,20 @@ function closeWishlistPanel() {
   if (panel._wlTrapFocus) panel.removeEventListener('keydown', panel._wlTrapFocus);
   if (panel._wlEscape) panel.removeEventListener('keydown', panel._wlEscape);
   if (panel._wlClickHandler) panel.removeEventListener('click', panel._wlClickHandler);
-  panel.setAttribute('hidden', '');
-  if (_wishlistPanelTrigger && typeof _wishlistPanelTrigger.focus === 'function') {
-    requestAnimationFrame(function () {
-      _wishlistPanelTrigger.focus();
-    });
-  }
-  _wishlistPanelTrigger = null;
+  panel.classList.add('is-closing');
+  var closeDuration = 300;
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) closeDuration = 0;
+  setTimeout(function () {
+    panel.classList.remove('is-closing');
+    panel.setAttribute('hidden', '');
+    if (_wishlistPanelTrigger && typeof _wishlistPanelTrigger.focus === 'function') {
+      requestAnimationFrame(function () {
+        _wishlistPanelTrigger.focus();
+      });
+    }
+    _wishlistPanelTrigger = null;
+  }, closeDuration);
 }
 
 function initWishlist() {

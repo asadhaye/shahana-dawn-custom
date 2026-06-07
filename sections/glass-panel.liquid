@@ -28,36 +28,50 @@
       {% endif %}
     </header>
 
-    {% if panel_collection.products.size > 0 %}
-      <div class="glass-panel-section__grid">
-        {% for product in panel_collection.products limit: 50 %}
-          <div
-            class="glass-panel-section__item"
-            style="--animation-order: {{ forloop.index0 }};"
-          >
-            {% render 'immersive-product-card',
-              product: product,
-              collection: panel_collection,
-              collection_handle: panel_collection.handle,
-              show_quick_add: false
-            %}
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="glass-panel-section__empty">
-        <p>{{ 'sections.immersive_store.collection_empty' | t }}</p>
-        {% comment %}Issue 11: Provide navigation options when collection is empty{% endcomment %}
-        <div class="glass-panel-section__empty-actions">
-          <button type="button" class="glass-panel-section__empty-action" data-empty-action="go-home">
-            {{ 'sections.immersive_store.breadcrumb_store' | t }}
-          </button>
-          <button type="button" class="glass-panel-section__empty-action" data-empty-action="close-panel">
-            {{ 'sections.immersive_store.breadcrumb_store' | t }}
-          </button>
+    {% paginate panel_collection.products by 24 %}
+      {% if panel_collection.products.size > 0 %}
+        <div class="glass-panel-section__grid" data-collection-grid>
+          {% for product in panel_collection.products %}
+            <div
+              class="glass-panel-section__item"
+              style="--animation-order: {{ forloop.index0 }};"
+            >
+              {% render 'immersive-product-card',
+                product: product,
+                collection: panel_collection,
+                collection_handle: panel_collection.handle,
+                show_quick_add: false
+              %}
+            </div>
+          {% endfor %}
         </div>
-      </div>
-    {% endif %}
+        {% if paginate.next %}
+          <div class="glass-panel-section__pagination">
+            <button
+              type="button"
+              class="glass-panel-section__load-more"
+              data-load-more
+              data-next-url="{{ paginate.next.url }}"
+            >
+              {{ 'sections.immersive_store.load_more' | default: 'Load More' }}
+            </button>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="glass-panel-section__empty">
+          <p>{{ 'sections.immersive_store.collection_empty' | t }}</p>
+          {% comment %}Issue 11: Provide navigation options when collection is empty{% endcomment %}
+          <div class="glass-panel-section__empty-actions">
+            <button type="button" class="glass-panel-section__empty-action" data-empty-action="go-home">
+              {{ 'sections.immersive_store.breadcrumb_store' | t }}
+            </button>
+            <button type="button" class="glass-panel-section__empty-action" data-empty-action="close-panel">
+              {{ 'sections.immersive_store.close_panel' | t }}
+            </button>
+          </div>
+        </div>
+      {% endif %}
+    {% endpaginate %}
   {% else %}
     <div class="glass-panel-section__empty">
       <p>{{ 'sections.immersive_store.collection_not_found' | t }}</p>

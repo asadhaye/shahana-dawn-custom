@@ -75,21 +75,15 @@ function showFeedback(message, type) {
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
   toast.textContent = message;
-  toast.style.cssText =
-    'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:0.75rem 1.5rem;border-radius:8px;font-size:0.875rem;z-index:10000;max-width:90vw;text-align:center;';
-  if (type === 'error') {
-    toast.style.background = 'rgba(220,38,38,0.9)';
-    toast.style.color = '#fff';
-  } else if (type === 'success') {
-    toast.style.background = 'rgba(34,197,94,0.9)';
-    toast.style.color = '#fff';
-  } else {
-    toast.style.background = 'rgba(15,23,42,0.9)';
-    toast.style.color = '#d4af37';
-  }
   document.body.appendChild(toast);
+  var roomBadge = document.getElementById('immersive-room-badge');
+  if (roomBadge) roomBadge.classList.add('is-toast-visible');
   setTimeout(function () {
-    if (toast.parentNode) toast.remove();
+    toast.classList.add('immersive-feedback-toast--out');
+    if (roomBadge) roomBadge.classList.remove('is-toast-visible');
+    setTimeout(function () {
+      if (toast.parentNode) toast.remove();
+    }, 350);
   }, 3000);
 }
 
@@ -1036,6 +1030,163 @@ function initGuidedMode() {
 }
 
 // ---------------------------------------------------------------------------
+// Promo Code Overlay
+// ---------------------------------------------------------------------------
+
+function initPromoCodeOverlay() {
+  var overlay = document.getElementById('immersive-promo-code');
+  if (!overlay) return;
+  var form = overlay.querySelector('[data-promo-code-form]');
+  var input = overlay.querySelector('#immersive-promo-code-input');
+  var feedback = overlay.querySelector('[data-promo-code-feedback]');
+  var closeBtn = overlay.querySelector('.immersive-promo-code-overlay__close');
+  var msgSuccess = overlay.getAttribute('data-msg-success') || 'Discount applied!';
+  var msgError = overlay.getAttribute('data-msg-error') || 'Invalid discount code.';
+  var msgEmpty = overlay.getAttribute('data-msg-empty') || 'Please enter a code.';
+  var shopRoot = (window.routes && window.routes.root_url) || '/';
+
+  if (!shopRoot.endsWith('/')) shopRoot += '/';
+
+  function showFeedback(message, type) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = 'immersive-promo-code-overlay__feedback immersive-promo-code-overlay__feedback--' + type;
+    feedback.hidden = false;
+    setTimeout(function () {
+      feedback.hidden = true;
+    }, 4000);
+  }
+
+  function openOverlay() {
+    overlay.hidden = false;
+    if (input) input.focus();
+    if (typeof exitGuidedMode === 'function') exitGuidedMode();
+  }
+
+  function closeOverlay() {
+    overlay.hidden = true;
+    if (input) input.value = '';
+    if (feedback) feedback.hidden = true;
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeOverlay);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay && !overlay.hidden) {
+      closeOverlay();
+    }
+  });
+
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var code = input ? input.value.trim() : '';
+      if (!code) {
+        showFeedback(msgEmpty, 'error');
+        return;
+      }
+      var submitBtn = form.querySelector('.immersive-promo-code-overlay__submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Applying...';
+      }
+      fetch(shopRoot + 'cart/update.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ discount: code }),
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('Discount update failed');
+          return res.json();
+        })
+        .then(function (cartData) {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Apply';
+          }
+          var hasDiscount = cartData.cart_level_discount_applications && cartData.cart_level_discount_applications.length > 0;
+          if (hasDiscount) {
+            showFeedback(msgSuccess, 'success');
+            if (typeof showFeedback === 'function') {
+              showFeedback(msgSuccess, 'success');
+            }
+            if (input) input.value = '';
+            if (typeof trackImmersiveEvent === 'function') {
+              trackImmersiveEvent('promo_code_applied', { code: code });
+            }
+            var cartDrawer = document.querySelector('cart-drawer');
+            if (cartDrawer && typeof cartDrawer.open === 'function') {
+              cartDrawer.open();
+            }
+            setTimeout(closeOverlay, 2000);
+          } else {
+            showFeedback(msgError, 'error');
+          }
+        })
+        .catch(function () {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Apply';
+          }
+          showFeedback(msgError, 'error');
+        });
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    var removeBtn = e.target.closest('[data-promo-code-remove]');
+    if (!removeBtn) return;
+    var codeToRemove = removeBtn.getAttribute('data-promo-code-remove');
+    if (!codeToRemove) return;
+    fetch(shopRoot + 'cart/update.js', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({ discount: '' }),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('Remove discount failed');
+        return res.json();
+      })
+      .then(function () {
+        if (typeof showFeedback === 'function') {
+          showFeedback('Discount removed', 'success');
+        }
+        var activeSection = overlay.querySelector('[data-promo-code-active]');
+        if (activeSection) activeSection.remove();
+        if (typeof trackImmersiveEvent === 'function') {
+          trackImmersiveEvent('promo_code_removed', { code: codeToRemove });
+        }
+      })
+      .catch(function () {
+        showFeedback('Could not remove discount', 'error');
+      });
+  });
+
+  // Open overlay from FAB overlay trigger
+  document.addEventListener('click', function (e) {
+    var trigger = e.target.closest('[data-immersive-overlay="immersive-promo-code"]');
+    if (!trigger) return;
+    e.preventDefault();
+    openOverlay();
+    // Close FAB menu
+    var fabTrigger = document.querySelector('[data-fab-trigger]');
+    var fabActions = document.querySelector('[data-fab-actions]');
+    if (fabTrigger) fabTrigger.setAttribute('aria-expanded', 'false');
+    if (fabActions) fabActions.hidden = true;
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Full FAB
 // ---------------------------------------------------------------------------
 
@@ -1350,6 +1501,7 @@ function safeBindImmersiveInit() {
     if (typeof initEditorialScrollReveal === 'function') initEditorialScrollReveal();
 
     if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
+    if (typeof initPromoCodeOverlay === 'function') initPromoCodeOverlay();
 
     if (typeof initHomeButton === 'function') initHomeButton();
     if (typeof initSearchShortcut === 'function') initSearchShortcut();
@@ -1407,6 +1559,7 @@ document.addEventListener('shopify:section:load', function (e) {
     safeBindImmersiveInit();
     if (typeof initImmersiveSearch === 'function') initImmersiveSearch();
     if (typeof initImmersiveBottomNav === 'function') initImmersiveBottomNav();
+    if (typeof initPromoCodeOverlay === 'function') initPromoCodeOverlay();
     if (typeof initImmersiveLimitedTime === 'function') initImmersiveLimitedTime();
   }
 });
