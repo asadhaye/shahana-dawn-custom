@@ -360,6 +360,9 @@
     "error_load_product": "Unable to load product. Please check your connection and try again.",
     "added_to_cart": "Added to cart!",
     "breadcrumb_store": "Shahana Collection",
+    "close_panel": "Close panel",
+    "nav_previous": "Previous",
+    "nav_next": "Next",
     "cookie_banner": {
       "aria_label": "Cookie consent",
       "text": "We use cookies to enhance your experience.",
@@ -489,6 +492,16 @@
       "room_occasions": "Occasions",
       "room_featured_collections": "Featured Collections"
     },
+    "promo_code": {
+      "label": "Enter discount code",
+      "placeholder": "Discount code",
+      "apply": "Apply",
+      "success": "Discount applied successfully!",
+      "error": "Invalid or expired discount code.",
+      "empty": "Please enter a discount code.",
+      "active_codes": "Active discounts",
+      "remove": "Remove {{ code }}"
+    },
     "limited_time": {
       "sale_ends": "Sale ends in",
       "days": "d",
@@ -559,6 +572,7 @@
     "close_panel": "Close panel",
     "fab_story_rail": "Our Story",
     "fab_typo_index": "Typography",
+    "fab_promo_code": "Promo Code",
     "logo_home": "{{ name }} — Home"
   },
   "immersive_editorial": {

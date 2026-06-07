@@ -99,7 +99,7 @@
 
 .immersive-room-badge {
   position: absolute;
-  bottom: 2rem;
+  bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
   left: 1.5rem;
   z-index: var(--z-overlay);
   pointer-events: none;
@@ -107,6 +107,11 @@
   flex-direction: column;
   gap: 0.25rem;
   max-width: calc(100% - 3rem);
+  transition: bottom 0.3s ease;
+}
+
+.immersive-room-badge.is-toast-visible {
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
 }
 
 .immersive-room-badge__name {
@@ -118,6 +123,11 @@
   text-shadow:
     0 1px 4px rgba(0, 0, 0, 0.7),
     0 0 12px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.2s ease;
+}
+
+.immersive-room-badge__name.is-fading {
+  opacity: 0;
 }
 
 .immersive-room-badge__guidance {
@@ -127,6 +137,11 @@
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.7),
     0 0 8px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.2s ease;
+}
+
+.immersive-room-badge__guidance.is-fading {
+  opacity: 0;
 }
 
 /* =============================================================================
@@ -157,7 +172,22 @@
   }
   50% {
     transform: scale(1.35);
+    opacity: 0.15;
+  }
+}
+
+.immersive-hotspot {
+  animation: immersive-hotspot-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+@keyframes immersive-hotspot-enter {
+  from {
     opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -166,6 +196,9 @@
     animation: none;
     opacity: 0.6;
     transform: scale(1);
+  }
+  .immersive-hotspot {
+    animation: none;
   }
 }
 
@@ -203,6 +236,14 @@
 @media (prefers-reduced-motion: reduce) {
   .immersive-hotspot__label {
     transition: none;
+  }
+  .immersive-room-badge__name,
+  .immersive-room-badge__guidance {
+    transition: none;
+  }
+  .immersive-room-badge__name.is-fading,
+  .immersive-room-badge__guidance.is-fading {
+    opacity: 0;
   }
 }
 
@@ -468,10 +509,22 @@
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   z-index: var(--z-fab);
+  animation: immersive-search-dropdown-in 0.2s ease;
 }
 
 .immersive-search__dropdown[hidden] {
   display: none;
+}
+
+@keyframes immersive-search-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .immersive-search__group-label {
@@ -1047,13 +1100,31 @@
   position: fixed;
   bottom: 5.5rem;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(8px);
   z-index: var(--z-panel);
   pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .immersive-next-actions[hidden] {
   display: none;
+}
+
+.immersive-next-actions.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.immersive-next-actions__inner {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.immersive-next-actions.is-visible .immersive-next-actions__inner {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .immersive-next-actions__inner {
@@ -1096,6 +1167,102 @@
   }
   .immersive-next-actions__close {
     transition: none;
+  }
+}
+
+/* ── Add-to-cart loading state ─────────────────────────── */
+.glass-product-section__add-to-cart.is-adding {
+  background: rgba(212, 175, 55, 0.5);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: wait;
+  position: relative;
+}
+
+.glass-product-section__add-to-cart.is-adding::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: immersive-spin 0.6s linear infinite;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes immersive-spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.immersive-add-to-cart.is-adding {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ── Feedback toast (replaces inline JS styles) ────────── */
+.immersive-feedback-toast {
+  position: fixed;
+  bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  z-index: 10000;
+  max-width: 90vw;
+  text-align: center;
+  pointer-events: none;
+  animation: immersive-toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.immersive-feedback-toast--info {
+  background: rgba(15, 23, 42, 0.9);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.immersive-feedback-toast--success {
+  background: rgba(34, 197, 94, 0.9);
+  color: #fff;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.immersive-feedback-toast--error {
+  background: rgba(220, 38, 38, 0.9);
+  color: #fff;
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+@keyframes immersive-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes immersive-toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-feedback-toast {
+    animation: none !important;
+  }
+  .glass-product-section__add-to-cart.is-adding::after {
+    animation: none !important;
   }
 }
 

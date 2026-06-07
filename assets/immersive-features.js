@@ -993,6 +993,14 @@ function setupBuyNowForm(panel) {
       formData.set('sections', 'cart-drawer,cart-icon-bubble');
       formData.set('sections_url', window.location.pathname);
 
+      var submitBtn = form.querySelector('[type="submit"][name="add"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('is-adding');
+        submitBtn.dataset.originalText = submitBtn.textContent;
+        submitBtn.textContent = msgAdding || 'Adding\u2026';
+      }
+
       fetch(shopRoot + 'cart/add.js', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -1007,6 +1015,12 @@ function setupBuyNowForm(panel) {
           return response.json();
         })
         .then(function () {
+          // Reset submit button state
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('is-adding');
+            if (submitBtn.dataset.originalText) submitBtn.textContent = submitBtn.dataset.originalText;
+          }
           showCartFeedback(panel);
 
           try {
@@ -1085,6 +1099,12 @@ function setupBuyNowForm(panel) {
         })
         .catch(function (error) {
           console.error('Error adding to cart:', error);
+          // Reset submit button state on error
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('is-adding');
+            if (submitBtn.dataset.originalText) submitBtn.textContent = submitBtn.dataset.originalText;
+          }
           showErrorFeedback(panel, error.message || msgAddToCart);
         });
     });

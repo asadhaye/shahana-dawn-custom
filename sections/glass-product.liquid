@@ -49,6 +49,8 @@
   endif
 %}
 
+{{ 'component-rating.css' | asset_url | stylesheet_tag }}
+
 <section
   class="glass-product-section"
   aria-label="{{ 'sections.immersive.product_panel.product_detail_aria' | t }}"
@@ -120,7 +122,7 @@
             class="glass-product-section__product-nav-btn glass-product-section__product-nav-btn--prev"
             data-product-handle="{{ prev_product.handle }}"
             data-collection-handle="{{ originating_collection_handle }}"
-            aria-label="Previous product: {{ prev_product.title | escape }}"
+            aria-label="{{ 'sections.immersive_store.nav_previous' | t }}: {{ prev_product.title | escape }}"
           >
             <svg
               width="20"
@@ -136,7 +138,7 @@
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
             <span class="glass-product-section__product-nav-label">
-              <span class="glass-product-section__product-nav-hint">Previous</span>
+              <span class="glass-product-section__product-nav-hint">{{ 'sections.immersive_store.nav_previous' | t }}</span>
               <span class="glass-product-section__product-nav-title">
                 {{- prev_product.title | escape | truncate: 30 -}}
               </span>
@@ -154,10 +156,10 @@
             class="glass-product-section__product-nav-btn glass-product-section__product-nav-btn--next"
             data-product-handle="{{ next_product.handle }}"
             data-collection-handle="{{ originating_collection_handle }}"
-            aria-label="Next product: {{ next_product.title | escape }}"
+            aria-label="{{ 'sections.immersive_store.nav_next' | t }}: {{ next_product.title | escape }}"
           >
             <span class="glass-product-section__product-nav-label">
-              <span class="glass-product-section__product-nav-hint">Next</span>
+              <span class="glass-product-section__product-nav-hint">{{ 'sections.immersive_store.nav_next' | t }}</span>
               <span class="glass-product-section__product-nav-title">
                 {{- next_product.title | escape | truncate: 30 -}}
               </span>
@@ -268,6 +270,44 @@
           {% endif %}
         </div>
 
+        {%- if section.settings.show_rating and panel_product.metafields.reviews.rating.value != blank -%}
+          <div class="glass-product-section__rating-wrapper">
+            {% liquid
+              assign rating_decimal = 0
+              assign decimal = panel_product.metafields.reviews.rating.value.rating | modulo: 1
+              if decimal >= 0.3 and decimal <= 0.7
+                assign rating_decimal = 0.5
+              elsif decimal > 0.7
+                assign rating_decimal = 1
+              endif
+            %}
+            <div
+              class="rating glass-product-section__rating"
+              role="img"
+              aria-label="{{ 'accessibility.star_reviews_info' | t: rating_value: panel_product.metafields.reviews.rating.value, rating_max: panel_product.metafields.reviews.rating.value.scale_max }}"
+            >
+              <span
+                aria-hidden="true"
+                class="rating-star glass-product-section__rating-star"
+                style="--rating: {{ panel_product.metafields.reviews.rating.value.rating | floor }}; --rating-max: {{ panel_product.metafields.reviews.rating.value.scale_max }}; --rating-decimal: {{ rating_decimal }};"
+              ></span>
+            </div>
+            <p class="rating-text caption">
+              <span aria-hidden="true">
+                {{- panel_product.metafields.reviews.rating.value }} /
+                {{ panel_product.metafields.reviews.rating.value.scale_max -}}
+              </span>
+            </p>
+            <p class="rating-count caption">
+              <span aria-hidden="true">({{ panel_product.metafields.reviews.rating_count }})</span>
+              <span class="visually-hidden">
+                {{- panel_product.metafields.reviews.rating_count }}
+                {{ 'accessibility.total_reviews' | t -}}
+              </span>
+            </p>
+          </div>
+        {%- endif -%}
+
         {% form 'product', panel_product, class: 'glass-product-section__form' %}
           {% if panel_product.has_only_default_variant == false %}
             <div class="glass-product-section__variants">
@@ -303,6 +343,35 @@
           {% else %}
             <input type="hidden" name="id" value="{{ panel_product.selected_or_first_available_variant.id }}">
           {% endif %}
+
+          <div class="glass-product-section__quantity">
+            <label for="GlassProduct-Quantity-{{ section.id }}" class="glass-product-section__quantity-label visually-hidden">
+              {{ 'products.product.quantity.label' | t }}
+            </label>
+            <quantity-input class="quantity glass-quantity">
+              <button class="quantity__button glass-quantity__button" name="minus" type="button">
+                <span class="visually-hidden">{{ 'products.product.quantity.decrease' | t: product: panel_product.title | escape }}</span>
+                <span class="glass-quantity__icon" aria-hidden="true">&minus;</span>
+              </button>
+              <input
+                class="quantity__input glass-quantity__input"
+                type="number"
+                name="quantity"
+                id="GlassProduct-Quantity-{{ section.id }}"
+                value="1"
+                min="1"
+                {% if panel_product.selected_or_first_available_variant.quantity_rule.max != null %}
+                  max="{{ panel_product.selected_or_first_available_variant.quantity_rule.max }}"
+                {% endif %}
+                step="{{ panel_product.selected_or_first_available_variant.quantity_rule.increment | default: 1 }}"
+                aria-label="{{ 'products.product.quantity.input_label' | t: product: panel_product.title | escape }}"
+              >
+              <button class="quantity__button glass-quantity__button" name="plus" type="button">
+                <span class="visually-hidden">{{ 'products.product.quantity.increase' | t: product: panel_product.title | escape }}</span>
+                <span class="glass-quantity__icon" aria-hidden="true">+</span>
+              </button>
+            </quantity-input>
+          </div>
 
           <button
             type="submit"
@@ -608,7 +677,9 @@
   }
 
   .glass-product-section__back:hover {
-    background: rgba(30, 64, 175, 0.9);
+    background: rgba(212, 175, 55, 0.15);
+    border-color: rgba(212, 175, 55, 0.6);
+    color: #d4af37;
   }
 
   .glass-product-section__title-wrap {
@@ -730,8 +801,8 @@
     cursor: pointer;
     border-radius: 0.5rem;
     overflow: hidden;
-    width: 60px;
-    height: 80px;
+    flex: 0 0 60px;
+    aspect-ratio: 3 / 4;
     transition: border-color 0.2s ease;
   }
 
@@ -769,6 +840,14 @@
     text-align: left;
   }
 
+  .glass-product-section__info {
+    transition: opacity 0.2s ease;
+  }
+
+  .glass-product-section__info.is-updating {
+    opacity: 0.4;
+  }
+
   .glass-product-section__description h3 {
     color: #d4af37;
     margin-top: 1rem;
@@ -792,6 +871,41 @@
     color: #ff6b6b;
   }
 
+  /* ── Rating Display ─────────────────────────────────── */
+  .glass-product-section__rating-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    justify-content: center;
+  }
+
+  .glass-product-section__rating-star {
+    --color-rating-star: #d4af37;
+    --letter-spacing: 0.8;
+    --font-size: 1.4;
+  }
+
+  .glass-product-section__rating-wrapper .rating-count {
+    color: rgba(212, 175, 55, 0.7);
+    font-size: 0.875rem;
+  }
+
+  .glass-product-section__rating-wrapper .rating-text {
+    color: rgba(212, 175, 55, 0.8);
+    font-size: 0.875rem;
+  }
+
+  @media (forced-colors: active) {
+    .glass-product-section__rating-wrapper .rating {
+      display: none;
+    }
+
+    .glass-product-section__rating-wrapper .rating-text {
+      display: block;
+    }
+  }
+
   .glass-product-section__variants {
     margin-bottom: 1.5rem;
   }
@@ -806,12 +920,12 @@
   .glass-product-section__variant-button {
     padding: 0.5rem 1rem;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #fff;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    color: rgba(212, 175, 55, 0.8);
     border-radius: 8px;
     font-size: 1rem;
     cursor: pointer;
-    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   }
 
   .glass-product-section__variant-button:hover:not(:disabled) {
@@ -842,6 +956,87 @@
 
   .glass-product-section__variant-input {
     display: none;
+  }
+
+  /* ── Quantity Selector ───────────────────────────────── */
+  .glass-product-section__quantity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0 0.75rem;
+  }
+
+  .glass-quantity {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(10, 15, 30, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    overflow: hidden;
+    max-width: 160px;
+  }
+
+  .glass-quantity__button {
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid rgba(212, 175, 55, 0.2);
+    color: #d4af37;
+    font-size: 1.125rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease;
+    padding: 0;
+  }
+
+  .glass-quantity__button:last-of-type {
+    border-right: none;
+    border-left: 1px solid rgba(212, 175, 55, 0.2);
+  }
+
+  .glass-quantity__button:hover {
+    background: rgba(212, 175, 55, 0.15);
+  }
+
+  .glass-quantity__button:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: -2px;
+  }
+
+  .glass-quantity__icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .glass-quantity__input {
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    color: #d4af37;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 0;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .glass-quantity__input::-webkit-outer-spin-button,
+  .glass-quantity__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .glass-quantity__input:focus {
+    outline: 2px solid #d4af37;
+    outline-offset: -2px;
   }
 
   .glass-product-section__add-to-cart {
@@ -1261,6 +1456,9 @@
 
   .glass-product-section__heart--filled {
     display: none;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
 
   .glass-product-section__wishlist-toggle.is-saved .glass-product-section__heart--outline {
@@ -1269,6 +1467,9 @@
 
   .glass-product-section__wishlist-toggle.is-saved .glass-product-section__heart--filled {
     display: block;
+    opacity: 1;
+    transform: scale(1);
+    animation: glass-heart-beat 0.6s ease;
   }
 
   .glass-product-section__wishlist-toggle.is-saved {
@@ -1277,9 +1478,22 @@
     background: rgba(212, 175, 55, 0.08);
   }
 
+  @keyframes glass-heart-beat {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.25); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .glass-product-section__wishlist-toggle {
       transition: none !important;
+    }
+    .glass-product-section__wishlist-toggle.is-saved .glass-product-section__heart--filled {
+      animation: none;
+      transform: scale(1);
+      opacity: 1;
     }
   }
 
@@ -1363,6 +1577,17 @@
       padding: 0.6rem 1.2rem;
     }
 
+    /* Quantity selector */
+    .glass-quantity__button {
+      width: 48px;
+      height: 48px;
+    }
+
+    .glass-quantity__input {
+      width: 48px;
+      height: 48px;
+    }
+
     /* Delivery estimate */
     .glass-product-section__delivery {
       font-size: clamp(0.875rem, 3.2vw, 1rem);
@@ -1389,8 +1614,8 @@
 
     /* Thumbs — larger on mobile */
     .glass-product-section__thumb {
-      width: 52px;
-      height: 70px;
+      flex: 0 0 52px;
+      aspect-ratio: 3 / 4;
     }
   }
 
@@ -1416,6 +1641,10 @@
     .glass-product-section__variant-button {
       font-size: 0.875rem;
       padding: 0.5rem 0.875rem;
+    }
+
+    .glass-product-section__thumb {
+      flex: 0 0 44px;
     }
 
     /* Stack share buttons on very small screens */
@@ -1568,7 +1797,7 @@
       "type": "checkbox",
       "id": "show_rating",
       "label": "t:sections.glass_product.settings.show_rating.label",
-      "default": false,
+      "default": true,
       "info": "t:sections.glass_product.settings.show_rating.info"
     },
     {
