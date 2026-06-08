@@ -186,11 +186,11 @@
       "settings": {
         "collection": "silk-pret-summer-26-suffuse-by-sana-yasir",
         "products_to_show": 25,
-        "title": "El Veneto Luxury Formals - Saad Bin Shahzad",
+        "title": "Silk Pret Suffuse",
         "heading_size": "h2",
         "description": "",
         "show_description": false,
-        "description_style": "body",
+        "description_style": "subtitle",
         "columns_desktop": 4,
         "enable_desktop_slider": true,
         "full_width": false,
