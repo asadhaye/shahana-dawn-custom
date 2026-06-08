@@ -9,8 +9,8 @@
  */
 {
   "current": {
-    "logo": "shopify://shop_images/sc-logo-transparent-bg.png",
-    "logo_width": 160,
+    "logo": "shopify://shop_images/sc-logo-transpartent-bg.png",
+    "logo_width": 170,
     "type_header_font": "cardo_n4",
     "heading_scale": 100,
     "type_body_font": "baskervville_n6",
@@ -38,7 +38,7 @@
     "inputs_radius": 0,
     "inputs_shadow_opacity": 0,
     "inputs_shadow_horizontal_offset": 0,
-    "inputs_shadow_vertical_offset": 4,
+    "inputs_shadow_vertical_offset": 2,
     "inputs_shadow_blur": 5,
     "card_style": "card",
     "card_image_padding": 0,
