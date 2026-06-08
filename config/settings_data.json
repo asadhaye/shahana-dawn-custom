@@ -42,7 +42,7 @@
     "inputs_shadow_blur": 5,
     "card_style": "card",
     "card_image_padding": 0,
-    "card_text_alignment": "left",
+    "card_text_alignment": "center",
     "card_color_scheme": "scheme-1",
     "card_border_thickness": 0,
     "card_border_opacity": 10,
@@ -104,6 +104,7 @@
     "badge_corner_radius": 38,
     "sale_badge_color_scheme": "scheme-5",
     "sold_out_badge_color_scheme": "scheme-3",
+    "brand_image": "shopify://shop_images/sc-logo-transpartent-bg.png",
     "social_facebook_link": "",
     "social_instagram_link": "",
     "social_youtube_link": "",
@@ -118,8 +119,8 @@
     "predictive_search_show_price": false,
     "currency_code_enabled": true,
     "cart_type": "notification",
-    "show_vendor": false,
-    "show_cart_note": false,
+    "show_vendor": true,
+    "show_cart_note": true,
     "cart_drawer_collection": "",
     "sections": {
       "main-password-header": {
