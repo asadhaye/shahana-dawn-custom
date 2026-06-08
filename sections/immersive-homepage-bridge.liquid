@@ -2,7 +2,10 @@
   assign bridge_label = 'sections.immersive_journey_bridges.switch_to_3d' | t
   assign bridge_aria = 'sections.immersive_journey_bridges.switch_to_3d_aria' | t
 -%}
-<div class="immersive-homepage-bridge page-width color-{{ section.settings.color_scheme }}" style="padding-top: {{ section.settings.padding_top }}px; padding-bottom: {{ section.settings.padding_bottom }}px; --button-width: {{ section.settings.button_width }}px;">
+<div
+  class="immersive-homepage-bridge page-width color-{{ section.settings.color_scheme }}"
+  style="padding-top: {{ section.settings.padding_top }}px; padding-bottom: {{ section.settings.padding_bottom }}px; --button-width: {{ section.settings.button_width }}px;"
+>
   {%- render 'immersive-bridge-btn',
     bridge_url: '/pages/immersive',
     bridge_label: bridge_label,
@@ -18,7 +21,7 @@
 
   .immersive-homepage-bridge .immersive-bridge-btn {
     min-width: var(--button-width);
-    text-align: center;
+    text-align: justify;
     display: inline-block;
   }
 {% endstylesheet %}
@@ -50,7 +53,7 @@
       "step": 10,
       "unit": "px",
       "label": "Button width",
-      "default": 200
+      "default": 400
     },
     {
       "type": "range",
