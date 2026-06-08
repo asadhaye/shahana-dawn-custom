@@ -44,22 +44,13 @@
 .card--standard .card__inner {
   position: relative;
   box-sizing: border-box;
-  border-radius: var(--border-radius);
-  border: var(--border-width) solid rgba(var(--color-foreground), var(--border-opacity));
+  border-radius: 0;
+  border: none;
 }
 
 .card--card:after,
 .card--standard .card__inner:after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  width: calc(var(--border-width) * 2 + 100%);
-  height: calc(var(--border-width) * 2 + 100%);
-  top: calc(var(--border-width) * -1);
-  left: calc(var(--border-width) * -1);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-horizontal-offset) var(--shadow-vertical-offset) var(--shadow-blur-radius)
-    rgba(var(--color-shadow), var(--shadow-opacity));
+  display: none;
 }
 
 /* Needed for gradient continuity with or without animation, the transform scopes the gradient to its container which happens already when animation are turned on */
@@ -136,7 +127,7 @@
 
 .card__information {
   grid-row-start: 2;
-  padding: 1.3rem 1rem;
+  padding: 10px 0 0;
 }
 
 .card:not(.ratio) > .card__content {
@@ -591,5 +582,192 @@
 
   .grid__item:nth-child(8n) .product-card-wrapper:hover .shape--blob {
     clip-path: polygon(var(--shape--blob-5));
+  }
+}
+
+/* ==========================================================================
+   LUXURY PRODUCT CARD STYLES - UY Collection Inspired
+   ========================================================================== */
+
+/* Luxury card wrapper with enhanced hover effect */
+.product-card-wrapper.luxury-style {
+  transition: transform var(--luxury-transition-normal), box-shadow var(--luxury-transition-normal);
+}
+
+.product-card-wrapper.luxury-style:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--luxury-shadow-medium);
+}
+
+/* Luxury card media with rounded corners */
+.product-card-wrapper.luxury-style .card__media {
+  border-radius: var(--luxury-radius-md);
+  overflow: hidden;
+}
+
+/* Luxury image hover swap effect */
+.product-card-wrapper.luxury-style .media--hover-effect .card__media img:first-child {
+  transition: opacity var(--luxury-transition-normal), transform var(--luxury-transition-slow);
+}
+
+.product-card-wrapper.luxury-style:hover .media--hover-effect .card__media img:first-child {
+  opacity: 0;
+  transform: scale(1.05);
+}
+
+.product-card-wrapper.luxury-style .media--hover-effect .card__media img:last-child {
+  opacity: 0;
+  transition: opacity var(--luxury-transition-normal);
+}
+
+.product-card-wrapper.luxury-style:hover .media--hover-effect .card__media img:last-child {
+  opacity: 1;
+}
+
+/* Luxury badges */
+.product-card-wrapper.luxury-style .badge {
+  font-family: var(--luxury-font-accent);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--luxury-radius-sm);
+  padding: 6px 14px;
+}
+
+/* Luxury sale badge */
+.product-card-wrapper.luxury-style .badge--bottom-left.color-scheme-2,
+.product-card-wrapper.luxury-style .badge--bottom-left.color-{{ settings.sale_badge_color_scheme }} {
+  background-color: var(--luxury-accent-red);
+  color: white;
+}
+
+/* Luxury quick action buttons */
+.product-card-wrapper.luxury-style .luxury-quick-actions {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--luxury-transition-normal);
+  z-index: 20;
+}
+
+.product-card-wrapper.luxury-style:hover .luxury-quick-actions {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.product-card-wrapper.luxury-style .luxury-quick-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background-color: var(--luxury-bg-primary);
+  color: var(--luxury-text-primary);
+  border-radius: var(--luxury-radius-round);
+  border: 1px solid var(--luxury-border);
+  cursor: pointer;
+  transition: all var(--luxury-transition-fast);
+  box-shadow: var(--luxury-shadow-image);
+}
+
+.product-card-wrapper.luxury-style .luxury-quick-action:hover {
+  background-color: var(--luxury-text-primary);
+  color: var(--luxury-bg-primary);
+  border-color: var(--luxury-text-primary);
+  transform: scale(1.08);
+}
+
+.product-card-wrapper.luxury-style .luxury-quick-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Luxury color swatches */
+.product-card-wrapper.luxury-style .luxury-card__swatches {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.product-card-wrapper.luxury-style .luxury-card__swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--luxury-radius-round);
+  border: 2px solid var(--luxury-border);
+  cursor: pointer;
+  transition: all var(--luxury-transition-fast);
+}
+
+.product-card-wrapper.luxury-style .luxury-card__swatch:hover {
+  border-color: var(--luxury-text-primary);
+  transform: scale(1.15);
+}
+
+.product-card-wrapper.luxury-style .luxury-card__swatch--active {
+  border-color: var(--luxury-text-primary);
+  box-shadow: 0 0 0 2px var(--luxury-bg-primary), 0 0 0 4px var(--luxury-text-primary);
+}
+
+/* Luxury vendor styling */
+.product-card-wrapper.luxury-style .luxury-card__vendor {
+  display: block;
+  font-family: var(--luxury-font-accent);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--luxury-text-muted);
+  margin-bottom: 4px;
+}
+
+/* Luxury title styling */
+.product-card-wrapper.luxury-style .card__heading a {
+  font-family: var(--luxury-font-heading);
+  font-size: 15px;
+  font-weight: 400;
+  transition: color var(--luxury-transition-fast);
+}
+
+.product-card-wrapper.luxury-style .card__heading a:hover {
+  color: var(--luxury-text-muted);
+}
+
+/* Mobile: always show quick actions */
+@media (max-width: 767px) {
+  .product-card-wrapper.luxury-style .luxury-quick-actions {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+    bottom: 8px;
+  }
+
+  .product-card-wrapper.luxury-style .luxury-quick-action {
+    width: 38px;
+    height: 38px;
+  }
+
+  .product-card-wrapper.luxury-style .luxury-quick-action::after {
+    display: none;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .product-card-wrapper.luxury-style,
+  .product-card-wrapper.luxury-style .media--hover-effect img,
+  .product-card-wrapper.luxury-style .luxury-quick-actions {
+    transition: none;
+  }
+
+  .product-card-wrapper.luxury-style:hover {
+    transform: none;
   }
 }

@@ -1492,3 +1492,191 @@ a.product__text {
     border: none;
   }
 }
+
+
+/* ─── 2D STORE: Luxury Product Page ──────────────────────────────────────── */
+
+.template-product .product {
+  gap: 60px;
+}
+
+@media screen and (min-width: 990px) {
+  .template-product .product__media-wrapper {
+    max-width: 55%;
+    width: 55%;
+  }
+  
+  .template-product .product__info-wrapper {
+    max-width: 45%;
+    width: 45%;
+    padding-left: 40px;
+  }
+}
+
+/* Product title */
+.template-product .product__title h1 {
+  font-family: var(--luxury-font-heading);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+
+/* Product vendor */
+.template-product .product__vendor {
+  font-family: var(--luxury-font-accent);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--luxury-text-muted);
+  margin-bottom: 16px;
+}
+
+/* Product price */
+.template-product .price__container {
+  margin-bottom: 24px;
+}
+
+.template-product .price__regular .price-item {
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.template-product .price__sale .price-item--regular {
+  font-size: 0.9375rem;
+  color: var(--luxury-text-muted);
+}
+
+.template-product .price__sale .price-item--sale {
+  font-size: 1.125rem;
+  color: var(--luxury-accent-red);
+  font-weight: 600;
+}
+
+/* Variant picker */
+.template-product .product-form__input .form__label {
+  font-family: var(--luxury-font-accent);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--luxury-text-secondary);
+}
+
+.template-product .product-form__input input[type="radio"] + label {
+  border-radius: 0;
+  border: 1px solid var(--luxury-border);
+  padding: 8px 16px;
+  min-width: 44px;
+  transition: all var(--luxury-transition-fast);
+}
+
+.template-product .product-form__input input[type="radio"]:checked + label {
+  border-color: var(--luxury-text-primary);
+  background: var(--luxury-text-primary);
+  color: var(--luxury-bg-primary);
+}
+
+/* Quantity selector */
+.template-product .quantity {
+  border: 1px solid var(--luxury-border);
+  border-radius: 0;
+}
+
+.template-product .quantity__button {
+  width: 44px;
+  color: var(--luxury-text-secondary);
+}
+
+.quantity__input {
+  font-size: 0.875rem;
+  color: var(--luxury-text-primary);
+}
+
+/* Add to cart button */
+.template-product .product-form__submit {
+  font-family: var(--luxury-font-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 16px 32px;
+  border-radius: 0;
+  min-height: 52px;
+  background: var(--luxury-text-primary);
+  color: var(--luxury-bg-primary);
+  border: 1px solid var(--luxury-text-primary);
+  transition: all var(--luxury-transition-normal);
+}
+
+.template-product .product-form__submit:hover:not([disabled]) {
+  background: transparent;
+  color: var(--luxury-text-primary);
+}
+
+.template-product .shopify-payment-button__button {
+  font-family: var(--luxury-font-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border-radius: 0;
+  min-height: 52px;
+}
+
+/* Product description */
+.template-product .product__description {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--luxury-text-secondary);
+  margin-top: 32px;
+}
+
+/* Accordion / tabs */
+.template-product .product__accordion .accordion__title {
+  font-family: var(--luxury-font-accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 16px 0;
+}
+
+.template-product .product__accordion .accordion__content {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--luxury-text-secondary);
+  padding-bottom: 24px;
+}
+
+/* Product media */
+.template-product .product__media-list {
+  gap: 16px;
+}
+
+.template-product .product__media {
+  border-radius: 0;
+}
+
+.template-product .thumbnail-list {
+  gap: 8px;
+}
+
+.template-product .thumbnail {
+  border-radius: 0;
+}
+
+/* Related products */
+.template-product .related-products__heading {
+  font-family: var(--luxury-font-heading);
+  font-size: 1.5rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+@media screen and (max-width: 749px) {
+  .template-product .product {
+    gap: 32px;
+  }
+}

@@ -199,3 +199,95 @@ slideshow-component:not(.page-width) .slider-buttons {
   opacity: 0;
   transform: scale(0.8);
 }
+
+
+/* ─── 2D STORE: Luxury Hero Slideshow ───────────────────────────────────── */
+
+.slideshow__banner {
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.slideshow__media {
+  border-radius: 0;
+}
+
+.slideshow__text.banner__box {
+  background: transparent;
+  padding: 40px;
+  max-width: 600px;
+}
+
+.slideshow__text .banner__heading {
+  font-family: var(--luxury-font-heading);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+.slideshow__text .banner__text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  max-width: 400px;
+}
+
+.slideshow__text .banner__buttons .button {
+  font-family: var(--luxury-font-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 14px 32px;
+  border-radius: 0;
+  min-width: 160px;
+}
+
+.slideshow__controls {
+  border: none;
+}
+
+.slideshow__control-button {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--luxury-transition-fast);
+}
+
+.slideshow__control-button:hover {
+  background: #fff;
+}
+
+.slideshow__control-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.slider-counter {
+  font-family: var(--luxury-font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+@media screen and (max-width: 749px) {
+  .slideshow__text.banner__box {
+    padding: 24px 16px;
+  }
+  
+  .slideshow__text .banner__heading {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+  
+  .slideshow__text .banner__buttons .button {
+    padding: 12px 24px;
+    min-width: 140px;
+  }
+}

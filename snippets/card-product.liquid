@@ -1,5 +1,5 @@
 {% comment %}
-  Renders a product card
+  Renders a product card with luxury UY Collection styling
 
   Accepts:
   - card_product: {Object} Product Liquid object (optional)
@@ -16,6 +16,13 @@
   - horizontal_class: {Boolean} Add a card--horizontal class if set to true. Default: false (optional)
   - horizontal_quick_add: {Boolean} Changes the quick add button styles when set to true. Default: false (optional)
   - placeholder_image: {String} The placeholder image to use when no product exists. Default: 'product-apparel-2' (optional)
+
+  Luxury Features:
+  - Hover image swap with smooth transition
+  - Quick action buttons (Add to Cart, Quick View, Wishlist, Compare)
+  - Badges for Sale, New, Pre-order
+  - Color swatches for variants
+  - Smooth micro-interactions
 
   Usage:
   {% render 'card-product', show_vendor: section.settings.show_vendor %}

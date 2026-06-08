@@ -104,3 +104,29 @@ if (Shopify.designMode) {
   document.addEventListener('shopify:section:load', (event) => initializeScrollAnimationTrigger(event.target, true));
   document.addEventListener('shopify:section:reorder', () => initializeScrollAnimationTrigger(document, true));
 }
+
+/* ========== LUXURY SCROLL REVEAL - UY Collection Inspired ========== */
+function initializeLuxuryReveal(rootEl = document) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const reveals = Array.from(rootEl.querySelectorAll('.luxury-reveal'));
+  if (reveals.length === 0) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -50px 0px', threshold: 0.1 });
+
+  reveals.forEach(el => observer.observe(el));
+}
+
+window.addEventListener('DOMContentLoaded', () => initializeLuxuryReveal());
+
+if (Shopify.designMode) {
+  document.addEventListener('shopify:section:load', (event) => initializeLuxuryReveal(event.target));
+  document.addEventListener('shopify:section:reorder', () => initializeLuxuryReveal(document));
+}
