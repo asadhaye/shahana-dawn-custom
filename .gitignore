@@ -66,3 +66,5 @@ skills/
 # Theme Editor dynamically modified files
 # These should NOT be tracked - they are modified by Shopify Theme Editor
 # templates/page.immersive.json  # Re-enabled for local dev - gallery config changes
+.understand-anything/
+AUDIT_REPORT.md
