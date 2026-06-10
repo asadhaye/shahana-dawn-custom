@@ -107,7 +107,8 @@
           </div>
         {%- endif -%}
         {%- comment -%}Luxury: Quick shop overlay + wishlist heart{%- endcomment -%}
-        <button type="button" class="quick-shop-btn" data-product-url="{{ card_product.url }}" aria-label="Quick shop {{ card_product.title | escape }}">
+        <button type="button" class="quick-shop-btn" data-product-url="{{ card_product.url }}" aria-label="Quick shop {%- assign title_parts = card_product.title | split: ' |' -%}
+                {{ title_parts.first | escape }}">
           Quick Shop
         </button>
         <button type="button" class="wishlist-heart" aria-label="Add to wishlist">
@@ -127,7 +128,8 @@
                 class="full-unstyled-link"
                 aria-labelledby="StandardCardNoMediaLink-{{ section_id }}-{{ card_product.id }} NoMediaStandardBadge-{{ section_id }}-{{ card_product.id }}"
               >
-                {{ card_product.title | escape }}
+                {%- assign title_parts = card_product.title | split: ' |' -%}
+                {{ title_parts.first | escape }}
               </a>
             </h3>
           </div>
@@ -164,7 +166,8 @@
               class="full-unstyled-link"
               aria-labelledby="CardLink-{{ section_id }}-{{ card_product.id }} Badge-{{ section_id }}-{{ card_product.id }}"
             >
-              {{ card_product.title | escape }}
+              {%- assign title_parts = card_product.title | split: ' |' -%}
+                {{ title_parts.first | escape }}
             </a>
           </h3>
           <div class="card-information">
@@ -517,7 +520,8 @@
                       </div>
                       <div class="quick-add-modal__content-info--bulk-details large-up-hide">
                         <a href="{{ card_product.url }}" class="full-unstyled-link">
-                          <h3>{{ card_product.title | escape }}</h3>
+                          <h3>{%- assign title_parts = card_product.title | split: ' |' -%}
+                {{ title_parts.first | escape }}</h3>
                         </a>
                         {% render 'price', product: card_product, price_class: '', show_compare_at_price: true %}
                         {%- if card_product.quantity_price_breaks_configured? -%}
@@ -531,7 +535,8 @@
                       <div class="quick-add-modal__content-info--bulk-details small-hide medium-hide">
                         <a href="{{ card_product.url }}" class="full-unstyled-link">
                           <h3 class="h2">
-                            {{ card_product.title | escape }}
+                            {%- assign title_parts = card_product.title | split: ' |' -%}
+                {{ title_parts.first | escape }}
                           </h3>
                         </a>
                         {% render 'price', product: card_product, price_class: '', show_compare_at_price: true %}
