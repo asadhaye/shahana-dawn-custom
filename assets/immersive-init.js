@@ -489,6 +489,7 @@ function initImmersiveGestures() {
     canvasWrapper,
     'touchstart',
     function (e) {
+      if (window.ShahanaImmersive && window.ShahanaImmersive.settings && !window.ShahanaImmersive.settings.interactionEnabled) return;
       var touch = e.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;

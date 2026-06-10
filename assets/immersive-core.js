@@ -243,6 +243,7 @@ if (!window.ShahanaImmersive) {
       isTablet: false,
       textureQuality: 1.0,
       targetFPS: 60,
+      interactionEnabled: false,
     },
     search: {
       activeIndex: -1,
@@ -1781,6 +1782,8 @@ function initGalleryCarousel(canvas) {
   var isScrollTunnel = layout === 'scroll-tunnel';
 
   var startHandler = function (e) {
+    // Guard: don't capture touch/click until user has entered the 3D experience
+    if (window.ShahanaImmersive && window.ShahanaImmersive.settings && !window.ShahanaImmersive.settings.interactionEnabled) return;
     if (!galleryStageRegistry[currentRoomKey]) return;
     galleryDragState.isDragging = true;
     galleryDragState.startX = e.clientX || e.touches?.[0]?.clientX || 0;
@@ -4142,6 +4145,7 @@ function renderHotspots(roomKey) {
         } else if (hotspot.targetRoom) {
           if (hotspot.startExperience) {
             activateGuidedMode();
+            window.ShahanaImmersive.settings.interactionEnabled = true;
           }
           goToRoom(hotspot.targetRoom);
         } else if (hotspot.targetStory) {
