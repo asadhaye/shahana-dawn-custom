@@ -46,18 +46,7 @@
     <script src="{{ 'details-modal.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'search-form.js' | asset_url }}" defer="defer"></script>
 
-    {%- comment -%}Three.js + immersive scene manager on immersive templates{%- endcomment -%}
-    {%- if template == 'page.immersive' -%}
-      {%- comment -%}
-        Immersive storefront script loading — CANONICAL PATH.
-        immersive-bundle.js is the concatenated output of immersive-core.js + immersive-features.js.
-        Do NOT load the individual source files alongside the bundle; that causes double-execution.
-        To rebuild the bundle after source changes: bash assets/build-immersive-bundle.sh
-      {%- endcomment -%}
-      <script src="{{ 'three.min.js' | asset_url }}"></script>
-      <script src="{{ 'immersive-bundle.min.js' | asset_url }}"></script>
-      <script src="{{ 'immersive-init.js' | asset_url }}"></script>
-    {%- endif -%}
+    {%- comment -%}Immersive 3D scripts moved to end of body for correct data ordering{%- endcomment -%}
 
     {%- comment -%}Device/connection-aware bridge behavior on all pages{%- endcomment -%}
     <script>
@@ -627,6 +616,13 @@
 
     {%- if settings.cart_type == 'drawer' -%}
       <script src="{{ 'cart-drawer.js' | asset_url }}" defer="defer"></script>
+    {%- endif -%}
+
+    {%- comment -%}Immersive 3D engine — loaded after body content so JSON config is available{%- endcomment -%}
+    {%- if template == 'page.immersive' -%}
+      <script src="{{ 'three.min.js' | asset_url }}"></script>
+      <script src="{{ 'immersive-bundle.min.js' | asset_url }}"></script>
+      <script src="{{ 'immersive-init.js' | asset_url }}"></script>
     {%- endif -%}
   </body>
 </html>
