@@ -57,14 +57,15 @@
           {%- endif -%}
         >
           {%- if block.settings.image -%}
-            {%- assign gallery_img = block.settings.image | image_url: width: 1920, height: 1080 -%}
+            {%- assign gallery_img = block.settings.image | image_url: width: 1440, height: 810, quality: 75 -%}
             <img
               class="immersive-webgl-gallery-config__img"
               src="{{ gallery_img }}"
               alt="{{ block.settings.title | default: block.settings.subtitle | escape }}"
-              width="1920"
-              height="1080"
-              loading="lazy"
+              width="1440"
+              height="810"
+              loading="eager"
+              decoding="async"
             >
           {%- endif -%}
         </li>
@@ -82,14 +83,12 @@
 {% stylesheet %}
   .immersive-webgl-gallery-config {
     position: absolute;
-    width: 1px;
-    height: 1px;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-    padding: 0;
-    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
   }
 {% endstylesheet %}
 

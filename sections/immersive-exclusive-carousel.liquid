@@ -52,7 +52,7 @@
           {%- for product in products -%}
             {%- assign img_src = null -%}
             {%- if product.featured_image -%}
-              {%- assign img_src = product.featured_image | image_url: width: 480, height: 640 -%}
+              {%- assign img_src = product.featured_image | image_url: width: 360, height: 480, quality: 75 -%}
             {%- endif -%}
 
             <div
@@ -73,9 +73,10 @@
                       class="immersive-exclusive-carousel__card-img"
                       src="{{ img_src }}"
                       alt="{{ product.featured_image.alt | default: product.title | escape }}"
-                      width="480"
-                      height="640"
-                      loading="lazy"
+                      width="360"
+                      height="480"
+                      loading="eager"
+                      decoding="async"
                     >
                   {%- else -%}
                     {{ 'product-1' | placeholder_svg_tag: 'immersive-exclusive-carousel__card-placeholder' }}

@@ -42,7 +42,8 @@
               alt="{{ 'sections.immersive_story.hero_image_alt' | t }}"
               width="1600"
               height="900"
-              loading="lazy"
+              loading="eager"
+              fetchpriority="high"
             >
           </div>
         {%- endif -%}
@@ -86,7 +87,8 @@
                     alt="{{ block.settings.heading | default: '' | escape }}"
                     width="1200"
                     height="800"
-                    loading="lazy"
+                    loading="eager"
+              fetchpriority="high"
                   >
                 </div>
               {%- endif -%}
