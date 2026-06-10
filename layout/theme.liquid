@@ -54,9 +54,9 @@
         Do NOT load the individual source files alongside the bundle; that causes double-execution.
         To rebuild the bundle after source changes: bash assets/build-immersive-bundle.sh
       {%- endcomment -%}
-      <script src="{{ 'three.min.js' | asset_url }}" defer></script>
-      <script src="{{ 'immersive-bundle.min.js' | asset_url }}" defer></script>
-      <script src="{{ 'immersive-init.js' | asset_url }}" defer></script>
+      <script src="{{ 'three.min.js' | asset_url }}"></script>
+      <script src="{{ 'immersive-bundle.min.js' | asset_url }}"></script>
+      <script src="{{ 'immersive-init.js' | asset_url }}"></script>
     {%- endif -%}
 
     {%- comment -%}Device/connection-aware bridge behavior on all pages{%- endcomment -%}
