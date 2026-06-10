@@ -1,14 +1,13 @@
 {{ 'component-menu-drawer.css' | asset_url | stylesheet_tag }}
 
-{% comment %}Preload critical 3D textures for the initial room{% endcomment %}
+{% comment %}Preload critical 3D textures for the initial room — only preload merchant-set images to match JS config{% endcomment %}
 {%- if section.settings.storefront_base_image != blank -%}
   <link rel="preload" as="image" href="{{ section.settings.storefront_base_image | image_url: width: 1440, quality: 75 }}" fetchpriority="high">
+  <link rel="preload" as="image" href="{{ section.settings.storefront_base_image | image_url: width: 800, quality: 75 }}" fetchpriority="high" media="(max-width: 749px)">
 {%- endif -%}
 {%- if section.settings.storefront_depth_map != blank -%}
   <link rel="preload" as="image" href="{{ section.settings.storefront_depth_map | image_url: width: 1440, quality: 75 }}" fetchpriority="high">
-{%- endif -%}
-{%- if section.settings.storefront_base_image_mobile != blank -%}
-  <link rel="preload" as="image" href="{{ section.settings.storefront_base_image_mobile | image_url: width: 800, quality: 75 }}" fetchpriority="high" media="(max-width: 749px)">
+  <link rel="preload" as="image" href="{{ section.settings.storefront_depth_map | image_url: width: 800, quality: 75 }}" fetchpriority="high" media="(max-width: 749px)">
 {%- endif -%}
 
 {% liquid
