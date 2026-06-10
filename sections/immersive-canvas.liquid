@@ -25,6 +25,8 @@
 
   if section.settings.logo_image != blank
     assign logo_src = section.settings.logo_image | image_url: width: 600
+  else
+    assign logo_src = 'golden-s-logo.webp' | asset_url
   endif
 %}
 
@@ -1200,8 +1202,11 @@
   .immersive-initial-loader__logo {
     width: 180px;
     height: auto;
+    max-height: 240px;
     margin-bottom: 2rem;
     opacity: 0;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.15));
     animation: immersive-loader-logo-in 0.6s ease 0.15s forwards;
   }
 
@@ -4581,6 +4586,10 @@
     {
       "type": "header",
       "content": "Logo"
+    },
+    {
+      "type": "paragraph",
+      "content": "Upload the golden Shahana 'S' logo (PNG with transparent background, ~600×600px) for the immersive store loader screen. Download: golden-s-logo.png"
     },
     {
       "type": "image_picker",
