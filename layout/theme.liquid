@@ -553,6 +553,15 @@
     {%- endunless -%}
 
     <main id="MainContent" class="content-for-layout focus-none" role="main" tabindex="-1">
+      {%- if template == 'page.immersive' -%}
+        <script>
+          window.immersiveStrings = window.immersiveStrings || {};
+          window.immersiveStrings.loading = 'Loading...';
+          window.immersiveStrings.loading_product = 'Loading product...';
+          window.immersiveStrings.error_load_cart = 'Unable to load cart';
+          window.immersiveStrings.error_load_collection = 'Unable to load collection';
+        </script>
+      {%- endif -%}
       {{ content_for_layout }}
     </main>
 
