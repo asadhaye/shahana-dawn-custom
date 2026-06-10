@@ -9,6 +9,47 @@
  */
 {
   "sections": {
+    "immersive_notification_bar": {
+      "type": "immersive-notification-bar",
+      "blocks": {
+        "notif_1": {
+          "type": "announcement",
+          "settings": {
+            "text": "Free shipping on orders over PKR 150,000",
+            "icon": "✦",
+            "url": ""
+          }
+        },
+        "notif_2": {
+          "type": "announcement",
+          "settings": {
+            "text": "New arrivals — Eid Collection 2026",
+            "icon": "✦",
+            "url": ""
+          }
+        },
+        "notif_3": {
+          "type": "announcement",
+          "settings": {
+            "text": "Explore the 3D Immersive Store",
+            "icon": "✦",
+            "url": ""
+          }
+        }
+      },
+      "block_order": [
+        "notif_1",
+        "notif_2",
+        "notif_3"
+      ],
+      "settings": {
+        "enabled": true,
+        "bar_height": 48,
+        "display_duration": 4,
+        "separator": "✦",
+        "aria_label": "Store announcements"
+      }
+    },
     "immersive_canvas": {
       "type": "immersive-canvas",
       "settings": {
@@ -111,47 +152,6 @@
         "designer_houses_layout": "infinite-drag-gallery",
         "occasions_layout": "scroll-story",
         "featured_collections_layout": "masonry-featured"
-      }
-    },
-    "immersive_notification_bar": {
-      "type": "immersive-notification-bar",
-      "blocks": {
-        "notif_1": {
-          "type": "announcement",
-          "settings": {
-            "text": "Free shipping on orders over PKR 150,000",
-            "icon": "✦",
-            "url": ""
-          }
-        },
-        "notif_2": {
-          "type": "announcement",
-          "settings": {
-            "text": "New arrivals — Eid Collection 2026",
-            "icon": "✦",
-            "url": ""
-          }
-        },
-        "notif_3": {
-          "type": "announcement",
-          "settings": {
-            "text": "Explore the 3D Immersive Store",
-            "icon": "✦",
-            "url": ""
-          }
-        }
-      },
-      "block_order": [
-        "notif_1",
-        "notif_2",
-        "notif_3"
-      ],
-      "settings": {
-        "enabled": true,
-        "bar_height": 48,
-        "display_duration": 4,
-        "separator": "✦",
-        "aria_label": "Store announcements"
       }
     },
     "editorial_designer_houses": {
@@ -554,8 +554,8 @@
     }
   },
   "order": [
-    "immersive_canvas",
     "immersive_notification_bar",
+    "immersive_canvas",
     "editorial_designer_houses",
     "editorial_occasions",
     "editorial_featured_collections",
