@@ -4220,36 +4220,99 @@ function closeDialogFocus(panel, triggerEl) {
   }
 }
 
+function getFocusableElements(container) {
+  return Array.from(
+    container.querySelectorAll(
+      'a[href]:not([disabled]), button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([disabled]):not([tabindex="-1"])'
+    )
+  ).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement);
+}
+
+function trapFocus(container, event) {
+  if (event.key !== 'Tab') return;
+  const focusableElements = getFocusableElements(container);
+  if (focusableElements.length === 0) return;
+
+  const firstFocusableEl = focusableElements[0];
+  const lastFocusableEl = focusableElements[focusableElements.length - 1];
+
+  if (event.shiftKey) { // Shift + Tab
+    if (document.activeElement === firstFocusableEl) {
+      lastFocusableEl.focus();
+      event.preventDefault();
+    }
+  } else { // Tab
+    if (document.activeElement === lastFocusableEl) {
+      firstFocusableEl.focus();
+      event.preventDefault();
+    }
+  }
+}
+
 function openPanel(panel, triggerEl) {
   if (!panel) return null;
   var closeBtn = panel.querySelector('.immersive-store__panel-close');
   if (closeBtn && !closeBtn._clickBound) {
     closeBtn._clickBound = true;
-    closeBtn.addEventListener('click', function () {
+    ListenerRegistry.add('panel-close-' + panel.id, closeBtn, 'click', function () {
       closePanel(panel);
     });
   }
   panel.classList.remove('hidden');
   panel.removeAttribute('hidden');
   panel.setAttribute('data-open', 'true');
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  
+  // Store the trigger element to return focus later
+  panel._panelTrigger = triggerEl;
+
+  // Add focus trap
+  const trapFocusHandler = trapFocus.bind(null, panel);
+  ListenerRegistry.add('panel-trap-focus-' + panel.id, panel, 'keydown', trapFocusHandler);
+  
+  // Handle escape key
+  const escapeHandler = function(e) {
+    if (e.key === 'Escape') closePanel(panel);
+  };
+  ListenerRegistry.add('panel-escape-' + panel.id, panel, 'keydown', escapeHandler);
+
   var enteringClass =
     panel.id === 'glass-panel' ? 'immersive-store__panel--entering' : 'immersive-editorial-overlay--entering';
   if (!reduceMotion) {
     panel.classList.add(enteringClass);
     setTimeout(function () {
       panel.classList.remove(enteringClass);
-      openDialogFocus(panel, triggerEl);
+      // Ensure focus is within the panel
+      const focusable = getFocusableElements(panel);
+      if (focusable.length > 0) focusable[0].focus();
+      else panel.focus(); // Fallback to panel itself
     }, 350);
   } else {
-    openDialogFocus(panel, triggerEl);
+    const focusable = getFocusableElements(panel);
+    if (focusable.length > 0) focusable[0].focus();
+    else panel.focus(); // Fallback to panel itself
   }
   return triggerEl;
 }
 
 function closePanel(panel) {
   if (!panel) return;
+  
+  // Remove focus trap and escape handler
+  ListenerRegistry.cleanup('panel-trap-focus-' + panel.id);
+  ListenerRegistry.cleanup('panel-escape-' + panel.id);
+
   panel.removeAttribute('data-open');
-  closeDialogFocus(panel, panel._panelTrigger);
+  panel.removeAttribute('role');
+  panel.removeAttribute('aria-modal');
+
+  // Return focus to the element that opened the panel
+  if (panel._panelTrigger && typeof panel._panelTrigger.focus === 'function') {
+    requestAnimationFrame(function() {
+      panel._panelTrigger.focus();
+    });
+  }
   panel._panelTrigger = null;
   // Issue 5: Clear panel state from sessionStorage on close so a page
   // refresh doesn't reopen the panel with potentially stale data.
