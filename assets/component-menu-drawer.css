@@ -144,6 +144,12 @@ details[open].menu-opening > .menu-drawer__submenu {
   z-index: 1;
   transform: translateX(100%);
   visibility: hidden;
+  display: none;
+}
+
+.js details[open] > .menu-drawer__submenu {
+  display: block;
+  visibility: visible;
 }
 
 .js .menu-drawer__submenu .menu-drawer__submenu {
