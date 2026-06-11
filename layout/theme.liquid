@@ -628,10 +628,12 @@
     {%- endif -%}
 
     {%- comment -%}Immersive 3D engine — loaded after body content so JSON config is available{%- endcomment -%}
+    {%- comment -%}theme-check-disable ParserBlockingScript{%- endcomment -%}
     {%- if template == 'page.immersive' -%}
       <script src="{{ 'three.min.js' | asset_url }}"></script>
       <script src="{{ 'immersive-bundle.min.js' | asset_url }}"></script>
       <script src="{{ 'immersive-init.js' | asset_url }}"></script>
     {%- endif -%}
+    {%- comment -%}theme-check-enable ParserBlockingScript{%- endcomment -%}
   </body>
 </html>

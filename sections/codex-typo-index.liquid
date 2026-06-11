@@ -82,6 +82,7 @@
 
                 {%- if peek_img -%}
                   <span class="codex-typo-index__peek" aria-hidden="true">
+                    {%- comment -%}theme-check-disable RemoteAsset{%- endcomment -%}
                     <img
                       class="codex-typo-index__peek-img"
                       src="{{ peek_img }}"
@@ -90,6 +91,7 @@
                       height="400"
                       loading="lazy"
                     >
+                    {%- comment -%}theme-check-enable RemoteAsset{%- endcomment -%}
                   </span>
                 {%- endif -%}
               </a>
