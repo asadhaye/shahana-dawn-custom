@@ -73,6 +73,21 @@
         "accessibility_info": "Slideshow about our brand"
       }
     },
+    "shop_by_category": {
+      "type": "collection-list",
+      "settings": {
+        "title": "SHOP BY CATEGORY",
+        "heading_size": "h1",
+        "image_ratio": "portrait",
+        "columns_desktop": 4,
+        "color_scheme": "scheme-1",
+        "show_view_all": false,
+        "columns_mobile": "2",
+        "swipe_on_mobile": true,
+        "padding_top": 36,
+        "padding_bottom": 12
+      }
+    },
     "brand_logos": {
       "type": "multicolumn",
       "blocks": {
@@ -207,6 +222,69 @@
         "swipe_on_mobile": true,
         "padding_top": 36,
         "padding_bottom": 36
+      }
+    },
+    "trust_badges": {
+      "type": "multicolumn",
+      "blocks": {
+        "badge_1": {
+          "type": "column",
+          "settings": {
+            "title": "Free Shipping",
+            "text": "<p>On orders over £350</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "badge_2": {
+          "type": "column",
+          "settings": {
+            "title": "100% Genuine",
+            "text": "<p>Authentic designer products</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "badge_3": {
+          "type": "column",
+          "settings": {
+            "title": "Easy Returns",
+            "text": "<p>Hassle-free exchange policy</p>",
+            "link_label": "",
+            "link": ""
+          }
+        },
+        "badge_4": {
+          "type": "column",
+          "settings": {
+            "title": "WhatsApp Support",
+            "text": "<p>Order easily via WhatsApp</p>",
+            "link_label": "",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "badge_1",
+        "badge_2",
+        "badge_3",
+        "badge_4"
+      ],
+      "settings": {
+        "title": "",
+        "heading_size": "h2",
+        "image_width": "full",
+        "image_ratio": "adapt",
+        "button_label": "",
+        "button_link": "",
+        "columns_desktop": 4,
+        "column_alignment": "center",
+        "background_style": "secondary",
+        "color_scheme": "scheme-1",
+        "columns_mobile": "2",
+        "swipe_on_mobile": true,
+        "padding_top": 24,
+        "padding_bottom": 24
       }
     },
     "featured_collection_1": {
@@ -348,81 +426,6 @@
         "swipe_on_mobile": true,
         "padding_top": 36,
         "padding_bottom": 36
-      }
-    },
-    "shop_by_category": {
-      "type": "collection-list",
-      "settings": {
-        "title": "SHOP BY CATEGORY",
-        "image_ratio": "portrait",
-        "columns_desktop": 4,
-        "color_scheme": "scheme-1",
-        "show_view_all": false,
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 36,
-        "padding_bottom": 12
-      }
-    },
-    "trust_badges": {
-      "type": "multicolumn",
-      "blocks": {
-        "badge_1": {
-          "type": "column",
-          "settings": {
-            "title": "Free Shipping",
-            "text": "<p>On orders over Rs. 5,000</p>",
-            "link_label": "",
-            "link": ""
-          }
-        },
-        "badge_2": {
-          "type": "column",
-          "settings": {
-            "title": "100% Genuine",
-            "text": "<p>Authentic designer products</p>",
-            "link_label": "",
-            "link": ""
-          }
-        },
-        "badge_3": {
-          "type": "column",
-          "settings": {
-            "title": "Easy Returns",
-            "text": "<p>Hassle-free exchange policy</p>",
-            "link_label": "",
-            "link": ""
-          }
-        },
-        "badge_4": {
-          "type": "column",
-          "settings": {
-            "title": "WhatsApp Support",
-            "text": "<p>Order easily via WhatsApp</p>",
-            "link_label": "",
-            "link": ""
-          }
-        }
-      },
-      "block_order": [
-        "badge_1",
-        "badge_2",
-        "badge_3",
-        "badge_4"
-      ],
-      "settings": {
-        "title": "",
-        "heading_size": "h2",
-        "image_width": "full",
-        "image_ratio": "adapt",
-        "columns_desktop": 4,
-        "column_alignment": "center",
-        "background_style": "secondary",
-        "color_scheme": "scheme-1",
-        "columns_mobile": "2",
-        "swipe_on_mobile": true,
-        "padding_top": 24,
-        "padding_bottom": 24
       }
     },
     "newsletter_section": {
