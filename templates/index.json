@@ -56,29 +56,11 @@
             "text_alignment_mobile": "center",
             "color_scheme": ""
           }
-        },
-        "slide_i7cDz6": {
-          "type": "slide",
-          "settings": {
-            "image_overlay_opacity": 0,
-            "heading": "Image slide",
-            "heading_size": "h1",
-            "subheading": "Tell your brand's story through images",
-            "button_label": "Button label",
-            "link": "",
-            "button_style_secondary": false,
-            "show_text_box": true,
-            "box_align": "middle-center",
-            "text_alignment": "center",
-            "text_alignment_mobile": "center",
-            "color_scheme": "scheme-1"
-          }
         }
       },
       "block_order": [
         "slide_1",
-        "slide_2",
-        "slide_i7cDz6"
+        "slide_2"
       ],
       "settings": {
         "layout": "full_bleed",
@@ -93,14 +75,46 @@
     },
     "shop_by_category": {
       "type": "collection-list",
+      "blocks": {
+        "featured_collection_EaYnmB": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "lolita-25-saad-bin-shahzad"
+          }
+        },
+        "featured_collection_RHMwET": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "oriana-luxury-formals-26-soraya-official"
+          }
+        },
+        "featured_collection_xBiGDE": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "laavni-25-saad-bin-shahzad"
+          }
+        },
+        "featured_collection_hwyNJN": {
+          "type": "featured_collection",
+          "settings": {
+            "collection": "silk-pret-summer-26-suffuse-by-sana-yasir"
+          }
+        }
+      },
+      "block_order": [
+        "featured_collection_EaYnmB",
+        "featured_collection_RHMwET",
+        "featured_collection_xBiGDE",
+        "featured_collection_hwyNJN"
+      ],
       "settings": {
         "title": "SHOP BY CATEGORY",
-        "heading_size": "h1",
-        "image_ratio": "portrait",
-        "columns_desktop": 4,
+        "heading_size": "h2",
+        "image_ratio": "adapt",
+        "columns_desktop": 2,
         "color_scheme": "scheme-1",
         "show_view_all": false,
-        "columns_mobile": "2",
+        "columns_mobile": "1",
         "swipe_on_mobile": true,
         "padding_top": 36,
         "padding_bottom": 12
@@ -171,14 +185,14 @@
         "title": "",
         "heading_size": "h2",
         "image_width": "full",
-        "image_ratio": "adapt",
+        "image_ratio": "square",
         "button_label": "",
         "button_link": "",
-        "columns_desktop": 5,
+        "columns_desktop": 6,
         "column_alignment": "center",
         "background_style": "none",
         "color_scheme": "scheme-1",
-        "columns_mobile": "1",
+        "columns_mobile": "2",
         "swipe_on_mobile": true,
         "padding_top": 0,
         "padding_bottom": 0
@@ -446,48 +460,6 @@
         "padding_bottom": 36
       }
     },
-    "codex_collections_grid_dbgrVX": {
-      "type": "codex-collections-grid",
-      "blocks": {
-        "codex_entry_PYp8Fi": {
-          "type": "codex_entry",
-          "settings": {
-            "collection": "el-veneto-luxury-formals-saad-bin-shahzad",
-            "subtitle": "",
-            "theme": "Luxury Formals"
-          }
-        },
-        "codex_entry_8mqG4x": {
-          "type": "codex_entry",
-          "settings": {
-            "collection": "lumene-festive-25-26-soraya-official",
-            "subtitle": "",
-            "theme": "Festive"
-          }
-        },
-        "codex_entry_eexikG": {
-          "type": "codex_entry",
-          "settings": {
-            "collection": "silk-pret-fall-2025-suffuse-by-sana-yasir",
-            "subtitle": "",
-            "theme": "Pret"
-          }
-        }
-      },
-      "block_order": [
-        "codex_entry_PYp8Fi",
-        "codex_entry_8mqG4x",
-        "codex_entry_eexikG"
-      ],
-      "name": "t:sections.codex_collections_hub.preset_name",
-      "settings": {
-        "show_header": true,
-        "heading": "",
-        "subheading": "",
-        "enable_filtering": true,
-        "filter_all_label": ""
-      }
-    },
     "newsletter_section": {
       "type": "newsletter",
       "blocks": {
@@ -530,7 +502,6 @@
     "featured_collection_wYNyfe",
     "featured_collection_2",
     "featured_collection_3",
-    "codex_collections_grid_dbgrVX",
     "newsletter_section"
   ]
 }
