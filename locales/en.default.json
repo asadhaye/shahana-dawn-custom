@@ -1014,7 +1014,7 @@
         }
       }
     },
-    "virtual_try_on": {
+    "virtual-try-on": {
       "name": "Virtual Try-On",
       "settings": {
         "vton_api_url": {
@@ -1027,7 +1027,7 @@
         }
       }
     },
-    "store_bridge": {
+    "store-bridge": {
       "name": "3D Store Bridge",
       "settings": {
         "bridge_slow_note": {
