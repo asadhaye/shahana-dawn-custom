@@ -13,7 +13,7 @@
       "type": "immersive-homepage-bridge",
       "settings": {
         "color_scheme": "",
-        "button_width": 200,
+        "button_width": 330,
         "padding_top": 8,
         "padding_bottom": 8
       }
