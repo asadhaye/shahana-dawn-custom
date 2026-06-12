@@ -56,11 +56,29 @@
             "text_alignment_mobile": "center",
             "color_scheme": ""
           }
+        },
+        "slide_i7cDz6": {
+          "type": "slide",
+          "settings": {
+            "image_overlay_opacity": 0,
+            "heading": "Image slide",
+            "heading_size": "h1",
+            "subheading": "Tell your brand's story through images",
+            "button_label": "Button label",
+            "link": "",
+            "button_style_secondary": false,
+            "show_text_box": true,
+            "box_align": "middle-center",
+            "text_alignment": "center",
+            "text_alignment_mobile": "center",
+            "color_scheme": "scheme-1"
+          }
         }
       },
       "block_order": [
         "slide_1",
-        "slide_2"
+        "slide_2",
+        "slide_i7cDz6"
       ],
       "settings": {
         "layout": "full_bleed",
@@ -69,8 +87,8 @@
         "auto_rotate": true,
         "change_slides_speed": 5,
         "image_behavior": "ambient",
-        "show_text_below": true,
-        "accessibility_info": "Slideshow about our brand"
+        "show_text_below": false,
+        "accessibility_info": "Slideshow about the new brand's collections"
       }
     },
     "shop_by_category": {
@@ -173,11 +191,11 @@
         "collection": "el-veneto-luxury-formals-saad-bin-shahzad",
         "products_to_show": 25,
         "title": "El Veneto Luxury Formals - Saad Bin Shahzad",
-        "heading_size": "h1",
+        "heading_size": "h2",
         "description": "",
         "show_description": false,
         "description_style": "body",
-        "columns_desktop": 3,
+        "columns_desktop": 4,
         "enable_desktop_slider": true,
         "full_width": false,
         "show_view_all": true,
@@ -428,6 +446,48 @@
         "padding_bottom": 36
       }
     },
+    "codex_collections_grid_dbgrVX": {
+      "type": "codex-collections-grid",
+      "blocks": {
+        "codex_entry_PYp8Fi": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "",
+            "subtitle": "",
+            "theme": "Bridal"
+          }
+        },
+        "codex_entry_8mqG4x": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "",
+            "subtitle": "",
+            "theme": "Eid"
+          }
+        },
+        "codex_entry_eexikG": {
+          "type": "codex_entry",
+          "settings": {
+            "collection": "",
+            "subtitle": "",
+            "theme": "Pret"
+          }
+        }
+      },
+      "block_order": [
+        "codex_entry_PYp8Fi",
+        "codex_entry_8mqG4x",
+        "codex_entry_eexikG"
+      ],
+      "name": "t:sections.codex_collections_hub.preset_name",
+      "settings": {
+        "show_header": true,
+        "heading": "",
+        "subheading": "",
+        "enable_filtering": true,
+        "filter_all_label": ""
+      }
+    },
     "newsletter_section": {
       "type": "newsletter",
       "blocks": {
@@ -470,6 +530,7 @@
     "featured_collection_wYNyfe",
     "featured_collection_2",
     "featured_collection_3",
+    "codex_collections_grid_dbgrVX",
     "newsletter_section"
   ]
 }
