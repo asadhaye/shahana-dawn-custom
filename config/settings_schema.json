@@ -1358,6 +1358,13 @@
         "id": "social_vimeo_link",
         "label": "t:settings_schema.social-media.settings.social_vimeo_link.label",
         "placeholder": "t:settings_schema.social-media.settings.social_vimeo_link.info"
+      },
+      {
+        "type": "text",
+        "id": "whatsapp_number",
+        "label": "t:settings_schema.social_media.settings.whatsapp_number.label",
+        "placeholder": "t:settings_schema.social_media.settings.whatsapp_number.placeholder",
+        "info": "t:settings_schema.social_media.settings.whatsapp_number.info"
       }
     ]
   },
@@ -1455,19 +1462,19 @@
     ]
   },
   {
-    "name": "Virtual Try-On",
+    "name": "t:settings_schema.virtual_try_on.name",
     "settings": [
       {
         "type": "text",
         "id": "vton_api_url",
-        "label": "Try-On API URL",
+        "label": "t:settings_schema.virtual_try_on.settings.vton_api_url.label",
         "default": "https://scuk-vton.vercel.app",
-        "info": "Base URL of the deployed scuk-vton Vercel API (no trailing slash)"
+        "info": "t:settings_schema.virtual_try_on.settings.vton_api_url.info"
       }
     ]
   },
   {
-    "name": "3D Store Bridge",
+    "name": "t:settings_schema.store_bridge.name",
     "settings": [
       {
         "type": "paragraph",
@@ -1476,22 +1483,22 @@
       {
         "type": "text",
         "id": "bridge_slow_note",
-        "label": "Slow connection note",
+        "label": "t:settings_schema.store_bridge.settings.bridge_slow_note.label",
         "default": "Your connection appears slow — the 3D experience may take longer to load.",
-        "info": "Shown on 2G or when data saver is enabled"
+        "info": "t:settings_schema.store_bridge.settings.bridge_slow_note.info"
       },
       {
         "type": "text",
         "id": "bridge_medium_note",
-        "label": "Medium connection note",
+        "label": "t:settings_schema.store_bridge.settings.bridge_medium_note.label",
         "default": "The 3D store works best on a faster connection.",
-        "info": "Shown on 3G connections"
+        "info": "t:settings_schema.store_bridge.settings.bridge_medium_note.info"
       },
       {
         "type": "text",
         "id": "vton_customer_secret",
-        "label": "Try-On Customer Secret",
-        "info": "HMAC secret used to sign customer tokens for the VTON API"
+        "label": "t:settings_schema.virtual_try_on.settings.vton_customer_secret.label",
+        "info": "t:settings_schema.virtual_try_on.settings.vton_customer_secret.info"
       }
     ]
   }

@@ -1,9 +1,9 @@
 {{ 'component-menu-drawer.css' | asset_url | stylesheet_tag }}
 
 {% comment %}Preload critical 3D textures — use captured vars so preload URLs match JS config exactly{% endcomment %}
-{%- capture storefront_base_desktop -%}{%- if section.settings.storefront_base_image != blank -%}{{ section.settings.storefront_base_image | image_url: width: 1440, quality: 75 }}{%- endif -%}{%- endcapture -%}
+{%- capture storefront_base_desktop -%}{%- if section.settings.storefront_base_image != blank -%}{{ section.settings.storefront_base_image | image_url: width: 1440, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
 {%- capture storefront_base_mobile -%}{%- if section.settings.storefront_base_image_mobile != blank -%}{{ section.settings.storefront_base_image_mobile | image_url: width: 900, quality: 75 }}{%- elsif section.settings.storefront_base_image != blank -%}{{ section.settings.storefront_base_image | image_url: width: 900, quality: 75 }}{%- endif -%}{%- endcapture -%}
-{%- capture storefront_depth_desktop -%}{%- if section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 1440, quality: 75 }}{%- endif -%}{%- endcapture -%}
+{%- capture storefront_depth_desktop -%}{%- if section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 1440, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
 {%- capture storefront_depth_mobile -%}{%- if section.settings.storefront_depth_map_mobile != blank -%}{{ section.settings.storefront_depth_map_mobile | image_url: width: 900, quality: 75 }}{%- elsif section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 900, quality: 75 }}{%- endif -%}{%- endcapture -%}
 
 {%- comment %}theme-check-disable AssetPreload{%- endcomment -%}
@@ -144,7 +144,7 @@
         aria-label="{{ 'sections.immersive_store.fab.open' | t | escape }}"
       >
         {%- if section.settings.fab_icon_svg != blank -%}
-          {{ section.settings.fab_icon_svg | raw }}
+          {{ section.settings.fab_icon_svg }}
         {%- else -%}
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="serif" font-size="22" font-weight="700" fill="#d4af37">S</text>
@@ -831,31 +831,31 @@
         "hotspots": {% if storefront_hotspots != '' %}[{{ storefront_hotspots }}]{% else %}[{"x":50,"y":68,"label":"Enter Store","targetRoom":"lounge","mobileX":55,"mobileY":63}]{% endif %}
       },
       "lounge": {
-        "baseTextureUrl": {% if section.settings.lounge_base_image != blank %}{{ section.settings.lounge_base_image | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileBaseTextureUrl": {% if section.settings.lounge_base_image_mobile != blank %}{{ section.settings.lounge_base_image_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.lounge_base_image != blank %}{{ section.settings.lounge_base_image | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
-        "depthMapUrl": {% if section.settings.lounge_depth_map != blank %}{{ section.settings.lounge_depth_map | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileDepthMapUrl": {% if section.settings.lounge_depth_map_mobile != blank %}{{ section.settings.lounge_depth_map_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.lounge_depth_map != blank %}{{ section.settings.lounge_depth_map | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
+        "baseTextureUrl": {% if section.settings.lounge_base_image != blank %}{{ section.settings.lounge_base_image | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileBaseTextureUrl": {% if section.settings.lounge_base_image_mobile != blank %}{{ section.settings.lounge_base_image_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.lounge_base_image != blank %}{{ section.settings.lounge_base_image | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "depthMapUrl": {% if section.settings.lounge_depth_map != blank %}{{ section.settings.lounge_depth_map | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileDepthMapUrl": {% if section.settings.lounge_depth_map_mobile != blank %}{{ section.settings.lounge_depth_map_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.lounge_depth_map != blank %}{{ section.settings.lounge_depth_map | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
         "hotspots": {% if lounge_hotspots != '' %}[{{ lounge_hotspots }}]{% else %}[{"x":25,"y":27,"label":"Designer Houses","targetRoom":"designer_houses","mobileX":17,"mobileY":32},{"x":50,"y":27,"label":"Occasions","targetRoom":"occasions","mobileX":50,"mobileY":32},{"x":75,"y":28,"label":"Featured Collections","targetRoom":"featured_collections","mobileX":83,"mobileY":32}]{% endif %}
       },
       "designer_houses": {
-        "baseTextureUrl": {% if section.settings.designer_houses_base_image != blank %}{{ section.settings.designer_houses_base_image | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileBaseTextureUrl": {% if section.settings.designer_houses_base_image_mobile != blank %}{{ section.settings.designer_houses_base_image_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.designer_houses_base_image != blank %}{{ section.settings.designer_houses_base_image | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
-        "depthMapUrl": {% if section.settings.designer_houses_depth_map != blank %}{{ section.settings.designer_houses_depth_map | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileDepthMapUrl": {% if section.settings.designer_houses_depth_map_mobile != blank %}{{ section.settings.designer_houses_depth_map_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.designer_houses_depth_map != blank %}{{ section.settings.designer_houses_depth_map | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
+        "baseTextureUrl": {% if section.settings.designer_houses_base_image != blank %}{{ section.settings.designer_houses_base_image | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileBaseTextureUrl": {% if section.settings.designer_houses_base_image_mobile != blank %}{{ section.settings.designer_houses_base_image_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.designer_houses_base_image != blank %}{{ section.settings.designer_houses_base_image | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "depthMapUrl": {% if section.settings.designer_houses_depth_map != blank %}{{ section.settings.designer_houses_depth_map | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileDepthMapUrl": {% if section.settings.designer_houses_depth_map_mobile != blank %}{{ section.settings.designer_houses_depth_map_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.designer_houses_depth_map != blank %}{{ section.settings.designer_houses_depth_map | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
         "hotspots": {% if designer_houses_hotspots != '' %}[{{ designer_houses_hotspots }}]{% else %}[{"x":50,"y":90,"label":"Back to Lounge","targetRoom":"lounge","mobileX":50,"mobileY":90}]{% endif %}
       },
       "occasions": {
-        "baseTextureUrl": {% if section.settings.occasions_base_image != blank %}{{ section.settings.occasions_base_image | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileBaseTextureUrl": {% if section.settings.occasions_base_image_mobile != blank %}{{ section.settings.occasions_base_image_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.occasions_base_image != blank %}{{ section.settings.occasions_base_image | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
-        "depthMapUrl": {% if section.settings.occasions_depth_map != blank %}{{ section.settings.occasions_depth_map | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileDepthMapUrl": {% if section.settings.occasions_depth_map_mobile != blank %}{{ section.settings.occasions_depth_map_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.occasions_depth_map != blank %}{{ section.settings.occasions_depth_map | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
+        "baseTextureUrl": {% if section.settings.occasions_base_image != blank %}{{ section.settings.occasions_base_image | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileBaseTextureUrl": {% if section.settings.occasions_base_image_mobile != blank %}{{ section.settings.occasions_base_image_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.occasions_base_image != blank %}{{ section.settings.occasions_base_image | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "depthMapUrl": {% if section.settings.occasions_depth_map != blank %}{{ section.settings.occasions_depth_map | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileDepthMapUrl": {% if section.settings.occasions_depth_map_mobile != blank %}{{ section.settings.occasions_depth_map_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.occasions_depth_map != blank %}{{ section.settings.occasions_depth_map | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
         "hotspots": {% if occasions_hotspots != '' %}[{{ occasions_hotspots }}]{% else %}[{"x":50,"y":15,"label":"Our Occasions","targetEditorialRoom":"occasions","mobileX":50,"mobileY":15},{% if section.settings.occasions_slot_1_collection %}{"x":25,"y":40,"label":{{ section.settings.occasions_slot_1_label | default: 'Eid Collection' | json }},"targetCollection":{{ section.settings.occasions_slot_1_collection.handle | json }},"mobileX":25,"mobileY":40},{% else %}{"x":25,"y":40,"label":"Eid Collection","targetCollection":"eid-collection","mobileX":25,"mobileY":40},{% endif %}{% if section.settings.occasions_slot_2_collection %}{"x":42,"y":50,"label":{{ section.settings.occasions_slot_2_label | default: 'Bridal & Mehndi' | json }},"targetCollection":{{ section.settings.occasions_slot_2_collection.handle | json }},"mobileX":42,"mobileY":50},{% else %}{"x":42,"y":50,"label":"Bridal & Mehndi","targetCollection":"bridal-mehndi","mobileX":42,"mobileY":50},{% endif %}{% if section.settings.occasions_slot_3_collection %}{"x":58,"y":40,"label":{{ section.settings.occasions_slot_3_label | default: 'Luxury Formals' | json }},"targetCollection":{{ section.settings.occasions_slot_3_collection.handle | json }},"mobileX":58,"mobileY":40},{% else %}{"x":58,"y":40,"label":"Luxury Formals","targetCollection":"luxury-formals","mobileX":58,"mobileY":40},{% endif %}{% if section.settings.occasions_slot_4_collection %}{"x":75,"y":50,"label":{{ section.settings.occasions_slot_4_label | default: 'Casual Pret' | json }},"targetCollection":{{ section.settings.occasions_slot_4_collection.handle | json }},"mobileX":75,"mobileY":50},{% else %}{"x":75,"y":50,"label":"Casual Pret","targetCollection":"casual-pret","mobileX":75,"mobileY":50},{% endif %}{"x":50,"y":85,"label":"Back to Lounge","targetRoom":"lounge","mobileX":50,"mobileY":85}]{% endif %}
       },
       "featured_collections": {
-        "baseTextureUrl": {% if section.settings.featured_collections_base_image != blank %}{{ section.settings.featured_collections_base_image | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileBaseTextureUrl": {% if section.settings.featured_collections_base_image_mobile != blank %}{{ section.settings.featured_collections_base_image_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.featured_collections_base_image != blank %}{{ section.settings.featured_collections_base_image | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
-        "depthMapUrl": {% if section.settings.featured_collections_depth_map != blank %}{{ section.settings.featured_collections_depth_map | image_url: width: 1440, quality: 75 | json }}{% else %}null{% endif %},
-        "mobileDepthMapUrl": {% if section.settings.featured_collections_depth_map_mobile != blank %}{{ section.settings.featured_collections_depth_map_mobile | image_url: width: 800, quality: 75 | json }}{% elsif section.settings.featured_collections_depth_map != blank %}{{ section.settings.featured_collections_depth_map | image_url: width: 800, quality: 75 | json }}{% else %}null{% endif %},
+        "baseTextureUrl": {% if section.settings.featured_collections_base_image != blank %}{{ section.settings.featured_collections_base_image | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileBaseTextureUrl": {% if section.settings.featured_collections_base_image_mobile != blank %}{{ section.settings.featured_collections_base_image_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.featured_collections_base_image != blank %}{{ section.settings.featured_collections_base_image | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "depthMapUrl": {% if section.settings.featured_collections_depth_map != blank %}{{ section.settings.featured_collections_depth_map | image_url: width: 1440, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
+        "mobileDepthMapUrl": {% if section.settings.featured_collections_depth_map_mobile != blank %}{{ section.settings.featured_collections_depth_map_mobile | image_url: width: 800, format: 'webp', quality: 75 | json }}{% elsif section.settings.featured_collections_depth_map != blank %}{{ section.settings.featured_collections_depth_map | image_url: width: 800, format: 'webp', quality: 75 | json }}{% else %}null{% endif %},
         "hotspots": {% if featured_collections_hotspots != '' %}[{{ featured_collections_hotspots }}]{% else %}[{"x":50,"y":15,"label":"Featured Stories","targetEditorialRoom":"featured_collections","mobileX":50,"mobileY":15},{"x":25,"y":40,"label":"SS5 Summer Pret 26","targetCollection":"summer-pret-26-eid-edit-saad-bin-shahzad","mobileX":25,"mobileY":40},{"x":50,"y":50,"label":"Suffuse Luxury Pret","targetCollection":"luxury-pret-suffuse","mobileX":50,"mobileY":50},{"x":75,"y":40,"label":"Soraya Eid Pret","targetCollection":"lumene-festive-25-26-soraya-official","mobileX":75,"mobileY":40},{"x":50,"y":85,"label":"Back to Lounge","targetRoom":"lounge","mobileX":50,"mobileY":85}]{% endif %}
       }
     }
@@ -888,7 +888,7 @@
             {%- assign _label_key = "designer_houses_slot_" | append: i | append: "_label" -%}
             {%- assign _label = section.settings[_label_key] | default: _col.title -%}
             {%- if _col.featured_image -%}
-              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
+              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800, format: 'webp', quality: 75 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- else -%}
               {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- endif -%}
@@ -906,7 +906,7 @@
             {%- assign _label_key = "occasions_slot_" | append: i | append: "_label" -%}
             {%- assign _label = section.settings[_label_key] | default: _col.title -%}
             {%- if _col.featured_image -%}
-              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
+              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800, format: 'webp', quality: 75 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- else -%}
               {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- endif -%}
@@ -924,7 +924,7 @@
             {%- assign _label_key = "featured_collections_slot_" | append: i | append: "_label" -%}
             {%- assign _label = section.settings[_label_key] | default: _col.title -%}
             {%- if _col.featured_image -%}
-              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
+              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800, format: 'webp', quality: 75 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- else -%}
               {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
             {%- endif -%}

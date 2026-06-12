@@ -203,7 +203,7 @@
 
 .collection .card__heading {
   font-family: var(--luxury-font-body);
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 400;
   margin: 0 0 4px;
   line-height: 1.4;
@@ -216,7 +216,7 @@
 }
 
 .collection .price {
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 500;
 }
 
@@ -234,7 +234,7 @@
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
   font-family: var(--luxury-font-accent);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;

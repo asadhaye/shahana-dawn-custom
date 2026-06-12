@@ -281,6 +281,11 @@
     }
   },
   "sections": {
+    "all": {
+      "colors": {
+        "label": "Color scheme"
+      }
+    },
     "ai_vton": {
       "name": "AI virtual try-on",
       "preset_name": "AI virtual try-on",
@@ -998,5 +1003,42 @@
       "send_on": "YYYY-MM-DD",
       "send_on_label": "Send on (optional)"
     }
+  },
+  "settings_schema": {
+    "social_media": {
+      "settings": {
+        "whatsapp_number": {
+          "label": "WhatsApp number",
+          "placeholder": "e.g. 971501234567",
+          "info": "Enter your WhatsApp number without the + sign. Used for the floating WhatsApp button and product sharing."
+        }
+      }
+    },
+    "virtual_try_on": {
+      "name": "Virtual Try-On",
+      "settings": {
+        "vton_api_url": {
+          "label": "Try-On API URL",
+          "info": "Base URL of the deployed scuk-vton Vercel API (no trailing slash)"
+        },
+        "vton_customer_secret": {
+          "label": "Try-On Customer Secret",
+          "info": "HMAC secret used to sign customer tokens for the VTON API"
+        }
+      }
+    },
+    "store_bridge": {
+      "name": "3D Store Bridge",
+      "settings": {
+        "bridge_slow_note": {
+          "label": "Slow connection note",
+          "info": "Shown on 2G or when data saver is enabled"
+        },
+        "bridge_medium_note": {
+          "label": "Medium connection note",
+          "info": "Shown on 3G connections"
+        }
+      }
+    }
   }
-  }
+}

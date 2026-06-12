@@ -1525,7 +1525,7 @@ a.product__text {
 /* Product vendor */
 .template-product .product__vendor {
   font-family: var(--luxury-font-accent);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--luxury-text-muted);
@@ -1556,7 +1556,7 @@ a.product__text {
 /* Variant picker */
 .template-product .product-form__input .form__label {
   font-family: var(--luxury-font-accent);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--luxury-text-secondary);
@@ -1595,7 +1595,7 @@ a.product__text {
 /* Add to cart button */
 .template-product .product-form__submit {
   font-family: var(--luxury-font-accent);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -1615,7 +1615,7 @@ a.product__text {
 
 .template-product .shopify-payment-button__button {
   font-family: var(--luxury-font-accent);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -1625,7 +1625,7 @@ a.product__text {
 
 /* Product description */
 .template-product .product__description {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.7;
   color: var(--luxury-text-secondary);
   margin-top: 32px;
@@ -1634,14 +1634,14 @@ a.product__text {
 /* Accordion / tabs */
 .template-product .product__accordion .accordion__title {
   font-family: var(--luxury-font-accent);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 16px 0;
 }
 
 .template-product .product__accordion .accordion__content {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.7;
   color: var(--luxury-text-secondary);
   padding-bottom: 24px;

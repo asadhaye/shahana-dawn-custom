@@ -3869,10 +3869,10 @@ h1, h2, h3, h4, h5, h6,
   left: 0;
   right: 0;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.8);
   color: #fff;
   font-family: var(--luxury-font-accent);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -3897,7 +3897,7 @@ h1, h2, h3, h4, h5, h6,
 
 .card__heading {
   font-family: var(--luxury-font-body);
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 400;
   color: var(--luxury-text-primary);
   line-height: 1.4;
@@ -3919,7 +3919,7 @@ h1, h2, h3, h4, h5, h6,
 
 .price {
   font-family: var(--luxury-font-body);
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   color: var(--luxury-text-secondary);
 }
@@ -3942,7 +3942,7 @@ h1, h2, h3, h4, h5, h6,
 /* ── 2D Store: Badges ───────────────────────────────────────────────────── */
 .badge {
   font-family: var(--luxury-font-accent);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -4198,7 +4198,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .footer__newsletter-subtitle {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--luxury-text-muted);
   margin-bottom: 24px;
 }
@@ -4212,7 +4212,7 @@ h1, h2, h3, h4, h5, h6,
 .footer__newsletter-input {
   flex: 1;
   padding: 14px 16px;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   border: 1px solid var(--luxury-border);
   border-right: none;
   border-radius: 0;
@@ -4227,7 +4227,7 @@ h1, h2, h3, h4, h5, h6,
 .footer__newsletter-btn {
   padding: 14px 24px;
   font-family: var(--luxury-font-accent);
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -4252,7 +4252,7 @@ h1, h2, h3, h4, h5, h6,
 
 .footer__column-title {
   font-family: var(--luxury-font-accent);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -4271,7 +4271,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .footer__links a {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--luxury-text-muted);
   text-decoration: none;
   transition: color var(--luxury-transition-fast);
@@ -4318,7 +4318,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .footer__copyright {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--luxury-text-muted);
 }
 

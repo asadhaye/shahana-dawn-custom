@@ -337,7 +337,7 @@
         "name": {{ shop.name | json }},
         "url": {{ request.origin | json }}
         {%- if settings.logo != blank -%}
-          ,"logo": {{ settings.logo | image_url: width: 500 | json }}
+          ,"logo": {{ settings.logo | image_url: width: 500, format: 'webp', quality: 75 | json }}
         {%- endif -%}
         {%- liquid
           assign social_urls = ''
