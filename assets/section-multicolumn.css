@@ -87,6 +87,27 @@
   margin: 0;
 }
 
+.multicolumn-card__info h3.inline-richtext {
+  font-size: 0.9375rem;
+  font-family: var(--luxury-font-body);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.multicolumn-card__image-wrapper--fixed-height .media {
+  padding-bottom: 0;
+  height: var(--multicolumn-image-height, 120px);
+}
+
+.multicolumn-card__image-wrapper--fixed-height .media > img {
+  position: static;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
 .multicolumn-card-spacing {
   padding-top: 2.5rem;
   margin-left: 2.5rem;

@@ -1,10 +1,11 @@
+{%- # theme-check-disable UnknownFilter -%}
 {{ 'component-menu-drawer.css' | asset_url | stylesheet_tag }}
 
 {% comment %}Preload critical 3D textures — use captured vars so preload URLs match JS config exactly{% endcomment %}
 {%- capture storefront_base_desktop -%}{%- if section.settings.storefront_base_image != blank -%}{{ section.settings.storefront_base_image | image_url: width: 1440, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
-{%- capture storefront_base_mobile -%}{%- if section.settings.storefront_base_image_mobile != blank -%}{{ section.settings.storefront_base_image_mobile | image_url: width: 900, quality: 75 }}{%- elsif section.settings.storefront_base_image != blank -%}{{ section.settings.storefront_base_image | image_url: width: 900, quality: 75 }}{%- endif -%}{%- endcapture -%}
+{%- capture storefront_base_mobile -%}{%- if section.settings.storefront_base_image_mobile != blank -%}{{ section.settings.storefront_base_image_mobile | image_url: width: 900, format: 'webp', quality: 75 }}{%- elsif section.settings.storefront_base_image != blank -%}{{ section.settings.storefront_base_image | image_url: width: 900, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
 {%- capture storefront_depth_desktop -%}{%- if section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 1440, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
-{%- capture storefront_depth_mobile -%}{%- if section.settings.storefront_depth_map_mobile != blank -%}{{ section.settings.storefront_depth_map_mobile | image_url: width: 900, quality: 75 }}{%- elsif section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 900, quality: 75 }}{%- endif -%}{%- endcapture -%}
+{%- capture storefront_depth_mobile -%}{%- if section.settings.storefront_depth_map_mobile != blank -%}{{ section.settings.storefront_depth_map_mobile | image_url: width: 900, format: 'webp', quality: 75 }}{%- elsif section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 900, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
 
 {%- comment %}theme-check-disable AssetPreload{%- endcomment -%}
 {%- if storefront_base_desktop != blank -%}
@@ -143,11 +144,17 @@
         aria-haspopup="true"
         aria-label="{{ 'sections.immersive_store.fab.open' | t | escape }}"
       >
-        {%- if section.settings.fab_icon_svg != blank -%}
-          {{ section.settings.fab_icon_svg }}
+        {%- if section.settings.fab_text_icon != blank -%}
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="var(--luxury-font-heading, serif)" font-size="22" font-weight="700" fill="currentColor">
+              {{- section.settings.fab_text_icon | escape -}}
+            </text>
+          </svg>
+        {%- elsif section.settings.fab_icon_svg != blank -%}
+          {{ section.settings.fab_icon_svg | raw }}
         {%- else -%}
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="serif" font-size="22" font-weight="700" fill="#d4af37">S</text>
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="var(--luxury-font-heading, serif)" font-size="22" font-weight="700" fill="currentColor">S</text>
           </svg>
         {%- endif -%}
       </button>
@@ -4677,11 +4684,18 @@
       "content": "Assistive Navigation Ball"
     },
     {
+      "type": "text",
+      "id": "fab_text_icon",
+      "label": "FAB text icon",
+      "default": "S",
+      "info": "Enter a single letter or short symbol for the FAB. Overridden by the SVG setting below if both are set."
+    },
+    {
       "type": "html",
       "id": "fab_icon_svg",
-      "label": "FAB icon SVG",
-      "default": "<svg viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'><text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-size='22' font-weight='700' fill='#d4af37'>S</text></svg>",
-      "info": "Paste custom SVG markup for the floating action button icon. The FAB provides quick access to wishlist, cart, and classic store. Default is the Shahana 'S' monogram."
+      "label": "FAB icon SVG (advanced)",
+      "default": "",
+      "info": "Paste full custom SVG markup to completely replace the text icon. Useful for brand logos or custom monograms."
     },
     {
       "type": "header",

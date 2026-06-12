@@ -80,11 +80,13 @@
                 {% if section.settings.image_ratio == 'adapt' or section.settings.image_ratio == 'circle' %}
                   {% assign spaced_image = true %}
                 {% endif %}
-                <div class="multicolumn-card__image-wrapper multicolumn-card__image-wrapper--{{ section.settings.image_width }}-width{% if section.settings.image_width != 'full' or spaced_image %} multicolumn-card-spacing{% endif %}">
+                <div class="multicolumn-card__image-wrapper multicolumn-card__image-wrapper--{{ section.settings.image_width }}-width{% if section.settings.image_width != 'full' or spaced_image %} multicolumn-card-spacing{% endif %}{% if section.settings.image_fixed_height > 0 %} multicolumn-card__image-wrapper--fixed-height{% endif %}">
                   <div
                     class="media media--transparent media--{{ section.settings.image_ratio }}"
-                    {% if section.settings.image_ratio == 'adapt' %}
+                    {% if section.settings.image_ratio == 'adapt' and section.settings.image_fixed_height == 0 %}
                       style="padding-bottom: {{ 1 | divided_by: highest_ratio | times: 100 }}%;"
+                    {% elsif section.settings.image_fixed_height > 0 %}
+                      style="--multicolumn-image-height: {{ section.settings.image_fixed_height }}px;"
                     {% endif %}
                   >
                     {%- liquid
@@ -280,6 +282,17 @@
       ],
       "default": "adapt",
       "label": "t:sections.multicolumn.settings.image_ratio.label"
+    },
+    {
+      "type": "range",
+      "id": "image_fixed_height",
+      "min": 0,
+      "max": 300,
+      "step": 10,
+      "unit": "px",
+      "label": "Fixed image height",
+      "info": "Set to 0 to use aspect ratio. When set, all column images will be constrained to this height with contain fitting.",
+      "default": 0
     },
     {
       "type": "header",
