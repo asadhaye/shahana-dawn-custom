@@ -144,7 +144,7 @@
         aria-label="{{ 'sections.immersive_store.fab.open' | t | escape }}"
       >
         {%- if section.settings.fab_icon_svg != blank -%}
-          {{ section.settings.fab_icon_svg | escape }}
+          {{ section.settings.fab_icon_svg | raw }}
         {%- else -%}
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="serif" font-size="22" font-weight="700" fill="#d4af37">S</text>
