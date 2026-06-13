@@ -3098,6 +3098,10 @@ function initImmersiveScene() {
   // Use canvas client dimensions so the renderer fills its container exactly
   var initWidth = canvas.clientWidth || window.innerWidth || canvas.offsetWidth;
   var initHeight = canvas.clientHeight || window.innerHeight || canvas.offsetHeight;
+  if (initWidth === 0 || initHeight === 0) {
+    showWebGLFallback(canvas);
+    return;
+  }
   renderer.setSize(initWidth, initHeight, false);
 
   // WebGL context loss recovery
@@ -3498,10 +3502,21 @@ function handleResize(roomKeyOverride) {
   if (camera instanceof THREE.PerspectiveCamera) {
     camera.aspect = aspect;
   } else {
-    camera.left = -aspect;
-    camera.right = aspect;
-    camera.top = 1;
-    camera.bottom = -1;
+    if (aspect < 1) {
+      // PORTRAIT (Mobile): Increase frustum range to 'zoom out'
+      // and show more of the scene width, preventing the cropped look.
+      var zoomOutFactor = 1.4;
+      camera.left = -aspect * zoomOutFactor;
+      camera.right = aspect * zoomOutFactor;
+      camera.top = zoomOutFactor;
+      camera.bottom = -zoomOutFactor;
+    } else {
+      // DESKTOP (Landscape): Maintain default framing
+      camera.left = -aspect;
+      camera.right = aspect;
+      camera.top = 1;
+      camera.bottom = -1;
+    }
   }
   camera.updateProjectionMatrix();
 

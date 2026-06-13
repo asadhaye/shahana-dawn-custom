@@ -9,16 +9,16 @@
 
 {%- comment %}theme-check-disable AssetPreload{%- endcomment -%}
 {%- if storefront_base_desktop != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_base_desktop }}" fetchpriority="high" media="(min-width: 750px)">
+  <link rel="preload" as="image" href="{{ storefront_base_desktop }}" crossorigin="anonymous" fetchpriority="high" media="(min-width: 750px)">
 {%- endif -%}
 {%- if storefront_base_mobile != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_base_mobile }}" fetchpriority="high" media="(max-width: 749px)">
+  <link rel="preload" as="image" href="{{ storefront_base_mobile }}" crossorigin="anonymous" fetchpriority="high" media="(max-width: 749px)">
 {%- endif -%}
 {%- if storefront_depth_desktop != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_depth_desktop }}" fetchpriority="high" media="(min-width: 750px)">
+  <link rel="preload" as="image" href="{{ storefront_depth_desktop }}" crossorigin="anonymous" fetchpriority="high" media="(min-width: 750px)">
 {%- endif -%}
 {%- if storefront_depth_mobile != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_depth_mobile }}" fetchpriority="high" media="(max-width: 749px)">
+  <link rel="preload" as="image" href="{{ storefront_depth_mobile }}" crossorigin="anonymous" fetchpriority="high" media="(max-width: 749px)">
 {%- endif -%}
 {%- comment %}theme-check-enable AssetPreload{%- endcomment -%}
 
