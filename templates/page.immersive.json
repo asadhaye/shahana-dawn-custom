@@ -231,6 +231,29 @@
         "layout": "asymmetric-gallery"
       }
     },
+    "immersive_webgl_gallery_config_TnHgLB": {
+      "type": "immersive-webgl-gallery-config",
+      "blocks": {
+        "gallery_item_cTJUqJ": {
+          "type": "gallery_item",
+          "settings": {
+            "image": "shopify://shop_images/Mastaani-Cover1.webp",
+            "title": "",
+            "subtitle": "",
+            "product": "",
+            "collection": "bridal-events"
+          }
+        }
+      },
+      "block_order": [
+        "gallery_item_cTJUqJ"
+      ],
+      "name": "t:sections.immersive_webgl_gallery.preset_name",
+      "settings": {
+        "room_key": "occasions",
+        "layout": "scroll-narrative"
+      }
+    },
     "editorial_designer_houses": {
       "type": "immersive-editorial",
       "blocks": {
@@ -590,6 +613,7 @@
     "immersive_notification_bar",
     "immersive_canvas",
     "webgl_gallery_exclusives",
+    "immersive_webgl_gallery_config_TnHgLB",
     "editorial_designer_houses",
     "editorial_occasions",
     "editorial_featured_collections",
