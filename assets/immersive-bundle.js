@@ -243,6 +243,7 @@ if (!window.ShahanaImmersive) {
       isTablet: false,
       textureQuality: 1.0,
       targetFPS: 60,
+      interactionEnabled: false,
     },
     search: {
       activeIndex: -1,
@@ -1781,6 +1782,8 @@ function initGalleryCarousel(canvas) {
   var isScrollTunnel = layout === 'scroll-tunnel';
 
   var startHandler = function (e) {
+    // Guard: don't capture touch/click until user has entered the 3D experience
+    if (window.ShahanaImmersive && window.ShahanaImmersive.settings && !window.ShahanaImmersive.settings.interactionEnabled) return;
     if (!galleryStageRegistry[currentRoomKey]) return;
     galleryDragState.isDragging = true;
     galleryDragState.startX = e.clientX || e.touches?.[0]?.clientX || 0;
@@ -3066,6 +3069,7 @@ function initImmersiveScene() {
         btn.style.display = 'none';
       });
     }
+    hideInitialLoader();
     hideLoader();
   });
 
@@ -3074,14 +3078,30 @@ function initImmersiveScene() {
     return;
   }
 
+  // Guard: if canvas already has a 2D context (e.g. from Shopify Chat/Replay),
+  // clear it before claiming WebGL context
+  var existingCtx = canvas.getContext('2d') || canvas.getContext('bitmaprenderer');
+  if (existingCtx) {
+    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Canvas had existing context — clearing before WebGL init');
+    // Force-release the existing context by resizing to 0
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+
   showLoader();
 
-  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true,
+    preserveDrawingBuffer: true,
+    alpha: true,
+    powerPreference: 'high-performance'
+  });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 
-  // Use viewport width to ensure canvas matches header width (handles scrollbar differences)
-  var initWidth = window.innerWidth || canvas.clientWidth || canvas.offsetWidth;
-  var initHeight = window.innerHeight || canvas.clientHeight || canvas.offsetHeight;
+  // Use canvas client dimensions so the renderer fills its container exactly
+  var initWidth = canvas.clientWidth || window.innerWidth || canvas.offsetWidth;
+  var initHeight = canvas.clientHeight || window.innerHeight || canvas.offsetHeight;
   renderer.setSize(initWidth, initHeight, false);
 
   // WebGL context loss recovery
@@ -3191,7 +3211,13 @@ function isWebGLSupported() {
   }
 }
 
+function hideInitialLoader() {
+  var el = document.getElementById('immersive-initial-loader');
+  if (el) el.classList.add('is-hidden');
+}
+
 function showWebGLFallback(canvas) {
+  hideInitialLoader();
   var room = getRoomData('lounge');
   if (!room) return;
   var wrapper = canvas.parentElement;
@@ -3414,6 +3440,7 @@ function onWindowResize() {
                 layoutConfig: _layoutConfig,
               });
             }
+            hideInitialLoader();
             hideLoader();
           });
         }
@@ -3463,9 +3490,9 @@ function handleResize(roomKeyOverride) {
   if (!renderer || !camera) return;
   evaluateDeviceFlags();
   var canvas = renderer.domElement;
-  // Use viewport width to ensure canvas matches header width (handles scrollbar differences)
-  var width = window.innerWidth || canvas.clientWidth;
-  var height = window.innerHeight || canvas.clientHeight;
+  // Use canvas client dimensions so the renderer fills its container exactly
+  var width = canvas.clientWidth || window.innerWidth;
+  var height = canvas.clientHeight || window.innerHeight;
   if (width === 0 || height === 0) return;
 
   renderer.setSize(width, height, false);
@@ -3483,27 +3510,12 @@ function handleResize(roomKeyOverride) {
   camera.updateProjectionMatrix();
 
   if (planeMesh) {
-    var resolvedRoomKey = roomKeyOverride || currentRoomKey;
-    var room = resolvedRoomKey && getRoomData(resolvedRoomKey);
-    var hasDedicatedMobileImage = usesMobileImg && room && room.mobileBaseTextureUrl;
-    if (hasDedicatedMobileImage && isMobile) {
-      planeMesh.scale.set(1, 1, 1);
-    } else if (hasDedicatedMobileImage && isTablet) {
-      var canvasAspect = width / height;
-      var imageAspect = currentImageAspect;
-      if (canvasAspect > imageAspect) {
-        planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
-      } else {
-        planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
-      }
+    var canvasAspect = width / height;
+    var imageAspect = currentImageAspect;
+    if (canvasAspect > imageAspect) {
+      planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
     } else {
-      var canvasAspect = width / height;
-      var imageAspect = currentImageAspect;
-      if (canvasAspect > imageAspect) {
-        planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
-      } else {
-        planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
-      }
+      planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
     }
     planeMesh.position.set(0, 0, 0);
   }
@@ -3808,6 +3820,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       preloadAdjacentRoomTextures(roomKey);
       var tagline = document.getElementById('immersive-tagline');
       if (tagline) tagline.classList.remove('is-visible');
+      hideInitialLoader();
       hideLoader();
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
@@ -4126,6 +4139,7 @@ function renderHotspots(roomKey) {
         } else if (hotspot.targetRoom) {
           if (hotspot.startExperience) {
             activateGuidedMode();
+            window.ShahanaImmersive.settings.interactionEnabled = true;
           }
           goToRoom(hotspot.targetRoom);
         } else if (hotspot.targetStory) {
@@ -4200,36 +4214,99 @@ function closeDialogFocus(panel, triggerEl) {
   }
 }
 
+function getFocusableElements(container) {
+  return Array.from(
+    container.querySelectorAll(
+      'a[href]:not([disabled]), button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([disabled]):not([tabindex="-1"])'
+    )
+  ).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement);
+}
+
+function trapFocus(container, event) {
+  if (event.key !== 'Tab') return;
+  const focusableElements = getFocusableElements(container);
+  if (focusableElements.length === 0) return;
+
+  const firstFocusableEl = focusableElements[0];
+  const lastFocusableEl = focusableElements[focusableElements.length - 1];
+
+  if (event.shiftKey) { // Shift + Tab
+    if (document.activeElement === firstFocusableEl) {
+      lastFocusableEl.focus();
+      event.preventDefault();
+    }
+  } else { // Tab
+    if (document.activeElement === lastFocusableEl) {
+      firstFocusableEl.focus();
+      event.preventDefault();
+    }
+  }
+}
+
 function openPanel(panel, triggerEl) {
   if (!panel) return null;
   var closeBtn = panel.querySelector('.immersive-store__panel-close');
   if (closeBtn && !closeBtn._clickBound) {
     closeBtn._clickBound = true;
-    closeBtn.addEventListener('click', function () {
+    ListenerRegistry.add('panel-close-' + panel.id, closeBtn, 'click', function () {
       closePanel(panel);
     });
   }
   panel.classList.remove('hidden');
   panel.removeAttribute('hidden');
   panel.setAttribute('data-open', 'true');
+  panel.setAttribute('role', 'dialog');
+  panel.setAttribute('aria-modal', 'true');
+  
+  // Store the trigger element to return focus later
+  panel._panelTrigger = triggerEl;
+
+  // Add focus trap
+  const trapFocusHandler = trapFocus.bind(null, panel);
+  ListenerRegistry.add('panel-trap-focus-' + panel.id, panel, 'keydown', trapFocusHandler);
+  
+  // Handle escape key
+  const escapeHandler = function(e) {
+    if (e.key === 'Escape') closePanel(panel);
+  };
+  ListenerRegistry.add('panel-escape-' + panel.id, panel, 'keydown', escapeHandler);
+
   var enteringClass =
     panel.id === 'glass-panel' ? 'immersive-store__panel--entering' : 'immersive-editorial-overlay--entering';
   if (!reduceMotion) {
     panel.classList.add(enteringClass);
     setTimeout(function () {
       panel.classList.remove(enteringClass);
-      openDialogFocus(panel, triggerEl);
+      // Ensure focus is within the panel
+      const focusable = getFocusableElements(panel);
+      if (focusable.length > 0) focusable[0].focus();
+      else panel.focus(); // Fallback to panel itself
     }, 350);
   } else {
-    openDialogFocus(panel, triggerEl);
+    const focusable = getFocusableElements(panel);
+    if (focusable.length > 0) focusable[0].focus();
+    else panel.focus(); // Fallback to panel itself
   }
   return triggerEl;
 }
 
 function closePanel(panel) {
   if (!panel) return;
+  
+  // Remove focus trap and escape handler
+  ListenerRegistry.cleanup('panel-trap-focus-' + panel.id);
+  ListenerRegistry.cleanup('panel-escape-' + panel.id);
+
   panel.removeAttribute('data-open');
-  closeDialogFocus(panel, panel._panelTrigger);
+  panel.removeAttribute('role');
+  panel.removeAttribute('aria-modal');
+
+  // Return focus to the element that opened the panel
+  if (panel._panelTrigger && typeof panel._panelTrigger.focus === 'function') {
+    requestAnimationFrame(function() {
+      panel._panelTrigger.focus();
+    });
+  }
   panel._panelTrigger = null;
   // Issue 5: Clear panel state from sessionStorage on close so a page
   // refresh doesn't reopen the panel with potentially stale data.

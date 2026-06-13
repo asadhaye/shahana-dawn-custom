@@ -3069,6 +3069,7 @@ function initImmersiveScene() {
         btn.style.display = 'none';
       });
     }
+    hideInitialLoader();
     hideLoader();
   });
 
@@ -3098,9 +3099,9 @@ function initImmersiveScene() {
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 
-  // Use viewport width to ensure canvas matches header width (handles scrollbar differences)
-  var initWidth = window.innerWidth || canvas.clientWidth || canvas.offsetWidth;
-  var initHeight = window.innerHeight || canvas.clientHeight || canvas.offsetHeight;
+  // Use canvas client dimensions so the renderer fills its container exactly
+  var initWidth = canvas.clientWidth || window.innerWidth || canvas.offsetWidth;
+  var initHeight = canvas.clientHeight || window.innerHeight || canvas.offsetHeight;
   renderer.setSize(initWidth, initHeight, false);
 
   // WebGL context loss recovery
@@ -3210,7 +3211,13 @@ function isWebGLSupported() {
   }
 }
 
+function hideInitialLoader() {
+  var el = document.getElementById('immersive-initial-loader');
+  if (el) el.classList.add('is-hidden');
+}
+
 function showWebGLFallback(canvas) {
+  hideInitialLoader();
   var room = getRoomData('lounge');
   if (!room) return;
   var wrapper = canvas.parentElement;
@@ -3433,6 +3440,7 @@ function onWindowResize() {
                 layoutConfig: _layoutConfig,
               });
             }
+            hideInitialLoader();
             hideLoader();
           });
         }
@@ -3482,9 +3490,9 @@ function handleResize(roomKeyOverride) {
   if (!renderer || !camera) return;
   evaluateDeviceFlags();
   var canvas = renderer.domElement;
-  // Use viewport width to ensure canvas matches header width (handles scrollbar differences)
-  var width = window.innerWidth || canvas.clientWidth;
-  var height = window.innerHeight || canvas.clientHeight;
+  // Use canvas client dimensions so the renderer fills its container exactly
+  var width = canvas.clientWidth || window.innerWidth;
+  var height = canvas.clientHeight || window.innerHeight;
   if (width === 0 || height === 0) return;
 
   renderer.setSize(width, height, false);
@@ -3502,27 +3510,12 @@ function handleResize(roomKeyOverride) {
   camera.updateProjectionMatrix();
 
   if (planeMesh) {
-    var resolvedRoomKey = roomKeyOverride || currentRoomKey;
-    var room = resolvedRoomKey && getRoomData(resolvedRoomKey);
-    var hasDedicatedMobileImage = usesMobileImg && room && room.mobileBaseTextureUrl;
-    if (hasDedicatedMobileImage && isMobile) {
-      planeMesh.scale.set(1, 1, 1);
-    } else if (hasDedicatedMobileImage && isTablet) {
-      var canvasAspect = width / height;
-      var imageAspect = currentImageAspect;
-      if (canvasAspect > imageAspect) {
-        planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
-      } else {
-        planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
-      }
+    var canvasAspect = width / height;
+    var imageAspect = currentImageAspect;
+    if (canvasAspect > imageAspect) {
+      planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
     } else {
-      var canvasAspect = width / height;
-      var imageAspect = currentImageAspect;
-      if (canvasAspect > imageAspect) {
-        planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
-      } else {
-        planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
-      }
+      planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
     }
     planeMesh.position.set(0, 0, 0);
   }
@@ -3827,6 +3820,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       preloadAdjacentRoomTextures(roomKey);
       var tagline = document.getElementById('immersive-tagline');
       if (tagline) tagline.classList.remove('is-visible');
+      hideInitialLoader();
       hideLoader();
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });

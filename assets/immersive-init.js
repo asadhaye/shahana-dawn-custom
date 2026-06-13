@@ -1532,6 +1532,16 @@ function safeBindImmersiveInit() {
   });
 }
 
+function hideInitialLoader() {
+  var el = document.getElementById('immersive-initial-loader');
+  if (el) el.classList.add('is-hidden');
+}
+
+// Safety net: force-hide the loading overlay if nothing else does within 10 seconds
+var _loaderSafetyTimer = setTimeout(function () {
+  hideInitialLoader();
+}, 10000);
+
 function scheduleImmersiveInit() {
   if (typeof window === 'undefined') return;
   function run() {
@@ -1540,6 +1550,9 @@ function scheduleImmersiveInit() {
     } catch (e) {
       if (typeof console !== 'undefined' && console.error) console.error('[Immersive] Init failed:', e);
     }
+    // If init succeeded, the loader should already be hidden by the bundle.
+    // Cancel the safety timer to avoid a flash.
+    clearTimeout(_loaderSafetyTimer);
   }
   if ('requestIdleCallback' in window) {
     window.requestIdleCallback(run, { timeout: 1000 });
