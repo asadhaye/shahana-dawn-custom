@@ -238,7 +238,27 @@
           "type": "gallery_item",
           "settings": {
             "image": "shopify://shop_images/Mastaani-Cover1.webp",
-            "title": "",
+            "title": "Bridal",
+            "subtitle": "",
+            "product": "",
+            "collection": "bridal-events"
+          }
+        },
+        "gallery_item_eXAAK4": {
+          "type": "gallery_item",
+          "settings": {
+            "image": "shopify://shop_images/Mastaani-Cover1.webp",
+            "title": "Bridal",
+            "subtitle": "",
+            "product": "",
+            "collection": "bridal-events"
+          }
+        },
+        "gallery_item_LjLQNp": {
+          "type": "gallery_item",
+          "settings": {
+            "image": "shopify://shop_images/Mastaani-Cover1.webp",
+            "title": "Bridal",
             "subtitle": "",
             "product": "",
             "collection": "bridal-events"
@@ -246,12 +266,59 @@
         }
       },
       "block_order": [
-        "gallery_item_cTJUqJ"
+        "gallery_item_cTJUqJ",
+        "gallery_item_eXAAK4",
+        "gallery_item_LjLQNp"
       ],
       "name": "t:sections.immersive_webgl_gallery.preset_name",
       "settings": {
         "room_key": "occasions",
         "layout": "scroll-narrative"
+      }
+    },
+    "immersive_webgl_gallery_config_zAWPaK": {
+      "type": "immersive-webgl-gallery-config",
+      "blocks": {
+        "gallery_item_knpyQR": {
+          "type": "gallery_item",
+          "settings": {
+            "image": "shopify://shop_images/cover_35fe8c98-49c1-4b52-8939-aa3a90d136c5.jpg",
+            "title": "",
+            "subtitle": "",
+            "product": "",
+            "collection": "el-veneto-luxury-formals-saad-bin-shahzad"
+          }
+        },
+        "gallery_item_h73Yce": {
+          "type": "gallery_item",
+          "settings": {
+            "image": "shopify://shop_images/cover_35fe8c98-49c1-4b52-8939-aa3a90d136c5.jpg",
+            "title": "",
+            "subtitle": "",
+            "product": "",
+            "collection": "el-veneto-luxury-formals-saad-bin-shahzad"
+          }
+        },
+        "gallery_item_TYgx6y": {
+          "type": "gallery_item",
+          "settings": {
+            "image": "shopify://shop_images/boutique-designer-houses-hero.png",
+            "title": "",
+            "subtitle": "",
+            "product": "",
+            "collection": "el-veneto-luxury-formals-saad-bin-shahzad"
+          }
+        }
+      },
+      "block_order": [
+        "gallery_item_knpyQR",
+        "gallery_item_h73Yce",
+        "gallery_item_TYgx6y"
+      ],
+      "name": "t:sections.immersive_webgl_gallery.preset_name",
+      "settings": {
+        "room_key": "featured_collections",
+        "layout": "masonry-featured"
       }
     },
     "editorial_designer_houses": {
@@ -614,6 +681,7 @@
     "immersive_canvas",
     "webgl_gallery_exclusives",
     "immersive_webgl_gallery_config_TnHgLB",
+    "immersive_webgl_gallery_config_zAWPaK",
     "editorial_designer_houses",
     "editorial_occasions",
     "editorial_featured_collections",
