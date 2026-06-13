@@ -3078,25 +3078,21 @@ function initImmersiveScene() {
     return;
   }
 
-  // Guard: if canvas already has a 2D context (e.g. from Shopify Chat/Replay),
-  // clear it before claiming WebGL context
-  var existingCtx = canvas.getContext('2d') || canvas.getContext('bitmaprenderer');
-  if (existingCtx) {
-    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Canvas had existing context — clearing before WebGL init');
-    // Force-release the existing context by resizing to 0
-    canvas.width = 0;
-    canvas.height = 0;
-  }
-
   showLoader();
 
-  renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    antialias: true,
-    preserveDrawingBuffer: true,
-    alpha: true,
-    powerPreference: 'high-performance'
-  });
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+      preserveDrawingBuffer: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+  } catch (e) {
+    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] WebGL context creation failed:', e);
+    showWebGLFallback(canvas);
+    return;
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 
   // Use canvas client dimensions so the renderer fills its container exactly
