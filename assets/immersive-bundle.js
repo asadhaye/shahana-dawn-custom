@@ -895,7 +895,9 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   // Replace the global OrthographicCamera with a PerspectiveCamera
   // so that cards at different Z depths appear with proper foreshortening
   var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
-  var aspect = size.x / size.y;
+  var width = size.x || canvas.clientWidth || window.innerWidth;
+  var height = size.y || canvas.clientHeight || window.innerHeight;
+  var aspect = (width && height) ? width / height : 1;
   var tunnelCam = new THREE.PerspectiveCamera(fov, aspect, near, far);
   if (camera && camera.dispose) camera.dispose();
   tunnelCam.position.z = 0;
@@ -1122,7 +1124,9 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   if (layout !== 'scroll-tunnel' && camera instanceof THREE.PerspectiveCamera) {
     if (camera && camera.dispose) camera.dispose();
     var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
-    var aspect = size.x / size.y;
+    var width = size.x || canvas.clientWidth || window.innerWidth;
+    var height = size.y || canvas.clientHeight || window.innerHeight;
+    var aspect = (width && height) ? width / height : 1;
     camera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0, 2);
     camera.position.z = 1;
     camera.updateProjectionMatrix();
