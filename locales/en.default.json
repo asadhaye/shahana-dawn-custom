@@ -621,6 +621,10 @@
       "size_heading": "Size Chart",
       "disclaimer_heading": "Disclaimer",
       "disclaimer_default": "Product color may slightly vary due to photographic lighting sources or your monitor settings. Actual colors and details may differ from images shown.",
+      "dispatch_heading": "Dispatch & Delivery",
+      "dispatch_notice": "Please allow 4–8 weeks from your order date for dispatch. You'll receive a shipping confirmation with tracking once it's on its way!",
+      "returns_heading": "Returns & Exchanges",
+      "returns_disclaimer": "Each piece in the Shahana Collection is exclusively sourced and curated for you. As such, we're unable to accommodate returns or exchanges based on personal preference. Should you receive an incorrect item, we will resolve this promptly. For craftsmanship or quality queries, we kindly ask that you reach out to the respective designer directly.",
       "size_table": {
         "size": "Size",
         "bust": "Bust",

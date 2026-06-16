@@ -193,6 +193,16 @@ function openProductPanel(productHandle, collectionHandle) {
             return;
           }
 
+          // Wishlist toggle — prevent product panel click-through
+          var wlToggle = event.target.closest('[data-wishlist-toggle]');
+          if (wlToggle) {
+            event.preventDefault();
+            event.stopPropagation();
+            var wlHandle = wlToggle.getAttribute('data-product-handle');
+            if (wlHandle) toggleWishlistItem(wlHandle, 'product_panel', wlToggle);
+            return;
+          }
+
           // Back button (PDP -> Collection)
           var backButton = event.target.closest('.glass-product-section__back');
           if (backButton) {
@@ -408,6 +418,17 @@ function openCollectionPanel(collectionHandle) {
             if (action) {
               handleEmptyStateAction(action);
             }
+            return;
+          }
+
+          // Wishlist toggle — must be checked BEFORE product card click so
+          // clicking the heart icon doesn't also open the product panel.
+          var wishlistToggle = event.target.closest('[data-wishlist-toggle]');
+          if (wishlistToggle) {
+            event.preventDefault();
+            event.stopPropagation();
+            var wlHandle = wishlistToggle.getAttribute('data-product-handle');
+            if (wlHandle) toggleWishlistItem(wlHandle, 'product_card', wishlistToggle);
             return;
           }
 
@@ -683,6 +704,12 @@ function exitEditorialMode() {
 
     if (canvas) {
       canvas.classList.remove('editorial-blur');
+    }
+
+    // Clear editorial back button flag so it can be re-bound on next entry
+    var _backBtn = document.getElementById('immersive-editorial-back');
+    if (_backBtn) {
+      _backBtn._editorialBound = false;
     }
 
     // Dispose 3D gallery stage if this was a gallery room
@@ -998,7 +1025,7 @@ function setupBuyNowForm(panel) {
         submitBtn.disabled = true;
         submitBtn.classList.add('is-adding');
         submitBtn.dataset.originalText = submitBtn.textContent;
-        submitBtn.textContent = msgAdding || 'Adding\u2026';
+        submitBtn.textContent = 'Adding\u2026';
       }
 
       fetch(shopRoot + 'cart/add.js', {

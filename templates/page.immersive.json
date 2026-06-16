@@ -149,9 +149,9 @@
         "guided_featured_wing": "designer_houses",
         "fab_icon_svg": "<svg viewbox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><text x=\"50%\" y=\"54%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"serif\" font-size=\"22\" font-weight=\"700\" fill=\"#d4af37\">S</text></svg>",
         "transition_style": "crossfade",
-        "designer_houses_layout": "infinite-drag-gallery",
-        "occasions_layout": "scroll-story",
-        "featured_collections_layout": "masonry-featured"
+        "designer_houses_layout": "codex-list",
+        "occasions_layout": "narrative-story",
+        "featured_collections_layout": "artifact-gallery"
       }
     },
     "webgl_gallery_exclusives": {
@@ -370,7 +370,6 @@
         "designer_soraya",
         "designer_sbs"
       ],
-      "disabled": true,
       "settings": {
         "room_key": "designer_houses",
         "layout": "designers",
@@ -425,7 +424,6 @@
         "occasion_formals",
         "occasion_pret"
       ],
-      "disabled": true,
       "settings": {
         "room_key": "occasions",
         "layout": "occasions",
@@ -470,145 +468,12 @@
         "featured_suffuse_pret",
         "featured_soraya_eid"
       ],
-      "disabled": true,
       "settings": {
         "room_key": "featured_collections",
         "layout": "featured_collections",
         "hero_heading": "The Edit",
         "hero_eyebrow": "This season",
         "hero_subheading": "<p>Three collections. Three stories. One curated moment in Pakistani fashion.</p>"
-      }
-    },
-    "immersive_editorial_N7cRUa": {
-      "type": "immersive-editorial",
-      "blocks": {
-        "designer_JdTz8V": {
-          "type": "designer",
-          "settings": {
-            "heading": "Suffuse",
-            "body": "",
-            "collection": ""
-          }
-        },
-        "designer_Aj8CEp": {
-          "type": "designer",
-          "settings": {
-            "heading": "Soraya",
-            "body": "",
-            "collection": ""
-          }
-        },
-        "designer_PRBGfT": {
-          "type": "designer",
-          "settings": {
-            "heading": "Saad Bin Shahzad",
-            "body": "",
-            "collection": ""
-          }
-        }
-      },
-      "block_order": [
-        "designer_JdTz8V",
-        "designer_Aj8CEp",
-        "designer_PRBGfT"
-      ],
-      "name": "t:sections.immersive_editorial.presets.designer_houses.name",
-      "settings": {
-        "room_key": "designer_houses",
-        "layout": "designers",
-        "hero_heading": "",
-        "hero_eyebrow": "",
-        "hero_subheading": ""
-      }
-    },
-    "immersive_editorial_cNd4fw": {
-      "type": "immersive-editorial",
-      "blocks": {
-        "occasion_card_VXt4X6": {
-          "type": "occasion_card",
-          "settings": {
-            "heading": "Eid Collection",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        },
-        "occasion_card_4DJteN": {
-          "type": "occasion_card",
-          "settings": {
-            "heading": "Bridal & Mehndi",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        },
-        "occasion_card_EPaXWW": {
-          "type": "occasion_card",
-          "settings": {
-            "heading": "Luxury Formals",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        }
-      },
-      "block_order": [
-        "occasion_card_VXt4X6",
-        "occasion_card_4DJteN",
-        "occasion_card_EPaXWW"
-      ],
-      "name": "t:sections.immersive_editorial.presets.occasions.name",
-      "settings": {
-        "room_key": "occasions",
-        "layout": "occasions",
-        "hero_heading": "",
-        "hero_eyebrow": "",
-        "hero_subheading": ""
-      }
-    },
-    "immersive_editorial_n6eTYr": {
-      "type": "immersive-editorial",
-      "blocks": {
-        "featured_item_6gbR3Y": {
-          "type": "featured_item",
-          "settings": {
-            "heading": "Collection One",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        },
-        "featured_item_hV89Jh": {
-          "type": "featured_item",
-          "settings": {
-            "heading": "Collection Two",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        },
-        "featured_item_wYzXEz": {
-          "type": "featured_item",
-          "settings": {
-            "heading": "Collection Three",
-            "body": "",
-            "collection": "",
-            "cta_url": ""
-          }
-        }
-      },
-      "block_order": [
-        "featured_item_6gbR3Y",
-        "featured_item_hV89Jh",
-        "featured_item_wYzXEz"
-      ],
-      "name": "t:sections.immersive_editorial.presets.featured_collections.name",
-      "settings": {
-        "room_key": "featured_collections",
-        "layout": "featured_collections",
-        "hero_heading": "",
-        "hero_eyebrow": "",
-        "hero_subheading": ""
       }
     },
     "immersive_story": {
@@ -685,9 +550,6 @@
     "editorial_designer_houses",
     "editorial_occasions",
     "editorial_featured_collections",
-    "immersive_editorial_N7cRUa",
-    "immersive_editorial_cNd4fw",
-    "immersive_editorial_n6eTYr",
     "immersive_story",
     "exclusive_carousel"
   ]

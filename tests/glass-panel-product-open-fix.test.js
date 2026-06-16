@@ -382,7 +382,7 @@ describe('Bug 3 — Editorial collection links missing data-collection attribute
 
     // The new design uses data-collection-handle on button elements (not a href links)
     expect(liquidSource).toContain('class="immersive-occasions__chapter-cta"');
-    expect(liquidSource).toContain('data-collection-handle="{{ collection.handle }}"');
+    expect(liquidSource).toContain('data-collection-handle="{{ block.settings.collection.handle }}"');
     expect(liquidSource).toContain('immersive-featured__card');
   });
 });
@@ -543,7 +543,7 @@ describe('Preservation 2d — custom layout renders banners; non-custom layouts 
     const liquidSource = fs.readFileSync(path.resolve(__dirname, '../sections/immersive-editorial.liquid'), 'utf8');
 
     // All three layouts should use data-collection-handle
-    expect(liquidSource).toContain('data-collection-handle="{{ collection.handle }}"');
+    expect(liquidSource).toContain('data-collection-handle="{{ block.settings.collection.handle }}"');
 
     // Layout-specific container classes should exist
     expect(liquidSource).toContain('immersive-designers__timeline-marker');

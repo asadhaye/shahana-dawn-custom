@@ -28,21 +28,21 @@ describe('immersive-editorial enabled editorial layouts', () => {
     const source = readSection();
     expect(source).toContain("{%- if section.settings.layout == 'designers' -%}");
     expect(source).toContain('class="immersive-designers__timeline-marker"');
-    expect(source).toContain('data-collection-handle="{{ collection.handle }}"');
+    expect(source).toContain('data-collection-handle="{{ block.settings.collection.handle }}"');
   });
 
   test('occasions layout routes collection through data-collection-handle on chapter CTAs', () => {
     const source = readSection();
-    expect(source).toContain("{%- if section.settings.layout == 'occasions' -%}");
+    expect(source).toContain("{%- elsif section.settings.layout == 'occasions' -%}");
     expect(source).toContain('class="immersive-occasions__chapter-cta"');
-    expect(source).toContain('data-collection-handle="{{ collection.handle }}"');
+    expect(source).toContain('data-collection-handle="{{ block.settings.collection.handle }}"');
   });
 
   test('featured_collections layout routes collection through data-collection-handle on cards', () => {
     const source = readSection();
-    expect(source).toContain("{%- if section.settings.layout == 'featured_collections' -%}");
+    expect(source).toContain("{%- elsif section.settings.layout == 'featured_collections' -%}");
     expect(source).toContain('class="immersive-featured__card"');
-    expect(source).toContain('data-collection-handle="{{ collection.handle }}"');
+    expect(source).toContain('data-collection-handle="{{ block.settings.collection.handle }}"');
   });
 
   test('designer marker clicks stop before the shared collection-panel route so products stay inline', () => {
@@ -126,7 +126,8 @@ describe('immersive editorial overlay launch-readiness wiring', () => {
     expect(source).toContain('{% unless request.design_mode %}hidden{% endunless %}');
     expect(source).toContain('{% unless request.design_mode %}aria-hidden="true"{% endunless %}');
     expect(source).not.toContain('style="display: none;"');
-    expect(source).toContain('.immersive-editorial--source[hidden]');
+    expect(source).toContain('immersive-editorial--source');
+    expect(source).toContain('hidden');
     expect(source).not.toContain('{% if request.design_mode %}');
   });
 

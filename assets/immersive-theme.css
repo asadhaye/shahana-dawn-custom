@@ -3337,3 +3337,8 @@
     display: none;
   }
 }
+
+/* ── Source section hidden state ── */
+.immersive-editorial--source[hidden] {
+  display: none !important;
+}
