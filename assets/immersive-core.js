@@ -7,6 +7,13 @@
  * Both files replace the former monolithic immersive-store.js.
  */
 
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIFIED NAMESPACE — single source of truth for all immersive state & animation
+// ─────────────────────────────────────────────────────────────────────────────
+window.ImmersiveTheme = window.ImmersiveTheme || {};
+window.ShahanaImmersive = window.ShahanaImmersive || window.ImmersiveTheme;
+var Immersive = window.ImmersiveTheme;
+
 // No-op stub for analytics tracking (may be overridden by external analytics)
 if (typeof window.trackImmersiveEvent === 'undefined') {
   window.trackImmersiveEvent = function () {};
@@ -192,87 +199,130 @@ var ListenerRegistry = {
 // IMMERSIVE STORE NAMESPACE - Prevent global pollution
 // ─────────────────────────────────────────────────────────────────────────────
 if (!window.ShahanaImmersive) {
-  window.ShahanaImmersive = {
-    store: {
-      get: function (key, fallback) {
-        try {
-          var raw = localStorage.getItem(key);
-          if (raw === null) return fallback;
-          return JSON.parse(raw);
-        } catch (e) {
-          return fallback;
-        }
-      },
-      set: function (key, value) {
-        try {
-          localStorage.setItem(key, JSON.stringify(value));
-          return true;
-        } catch (e) {
-          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] localStorage write failed:', key, e);
-          return false;
-        }
-      },
-      remove: function (key) {
-        try {
-          localStorage.removeItem(key);
-        } catch (e) {}
-      },
-    },
-    graphics: {
-      renderer: null,
-      scene: null,
-      camera: null,
-      planeMesh: null,
-      uniforms: null,
-    },
-    room: {
-      current: null,
-      subMode: null,
-      transitioning: false,
-    },
-    cache: {
-      textures: [],
-      content: {},
-      gallery: {},
-    },
-    settings: {
-      reduceMotion: false,
-      isMobile: false,
-      isTablet: false,
-      textureQuality: 1.0,
-      targetFPS: 60,
-      interactionEnabled: false,
-    },
-    search: {
-      activeIndex: -1,
-      results: [],
-      debounceTimer: null,
-      abortController: null,
-    },
-    gesture: {
-      lastRoomTransition: 0,
-      cooldown: 600,
-      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'],
-    },
-    quickAdd: {
-      modal: null,
-      trigger: null,
-    },
-    hotspot: {
-      elements: [],
-      focusedIndex: -1,
-    },
-    device: {
-      isMobile: false,
-      isTablet: false,
-      isLowEnd: false,
-    },
-    layout: {
-      registry: {},
-      current: {},
-    },
-  };
+  window.ShahanaImmersive = window.ImmersiveTheme;
 }
+
+// Only add sub-objects if they don't already exist (preserve StateManager data)
+Immersive.store = Immersive.store || {};
+Immersive.graphics = Immersive.graphics || {
+  renderer: null,
+  scene: null,
+  camera: null,
+  planeMesh: null,
+  uniforms: null,
+};
+Immersive.room = Immersive.room || {
+  current: null,
+  subMode: null,
+  transitioning: false,
+};
+Immersive.cache = Immersive.cache || {
+  textures: [],
+  content: {},
+  gallery: {},
+};
+Immersive.settings = Immersive.settings || {
+  reduceMotion: false,
+  isMobile: false,
+  isTablet: false,
+  textureQuality: 1.0,
+  targetFPS: 60,
+  interactionEnabled: false,
+};
+Immersive.search = Immersive.search || {
+  activeIndex: -1,
+  results: [],
+  debounceTimer: null,
+  abortController: null,
+};
+Immersive.gesture = Immersive.gesture || {
+  lastRoomTransition: 0,
+  cooldown: 600,
+  roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'],
+};
+Immersive.quickAdd = Immersive.quickAdd || {
+  modal: null,
+  trigger: null,
+};
+Immersive.hotspot = Immersive.hotspot || {
+  elements: [],
+  focusedIndex: -1,
+};
+Immersive.device = Immersive.device || {
+  isMobile: false,
+  isTablet: false,
+  isLowEnd: false,
+};
+Immersive.layout = Immersive.layout || {
+  registry: {},
+  current: {},
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE HELPERS — route through ImmersiveTheme.state
+// ─────────────────────────────────────────────────────────────────────────────
+function _sm() { return window.ImmersiveTheme && window.ImmersiveTheme.state; }
+
+function saveImmersiveSessionState(patch) {
+  var sm = _sm(); if (!sm) return;
+  var current = sm.get('immersive.session.state') || {};
+  sm.set('immersive.session.state', Object.assign({}, current, patch), { persist: 'session' });
+}
+
+function loadImmersiveSessionState() {
+  var sm = _sm(); if (!sm) return {};
+  return sm.get('immersive.session.state') || {};
+}
+
+function clearImmersiveSessionState() {
+  var sm = _sm(); if (!sm) return;
+  sm.set('immersive.session.state', {}, { persist: 'session' });
+}
+
+function _saveNavHistory(history) {
+  var sm = _sm(); if (!sm) return;
+  sm.set('immersive.navigation.history', history || [], { persist: 'session' });
+}
+
+function _loadNavHistory() {
+  var sm = _sm(); if (!sm) return [];
+  return sm.get('immersive.navigation.history') || [];
+}
+
+function hasSeenOnboarding() {
+  var sm = _sm(); if (!sm) return false;
+  return !!sm.get('onboarding.seen');
+}
+
+function markOnboardingSeen() {
+  var sm = _sm(); if (!sm) return;
+  sm.set('onboarding.seen', true, { persist: 'local' });
+}
+
+function loadBrowsingSignals() {
+  var sm = _sm(); if (!sm) return [];
+  var v = sm.get('immersive.browsing.signals');
+  return Array.isArray(v) ? v : [];
+}
+
+function saveBrowsingSignals(signals) {
+  var sm = _sm(); if (!sm) return;
+  sm.set('immersive.browsing.signals', signals || [], { persist: 'local' });
+}
+
+function isRoomDismissed(roomKey) {
+  var sm = _sm(); if (!sm) return false;
+  var map = sm.get('immersive.recommendations.dismissedRooms') || {};
+  return !!map[roomKey];
+}
+
+function dismissRoom(roomKey) {
+  var sm = _sm(); if (!sm) return;
+  var map = sm.get('immersive.recommendations.dismissedRooms') || {};
+  map[roomKey] = true;
+  sm.set('immersive.recommendations.dismissedRooms', map, { persist: 'session' });
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEVICE OPTIMIZATION
@@ -3267,31 +3317,15 @@ var activeHotspots = [];
 var navigationHistory = [];
 
 function saveState(patch) {
-  try {
-    var current = JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
-    sessionStorage.setItem(STATE_KEY, JSON.stringify(Object.assign(current, patch)));
-  } catch (e) {
-    if (window.__IMMERSIVE_DEV__) {
-      console.warn('[Immersive] saveState failed:', e);
-    }
-  }
+  saveImmersiveSessionState(patch);
 }
 
 function loadState() {
-  try {
-    return JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
-  } catch (e) {
-    if (window.__IMMERSIVE_DEV__) {
-      console.warn('[Immersive] loadState failed:', e);
-    }
-    return {};
-  }
+  return loadImmersiveSessionState();
 }
 
 function clearState() {
-  try {
-    sessionStorage.removeItem(STATE_KEY);
-  } catch (e) {}
+  clearImmersiveSessionState();
 }
 
 function writeImmersivePreference(storage) {
@@ -3325,7 +3359,7 @@ function pushNavigationHistory(roomKey) {
   if (_navigationHistory.length > 20) {
     _navigationHistory.shift();
   }
-  saveNavigationHistory();
+  _saveNavHistory(_navigationHistory);
   updateBackButton();
 }
 
@@ -3335,7 +3369,7 @@ function popNavigationHistory() {
   }
   if (_navigationHistory.length > 1) {
     _navigationHistory.pop();
-    saveNavigationHistory();
+    _saveNavHistory(_navigationHistory);
     updateBackButton();
     var previousRoom = _navigationHistory[_navigationHistory.length - 1];
     if (window.__IMMERSIVE_DEV__) {
@@ -3361,12 +3395,10 @@ function initWishlist() {
 }
 
 function saveNavigationHistory() {
-  try {
-    sessionStorage.setItem(NAVIGATION_HISTORY_KEY, JSON.stringify(_navigationHistory));
-  } catch (e) {}
+  _saveNavHistory(_navigationHistory);
 }
 
-function loadNavigationHistory() {
+function _loadNavHistory() {
   try {
     var stored = sessionStorage.getItem(NAVIGATION_HISTORY_KEY);
     _navigationHistory = stored ? JSON.parse(stored) : [];
@@ -3390,7 +3422,7 @@ function updateBackButton() {
 function initBackButton() {
   var backBtn = document.querySelector('[data-immersive-back]');
   if (!backBtn) return;
-  loadNavigationHistory();
+  _navigationHistory = _loadNavHistory();
   updateBackButton();
   backBtn.addEventListener('click', function () {
     if (window.__IMMERSIVE_DEV__) {
@@ -3710,7 +3742,7 @@ function preloadRoom(roomKey) {
 
 function showWelcomeToast() {
   try {
-    if (localStorage.getItem(ONBOARDING_KEY)) return;
+    if (hasSeenOnboarding()) return;
   } catch (e) {}
   // Issue 25: If onboarding overlay is present and enabled, skip welcome toast (redundant)
   var _ob = document.getElementById('immersive-onboarding');
@@ -4395,8 +4427,23 @@ function initTiltControlToggle() {
   });
 }
 
-function animate() {
-  animationFrameId = requestAnimationFrame(animate);
+// ─────────────────────────────────────────────────────────────────────────────
+// TICKER — main animation loop via ImmersiveTheme.ticker
+// ─────────────────────────────────────────────────────────────────────────────
+var ticker = window.ImmersiveTheme && window.ImmersiveTheme.ticker;
+var unsubscribeAnimate = null;
+
+function startAnimate() {
+  if (!ticker) return;
+  if (unsubscribeAnimate) return;
+  unsubscribeAnimate = ticker.subscribe(function (ts, dt) { animateFrame(ts, dt); });
+}
+
+function stopAnimate() {
+  if (unsubscribeAnimate) { unsubscribeAnimate(); unsubscribeAnimate = null; }
+}
+
+function animateFrame(timestamp, delta) {
   if (!uniforms) return;
 
   mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
@@ -5265,12 +5312,12 @@ function fetchSectionHtml(path, sectionId, extraParams) {
 function recordBrowsingSignal(roomKey) {
   if (!roomKey) return;
   try {
-    var raw = localStorage.getItem('immersive_browsing_signals');
+    var raw = loadBrowsingSignals();
     var signals = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(signals)) signals = [];
     signals.push(roomKey);
     if (signals.length > 50) signals = signals.slice(signals.length - 50);
-    localStorage.setItem('immersive_browsing_signals', JSON.stringify(signals));
+    saveBrowsingSignals(signals);
   } catch (e) {}
 }
 
@@ -5325,7 +5372,7 @@ function evaluateRoomRecommendation() {
   var rec = getRecommendation(_browsingContext);
   if (!rec) return;
   try {
-    if (sessionStorage.getItem('immersive_rec_dismissed_' + rec.roomKey)) return;
+    if (isRoomDismissed(rec.roomKey)) return;
   } catch (e) {}
 }
 

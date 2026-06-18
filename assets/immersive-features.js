@@ -25,116 +25,36 @@ function safeJSONParse(str, fallback) {
 // ─────────────────────────────────────────────────────────────
 // Unified State Manager Integration
 // ─────────────────────────────────────────────────────────────
-function initStateManager() {
-  if (!window.ImmersiveTheme) {
-    window.ImmersiveTheme = {};
-  }
-  if (!window.ImmersiveTheme.state) {
-    window.ImmersiveTheme.state = {
-      _data: {},
-      get: function (key) {
-        return this._data[key];
-      },
-      set: function (key, value) {
-        this._data[key] = value;
-        try {
-          localStorage.setItem('immersive_state_' + key, JSON.stringify(value));
-        } catch (e) {}
-      },
-      load: function (key, defaultValue) {
-        try {
-          var stored = localStorage.getItem('immersive_state_' + key);
-          if (stored) {
-            this._data[key] = JSON.parse(stored);
-            return this._data[key];
-          }
-        } catch (e) {}
-        this._data[key] = defaultValue;
-        return defaultValue;
-      },
-    };
-  }
-  return window.ImmersiveTheme.state;
-}
+// State manager (immersive-state-manager.js) is loaded before this file
+// and defines window.ImmersiveTheme.state. No fallback shim needed.
 
-// Initialize state manager immediately
-initStateManager();
-
-// State accessor helpers
+// State accessor helpers — thin wrappers over ImmersiveTheme.state
 function getState(key, defaultValue) {
-  return window.ImmersiveTheme.state.get(key) !== undefined
-    ? window.ImmersiveTheme.state.get(key)
-    : window.ImmersiveTheme.state.load(key, defaultValue);
+  var sm = window.ImmersiveTheme && window.ImmersiveTheme.state;
+  if (!sm) return defaultValue;
+  return sm.get(key) !== undefined ? sm.get(key) : sm.load(key, defaultValue);
 }
 
 function setState(key, value) {
-  window.ImmersiveTheme.state.set(key, value);
+  var sm = window.ImmersiveTheme && window.ImmersiveTheme.state;
+  if (sm) sm.set(key, value);
 }
 
 // ─────────────────────────────────────────────────────────────
 // Unified Ticker Manager Integration
 // ─────────────────────────────────────────────────────────────
-function initTicker() {
-  if (!window.ImmersiveTheme) {
-    window.ImmersiveTheme = {};
-  }
-  if (!window.ImmersiveTheme.ticker) {
-    window.ImmersiveTheme.ticker = {
-      _subscribers: [],
-      _running: false,
-      _rafId: null,
-      subscribe: function (callback) {
-        this._subscribers.push(callback);
-        if (!this._running) {
-          this._start();
-        }
-        return callback;
-      },
-      unsubscribe: function (callback) {
-        var idx = this._subscribers.indexOf(callback);
-        if (idx > -1) {
-          this._subscribers.splice(idx, 1);
-        }
-        if (this._subscribers.length === 0 && this._running) {
-          this._stop();
-        }
-      },
-      _start: function () {
-        var self = this;
-        this._running = true;
-        function tick() {
-          if (!self._running) return;
-          for (var i = 0; i < self._subscribers.length; i++) {
-            try {
-              self._subscribers[i]();
-            } catch (e) {}
-          }
-          self._rafId = requestAnimationFrame(tick);
-        }
-        this._rafId = requestAnimationFrame(tick);
-      },
-      _stop: function () {
-        this._running = false;
-        if (this._rafId) {
-          cancelAnimationFrame(this._rafId);
-          this._rafId = null;
-        }
-      },
-    };
-  }
-  return window.ImmersiveTheme.ticker;
-}
+// Tick manager (tick-manager.js) is loaded before this file
+// and defines window.ImmersiveTheme.ticker. No fallback shim needed.
 
-// Initialize ticker immediately
-initTicker();
-
-// Ticker accessor helpers
+// Ticker accessor helpers — thin wrappers over ImmersiveTheme.ticker
 function subscribeToTicker(callback) {
-  return window.ImmersiveTheme.ticker.subscribe(callback);
+  var tk = window.ImmersiveTheme && window.ImmersiveTheme.ticker;
+  return tk ? tk.subscribe(callback) : callback;
 }
 
 function unsubscribeFromTicker(callback) {
-  window.ImmersiveTheme.ticker.unsubscribe(callback);
+  var tk = window.ImmersiveTheme && window.ImmersiveTheme.ticker;
+  if (tk) tk.unsubscribe(callback);
 }
 
 // Animation handle tracking for cleanup

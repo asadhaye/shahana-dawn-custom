@@ -1,4 +1,515 @@
 /**
+ * Immersive Theme State Manager
+ *
+ * Centralized state management for all immersive theme features.
+ * Replaces direct localStorage/sessionStorage access and fragmented globals.
+ *
+ * @see https://shopify.dev/docs/themes/best-practices/javascript
+ */
+
+(function () {
+  'use strict';
+
+  // Storage prefixes
+  var LOCAL_PREFIX = 'immersive:';
+  var SESSION_PREFIX = 'immersive_session:';
+
+  /**
+   * Default state schema
+   */
+  var defaultState = {
+    immersive: {
+      browsing: {
+        signals: [], // User behavior for recommendations (persistent)
+      },
+      ui: {
+        fabPosition: null, // { x, y } - FAB position (persistent)
+        filters: {}, // { [collectionHandle]: filterState } (session-only)
+      },
+      guided: {
+        dismissedGlobal: false, // One-time dismissal (persistent)
+        dismissedRooms: {}, // Room-specific dismissals (session-only)
+      },
+      recommendations: {
+        dismissedRooms: {}, // Room rec dismissals (session-only)
+      },
+    },
+    wishlist: {
+      items: [], // Array of product handles/IDs (persistent)
+    },
+    onboarding: {
+      seen: false, // Onboarding completion flag (persistent)
+    },
+    preferredMode: null, // '3d' or null (persistent)
+  };
+
+  /**
+   * Persistence configuration per state path
+   * 'local' = localStorage (persistent across sessions)
+   * 'session' = sessionStorage (reset each visit)
+   * null = in-memory only
+   */
+  var persistenceConfig = {
+    'immersive.browsing.signals': 'local',
+    'immersive.ui.fabPosition': 'local',
+    'immersive.ui.filters': 'session',
+    'immersive.guided.dismissedGlobal': 'local',
+    'immersive.guided.dismissedRooms': 'session',
+    'immersive.recommendations.dismissedRooms': 'session',
+    'wishlist.items': 'local',
+    'onboarding.seen': 'local',
+    preferredMode: 'local',
+  };
+
+  /**
+   * Current state (in-memory source of truth)
+   */
+  var state = JSON.parse(JSON.stringify(defaultState));
+
+  /**
+   * Subscribers map: path -> Set<callback>
+   */
+  var subscribers = new Map();
+
+  /**
+   * Get value at path in state object
+   * @param {string} path - Dot-notation path (e.g., 'immersive.ui.filters')
+   * @returns {*} Value at path or undefined
+   */
+  function get(path) {
+    var parts = path.split('.');
+    var current = state;
+    for (var i = 0; i < parts.length; i++) {
+      if (current == null) return undefined;
+      current = current[parts[i]];
+    }
+    return current;
+  }
+
+  /**
+   * Set value at path in state object
+   * @param {string} path - Dot-notation path
+   * @param {*} value - Value to set
+   * @param {Object} options - Options object
+   * @param {boolean} [options.persist=true] - Whether to persist to storage
+   */
+  function set(path, value, options) {
+    options = options || {};
+    var parts = path.split('.');
+    var current = state;
+
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (current[parts[i]] == null) {
+        current[parts[i]] = {};
+      }
+      current = current[parts[i]];
+    }
+
+    var oldValue = current[parts[parts.length - 1]];
+    current[parts[parts.length - 1]] = value;
+
+    // Persist if configured
+    if (options.persist !== false && persistenceConfig[path]) {
+      persist(path);
+    }
+
+    // Notify subscribers
+    notify(path, value, oldValue);
+  }
+
+  /**
+   * Persist state path to browser storage
+   * @param {string} path - State path to persist
+   */
+  function persist(path) {
+    var storageType = persistenceConfig[path];
+    if (!storageType) return;
+
+    var value = get(path);
+    var key = (storageType === 'local' ? LOCAL_PREFIX : SESSION_PREFIX) + path;
+
+    try {
+      if (value === null || value === undefined) {
+        (storageType === 'local' ? localStorage : sessionStorage).removeItem(key);
+      } else {
+        (storageType === 'local' ? localStorage : sessionStorage).setItem(key, JSON.stringify(value));
+      }
+    } catch (e) {
+      if (window.__IMMERSIVE_DEV__) {
+        console.warn('[Immersive StateManager] Storage write failed:', path, e);
+      }
+    }
+  }
+
+  /**
+   * Load state from browser storage
+   * @param {string} path - State path to load
+   * @returns {boolean} True if loaded successfully
+   */
+  function load(path) {
+    var storageType = persistenceConfig[path];
+    if (!storageType) return false;
+
+    var key = (storageType === 'local' ? LOCAL_PREFIX : SESSION_PREFIX) + path;
+
+    try {
+      var raw = (storageType === 'local' ? localStorage : sessionStorage).getItem(key);
+      if (raw !== null) {
+        var value = JSON.parse(raw);
+        set(path, value, { persist: false });
+        return true;
+      }
+    } catch (e) {
+      if (window.__IMMERSIVE_DEV__) {
+        console.warn('[Immersive StateManager] Storage read failed:', path, e);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Subscribe to state changes at a path
+   * @param {string} path - State path to watch
+   * @param {Function} callback - Callback invoked on change
+   * @returns {Function} Unsubscribe function
+   */
+  function subscribe(path, callback) {
+    if (!subscribers.has(path)) {
+      subscribers.set(path, new Set());
+    }
+    subscribers.get(path).add(callback);
+
+    return function unsubscribe() {
+      var subs = subscribers.get(path);
+      if (subs) {
+        subs.delete(callback);
+        if (subs.size === 0) {
+          subscribers.delete(path);
+        }
+      }
+    };
+  }
+
+  /**
+   * Notify subscribers of state change
+   * @param {string} path - Changed path
+   * @param {*} newValue - New value
+   * @param {*} oldValue - Old value
+   */
+  function notify(path, newValue, oldValue) {
+    var subs = subscribers.get(path);
+    if (subs) {
+      subs.forEach(function (cb) {
+        try {
+          cb(newValue, oldValue, path);
+        } catch (e) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.error('[Immersive StateManager] Subscriber error:', e);
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Migrate legacy storage keys to new schema
+   */
+  function migrateLegacyKeys() {
+    var migrations = [
+      // Browsing signals (localStorage)
+      {
+        oldKey: 'immersive_browsing_signals',
+        newPath: 'immersive.browsing.signals',
+        storage: 'local',
+        transform: function (val) {
+          return val;
+        },
+      },
+      // FAB position (localStorage)
+      {
+        oldKey: 'immersive_fab_position',
+        newPath: 'immersive.ui.fabPosition',
+        storage: 'local',
+        transform: function (val) {
+          return val;
+        },
+      },
+      // Wishlist items (localStorage)
+      {
+        oldKey: 'immersive_wishlist_items',
+        newPath: 'wishlist.items',
+        storage: 'local',
+        transform: function (val) {
+          return val;
+        },
+      },
+      // Onboarding seen (localStorage)
+      {
+        oldKey: 'immersive_onboarding_seen',
+        newPath: 'onboarding.seen',
+        storage: 'local',
+        transform: function (val) {
+          return !!val;
+        },
+      },
+      // Preferred mode (localStorage)
+      {
+        oldKey: 'immersive_preferred_mode',
+        newPath: 'preferredMode',
+        storage: 'local',
+        transform: function (val) {
+          return val === '3d' ? '3d' : null;
+        },
+      },
+    ];
+
+    migrations.forEach(function (migration) {
+      try {
+        var storage = migration.storage === 'local' ? localStorage : sessionStorage;
+        var raw = storage.getItem(migration.oldKey);
+        if (raw !== null) {
+          var value = JSON.parse(raw);
+          var transformed = migration.transform(value);
+          set(migration.newPath, transformed, { persist: true });
+          // Remove old key after successful migration
+          storage.removeItem(migration.oldKey);
+          if (window.__IMMERSIVE_DEV__) {
+            console.log('[Immersive StateManager] Migrated:', migration.oldKey, '->', migration.newPath);
+          }
+        }
+      } catch (e) {
+        if (window.__IMMERSIVE_DEV__) {
+          console.warn('[Immersive StateManager] Migration failed:', migration.oldKey, e);
+        }
+      }
+    });
+  }
+
+  /**
+   * Initialize state manager
+   * Loads persisted state and migrates legacy keys
+   */
+  function init() {
+    // Migrate legacy keys first
+    migrateLegacyKeys();
+
+    // Load all persisted state paths
+    Object.keys(persistenceConfig).forEach(function (path) {
+      load(path);
+    });
+
+    if (window.__IMMERSIVE_DEV__) {
+      console.log('[Immersive StateManager] Initialized', state);
+    }
+  }
+
+  /**
+   * Reset state to defaults (for testing/debugging)
+   */
+  function reset() {
+    state = JSON.parse(JSON.stringify(defaultState));
+    // Clear all storage
+    Object.keys(localStorage).forEach(function (key) {
+      if (key.indexOf(LOCAL_PREFIX) === 0) {
+        localStorage.removeItem(key);
+      }
+    });
+    Object.keys(sessionStorage).forEach(function (key) {
+      if (key.indexOf(SESSION_PREFIX) === 0) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  }
+
+  /**
+   * Get full state snapshot (for debugging)
+   */
+  function getState() {
+    return JSON.parse(JSON.stringify(state));
+  }
+
+  // Expose API
+  window.ImmersiveTheme = window.ImmersiveTheme || {};
+  window.ImmersiveTheme.state = {
+    get: get,
+    set: set,
+    subscribe: subscribe,
+    init: init,
+    reset: reset,
+    getState: getState,
+  };
+
+  // Auto-initialize on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+/**
+ * Immersive Theme Tick Manager
+ *
+ * Centralized requestAnimationFrame loop for all animations.
+ * Replaces scattered rAF calls to prevent battery drain, jank, and leaks.
+ *
+ * @see https://shopify.dev/docs/themes/best-practices/optimize-your-javascript
+ */
+
+(function() {
+  'use strict';
+
+  var subscribers = new Set();
+  var isRunning = false;
+  var frameId = null;
+  var lastTimestamp = 0;
+
+  /**
+   * Main animation loop
+   * @param {number} timestamp - DOMHighResTimeStamp from rAF
+   */
+  function loop(timestamp) {
+    // Calculate delta time (ms since last frame)
+    var deltaTime = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    // Notify all subscribers
+    subscribers.forEach(function(fn) {
+      try {
+        fn(timestamp, deltaTime);
+      } catch (e) {
+        if (window.__IMMERSIVE_DEV__) {
+          console.error('[Immersive TickManager] Subscriber error:', e);
+        }
+      }
+    });
+
+    // Continue loop if there are subscribers
+    if (subscribers.size > 0) {
+      frameId = requestAnimationFrame(loop);
+    } else {
+      isRunning = false;
+      frameId = null;
+    }
+  }
+
+  /**
+   * Start the animation loop
+   */
+  function start() {
+    if (isRunning) return;
+    isRunning = true;
+    lastTimestamp = performance.now();
+    frameId = requestAnimationFrame(loop);
+
+    if (window.__IMMERSIVE_DEV__) {
+      console.log('[Immersive TickManager] Started');
+    }
+  }
+
+  /**
+   * Stop the animation loop
+   */
+  function stop() {
+    if (!isRunning) return;
+    isRunning = false;
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId);
+      frameId = null;
+    }
+
+    if (window.__IMMERSIVE_DEV__) {
+      console.log('[Immersive TickManager] Stopped');
+    }
+  }
+
+  /**
+   * Subscribe a callback to the tick loop
+   * @param {Function} fn - Callback receiving (timestamp, deltaTime)
+   * @returns {Function} Unsubscribe function
+   */
+  function subscribe(fn) {
+    if (typeof fn !== 'function') {
+      if (window.__IMMERSIVE_DEV__) {
+        console.warn('[Immersive TickManager] subscribe() requires a function');
+      }
+      return function() {};
+    }
+
+    subscribers.add(fn);
+
+    if (!isRunning) {
+      start();
+    }
+
+    // Return unsubscribe function
+    return function unsubscribe() {
+      subscribers.delete(fn);
+
+      // Auto-stop if no more subscribers
+      if (subscribers.size === 0 && isRunning) {
+        stop();
+      }
+    };
+  }
+
+  /**
+   * Check if the tick manager is running
+   * @returns {boolean}
+   */
+  function isRunningState() {
+    return isRunning;
+  }
+
+  /**
+   * Get number of active subscribers
+   * @returns {number}
+   */
+  function getSubscriberCount() {
+    return subscribers.size;
+  }
+
+  /**
+   * Pause the tick loop temporarily (for debugging/testing)
+   */
+  function pause() {
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId);
+      frameId = null;
+    }
+  }
+
+  /**
+   * Resume the tick loop after pause
+   */
+  function resume() {
+    if (subscribers.size > 0 && !isRunning) {
+      start();
+    }
+  }
+
+  // Expose API
+  window.ImmersiveTheme = window.ImmersiveTheme || {};
+  window.ImmersiveTheme.ticker = {
+    subscribe: subscribe,
+    start: start,
+    stop: stop,
+    isRunning: isRunningState,
+    getCount: getSubscriberCount,
+    pause: pause,
+    resume: resume
+  };
+
+  // Auto-start on DOM ready if needed
+  // (The loop will auto-stop when no subscribers remain)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      // Lazy start - only when first subscriber joins
+    });
+  }
+
+})();
+/**
  * immersive-core.js — Shahana Dawn Immersive Store
  * Core module: WebGL rendering, room navigation, state management,
  * panel system, product/collection panels, wishlist, and event tracking.
@@ -6,6 +517,13 @@
  * This file MUST load before immersive-features.js.
  * Both files replace the former monolithic immersive-store.js.
  */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIFIED NAMESPACE — single source of truth for all immersive state & animation
+// ─────────────────────────────────────────────────────────────────────────────
+window.ImmersiveTheme = window.ImmersiveTheme || {};
+window.ShahanaImmersive = window.ShahanaImmersive || window.ImmersiveTheme;
+var Immersive = window.ImmersiveTheme;
 
 // No-op stub for analytics tracking (may be overridden by external analytics)
 if (typeof window.trackImmersiveEvent === 'undefined') {
@@ -192,87 +710,130 @@ var ListenerRegistry = {
 // IMMERSIVE STORE NAMESPACE - Prevent global pollution
 // ─────────────────────────────────────────────────────────────────────────────
 if (!window.ShahanaImmersive) {
-  window.ShahanaImmersive = {
-    store: {
-      get: function (key, fallback) {
-        try {
-          var raw = localStorage.getItem(key);
-          if (raw === null) return fallback;
-          return JSON.parse(raw);
-        } catch (e) {
-          return fallback;
-        }
-      },
-      set: function (key, value) {
-        try {
-          localStorage.setItem(key, JSON.stringify(value));
-          return true;
-        } catch (e) {
-          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] localStorage write failed:', key, e);
-          return false;
-        }
-      },
-      remove: function (key) {
-        try {
-          localStorage.removeItem(key);
-        } catch (e) {}
-      },
-    },
-    graphics: {
-      renderer: null,
-      scene: null,
-      camera: null,
-      planeMesh: null,
-      uniforms: null,
-    },
-    room: {
-      current: null,
-      subMode: null,
-      transitioning: false,
-    },
-    cache: {
-      textures: [],
-      content: {},
-      gallery: {},
-    },
-    settings: {
-      reduceMotion: false,
-      isMobile: false,
-      isTablet: false,
-      textureQuality: 1.0,
-      targetFPS: 60,
-      interactionEnabled: false,
-    },
-    search: {
-      activeIndex: -1,
-      results: [],
-      debounceTimer: null,
-      abortController: null,
-    },
-    gesture: {
-      lastRoomTransition: 0,
-      cooldown: 600,
-      roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'],
-    },
-    quickAdd: {
-      modal: null,
-      trigger: null,
-    },
-    hotspot: {
-      elements: [],
-      focusedIndex: -1,
-    },
-    device: {
-      isMobile: false,
-      isTablet: false,
-      isLowEnd: false,
-    },
-    layout: {
-      registry: {},
-      current: {},
-    },
-  };
+  window.ShahanaImmersive = window.ImmersiveTheme;
 }
+
+// Only add sub-objects if they don't already exist (preserve StateManager data)
+Immersive.store = Immersive.store || {};
+Immersive.graphics = Immersive.graphics || {
+  renderer: null,
+  scene: null,
+  camera: null,
+  planeMesh: null,
+  uniforms: null,
+};
+Immersive.room = Immersive.room || {
+  current: null,
+  subMode: null,
+  transitioning: false,
+};
+Immersive.cache = Immersive.cache || {
+  textures: [],
+  content: {},
+  gallery: {},
+};
+Immersive.settings = Immersive.settings || {
+  reduceMotion: false,
+  isMobile: false,
+  isTablet: false,
+  textureQuality: 1.0,
+  targetFPS: 60,
+  interactionEnabled: false,
+};
+Immersive.search = Immersive.search || {
+  activeIndex: -1,
+  results: [],
+  debounceTimer: null,
+  abortController: null,
+};
+Immersive.gesture = Immersive.gesture || {
+  lastRoomTransition: 0,
+  cooldown: 600,
+  roomSequence: ['storefront', 'lounge', 'designer_houses', 'occasions', 'featured_collections'],
+};
+Immersive.quickAdd = Immersive.quickAdd || {
+  modal: null,
+  trigger: null,
+};
+Immersive.hotspot = Immersive.hotspot || {
+  elements: [],
+  focusedIndex: -1,
+};
+Immersive.device = Immersive.device || {
+  isMobile: false,
+  isTablet: false,
+  isLowEnd: false,
+};
+Immersive.layout = Immersive.layout || {
+  registry: {},
+  current: {},
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE HELPERS — route through ImmersiveTheme.state
+// ─────────────────────────────────────────────────────────────────────────────
+function _sm() { return window.ImmersiveTheme && window.ImmersiveTheme.state; }
+
+function saveImmersiveSessionState(patch) {
+  var sm = _sm(); if (!sm) return;
+  var current = sm.get('immersive.session.state') || {};
+  sm.set('immersive.session.state', Object.assign({}, current, patch), { persist: 'session' });
+}
+
+function loadImmersiveSessionState() {
+  var sm = _sm(); if (!sm) return {};
+  return sm.get('immersive.session.state') || {};
+}
+
+function clearImmersiveSessionState() {
+  var sm = _sm(); if (!sm) return;
+  sm.set('immersive.session.state', {}, { persist: 'session' });
+}
+
+function _saveNavHistory(history) {
+  var sm = _sm(); if (!sm) return;
+  sm.set('immersive.navigation.history', history || [], { persist: 'session' });
+}
+
+function _loadNavHistory() {
+  var sm = _sm(); if (!sm) return [];
+  return sm.get('immersive.navigation.history') || [];
+}
+
+function hasSeenOnboarding() {
+  var sm = _sm(); if (!sm) return false;
+  return !!sm.get('onboarding.seen');
+}
+
+function markOnboardingSeen() {
+  var sm = _sm(); if (!sm) return;
+  sm.set('onboarding.seen', true, { persist: 'local' });
+}
+
+function loadBrowsingSignals() {
+  var sm = _sm(); if (!sm) return [];
+  var v = sm.get('immersive.browsing.signals');
+  return Array.isArray(v) ? v : [];
+}
+
+function saveBrowsingSignals(signals) {
+  var sm = _sm(); if (!sm) return;
+  sm.set('immersive.browsing.signals', signals || [], { persist: 'local' });
+}
+
+function isRoomDismissed(roomKey) {
+  var sm = _sm(); if (!sm) return false;
+  var map = sm.get('immersive.recommendations.dismissedRooms') || {};
+  return !!map[roomKey];
+}
+
+function dismissRoom(roomKey) {
+  var sm = _sm(); if (!sm) return;
+  var map = sm.get('immersive.recommendations.dismissedRooms') || {};
+  map[roomKey] = true;
+  sm.set('immersive.recommendations.dismissedRooms', map, { persist: 'session' });
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEVICE OPTIMIZATION
@@ -3267,31 +3828,15 @@ var activeHotspots = [];
 var navigationHistory = [];
 
 function saveState(patch) {
-  try {
-    var current = JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
-    sessionStorage.setItem(STATE_KEY, JSON.stringify(Object.assign(current, patch)));
-  } catch (e) {
-    if (window.__IMMERSIVE_DEV__) {
-      console.warn('[Immersive] saveState failed:', e);
-    }
-  }
+  saveImmersiveSessionState(patch);
 }
 
 function loadState() {
-  try {
-    return JSON.parse(sessionStorage.getItem(STATE_KEY) || '{}');
-  } catch (e) {
-    if (window.__IMMERSIVE_DEV__) {
-      console.warn('[Immersive] loadState failed:', e);
-    }
-    return {};
-  }
+  return loadImmersiveSessionState();
 }
 
 function clearState() {
-  try {
-    sessionStorage.removeItem(STATE_KEY);
-  } catch (e) {}
+  clearImmersiveSessionState();
 }
 
 function writeImmersivePreference(storage) {
@@ -3325,7 +3870,7 @@ function pushNavigationHistory(roomKey) {
   if (_navigationHistory.length > 20) {
     _navigationHistory.shift();
   }
-  saveNavigationHistory();
+  _saveNavHistory(_navigationHistory);
   updateBackButton();
 }
 
@@ -3335,7 +3880,7 @@ function popNavigationHistory() {
   }
   if (_navigationHistory.length > 1) {
     _navigationHistory.pop();
-    saveNavigationHistory();
+    _saveNavHistory(_navigationHistory);
     updateBackButton();
     var previousRoom = _navigationHistory[_navigationHistory.length - 1];
     if (window.__IMMERSIVE_DEV__) {
@@ -3361,12 +3906,10 @@ function initWishlist() {
 }
 
 function saveNavigationHistory() {
-  try {
-    sessionStorage.setItem(NAVIGATION_HISTORY_KEY, JSON.stringify(_navigationHistory));
-  } catch (e) {}
+  _saveNavHistory(_navigationHistory);
 }
 
-function loadNavigationHistory() {
+function _loadNavHistory() {
   try {
     var stored = sessionStorage.getItem(NAVIGATION_HISTORY_KEY);
     _navigationHistory = stored ? JSON.parse(stored) : [];
@@ -3390,7 +3933,7 @@ function updateBackButton() {
 function initBackButton() {
   var backBtn = document.querySelector('[data-immersive-back]');
   if (!backBtn) return;
-  loadNavigationHistory();
+  _navigationHistory = _loadNavHistory();
   updateBackButton();
   backBtn.addEventListener('click', function () {
     if (window.__IMMERSIVE_DEV__) {
@@ -3710,7 +4253,7 @@ function preloadRoom(roomKey) {
 
 function showWelcomeToast() {
   try {
-    if (localStorage.getItem(ONBOARDING_KEY)) return;
+    if (hasSeenOnboarding()) return;
   } catch (e) {}
   // Issue 25: If onboarding overlay is present and enabled, skip welcome toast (redundant)
   var _ob = document.getElementById('immersive-onboarding');
@@ -4395,8 +4938,23 @@ function initTiltControlToggle() {
   });
 }
 
-function animate() {
-  animationFrameId = requestAnimationFrame(animate);
+// ─────────────────────────────────────────────────────────────────────────────
+// TICKER — main animation loop via ImmersiveTheme.ticker
+// ─────────────────────────────────────────────────────────────────────────────
+var ticker = window.ImmersiveTheme && window.ImmersiveTheme.ticker;
+var unsubscribeAnimate = null;
+
+function startAnimate() {
+  if (!ticker) return;
+  if (unsubscribeAnimate) return;
+  unsubscribeAnimate = ticker.subscribe(function (ts, dt) { animateFrame(ts, dt); });
+}
+
+function stopAnimate() {
+  if (unsubscribeAnimate) { unsubscribeAnimate(); unsubscribeAnimate = null; }
+}
+
+function animateFrame(timestamp, delta) {
   if (!uniforms) return;
 
   mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
@@ -5265,12 +5823,12 @@ function fetchSectionHtml(path, sectionId, extraParams) {
 function recordBrowsingSignal(roomKey) {
   if (!roomKey) return;
   try {
-    var raw = localStorage.getItem('immersive_browsing_signals');
+    var raw = loadBrowsingSignals();
     var signals = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(signals)) signals = [];
     signals.push(roomKey);
     if (signals.length > 50) signals = signals.slice(signals.length - 50);
-    localStorage.setItem('immersive_browsing_signals', JSON.stringify(signals));
+    saveBrowsingSignals(signals);
   } catch (e) {}
 }
 
@@ -5325,7 +5883,7 @@ function evaluateRoomRecommendation() {
   var rec = getRecommendation(_browsingContext);
   if (!rec) return;
   try {
-    if (sessionStorage.getItem('immersive_rec_dismissed_' + rec.roomKey)) return;
+    if (isRoomDismissed(rec.roomKey)) return;
   } catch (e) {}
 }
 
@@ -5769,116 +6327,36 @@ function safeJSONParse(str, fallback) {
 // ─────────────────────────────────────────────────────────────
 // Unified State Manager Integration
 // ─────────────────────────────────────────────────────────────
-function initStateManager() {
-  if (!window.ImmersiveTheme) {
-    window.ImmersiveTheme = {};
-  }
-  if (!window.ImmersiveTheme.state) {
-    window.ImmersiveTheme.state = {
-      _data: {},
-      get: function (key) {
-        return this._data[key];
-      },
-      set: function (key, value) {
-        this._data[key] = value;
-        try {
-          localStorage.setItem('immersive_state_' + key, JSON.stringify(value));
-        } catch (e) {}
-      },
-      load: function (key, defaultValue) {
-        try {
-          var stored = localStorage.getItem('immersive_state_' + key);
-          if (stored) {
-            this._data[key] = JSON.parse(stored);
-            return this._data[key];
-          }
-        } catch (e) {}
-        this._data[key] = defaultValue;
-        return defaultValue;
-      },
-    };
-  }
-  return window.ImmersiveTheme.state;
-}
+// State manager (immersive-state-manager.js) is loaded before this file
+// and defines window.ImmersiveTheme.state. No fallback shim needed.
 
-// Initialize state manager immediately
-initStateManager();
-
-// State accessor helpers
+// State accessor helpers — thin wrappers over ImmersiveTheme.state
 function getState(key, defaultValue) {
-  return window.ImmersiveTheme.state.get(key) !== undefined
-    ? window.ImmersiveTheme.state.get(key)
-    : window.ImmersiveTheme.state.load(key, defaultValue);
+  var sm = window.ImmersiveTheme && window.ImmersiveTheme.state;
+  if (!sm) return defaultValue;
+  return sm.get(key) !== undefined ? sm.get(key) : sm.load(key, defaultValue);
 }
 
 function setState(key, value) {
-  window.ImmersiveTheme.state.set(key, value);
+  var sm = window.ImmersiveTheme && window.ImmersiveTheme.state;
+  if (sm) sm.set(key, value);
 }
 
 // ─────────────────────────────────────────────────────────────
 // Unified Ticker Manager Integration
 // ─────────────────────────────────────────────────────────────
-function initTicker() {
-  if (!window.ImmersiveTheme) {
-    window.ImmersiveTheme = {};
-  }
-  if (!window.ImmersiveTheme.ticker) {
-    window.ImmersiveTheme.ticker = {
-      _subscribers: [],
-      _running: false,
-      _rafId: null,
-      subscribe: function (callback) {
-        this._subscribers.push(callback);
-        if (!this._running) {
-          this._start();
-        }
-        return callback;
-      },
-      unsubscribe: function (callback) {
-        var idx = this._subscribers.indexOf(callback);
-        if (idx > -1) {
-          this._subscribers.splice(idx, 1);
-        }
-        if (this._subscribers.length === 0 && this._running) {
-          this._stop();
-        }
-      },
-      _start: function () {
-        var self = this;
-        this._running = true;
-        function tick() {
-          if (!self._running) return;
-          for (var i = 0; i < self._subscribers.length; i++) {
-            try {
-              self._subscribers[i]();
-            } catch (e) {}
-          }
-          self._rafId = requestAnimationFrame(tick);
-        }
-        this._rafId = requestAnimationFrame(tick);
-      },
-      _stop: function () {
-        this._running = false;
-        if (this._rafId) {
-          cancelAnimationFrame(this._rafId);
-          this._rafId = null;
-        }
-      },
-    };
-  }
-  return window.ImmersiveTheme.ticker;
-}
+// Tick manager (tick-manager.js) is loaded before this file
+// and defines window.ImmersiveTheme.ticker. No fallback shim needed.
 
-// Initialize ticker immediately
-initTicker();
-
-// Ticker accessor helpers
+// Ticker accessor helpers — thin wrappers over ImmersiveTheme.ticker
 function subscribeToTicker(callback) {
-  return window.ImmersiveTheme.ticker.subscribe(callback);
+  var tk = window.ImmersiveTheme && window.ImmersiveTheme.ticker;
+  return tk ? tk.subscribe(callback) : callback;
 }
 
 function unsubscribeFromTicker(callback) {
-  window.ImmersiveTheme.ticker.unsubscribe(callback);
+  var tk = window.ImmersiveTheme && window.ImmersiveTheme.ticker;
+  if (tk) tk.unsubscribe(callback);
 }
 
 // Animation handle tracking for cleanup
