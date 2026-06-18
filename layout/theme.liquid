@@ -631,8 +631,6 @@
     {%- comment -%}theme-check-disable ParserBlockingScript{%- endcomment -%}
     {%- if template == 'page.immersive' -%}
       <script src="{{ 'three.min.js' | asset_url }}"></script>
-      <script src="{{ 'immersive-state-manager.js' | asset_url }}"></script>
-      <script src="{{ 'tick-manager.js' | asset_url }}"></script>
       <script src="{{ 'immersive-bundle.min.js' | asset_url }}"></script>
       <script src="{{ 'immersive-init.js' | asset_url }}"></script>
     {%- endif -%}

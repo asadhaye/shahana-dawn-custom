@@ -1,34 +1,40 @@
 #!/bin/bash
 # build-immersive-bundle.sh
-# Concatenates immersive-core.js + immersive-features.js into immersive-bundle.js
+# Concatenates all immersive source files into immersive-bundle.js
 # Optionally minifies if terser is available.
 # Run this after any change to any source file.
-# Note: infinite-gallery.js has been inlined into immersive-core.js and is no longer separate.
+#
+# Order matters: state-manager → tick-manager → core → features
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STATE_MANAGER="$SCRIPT_DIR/immersive-state-manager.js"
+TICK_MANAGER="$SCRIPT_DIR/tick-manager.js"
 CORE="$SCRIPT_DIR/immersive-core.js"
 FEATURES="$SCRIPT_DIR/immersive-features.js"
 OUTPUT="$SCRIPT_DIR/immersive-bundle.js"
 OUTPUT_MIN="$SCRIPT_DIR/immersive-bundle.min.js"
 
-if [ ! -f "$CORE" ]; then
-  echo "ERROR: $CORE not found"
-  exit 1
-fi
-
-if [ ! -f "$FEATURES" ]; then
-  echo "ERROR: $FEATURES not found"
-  exit 1
-fi
+for f in "$STATE_MANAGER" "$TICK_MANAGER" "$CORE" "$FEATURES"; do
+  if [ ! -f "$f" ]; then
+    echo "ERROR: $f not found"
+    exit 1
+  fi
+done
 
 echo "Building immersive-bundle.js..."
+echo "  + $(basename "$STATE_MANAGER") ($(wc -l < "$STATE_MANAGER") lines)"
+echo "  + $(basename "$TICK_MANAGER") ($(wc -l < "$TICK_MANAGER") lines)"
 echo "  + $(basename "$CORE") ($(wc -l < "$CORE") lines)"
 echo "  + $(basename "$FEATURES") ($(wc -l < "$FEATURES") lines)"
 
-# Use printf to ensure a newline separator between files
-cat "$CORE" > "$OUTPUT"
+# Concatenate all files with newline separators
+cat "$STATE_MANAGER" > "$OUTPUT"
+printf '\n' >> "$OUTPUT"
+cat "$TICK_MANAGER" >> "$OUTPUT"
+printf '\n' >> "$OUTPUT"
+cat "$CORE" >> "$OUTPUT"
 printf '\n' >> "$OUTPUT"
 cat "$FEATURES" >> "$OUTPUT"
 
