@@ -147,7 +147,7 @@
         "onboarding_show_once": true,
         "low_stock_threshold": 3,
         "guided_featured_wing": "designer_houses",
-        "fab_icon_svg": "<svg viewbox=\"0 0 40 40\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><text x=\"50%\" y=\"54%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"serif\" font-size=\"22\" font-weight=\"700\" fill=\"#d4af37\">S</text></svg>",
+        "fab_icon_svg": "",
         "transition_style": "crossfade",
         "designer_houses_layout": "codex-list",
         "occasions_layout": "narrative-story",

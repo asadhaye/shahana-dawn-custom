@@ -7,20 +7,48 @@
 {%- capture storefront_depth_desktop -%}{%- if section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 1440, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
 {%- capture storefront_depth_mobile -%}{%- if section.settings.storefront_depth_map_mobile != blank -%}{{ section.settings.storefront_depth_map_mobile | image_url: width: 900, format: 'webp', quality: 75 }}{%- elsif section.settings.storefront_depth_map != blank -%}{{ section.settings.storefront_depth_map | image_url: width: 900, format: 'webp', quality: 75 }}{%- endif -%}{%- endcapture -%}
 
-{%- comment %}theme-check-disable AssetPreload{%- endcomment -%}
+{%- comment %}theme-check-disable AssetPreload{%- endcomment %}
 {%- if storefront_base_desktop != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_base_desktop }}" crossorigin="anonymous" fetchpriority="high" media="(min-width: 750px)">
+  <link
+    rel="preload"
+    as="image"
+    href="{{ storefront_base_desktop }}"
+    crossorigin="anonymous"
+    fetchpriority="high"
+    media="(min-width: 750px)"
+  >
 {%- endif -%}
 {%- if storefront_base_mobile != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_base_mobile }}" crossorigin="anonymous" fetchpriority="high" media="(max-width: 749px)">
+  <link
+    rel="preload"
+    as="image"
+    href="{{ storefront_base_mobile }}"
+    crossorigin="anonymous"
+    fetchpriority="high"
+    media="(max-width: 749px)"
+  >
 {%- endif -%}
 {%- if storefront_depth_desktop != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_depth_desktop }}" crossorigin="anonymous" fetchpriority="high" media="(min-width: 750px)">
+  <link
+    rel="preload"
+    as="image"
+    href="{{ storefront_depth_desktop }}"
+    crossorigin="anonymous"
+    fetchpriority="high"
+    media="(min-width: 750px)"
+  >
 {%- endif -%}
 {%- if storefront_depth_mobile != blank -%}
-  <link rel="preload" as="image" href="{{ storefront_depth_mobile }}" crossorigin="anonymous" fetchpriority="high" media="(max-width: 749px)">
+  <link
+    rel="preload"
+    as="image"
+    href="{{ storefront_depth_mobile }}"
+    crossorigin="anonymous"
+    fetchpriority="high"
+    media="(max-width: 749px)"
+  >
 {%- endif -%}
-{%- comment %}theme-check-enable AssetPreload{%- endcomment -%}
+{%- comment %}theme-check-enable AssetPreload{%- endcomment %}
 
 {% liquid
   assign base_url = ''
@@ -51,10 +79,18 @@
   data-low-stock-threshold="{{ section.settings.low_stock_threshold | default: 5 }}"
   data-guided-featured-wing="{{ section.settings.guided_featured_wing | default: 'designer_houses' | escape }}"
   data-gallery-layout="{{ section.settings.gallery_layout | default: 'vertical' }}"
-  data-designer-houses-layout="{{ section.settings.designer_houses_layout | default: 'infinite-drag-gallery' }}"
+  data-designer-houses-layout="{{ section.settings.designer_houses_layout | default: default: 'infinite-drag-gallery' }}"
   data-occasions-layout="{{ section.settings.occasions_layout | default: 'scroll-story' }}"
   data-featured-collections-layout="{{ section.settings.featured_collections_layout | default: 'masonry-featured' }}"
 >
+  {% comment %} Pass Liquid configuration to JavaScript {% endcomment %}
+  <div
+    class="immersive-config"
+    style="display:none;"
+    data-config="{{ section.settings | json }}"
+    data-routes="{{ routes | json }}"
+    data-cart-count="{{ cart.item_count }}"
+  ></div>
   <div
     class="immersive-store__canvas-wrapper"
     data-base-url="{{ base_url }}"
@@ -151,7 +187,14 @@
             </text>
           </svg>
         {%- elsif section.settings.fab_icon_svg != blank -%}
-          {{ section.settings.fab_icon_svg | raw }}
+          <img
+            src="{{ section.settings.fab_icon_svg | image_url: width: 80 }}"
+            alt=""
+            aria-hidden="true"
+            width="40"
+            height="40"
+            loading="eager"
+          >
         {%- else -%}
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="var(--luxury-font-heading, serif)" font-size="22" font-weight="700" fill="currentColor">S</text>
@@ -1057,7 +1100,15 @@
       class="immersive-promo-code-overlay__close"
       aria-label="{{ 'sections.immersive_store.close' | t }}"
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y1="18"/>
       </svg>
     </button>
@@ -1226,13 +1277,19 @@
     margin-bottom: 2rem;
     opacity: 0;
     object-fit: contain;
-    filter: drop-shadow(0 4px 24px rgba(0,0,0,0.15));
+    filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.15));
     animation: immersive-loader-logo-in 0.6s ease 0.15s forwards;
   }
 
   @keyframes immersive-loader-logo-in {
-    from { opacity: 0; transform: scale(0.92); }
-    to   { opacity: 1; transform: scale(1); }
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .immersive-initial-loader__spinner {
@@ -1245,7 +1302,9 @@
   }
 
   @keyframes immersive-loader-spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -4691,11 +4750,10 @@
       "info": "Enter a single letter or short symbol for the FAB. Overridden by the SVG setting below if both are set."
     },
     {
-      "type": "html",
+      "type": "image_picker",
       "id": "fab_icon_svg",
-      "label": "FAB icon SVG (advanced)",
-      "default": "",
-      "info": "Paste full custom SVG markup to completely replace the text icon. Useful for brand logos or custom monograms."
+      "label": "FAB icon image",
+      "info": "Upload an SVG or PNG to replace the text icon. Recommended: SVG with transparent background."
     },
     {
       "type": "header",

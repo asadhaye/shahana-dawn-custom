@@ -12,6 +12,149 @@ function escapeHtml(value) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Safe JSON parsing wrapper
+// ─────────────────────────────────────────────────────────────
+function safeJSONParse(str, fallback) {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return fallback !== undefined ? fallback : null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Unified State Manager Integration
+// ─────────────────────────────────────────────────────────────
+function initStateManager() {
+  if (!window.ImmersiveTheme) {
+    window.ImmersiveTheme = {};
+  }
+  if (!window.ImmersiveTheme.state) {
+    window.ImmersiveTheme.state = {
+      _data: {},
+      get: function (key) {
+        return this._data[key];
+      },
+      set: function (key, value) {
+        this._data[key] = value;
+        try {
+          localStorage.setItem('immersive_state_' + key, JSON.stringify(value));
+        } catch (e) {}
+      },
+      load: function (key, defaultValue) {
+        try {
+          var stored = localStorage.getItem('immersive_state_' + key);
+          if (stored) {
+            this._data[key] = JSON.parse(stored);
+            return this._data[key];
+          }
+        } catch (e) {}
+        this._data[key] = defaultValue;
+        return defaultValue;
+      },
+    };
+  }
+  return window.ImmersiveTheme.state;
+}
+
+// Initialize state manager immediately
+initStateManager();
+
+// State accessor helpers
+function getState(key, defaultValue) {
+  return window.ImmersiveTheme.state.get(key) !== undefined
+    ? window.ImmersiveTheme.state.get(key)
+    : window.ImmersiveTheme.state.load(key, defaultValue);
+}
+
+function setState(key, value) {
+  window.ImmersiveTheme.state.set(key, value);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Unified Ticker Manager Integration
+// ─────────────────────────────────────────────────────────────
+function initTicker() {
+  if (!window.ImmersiveTheme) {
+    window.ImmersiveTheme = {};
+  }
+  if (!window.ImmersiveTheme.ticker) {
+    window.ImmersiveTheme.ticker = {
+      _subscribers: [],
+      _running: false,
+      _rafId: null,
+      subscribe: function (callback) {
+        this._subscribers.push(callback);
+        if (!this._running) {
+          this._start();
+        }
+        return callback;
+      },
+      unsubscribe: function (callback) {
+        var idx = this._subscribers.indexOf(callback);
+        if (idx > -1) {
+          this._subscribers.splice(idx, 1);
+        }
+        if (this._subscribers.length === 0 && this._running) {
+          this._stop();
+        }
+      },
+      _start: function () {
+        var self = this;
+        this._running = true;
+        function tick() {
+          if (!self._running) return;
+          for (var i = 0; i < self._subscribers.length; i++) {
+            try {
+              self._subscribers[i]();
+            } catch (e) {}
+          }
+          self._rafId = requestAnimationFrame(tick);
+        }
+        this._rafId = requestAnimationFrame(tick);
+      },
+      _stop: function () {
+        this._running = false;
+        if (this._rafId) {
+          cancelAnimationFrame(this._rafId);
+          this._rafId = null;
+        }
+      },
+    };
+  }
+  return window.ImmersiveTheme.ticker;
+}
+
+// Initialize ticker immediately
+initTicker();
+
+// Ticker accessor helpers
+function subscribeToTicker(callback) {
+  return window.ImmersiveTheme.ticker.subscribe(callback);
+}
+
+function unsubscribeFromTicker(callback) {
+  window.ImmersiveTheme.ticker.unsubscribe(callback);
+}
+
+// Animation handle tracking for cleanup
+var _animationHandles = [];
+
+function registerAnimationHandle(handle) {
+  _animationHandles.push(handle);
+  return handle;
+}
+
+function clearAllAnimationHandles() {
+  for (var i = 0; i < _animationHandles.length; i++) {
+    if (_animationHandles[i]) {
+      unsubscribeFromTicker(_animationHandles[i]);
+    }
+  }
+  _animationHandles = [];
+}
+
+// ─────────────────────────────────────────────────────────────
 // Skeleton Loaders for Panel Content
 // ─────────────────────────────────────────────────────────────
 
@@ -74,9 +217,19 @@ function showErrorFeedback(panel, message) {
 
 // ─────────────────────────────────────────────────────────────
 // Wishlist item storage (consolidated with immersive-core.js)
+// Now uses Unified State Manager instead of direct localStorage
 // ─────────────────────────────────────────────────────────────
 
 var _wishlistItems = [];
+
+function getWishlistItems() {
+  return _wishlistItems;
+}
+
+function setWishlistItems(items) {
+  _wishlistItems = Array.isArray(items) ? items : [];
+  _persistWishlist(); // Keep local storage in sync
+}
 
 // ─────────────────────────────────────────────────────────────
 // Content Transition Helpers
@@ -184,120 +337,120 @@ function openProductPanel(productHandle, collectionHandle) {
           // Exclusive panel click handler — replaces any previous handler when panel content changes.
           // Do not set panel.onclick elsewhere; use addEventListener if co-handlers are needed.
           panel.onclick = function (event) {
-          if (event.target === panel) {
-            closePanel(panel);
-            return;
-          }
-          if (event.target.closest('.immersive-store__panel-close')) {
-            closePanel(panel);
-            return;
-          }
-
-          // Wishlist toggle — prevent product panel click-through
-          var wlToggle = event.target.closest('[data-wishlist-toggle]');
-          if (wlToggle) {
-            event.preventDefault();
-            event.stopPropagation();
-            var wlHandle = wlToggle.getAttribute('data-product-handle');
-            if (wlHandle) toggleWishlistItem(wlHandle, 'product_panel', wlToggle);
-            return;
-          }
-
-          // Back button (PDP -> Collection)
-          var backButton = event.target.closest('.glass-product-section__back');
-          if (backButton) {
-            var backHandle = backButton.getAttribute('data-collection-handle');
-            if (backHandle) {
-              event.preventDefault();
-              openCollectionPanel(backHandle);
-            }
-            return;
-          }
-
-          // Breadcrumb navigation -- <a href> links with progressive enhancement.
-          // preventDefault() stops the browser navigation so we can do smooth
-          // in-scene transitions. The href still works without JS (Dawn pattern).
-          var breadcrumbBtn = event.target.closest('[data-breadcrumb-action]');
-          if (breadcrumbBtn) {
-            event.preventDefault();
-            var action = breadcrumbBtn.getAttribute('data-breadcrumb-action');
-            if (action === 'go-home') {
+            if (event.target === panel) {
               closePanel(panel);
-              if (typeof goToRoom === 'function') goToRoom('storefront');
-            } else if (action === 'close-panel') {
+              return;
+            }
+            if (event.target.closest('.immersive-store__panel-close')) {
               closePanel(panel);
-            } else if (action === 'open-collection') {
-              var colHandle = breadcrumbBtn.getAttribute('data-collection-handle');
-              if (colHandle) openCollectionPanel(colHandle);
+              return;
             }
-            return;
-          }
 
-          // Vendor name → open vendor collection panel
-          var vendorBtn = event.target.closest('[data-vendor-collection]');
-          if (vendorBtn) {
-            var vendorHandle = vendorBtn.getAttribute('data-vendor-collection');
-            if (vendorHandle) openCollectionPanel(vendorHandle);
-            return;
-          }
-
-          // Prev/next product navigation
-          var navBtn = event.target.closest('.glass-product-section__product-nav-btn[data-product-handle]');
-          if (navBtn) {
-            var navHandle = navBtn.getAttribute('data-product-handle');
-            var navColHandle = navBtn.getAttribute('data-collection-handle');
-            if (navHandle) openProductPanel(navHandle, navColHandle || collectionHandle);
-            return;
-          }
-
-          // Related product click
-          var relatedItem = event.target.closest('.glass-product-section__related-item');
-          if (relatedItem) {
-            var relatedHandle = relatedItem.getAttribute('data-product-handle');
-            if (relatedHandle) {
+            // Wishlist toggle — prevent product panel click-through
+            var wlToggle = event.target.closest('[data-wishlist-toggle]');
+            if (wlToggle) {
               event.preventDefault();
-              openProductPanel(relatedHandle, collectionHandle);
+              event.stopPropagation();
+              var wlHandle = wlToggle.getAttribute('data-product-handle');
+              if (wlHandle) toggleWishlistItem(wlHandle, 'product_panel', wlToggle);
+              return;
             }
-            return;
-          }
 
-          // Any product link
-          var productLink = event.target.closest('a[data-product-handle]');
-          if (productLink) {
-            var linkHandle = productLink.getAttribute('data-product-handle');
-            if (linkHandle) {
+            // Back button (PDP -> Collection)
+            var backButton = event.target.closest('.glass-product-section__back');
+            if (backButton) {
+              var backHandle = backButton.getAttribute('data-collection-handle');
+              if (backHandle) {
+                event.preventDefault();
+                openCollectionPanel(backHandle);
+              }
+              return;
+            }
+
+            // Breadcrumb navigation -- <a href> links with progressive enhancement.
+            // preventDefault() stops the browser navigation so we can do smooth
+            // in-scene transitions. The href still works without JS (Dawn pattern).
+            var breadcrumbBtn = event.target.closest('[data-breadcrumb-action]');
+            if (breadcrumbBtn) {
               event.preventDefault();
-              openProductPanel(linkHandle, collectionHandle);
+              var action = breadcrumbBtn.getAttribute('data-breadcrumb-action');
+              if (action === 'go-home') {
+                closePanel(panel);
+                if (typeof goToRoom === 'function') goToRoom('storefront');
+              } else if (action === 'close-panel') {
+                closePanel(panel);
+              } else if (action === 'open-collection') {
+                var colHandle = breadcrumbBtn.getAttribute('data-collection-handle');
+                if (colHandle) openCollectionPanel(colHandle);
+              }
+              return;
             }
-            return;
-          }
 
-          // Recommendation card links
-          var recLink = event.target.closest('[data-related-root] a[href*="/products/"]');
-          if (recLink) {
-            var href = recLink.getAttribute('href') || '';
-            var match = href.match(/\/products\/([^/?#]+)/);
-            if (match) {
-              event.preventDefault();
-              openProductPanel(match[1], collectionHandle);
+            // Vendor name → open vendor collection panel
+            var vendorBtn = event.target.closest('[data-vendor-collection]');
+            if (vendorBtn) {
+              var vendorHandle = vendorBtn.getAttribute('data-vendor-collection');
+              if (vendorHandle) openCollectionPanel(vendorHandle);
+              return;
             }
-            return;
-          }
-        };
-      }
 
-      transitionPanelContent(panel, render);
-      LoadingState.complete();
-    })
-    .catch(function (error) {
-      console.error('[Immersive] Panel fetch failed:', error);
-      Analytics.trackError('product_panel_error', error.message);
-      var errMsg =
-        panel.getAttribute('data-msg-load-product-error') || 'Unable to load product. Please check your connection.';
-      showErrorFeedback(panel, errMsg);
-      closePanel(panel);
-      LoadingState.complete();
-    });
+            // Prev/next product navigation
+            var navBtn = event.target.closest('.glass-product-section__product-nav-btn[data-product-handle]');
+            if (navBtn) {
+              var navHandle = navBtn.getAttribute('data-product-handle');
+              var navColHandle = navBtn.getAttribute('data-collection-handle');
+              if (navHandle) openProductPanel(navHandle, navColHandle || collectionHandle);
+              return;
+            }
+
+            // Related product click
+            var relatedItem = event.target.closest('.glass-product-section__related-item');
+            if (relatedItem) {
+              var relatedHandle = relatedItem.getAttribute('data-product-handle');
+              if (relatedHandle) {
+                event.preventDefault();
+                openProductPanel(relatedHandle, collectionHandle);
+              }
+              return;
+            }
+
+            // Any product link
+            var productLink = event.target.closest('a[data-product-handle]');
+            if (productLink) {
+              var linkHandle = productLink.getAttribute('data-product-handle');
+              if (linkHandle) {
+                event.preventDefault();
+                openProductPanel(linkHandle, collectionHandle);
+              }
+              return;
+            }
+
+            // Recommendation card links
+            var recLink = event.target.closest('[data-related-root] a[href*="/products/"]');
+            if (recLink) {
+              var href = recLink.getAttribute('href') || '';
+              var match = href.match(/\/products\/([^/?#]+)/);
+              if (match) {
+                event.preventDefault();
+                openProductPanel(match[1], collectionHandle);
+              }
+              return;
+            }
+          };
+        }
+
+        transitionPanelContent(panel, render);
+        LoadingState.complete();
+      })
+      .catch(function (error) {
+        console.error('[Immersive] Panel fetch failed:', error);
+        Analytics.trackError('product_panel_error', error.message);
+        var errMsg =
+          panel.getAttribute('data-msg-load-product-error') || 'Unable to load product. Please check your connection.';
+        showErrorFeedback(panel, errMsg);
+        closePanel(panel);
+        LoadingState.complete();
+      });
   } catch (e) {
     Analytics.trackError('product_panel_error', e.message);
     if (window.__IMMERSIVE_DEV__) console.error('[Immersive] openProductPanel error:', e);
@@ -353,116 +506,118 @@ function openCollectionPanel(collectionHandle) {
         }
 
         function render() {
-        if (contentArea) {
-          fadeInContent(contentArea, html);
-        } else {
-          panel.innerHTML = html;
+          if (contentArea) {
+            fadeInContent(contentArea, html);
+          } else {
+            panel.innerHTML = html;
+          }
+
+          // Panel-specific setup
+          setPanelRoomLabel(panel);
+          setupVariantButtons(panel);
+          setupBuyNowForm(panel);
+          setupImageParallax(panel);
+          setupVirtualTryOn(panel);
+          syncAllWishlistToggles(panel);
+
+          trackImmersiveEvent('panel_opened', {
+            panel_type: 'collection',
+            collection_handle: collectionHandle,
+          });
+
+          // Init filters after collection content loads
+          var gridWrapper = panel.querySelector('.immersive-product-grid-wrapper');
+          if (gridWrapper) {
+            var collHandle = gridWrapper.closest('[data-collection-handle]')
+              ? gridWrapper.closest('[data-collection-handle]').getAttribute('data-collection-handle')
+              : collectionHandle;
+            var currentRoomForFilters =
+              (typeof immersiveState !== 'undefined' && immersiveState.currentRoom) || 'lounge';
+            initImmersiveFilters(panel, collHandle || collectionHandle, currentRoomForFilters, 'glass-panel');
+          }
+
+          // Exclusive panel click handler — replaces any previous handler when panel content changes.
+          // Do not set panel.onclick elsewhere; use addEventListener if co-handlers are needed.
+          panel.onclick = function (event) {
+            if (event.target === panel) {
+              closePanel(panel);
+              return;
+            }
+            if (event.target.closest('.immersive-store__panel-close')) {
+              closePanel(panel);
+              return;
+            }
+
+            // Breadcrumb navigation -- <a href> with progressive enhancement.
+            var breadcrumbBtn = event.target.closest('[data-breadcrumb-action]');
+            if (breadcrumbBtn) {
+              event.preventDefault();
+              var bAction = breadcrumbBtn.getAttribute('data-breadcrumb-action');
+              if (bAction === 'go-home') {
+                closePanel(panel);
+                if (typeof goToRoom === 'function') goToRoom('storefront');
+              } else if (bAction === 'close-panel') {
+                closePanel(panel);
+              } else if (bAction === 'open-collection') {
+                var colHandle = breadcrumbBtn.getAttribute('data-collection-handle');
+                if (colHandle) openCollectionPanel(colHandle);
+              }
+              return;
+            }
+
+            // Empty state action handling
+            var emptyAction = event.target.closest('[data-empty-action]');
+            if (emptyAction) {
+              var action = emptyAction.getAttribute('data-empty-action');
+              if (action) {
+                handleEmptyStateAction(action);
+              }
+              return;
+            }
+
+            // Wishlist toggle — must be checked BEFORE product card click so
+            // clicking the heart icon doesn't also open the product panel.
+            var wishlistToggle = event.target.closest('[data-wishlist-toggle]');
+            if (wishlistToggle) {
+              event.preventDefault();
+              event.stopPropagation();
+              var wlHandle = wishlistToggle.getAttribute('data-product-handle');
+              if (wlHandle) toggleWishlistItem(wlHandle, 'product_card', wishlistToggle);
+              return;
+            }
+
+            // Product card click — intercept clicks on the article OR any child
+            // element with data-product-handle (e.g. inner <a> links).
+            // event.preventDefault() is called IMMEDIATELY before any other logic
+            // so browser navigation on <a href> elements is cancelled synchronously.
+            var cardOrLink = event.target.closest('.immersive-product-card, [data-product-handle]');
+            if (cardOrLink) {
+              event.preventDefault();
+              var handle = cardOrLink.getAttribute('data-product-handle');
+              if (!handle) {
+                var parentCard = cardOrLink.closest('.immersive-product-card');
+                handle = parentCard && parentCard.getAttribute('data-product-handle');
+              }
+              if (handle) {
+                openProductPanel(handle, collectionHandle);
+              }
+              return;
+            }
+          };
         }
 
-        // Panel-specific setup
-        setPanelRoomLabel(panel);
-        setupVariantButtons(panel);
-        setupBuyNowForm(panel);
-        setupImageParallax(panel);
-        setupVirtualTryOn(panel);
-        syncAllWishlistToggles(panel);
-
-        trackImmersiveEvent('panel_opened', {
-          panel_type: 'collection',
-          collection_handle: collectionHandle,
-        });
-
-        // Init filters after collection content loads
-        var gridWrapper = panel.querySelector('.immersive-product-grid-wrapper');
-        if (gridWrapper) {
-          var collHandle = gridWrapper.closest('[data-collection-handle]')
-            ? gridWrapper.closest('[data-collection-handle]').getAttribute('data-collection-handle')
-            : collectionHandle;
-          var currentRoomForFilters = (typeof immersiveState !== 'undefined' && immersiveState.currentRoom) || 'lounge';
-          initImmersiveFilters(panel, collHandle || collectionHandle, currentRoomForFilters, 'glass-panel');
-        }
-
-        // Exclusive panel click handler — replaces any previous handler when panel content changes.
-        // Do not set panel.onclick elsewhere; use addEventListener if co-handlers are needed.
-        panel.onclick = function (event) {
-          if (event.target === panel) {
-            closePanel(panel);
-            return;
-          }
-          if (event.target.closest('.immersive-store__panel-close')) {
-            closePanel(panel);
-            return;
-          }
-
-          // Breadcrumb navigation -- <a href> with progressive enhancement.
-          var breadcrumbBtn = event.target.closest('[data-breadcrumb-action]');
-          if (breadcrumbBtn) {
-            event.preventDefault();
-            var bAction = breadcrumbBtn.getAttribute('data-breadcrumb-action');
-            if (bAction === 'go-home') {
-              closePanel(panel);
-              if (typeof goToRoom === 'function') goToRoom('storefront');
-            } else if (bAction === 'close-panel') {
-              closePanel(panel);
-            } else if (bAction === 'open-collection') {
-              var colHandle = breadcrumbBtn.getAttribute('data-collection-handle');
-              if (colHandle) openCollectionPanel(colHandle);
-            }
-            return;
-          }
-
-          // Empty state action handling
-          var emptyAction = event.target.closest('[data-empty-action]');
-          if (emptyAction) {
-            var action = emptyAction.getAttribute('data-empty-action');
-            if (action) {
-              handleEmptyStateAction(action);
-            }
-            return;
-          }
-
-          // Wishlist toggle — must be checked BEFORE product card click so
-          // clicking the heart icon doesn't also open the product panel.
-          var wishlistToggle = event.target.closest('[data-wishlist-toggle]');
-          if (wishlistToggle) {
-            event.preventDefault();
-            event.stopPropagation();
-            var wlHandle = wishlistToggle.getAttribute('data-product-handle');
-            if (wlHandle) toggleWishlistItem(wlHandle, 'product_card', wishlistToggle);
-            return;
-          }
-
-          // Product card click — intercept clicks on the article OR any child
-          // element with data-product-handle (e.g. inner <a> links).
-          // event.preventDefault() is called IMMEDIATELY before any other logic
-          // so browser navigation on <a href> elements is cancelled synchronously.
-          var cardOrLink = event.target.closest('.immersive-product-card, [data-product-handle]');
-          if (cardOrLink) {
-            event.preventDefault();
-            var handle = cardOrLink.getAttribute('data-product-handle');
-            if (!handle) {
-              var parentCard = cardOrLink.closest('.immersive-product-card');
-              handle = parentCard && parentCard.getAttribute('data-product-handle');
-            }
-            if (handle) {
-              openProductPanel(handle, collectionHandle);
-            }
-            return;
-          }
-        };
-      }
-
-      transitionPanelContent(panel, render);
-      LoadingState.complete();
-    })
-    .catch(function (error) {
-      console.error('[Immersive] Panel fetch failed:', error);
-      Analytics.trackError('collection_panel_error', error.message);
-      var errMsg = panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please check your connection.';
-      showErrorFeedback(panel, errMsg);
-      closePanel(panel);
-      LoadingState.complete();
-    });
+        transitionPanelContent(panel, render);
+        LoadingState.complete();
+      })
+      .catch(function (error) {
+        console.error('[Immersive] Panel fetch failed:', error);
+        Analytics.trackError('collection_panel_error', error.message);
+        var errMsg =
+          panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please check your connection.';
+        showErrorFeedback(panel, errMsg);
+        closePanel(panel);
+        LoadingState.complete();
+      });
   } catch (e) {
     Analytics.trackError('collection_panel_error', e.message);
     if (window.__IMMERSIVE_DEV__) console.error('[Immersive] openCollectionPanel error:', e);
@@ -474,7 +629,8 @@ function openCollectionPanel(collectionHandle) {
 // Editorial overlay entry point (single, canonical implementation)
 // ─────────────────────────────────────────────────────────────
 function enterEditorialMode(roomKey, triggerEl) {
-  if (window.__IMMERSIVE_DEV__) console.log('[Immersive] enterEditorialMode called with roomKey:', roomKey, 'triggerEl:', triggerEl);
+  if (window.__IMMERSIVE_DEV__)
+    console.log('[Immersive] enterEditorialMode called with roomKey:', roomKey, 'triggerEl:', triggerEl);
 
   // Gallery rooms (designer_houses, occasions, featured_collections) render
   // entirely on the 3D canvas — no 2D overlay. The parallax background
@@ -485,6 +641,7 @@ function enterEditorialMode(roomKey, triggerEl) {
     // Set editorial state so camera/UI behave correctly for gallery mode
     immersiveState.mode = 'editorial';
     immersiveState.editorialRoom = roomKey;
+    if (typeof updateCameraForMode === 'function') updateCameraForMode();
     goToRoom(roomKey);
     return;
   }
@@ -492,6 +649,7 @@ function enterEditorialMode(roomKey, triggerEl) {
   immersiveState.mode = 'editorial';
   immersiveState.editorialRoom = roomKey;
   immersiveState.lastHotspot = triggerEl || null;
+  if (typeof updateCameraForMode === 'function') updateCameraForMode();
 
   // Track in shared editorial data layer
   if (typeof editorialData !== 'undefined') {
@@ -536,7 +694,15 @@ function enterEditorialMode(roomKey, triggerEl) {
   }
 
   var fetchUrl = window.location.pathname + '?sections=' + encodeURIComponent(sectionInstanceId);
-  if (window.__IMMERSIVE_DEV__) console.log('[Immersive] Editorial fetch URL:', fetchUrl, 'roomKey:', roomKey, 'sectionInstanceId:', sectionInstanceId);
+  if (window.__IMMERSIVE_DEV__)
+    console.log(
+      '[Immersive] Editorial fetch URL:',
+      fetchUrl,
+      'roomKey:',
+      roomKey,
+      'sectionInstanceId:',
+      sectionInstanceId,
+    );
 
   // Open overlay with callback for post-content setup
   openOverlay(
@@ -577,9 +743,10 @@ function enterEditorialMode(roomKey, triggerEl) {
           var linkEl = e.target.closest('a[href]');
           if (linkEl && linkEl.closest('.immersive-editorial')) {
             // If it has a collection or product handle, handle it properly below
-            var hasHandle = linkEl.hasAttribute('data-collection')
-              || linkEl.hasAttribute('data-collection-handle')
-              || linkEl.hasAttribute('data-product-handle');
+            var hasHandle =
+              linkEl.hasAttribute('data-collection') ||
+              linkEl.hasAttribute('data-collection-handle') ||
+              linkEl.hasAttribute('data-product-handle');
             if (!hasHandle && !linkEl.getAttribute('href')?.startsWith('#')) {
               // External link (e.g. /pages/privacy-policy) -- allow it in a new tab
               if (linkEl.getAttribute('href')?.startsWith('http')) {
@@ -615,8 +782,7 @@ function enterEditorialMode(roomKey, triggerEl) {
           var studyTrigger = e.target.closest('[data-artifact-open]');
           if (studyTrigger && studyTrigger.closest('.immersive-editorial')) {
             var hasCollectionRoute =
-              studyTrigger.hasAttribute('data-collection') ||
-              studyTrigger.hasAttribute('data-collection-handle');
+              studyTrigger.hasAttribute('data-collection') || studyTrigger.hasAttribute('data-collection-handle');
             if (!hasCollectionRoute) {
               e.preventDefault();
               return;
@@ -1791,14 +1957,16 @@ function isWishlistCacheStale(handle) {
   var cached = _wishlistProductCache[handle];
   if (!cached) return true;
   if (!cached._cachedAt) return true; // No timestamp = treat as stale
-  return (Date.now() - cached._cachedAt) > 30 * 60 * 1000; // 30 minutes
+  return Date.now() - cached._cachedAt > 30 * 60 * 1000; // 30 minutes
 }
 
 function renderEmptyState(type) {
   if (type === 'wishlist') {
     return (
       '<div class="immersive-wishlist-empty">' +
-      '<p>' + escapeHtml('Your wishlist is empty') + '</p>' +
+      '<p>' +
+      escapeHtml('Your wishlist is empty') +
+      '</p>' +
       '<button type="button" class="immersive-wishlist-empty__browse" data-wishlist-browse>Browse Collections</button>' +
       '</div>'
     );
@@ -2262,10 +2430,7 @@ function bindCookieBanner() {
   function loadTimelineCollection(markerEl, productsContainer, options) {
     if (!markerEl || !productsContainer) return;
     // Read canonical data-collection first; fall back to legacy data-collection-handle
-    var handle =
-      markerEl.getAttribute('data-collection') ||
-      markerEl.getAttribute('data-collection-handle') ||
-      '';
+    var handle = markerEl.getAttribute('data-collection') || markerEl.getAttribute('data-collection-handle') || '';
     if (!handle) {
       productsContainer.innerHTML = '';
       return;
@@ -2673,16 +2838,12 @@ function bindCookieBanner() {
             // Only promote to collection routing if this element itself
             // carries a collection handle.
             collectionHandle =
-              event.target.getAttribute('data-collection') ||
-              event.target.getAttribute('data-collection-handle') ||
-              '';
+              event.target.getAttribute('data-collection') || event.target.getAttribute('data-collection-handle') || '';
           } else {
             // Case 2: user clicked inside an artifact-open container.
             // Check the actual click target for a collection route first.
             collectionHandle =
-              event.target.getAttribute('data-collection') ||
-              event.target.getAttribute('data-collection-handle') ||
-              '';
+              event.target.getAttribute('data-collection') || event.target.getAttribute('data-collection-handle') || '';
 
             // Also check if the target is wrapped in a collection element
             // (e.g. an <a> with data-collection inside an <article>).
@@ -2743,8 +2904,7 @@ function bindCookieBanner() {
 
     if (!ring || !panels.length) return;
 
-    var prefersReducedMotion =
-      window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var radius = parseInt(section.getAttribute('data-ring-radius') || '420', 10);
     var friction = parseFloat(section.getAttribute('data-drag-friction') || '0.88');
@@ -2860,7 +3020,13 @@ function bindCookieBanner() {
     });
 
     section._carouselBound = true;
-    _carouselInstances.push({ section: section, rafId: rafId, stop: function () { if (rafId) cancelAnimationFrame(rafId); } });
+    _carouselInstances.push({
+      section: section,
+      rafId: rafId,
+      stop: function () {
+        if (rafId) cancelAnimationFrame(rafId);
+      },
+    });
   }
 
   function initAll(container) {
@@ -2871,7 +3037,9 @@ function bindCookieBanner() {
   }
 
   function destroyAll() {
-    _carouselInstances.forEach(function (inst) { inst.stop(); });
+    _carouselInstances.forEach(function (inst) {
+      inst.stop();
+    });
     _carouselInstances = [];
   }
 
@@ -2961,19 +3129,23 @@ function bindCookieBanner() {
         window.dispatchEvent(
           new CustomEvent('immersive:story-mode-change', {
             detail: { active: active },
-            bubbles: false
-          })
+            bubbles: false,
+          }),
         );
       } catch (e) {}
     }
 
     if (prefersReducedMotion) {
-      chapters.forEach(function (ch) { ch.classList.add('is-visible'); });
+      chapters.forEach(function (ch) {
+        ch.classList.add('is-visible');
+      });
       return;
     }
 
     if (!('IntersectionObserver' in window)) {
-      chapters.forEach(function (ch) { ch.classList.add('is-visible'); });
+      chapters.forEach(function (ch) {
+        ch.classList.add('is-visible');
+      });
       return;
     }
 
@@ -2986,17 +3158,21 @@ function bindCookieBanner() {
           }
         });
       },
-      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }
+      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' },
     );
 
-    chapters.forEach(function (ch) { chapterObserver.observe(ch); });
+    chapters.forEach(function (ch) {
+      chapterObserver.observe(ch);
+    });
     _sectionObservers.push(chapterObserver);
 
     var sectionObserver = new IntersectionObserver(
       function (entries) {
-        entries.forEach(function (entry) { dispatchStoryMode(entry.isIntersecting); });
+        entries.forEach(function (entry) {
+          dispatchStoryMode(entry.isIntersecting);
+        });
       },
-      { threshold: 0.4 }
+      { threshold: 0.4 },
     );
     sectionObserver.observe(section);
     _sectionObservers.push(sectionObserver);
@@ -3004,7 +3180,9 @@ function bindCookieBanner() {
     if (sectionId && typeof window !== 'undefined' && window.Shopify && window.Shopify.designMode) {
       document.addEventListener('shopify:section:select', function (e) {
         if (!e.detail || e.detail.sectionId !== sectionId) return;
-        chapters.forEach(function (ch) { ch.classList.add('is-visible'); });
+        chapters.forEach(function (ch) {
+          ch.classList.add('is-visible');
+        });
         dispatchStoryMode(true);
       });
 
@@ -3025,7 +3203,9 @@ function bindCookieBanner() {
   }
 
   function destroyAll() {
-    _sectionObservers.forEach(function (obs) { obs.disconnect(); });
+    _sectionObservers.forEach(function (obs) {
+      obs.disconnect();
+    });
     _sectionObservers = [];
   }
 
@@ -3137,7 +3317,9 @@ function bindCookieBanner() {
   }
 
   function destroyAll() {
-    _scrollCleanups.forEach(function (fn) { fn(); });
+    _scrollCleanups.forEach(function (fn) {
+      fn();
+    });
     _scrollCleanups = [];
   }
 
@@ -3220,39 +3402,59 @@ function renderActiveFilterChips(state) {
   var chips = '';
   if (state.colors && state.colors.length > 0) {
     for (var i = 0; i < state.colors.length; i++) {
-      chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="color:' + escapeHtml(state.colors[i]) + '">' +
-        '<span class="immersive-filter-chip__label">' + escapeHtml(state.colors[i]) + '</span>' +
+      chips +=
+        '<button type="button" class="immersive-filter-chip" data-remove-filter="color:' +
+        escapeHtml(state.colors[i]) +
+        '">' +
+        '<span class="immersive-filter-chip__label">' +
+        escapeHtml(state.colors[i]) +
+        '</span>' +
         '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
         '</button>';
     }
   }
   if (state.designers && state.designers.length > 0) {
     for (var j = 0; j < state.designers.length; j++) {
-      chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="designer:' + escapeHtml(state.designers[j]) + '">' +
-        '<span class="immersive-filter-chip__label">' + escapeHtml(state.designers[j]) + '</span>' +
+      chips +=
+        '<button type="button" class="immersive-filter-chip" data-remove-filter="designer:' +
+        escapeHtml(state.designers[j]) +
+        '">' +
+        '<span class="immersive-filter-chip__label">' +
+        escapeHtml(state.designers[j]) +
+        '</span>' +
         '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
         '</button>';
     }
   }
   if (state.priceMin !== null && state.priceMin !== undefined && state.priceMin !== '') {
-    chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="priceMin">' +
-      '<span class="immersive-filter-chip__label">Min: $' + state.priceMin + '</span>' +
+    chips +=
+      '<button type="button" class="immersive-filter-chip" data-remove-filter="priceMin">' +
+      '<span class="immersive-filter-chip__label">Min: $' +
+      state.priceMin +
+      '</span>' +
       '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
       '</button>';
   }
   if (state.priceMax !== null && state.priceMax !== undefined && state.priceMax !== '') {
-    chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="priceMax">' +
-      '<span class="immersive-filter-chip__label">Max: $' + state.priceMax + '</span>' +
+    chips +=
+      '<button type="button" class="immersive-filter-chip" data-remove-filter="priceMax">' +
+      '<span class="immersive-filter-chip__label">Max: $' +
+      state.priceMax +
+      '</span>' +
       '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
       '</button>';
   }
   if (state.sortBy && state.sortBy !== 'manual') {
-    chips += '<button type="button" class="immersive-filter-chip" data-remove-filter="sortBy">' +
-      '<span class="immersive-filter-chip__label">Sort: ' + escapeHtml(state.sortBy) + '</span>' +
+    chips +=
+      '<button type="button" class="immersive-filter-chip" data-remove-filter="sortBy">' +
+      '<span class="immersive-filter-chip__label">Sort: ' +
+      escapeHtml(state.sortBy) +
+      '</span>' +
       '<span class="immersive-filter-chip__remove" aria-label="Remove">&times;</span>' +
       '</button>';
   }
-  chips += '<button type="button" class="immersive-filter-chip immersive-filter-chip--clear" data-clear-all-filters>Clear All</button>';
+  chips +=
+    '<button type="button" class="immersive-filter-chip immersive-filter-chip--clear" data-clear-all-filters>Clear All</button>';
   return chips;
 }
 
@@ -3269,9 +3471,13 @@ function removeFilterChip(filterKey, currentState, applyFilters) {
   };
 
   if (category === 'color') {
-    newState.colors = newState.colors.filter(function (c) { return c !== value; });
+    newState.colors = newState.colors.filter(function (c) {
+      return c !== value;
+    });
   } else if (category === 'designer') {
-    newState.designers = newState.designers.filter(function (d) { return d !== value; });
+    newState.designers = newState.designers.filter(function (d) {
+      return d !== value;
+    });
   } else if (category === 'priceMin') {
     newState.priceMin = null;
   } else if (category === 'priceMax') {

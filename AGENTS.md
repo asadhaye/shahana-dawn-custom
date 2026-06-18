@@ -25,14 +25,20 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 - Run a single test file:
   - `npx jest tests/wishlist-panel.test.js --forceExit`
 - Run one test case by name:
-  - `npx jest tests/glass-panel.property.test.js -t "opens product panel" --forceExit`
+  - `npx jest tests/glass-panel-property.test.js -t "opens product panel" --forceExit`
 
-Build note: there is no separate bundling/build pipeline in this codebase.
+### Immersive JS bundle
+- After editing `assets/immersive-core.js` or `assets/immersive-features.js`, rebuild:
+  - `npm run build:immersive`
+- This concatenates core + features into `assets/immersive-bundle.js` and minifies to `assets/immersive-bundle.min.js`
+- `theme.liquid` loads `immersive-bundle.min.js` on the immersive page template
+
+Build note: the immersive JS bundle is built via `npm run build:immersive` (concatenates `immersive-core.js` + `immersive-features.js` → `immersive-bundle.js` + minified `immersive-bundle.min.js`). Always rebuild after editing either source file.
 
 ## High-level architecture
 ### Theme shell and script loading
 - `layout/theme.liquid` is the global shell.
-- It conditionally loads `assets/three.min.js` and `assets/immersive-store.js` only on `page.immersive`.
+- It conditionally loads `assets/three.min.js`, `assets/immersive-state-manager.js`, `assets/tick-manager.js`, `assets/immersive-bundle.min.js`, and `assets/immersive-init.js` only on `page.immersive`.
 - It loads `assets/bridge-behavior.js` globally.
 - It also shows the non-immersive preference banner when `localStorage.immersive_preferred_mode === '3d'`.
 

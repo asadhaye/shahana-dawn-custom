@@ -82,10 +82,8 @@ var STORE_ROOMS = {
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/Lounge-Base-flow.jpg?v=1775054500&width=1600&quality=75',
     mobileBaseTextureUrl:
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-base.jpg?v=1775054009&width=900&quality=75',
-    depthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-depthmap-Grayscale.png?v=1775054498&width=1600&quality=60',
-    mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-depth-greyscale.png?v=1775054007&width=900&quality=60',
+    depthMapUrl: '',
+    mobileDepthMapUrl: '',
     hotspots: [
       { x: 20, y: 35, label: 'Designer Houses', targetRoom: 'designer_houses', mobileX: 15, mobileY: 80 },
       { x: 50, y: 35, label: 'Occasions', targetRoom: 'occasions', mobileX: 50, mobileY: 80 },
@@ -102,7 +100,7 @@ var STORE_ROOMS = {
       'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126&width=900',
     depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548&width=1600',
     mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.png?v=1775516123&width=900',
+      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.webp?v=1775516123&width=900',
     hotspots: [
       { x: 50, y: 15, label: 'Explore Designers', targetEditorialRoom: 'designer_houses' },
       { x: 13, y: 40, label: 'Suffuse', targetCollection: 'suffuse' },
@@ -690,7 +688,12 @@ function disposeGalleryStage(roomKey) {
 // ── NaN guard: wrap PlaneGeometry creation to catch invalid dimensions ──
 function _safePlaneGeometry(w, h, label) {
   if (typeof w !== 'number' || typeof h !== 'number' || isNaN(w) || isNaN(h) || !isFinite(w) || !isFinite(h)) {
-    console.error('[Immersive] NaN/Infinite PlaneGeometry blocked:', { w: w, h: h, label: label || 'unknown', stack: new Error().stack.split('\n').slice(1, 4).join('\n') });
+    console.error('[Immersive] NaN/Infinite PlaneGeometry blocked:', {
+      w: w,
+      h: h,
+      label: label || 'unknown',
+      stack: new Error().stack.split('\n').slice(1, 4).join('\n'),
+    });
     return new THREE.PlaneGeometry(0.01, 0.01, 1, 1); // tiny fallback to avoid crash
   }
   return new THREE.PlaneGeometry(w, h, 1, 1);
@@ -823,7 +826,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
   loadedItems.forEach(function (entry, idx) {
     if (!entry) return;
     var item = entry.item;
-    var geom = _safePlaneGeometry(cardW, cardH, "gallery-main");
+    var geom = _safePlaneGeometry(cardW, cardH, 'gallery-main');
 
     var mat;
     if (isScrollStory) {
@@ -905,7 +908,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       });
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
-      var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, "scroll-story-label"), labelMat);
+      var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, 'scroll-story-label'), labelMat);
       labelMesh.position.set(0, mesh.position.y - cardH * 0.55, isScrollStory ? 0.05 : 0);
       labelMesh.renderOrder = 999;
       group.add(labelMesh);
@@ -953,7 +956,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
   var width = size.x || (renderer.domElement ? renderer.domElement.clientWidth : window.innerWidth);
   var height = size.y || (renderer.domElement ? renderer.domElement.clientHeight : window.innerHeight);
-  var aspect = (width && height) ? width / height : 1;
+  var aspect = width && height ? width / height : 1;
   var tunnelCam = new THREE.PerspectiveCamera(fov, aspect, near, far);
   if (camera && camera.dispose) camera.dispose();
   tunnelCam.position.z = 0;
@@ -1070,7 +1073,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   loadedItems.forEach(function (entry, idx) {
     if (!entry) return;
     var item = entry.item;
-    var geom = _safePlaneGeometry(cardW, cardH, "gallery-main");
+    var geom = _safePlaneGeometry(cardW, cardH, 'gallery-main');
 
     var mat = new THREE.ShaderMaterial({
       vertexShader: vertSrc,
@@ -1134,7 +1137,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       });
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
-      var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, "tunnel-label"), labelMat);
+      var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, 'tunnel-label'), labelMat);
       labelMesh.position.set(xOff, yOff - cardH * 0.55, zPos - 0.05);
       labelMesh.renderOrder = 999;
       group.add(labelMesh);
@@ -1182,7 +1185,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
     var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
     var width = size.x || (renderer.domElement ? renderer.domElement.clientWidth : window.innerWidth);
     var height = size.y || (renderer.domElement ? renderer.domElement.clientHeight : window.innerHeight);
-    var aspect = (width && height) ? width / height : 1;
+    var aspect = width && height ? width / height : 1;
     camera = new THREE.OrthographicCamera(-aspect, aspect, 1, -1, 0, 2);
     camera.position.z = 1;
     camera.updateProjectionMatrix();
@@ -1259,7 +1262,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var thisCardAspect = isFeatured ? gridCardAspect : gridCardAspect * (0.9 + (index % 5) * 0.04);
       var thisCardW = thisCardH * thisCardAspect;
 
-      var geom = _safePlaneGeometry(thisCardW, thisCardH, "masonry-card");
+      var geom = _safePlaneGeometry(thisCardW, thisCardH, 'masonry-card');
       var mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
@@ -1329,7 +1332,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         });
         var labelW = thisCardW * (isFeatured ? 0.7 : 0.85);
         var labelH = labelW * (labelCanvas.height / labelCanvas.width);
-        var labelGeom = _safePlaneGeometry(labelW, labelH, "masonry-label");
+        var labelGeom = _safePlaneGeometry(labelW, labelH, 'masonry-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
         labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.3, z + 0.01);
         labelMesh.renderOrder = 999;
@@ -1388,7 +1391,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       tex.anisotropy = 8;
       textures.push(tex);
 
-      var geom = _safePlaneGeometry(cardW, cardH, "gallery-main");
+      var geom = _safePlaneGeometry(cardW, cardH, 'gallery-main');
       var mat = new THREE.MeshStandardMaterial({
         map: tex,
         roughness: 0.85,
@@ -1446,7 +1449,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         });
         var labelW = cardW * 1.2;
         var labelH = labelW * (160 / 1024);
-        var labelGeom = _safePlaneGeometry(labelW, labelH, "arc-label");
+        var labelGeom = _safePlaneGeometry(labelW, labelH, 'arc-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
         labelMesh.position.set(0, y - cardH * 0.5 - labelH * 0.6, 0.05);
         labelMesh.renderOrder = 999;
@@ -1516,7 +1519,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var h = 2.0;
       var w = h * aspect;
 
-      var geom = _safePlaneGeometry(w, h, "arc-gallery");
+      var geom = _safePlaneGeometry(w, h, 'arc-gallery');
       var mat = new THREE.MeshStandardMaterial({
         map: tex,
         roughness: 0.85,
@@ -1569,7 +1572,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         });
         var labelW = w * 0.8;
         var labelH = labelW * (96 / 512);
-        var labelGeom = _safePlaneGeometry(labelW, labelH, "arc-car-label");
+        var labelGeom = _safePlaneGeometry(labelW, labelH, 'arc-car-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
         labelMesh.position.set(x, verticalOffset - h * 0.55, z);
         labelMesh.lookAt(new THREE.Vector3(0, verticalOffset - h * 0.55, 0));
@@ -1699,7 +1702,7 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
     var item = entry.item;
     var col = idx % COLS;
     var row = Math.floor(idx / COLS);
-    var geom = _safePlaneGeometry(cardW, cardH, "gallery-main");
+    var geom = _safePlaneGeometry(cardW, cardH, 'gallery-main');
 
     var mat;
     if (useShader) {
@@ -1806,7 +1809,8 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
   // Switch to PerspectiveCamera for depth
   if (camera instanceof THREE.OrthographicCamera) {
     var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
-    var w = size.x || window.innerWidth, h = size.y || window.innerHeight;
+    var w = size.x || window.innerWidth,
+      h = size.y || window.innerHeight;
     if (camera && camera.dispose) camera.dispose();
     camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
     camera.position.set(0, 0, 5);
@@ -1826,12 +1830,17 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
     if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(item.imageSrc, function (t) {
-        t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        t.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Narrative texture error:', err);
-      });
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (t) {
+          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          t.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Narrative texture error:', err);
+        },
+      );
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
@@ -1841,7 +1850,16 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
 
   if (!loadedItems.length) {
     scene.add(group);
-    galleryStageRegistry[roomKey] = { group: group, planes: [], labels: [], textures: textures, layout: 'narrative-story', cardCount: 0, scrollZ: 0, targetScrollZ: 0 };
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: [],
+      labels: [],
+      textures: textures,
+      layout: 'narrative-story',
+      cardCount: 0,
+      scrollZ: 0,
+      targetScrollZ: 0,
+    };
     return;
   }
 
@@ -1849,21 +1867,29 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
   var sharedUniforms = { uTime: { value: 0 }, uScrollZ: { value: 0 }, uFloatAmp: { value: floatAmp } };
 
   var vertSrc = [
-    'varying vec2 vUv;', 'varying float vDist;',
-    'uniform float uTime;', 'uniform float uFloatAmp;',
+    'varying vec2 vUv;',
+    'varying float vDist;',
+    'uniform float uTime;',
+    'uniform float uFloatAmp;',
     'void main() {',
-    '  vUv = uv;', '  vec3 pos = position;',
+    '  vUv = uv;',
+    '  vec3 pos = position;',
     '  float wave = sin(pos.y * 1.5 + uTime * 0.8) * uFloatAmp;',
-    '  pos.x += wave;', '  pos.z += abs(wave) * 0.3;',
+    '  pos.x += wave;',
+    '  pos.z += abs(wave) * 0.3;',
     '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
-    '  vDist = -mv.z;', '  gl_Position = projectionMatrix * mv;',
+    '  vDist = -mv.z;',
+    '  gl_Position = projectionMatrix * mv;',
     '}',
   ].join('\n');
 
   var fragSrc = [
     'precision highp float;',
-    'uniform sampler2D uTexture;', 'uniform float uTime;', 'uniform float uScrollZ;',
-    'varying vec2 vUv;', 'varying float vDist;',
+    'uniform sampler2D uTexture;',
+    'uniform float uTime;',
+    'uniform float uScrollZ;',
+    'varying vec2 vUv;',
+    'varying float vDist;',
     'void main() {',
     '  float aberration = smoothstep(2.0, 12.0, vDist) * 0.004;',
     '  vec2 dir = vUv - 0.5;',
@@ -1884,15 +1910,32 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
   loadedItems.forEach(function (entry, idx) {
     if (!entry) return;
     var zPos = -(idx * cardSpacing);
-    var geom = _safePlaneGeometry(cardW, cardH, "narrative-plane");
+    var geom = _safePlaneGeometry(cardW, cardH, 'narrative-plane');
     var mat = new THREE.ShaderMaterial({
-      vertexShader: vertSrc, fragmentShader: fragSrc,
-      uniforms: { uTexture: { value: entry.tex }, uTime: sharedUniforms.uTime, uScrollZ: sharedUniforms.uScrollZ, uFloatAmp: sharedUniforms.uFloatAmp },
-      transparent: true, side: THREE.DoubleSide, depthWrite: false,
+      vertexShader: vertSrc,
+      fragmentShader: fragSrc,
+      uniforms: {
+        uTexture: { value: entry.tex },
+        uTime: sharedUniforms.uTime,
+        uScrollZ: sharedUniforms.uScrollZ,
+        uFloatAmp: sharedUniforms.uFloatAmp,
+      },
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
     });
     var mesh = new THREE.Mesh(geom, mat);
     mesh.position.set(0, 0, zPos);
-    mesh.userData = { roomKey: roomKey, galleryIndex: entry.index, title: entry.item.title || '', productHandle: entry.item.productHandle || null, collectionHandle: entry.item.collectionHandle || null, layout: 'narrative-story', baseZ: zPos, floatAmp: floatAmp };
+    mesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: entry.index,
+      title: entry.item.title || '',
+      productHandle: entry.item.productHandle || null,
+      collectionHandle: entry.item.collectionHandle || null,
+      layout: 'narrative-story',
+      baseZ: zPos,
+      floatAmp: floatAmp,
+    };
     group.add(mesh);
     planes.push(mesh);
 
@@ -1900,10 +1943,12 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
     if (entry.item.title) {
       var lCanvas = document.createElement('canvas');
       var lCtx = lCanvas.getContext('2d');
-      lCanvas.width = 1024; lCanvas.height = 160;
+      lCanvas.width = 1024;
+      lCanvas.height = 160;
       lCtx.clearRect(0, 0, 1024, 160);
       lCtx.font = 'bold 64px Georgia, serif';
-      lCtx.textAlign = 'center'; lCtx.textBaseline = 'middle';
+      lCtx.textAlign = 'center';
+      lCtx.textBaseline = 'middle';
       lCtx.fillStyle = '#ece3c2';
       lCtx.fillText(entry.item.title.toUpperCase(), 512, 55);
       lCtx.font = '500 13px Arial, sans-serif';
@@ -1911,9 +1956,15 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
       lCtx.fillText('[ SCROLL TO EXPLORE ]', 512, 120);
       var lTex = new THREE.CanvasTexture(lCanvas);
       lTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      var lMat = new THREE.MeshBasicMaterial({ map: lTex, transparent: true, depthTest: false, side: THREE.DoubleSide });
-      var lW = cardW * 1.1; var lH = lW * (160 / 1024);
-      var lMesh = new THREE.Mesh(_safePlaneGeometry(lW, lH, "narrative-label"), lMat);
+      var lMat = new THREE.MeshBasicMaterial({
+        map: lTex,
+        transparent: true,
+        depthTest: false,
+        side: THREE.DoubleSide,
+      });
+      var lW = cardW * 1.1;
+      var lH = lW * (160 / 1024);
+      var lMesh = new THREE.Mesh(_safePlaneGeometry(lW, lH, 'narrative-label'), lMat);
       lMesh.position.set(0, -cardH * 0.55, zPos + 0.05);
       lMesh.renderOrder = 999;
       group.add(lMesh);
@@ -1922,7 +1973,21 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
   });
 
   scene.add(group);
-  galleryStageRegistry[roomKey] = { group: group, planes: planes, labels: labels, textures: textures, layout: 'narrative-story', cardCount: count, cardSpacing: cardSpacing, cardH: cardH, scrollZ: 0, targetScrollZ: 0, sharedUniforms: sharedUniforms, isNarrativeStory: true, isScrollDriven: true };
+  galleryStageRegistry[roomKey] = {
+    group: group,
+    planes: planes,
+    labels: labels,
+    textures: textures,
+    layout: 'narrative-story',
+    cardCount: count,
+    cardSpacing: cardSpacing,
+    cardH: cardH,
+    scrollZ: 0,
+    targetScrollZ: 0,
+    sharedUniforms: sharedUniforms,
+    isNarrativeStory: true,
+    isScrollDriven: true,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1951,12 +2016,17 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
     if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(item.imageSrc, function (t) {
-        t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        t.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Codex texture error:', err);
-      });
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (t) {
+          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          t.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Codex texture error:', err);
+        },
+      );
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
@@ -1966,7 +2036,16 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
 
   if (!loadedItems.length) {
     scene.add(group);
-    galleryStageRegistry[roomKey] = { group: group, planes: [], labels: [], textures: textures, layout: 'codex-list', cardCount: 0, scrollY: 0, targetScrollY: 0 };
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: [],
+      labels: [],
+      textures: textures,
+      layout: 'codex-list',
+      cardCount: 0,
+      scrollY: 0,
+      targetScrollY: 0,
+    };
     return;
   }
 
@@ -1978,19 +2057,32 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
     // Text canvas for the entry name
     var tCanvas = document.createElement('canvas');
     var tCtx = tCanvas.getContext('2d');
-    tCanvas.width = 1024; tCanvas.height = 128;
+    tCanvas.width = 1024;
+    tCanvas.height = 128;
     tCtx.clearRect(0, 0, 1024, 128);
     tCtx.font = 'bold 52px Georgia, serif';
-    tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+    tCtx.textAlign = 'center';
+    tCtx.textBaseline = 'middle';
     tCtx.fillStyle = '#d4af37';
-    tCtx.fillText(entry.item.title || entry.item.subtitle || ('Item ' + (idx + 1)), 512, 64);
+    tCtx.fillText(entry.item.title || entry.item.subtitle || 'Item ' + (idx + 1), 512, 64);
     var tTex = new THREE.CanvasTexture(tCanvas);
     tTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
     var tMat = new THREE.MeshBasicMaterial({ map: tTex, transparent: true, depthTest: false, side: THREE.DoubleSide });
-    var tW = cardW * 1.5; var tH = tW * (128 / 1024);
-    var tMesh = new THREE.Mesh(_safePlaneGeometry(tW, tH, "codex-text"), tMat);
+    var tW = cardW * 1.5;
+    var tH = tW * (128 / 1024);
+    var tMesh = new THREE.Mesh(_safePlaneGeometry(tW, tH, 'codex-text'), tMat);
     tMesh.position.set(0, yPos, 0);
-    tMesh.userData = { roomKey: roomKey, galleryIndex: entry.index, title: entry.item.title || '', productHandle: entry.item.productHandle || null, collectionHandle: entry.item.collectionHandle || null, layout: 'codex-list', baseY: yPos, isTextEntry: true, itemIndex: idx };
+    tMesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: entry.index,
+      title: entry.item.title || '',
+      productHandle: entry.item.productHandle || null,
+      collectionHandle: entry.item.collectionHandle || null,
+      layout: 'codex-list',
+      baseY: yPos,
+      isTextEntry: true,
+      itemIndex: idx,
+    };
     group.add(tMesh);
     planes.push(tMesh);
   });
@@ -1998,8 +2090,13 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
   // Floating detail plane (shows hovered item's image)
   var hoverW = cardW * 2.5;
   var hoverH = hoverW / hoverAspect;
-  var hoverMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-  var hoverMesh = new THREE.Mesh(_safePlaneGeometry(hoverW, hoverH, "codex-hover"), hoverMat);
+  var hoverMat = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  var hoverMesh = new THREE.Mesh(_safePlaneGeometry(hoverW, hoverH, 'codex-hover'), hoverMat);
   hoverMesh.position.set(cardW * 1.2, 0, 0.5);
   hoverMesh.renderOrder = 1000;
   hoverMesh.userData = { isHoverPlane: true };
@@ -2007,7 +2104,21 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
   group.userData.hoverPlane = hoverMesh;
 
   scene.add(group);
-  galleryStageRegistry[roomKey] = { group: group, planes: planes, labels: labels, textures: textures, layout: 'codex-list', cardCount: count, itemSpacing: itemSpacing, cardH: cardH, scrollY: 0, targetScrollY: 0, lerpFactor: lerpFactor, isCodex: true, isScrollDriven: true };
+  galleryStageRegistry[roomKey] = {
+    group: group,
+    planes: planes,
+    labels: labels,
+    textures: textures,
+    layout: 'codex-list',
+    cardCount: count,
+    itemSpacing: itemSpacing,
+    cardH: cardH,
+    scrollY: 0,
+    targetScrollY: 0,
+    lerpFactor: lerpFactor,
+    isCodex: true,
+    isScrollDriven: true,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2041,12 +2152,17 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
   items.forEach(function (item, index) {
     if (!item.imageSrc) return;
     if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(item.imageSrc, function (t) {
-        t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-        t.anisotropy = 8;
-      }, undefined, function (err) {
-        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Artifact texture error:', err);
-      });
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (t) {
+          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          t.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Artifact texture error:', err);
+        },
+      );
       tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
@@ -2056,7 +2172,14 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
 
   if (!loadedItems.length) {
     scene.add(group);
-    galleryStageRegistry[roomKey] = { group: group, planes: [], labels: [], textures: textures, layout: 'artifact-gallery', cardCount: 0 };
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: [],
+      labels: [],
+      textures: textures,
+      layout: 'artifact-gallery',
+      cardCount: 0,
+    };
     return;
   }
 
@@ -2071,7 +2194,9 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
 
   var fragSrc = [
     'precision highp float;',
-    'uniform sampler2D uTexture;', 'uniform float uHover;', 'uniform vec2 uMouse;',
+    'uniform sampler2D uTexture;',
+    'uniform float uHover;',
+    'uniform vec2 uMouse;',
     'varying vec2 vUv;',
     'void main() {',
     '  vec2 dir = vUv - uMouse;',
@@ -2094,23 +2219,54 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
     var row = Math.floor(idx / gridCols);
     var x = startX + col * gridSpacing;
     var y = startY - row * gridSpacing;
-    var z = (Math.sin(col * 0.7) * 0.15 + Math.cos(row * 0.5) * 0.1);
+    var z = Math.sin(col * 0.7) * 0.15 + Math.cos(row * 0.5) * 0.1;
 
-    var geom = _safePlaneGeometry(cardW, cardH, "artifact-card");
+    var geom = _safePlaneGeometry(cardW, cardH, 'artifact-card');
     var mat = new THREE.ShaderMaterial({
-      vertexShader: vertSrc, fragmentShader: fragSrc,
-      uniforms: { uTexture: { value: entry.tex }, uHover: { value: 0 }, uMouse: { value: new THREE.Vector2(0.5, 0.5) } },
-      transparent: true, side: THREE.DoubleSide,
+      vertexShader: vertSrc,
+      fragmentShader: fragSrc,
+      uniforms: {
+        uTexture: { value: entry.tex },
+        uHover: { value: 0 },
+        uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+      },
+      transparent: true,
+      side: THREE.DoubleSide,
     });
     var mesh = new THREE.Mesh(geom, mat);
     mesh.position.set(x, y, z);
-    mesh.userData = { roomKey: roomKey, galleryIndex: entry.index, title: entry.item.title || '', productHandle: entry.item.productHandle || null, collectionHandle: entry.item.collectionHandle || null, layout: 'artifact-gallery', baseX: x, baseY: y, baseZ: z, col: col, row: row };
+    mesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: entry.index,
+      title: entry.item.title || '',
+      productHandle: entry.item.productHandle || null,
+      collectionHandle: entry.item.collectionHandle || null,
+      layout: 'artifact-gallery',
+      baseX: x,
+      baseY: y,
+      baseZ: z,
+      col: col,
+      row: row,
+    };
     group.add(mesh);
     planes.push(mesh);
   });
 
   scene.add(group);
-  galleryStageRegistry[roomKey] = { group: group, planes: planes, labels: labels, textures: textures, layout: 'artifact-gallery', cardCount: count, gridCols: gridCols, gridSpacing: gridSpacing, cardH: cardH, cardW: cardW, parallaxStr: parallaxStr, isArtifactGallery: true };
+  galleryStageRegistry[roomKey] = {
+    group: group,
+    planes: planes,
+    labels: labels,
+    textures: textures,
+    layout: 'artifact-gallery',
+    cardCount: count,
+    gridCols: gridCols,
+    gridSpacing: gridSpacing,
+    cardH: cardH,
+    cardW: cardW,
+    parallaxStr: parallaxStr,
+    isArtifactGallery: true,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2175,7 +2331,12 @@ function initGalleryCarousel(canvas) {
 
   var startHandler = function (e) {
     // Guard: don't capture touch/click until user has entered the 3D experience
-    if (window.ShahanaImmersive && window.ShahanaImmersive.settings && !window.ShahanaImmersive.settings.interactionEnabled) return;
+    if (
+      window.ShahanaImmersive &&
+      window.ShahanaImmersive.settings &&
+      !window.ShahanaImmersive.settings.interactionEnabled
+    )
+      return;
     if (!galleryStageRegistry[currentRoomKey]) return;
     galleryDragState.isDragging = true;
     galleryDragState.startX = e.clientX || e.touches?.[0]?.clientX || 0;
@@ -2354,7 +2515,8 @@ function initGalleryCarousel(canvas) {
     }
     if (isCodexList && s.hoverPlane) {
       // Raycaster hover detection for codex text entries
-      galleryMouse.x = mx; galleryMouse.y = my;
+      galleryMouse.x = mx;
+      galleryMouse.y = my;
       galleryRaycaster.setFromCamera(galleryMouse, camera);
       var hits = galleryRaycaster.intersectObjects(s.planes, false);
       if (hits.length > 0) {
@@ -2536,7 +2698,7 @@ function animateGalleryCarousel() {
     var _cdLerp = state.lerpFactor || 0.12;
     state.scrollY += (state.targetScrollY - state.scrollY) * _cdLerp;
     // Modulo recycling for infinite scroll
-    var _cdTotalH = state.totalHeight || (state.cardCount * (state.itemSpacing || 1.8));
+    var _cdTotalH = state.totalHeight || state.cardCount * (state.itemSpacing || 1.8);
     var _cdHalfH = _cdTotalH / 2;
     state.planes.forEach(function (plane) {
       if (!plane.userData) return;
@@ -2801,7 +2963,11 @@ function getRoomConfigWithLiquidOverride(roomKey) {
   });
 
   ['baseTextureUrl', 'mobileBaseTextureUrl', 'depthMapUrl', 'mobileDepthMapUrl', 'hotspots'].forEach(function (key) {
-    if (liquid[key] != null && liquid[key] !== '' && !(typeof liquid[key] === 'string' && liquid[key].indexOf('null') !== -1)) {
+    if (
+      liquid[key] != null &&
+      liquid[key] !== '' &&
+      !(typeof liquid[key] === 'string' && liquid[key].indexOf('null') !== -1)
+    ) {
       merged[key] = liquid[key];
     }
   });
@@ -2832,6 +2998,47 @@ var currentRoomKey = null;
 var currentRoomSubMode = null;
 var transitioning = false;
 var currentImageAspect = 16 / 9;
+var activeTextureVariant = null; // 'mobile' | 'desktop' — tracks which room asset pair is on the plane
+var lastResizeDims = { w: 0, h: 0, dpr: 0 };
+
+function getTextureVariantKey() {
+  return usesMobileImg ? 'mobile' : 'desktop';
+}
+
+function syncImageAspectFromTexture(texture) {
+  if (texture && texture.image && texture.image.width && texture.image.height) {
+    currentImageAspect = texture.image.width / texture.image.height;
+    return true;
+  }
+  return false;
+}
+
+function applyRoomTexturesToScene(baseTexture, depthTexture, roomKey) {
+  if (!uniforms || !baseTexture || !depthTexture) return;
+  uniforms.uTexture1.value = baseTexture;
+  uniforms.uDepth1.value = depthTexture;
+  uniforms.uTexture2.value = baseTexture;
+  uniforms.uDepth2.value = depthTexture;
+  uniforms.uTransitionProgress.value = 0;
+  syncImageAspectFromTexture(baseTexture);
+  activeTextureVariant = getTextureVariantKey();
+  lastResizeDims.w = 0;
+  lastResizeDims.h = 0;
+  lastResizeDims.dpr = 0;
+  handleResize(roomKey || currentRoomKey);
+}
+
+function reloadCurrentRoomTextures() {
+  if (!currentRoomKey) return;
+  var roomData = getRoomTextureUrls(currentRoomKey);
+  if (!roomData) return;
+  showLoader();
+  loadRoomTextures(roomData, function (baseTexture, depthTexture) {
+    applyRoomTexturesToScene(baseTexture, depthTexture, currentRoomKey);
+    hideInitialLoader();
+    hideLoader();
+  });
+}
 
 var textureCache = [];
 var textureRefCount = {};
@@ -3042,7 +3249,7 @@ function updateCanvasRect() {
 evaluateDeviceFlags();
 
 var textureWidth = usesMobileImg ? 1200 : 1920;
-var parallaxStrength = usesMobileImg ? 0.03 : 0.08;
+var parallaxStrength = usesMobileImg ? 0.06 : 0.1;
 
 var STATE_KEY = 'immersive_state';
 var ONBOARDING_KEY = 'immersive_onboarding_seen';
@@ -3368,13 +3575,21 @@ var fragmentShaderSource = `
   }
 
   vec2 parallaxUv(vec2 uv, sampler2D depthTex, vec2 mouse) {
-    vec3 depthSample = texture2D(depthTex, uv).rgb;
-    float depth = dot(depthSample, vec3(0.299, 0.587, 0.114));
-    float d = depth - 0.5;
+    float depthC = dot(texture2D(depthTex, uv).rgb, vec3(0.299, 0.587, 0.114));
+
+    // Screen-space depth gradient — no texel size needed, works at any resolution
+    float ddx = dFdx(depthC);
+    float ddy = dFdy(depthC);
+    float edgeGrad = length(vec2(ddx, ddy));
+
+    // Attenuate parallax at depth discontinuities (prevents ghosting)
+    float edgeFade = 1.0 - smoothstep(0.0, 0.12, edgeGrad);
+
+    float d = depthC - 0.5;
     vec2 centeredMouse = mouse - 0.5;
 
     vec2 tiltOffset = vec2(uTiltOffsetX, uTiltOffsetY);
-    vec2 offset = (centeredMouse + tiltOffset) * uParallaxStrength * d;
+    vec2 offset = (centeredMouse + tiltOffset) * uParallaxStrength * d * edgeFade;
 
     float scrollWeight = d + 0.5;
     float backCounterShift = (1.0 - scrollWeight) * -0.08;
@@ -3607,7 +3822,7 @@ function initImmersiveScene() {
       antialias: true,
       preserveDrawingBuffer: true,
       alpha: true,
-      powerPreference: 'high-performance'
+      powerPreference: 'high-performance',
     });
   } catch (e) {
     if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] WebGL context creation failed:', e);
@@ -3640,7 +3855,7 @@ function initImmersiveScene() {
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 2);
   camera.position.z = 1;
 
-  var geometry = _safePlaneGeometry(2, 2, "main-scene-plane");
+  var geometry = _safePlaneGeometry(2, 2, 'main-scene-plane');
   var textureLoader = new THREE.TextureLoader();
 
   var placeholderData = new Uint8Array([0, 0, 0, 255]);
@@ -3711,6 +3926,7 @@ function initImmersiveScene() {
   goToRoom(startRoom, true);
   pushNavigationHistory(startRoom);
   writeImmersivePreference();
+  updateCameraForMode();
 
   if (state.panel === 'product' && state.product) {
     setTimeout(function () {
@@ -3804,7 +4020,7 @@ function showLoader() {
   var imgAspect = transitionLogoTex.image ? transitionLogoTex.image.width / transitionLogoTex.image.height : 1;
   var logoW = logoH * Math.max(imgAspect, 0.5);
 
-  var geom = _safePlaneGeometry(logoW, logoH, "logo-plane");
+  var geom = _safePlaneGeometry(logoW, logoH, 'logo-plane');
   var mat = new THREE.MeshBasicMaterial({
     map: transitionLogoTex,
     transparent: true,
@@ -3906,66 +4122,66 @@ var lastMobile = isMobile;
 var lastOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
 
 function onWindowResize() {
-  if (resizeRaf !== null) return;
+  // Coalesce rapid resize events — reschedule RAF so the latest dimensions win
+  if (resizeRaf !== null) {
+    cancelAnimationFrame(resizeRaf);
+  }
   resizeRaf = requestAnimationFrame(function () {
     resizeRaf = null;
     var wasMobile = isMobile;
     var wasUsesMobileImg = usesMobileImg;
     evaluateDeviceFlags();
     updateCanvasRect();
-    handleResize();
 
     var currentOrientation = window.matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
-    if (isMobile !== lastMobile || currentOrientation !== lastOrientation || usesMobileImg !== wasUsesMobileImg) {
+    var orientationChanged = currentOrientation !== lastOrientation;
+    var mobileImgChanged = usesMobileImg !== wasUsesMobileImg;
+
+    // Mobile and desktop room canvases use separate assets — swap when variant changes
+    if (mobileImgChanged && currentRoomKey) {
+      renderHotspots(currentRoomKey);
+      var roomData = getRoomTextureUrls(currentRoomKey);
+      if (roomData) {
+        showLoader();
+        loadRoomTextures(roomData, function (baseTexture, depthTexture) {
+          applyRoomTexturesToScene(baseTexture, depthTexture, currentRoomKey);
+          if (getGalleryStageConfig(currentRoomKey).length) {
+            if (galleryStageRegistry[currentRoomKey]) {
+              disposeGalleryStage(currentRoomKey);
+            }
+            var _sectionEl = document.querySelector('.immersive-store');
+            var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
+            var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
+            var _layoutConfig =
+              _semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout]
+                ? LAYOUT_REGISTRY[_semanticLayout].config
+                : {};
+            buildGalleryStageForRoom(currentRoomKey, scene, {
+              layout: getGalleryLayout(currentRoomKey),
+              radius: 6,
+              arcDegrees: 120,
+              verticalOffset: 0.3,
+              tiltDegrees: -3,
+              cardSpacing: _layoutConfig.spacing || 3.5,
+              cardHeight: 2.2,
+              cardAspect: 2 / 3,
+              layoutConfig: _layoutConfig,
+            });
+          }
+          hideInitialLoader();
+          hideLoader();
+        });
+      }
+    } else {
+      if (orientationChanged && currentRoomKey) {
+        renderHotspots(currentRoomKey);
+      }
+      handleResize();
+    }
+
+    if (isMobile !== wasMobile || orientationChanged || mobileImgChanged) {
       lastMobile = isMobile;
       lastOrientation = currentOrientation;
-      if (currentRoomKey) renderHotspots(currentRoomKey);
-
-      // Reload room texture if device type, orientation, or mobile-image flag changed
-      if (
-        (wasMobile !== isMobile || usesMobileImg !== wasUsesMobileImg || currentOrientation !== lastOrientation) &&
-        currentRoomKey
-      ) {
-        var roomData = getRoomTextureUrls(currentRoomKey);
-        if (roomData) {
-          showLoader();
-          loadRoomTextures(roomData, function (baseTexture, depthTexture) {
-            if (uniforms) {
-              uniforms.uTexture1.value = baseTexture;
-              uniforms.uDepth1.value = depthTexture;
-              uniforms.uTexture2.value = baseTexture;
-              uniforms.uDepth2.value = depthTexture;
-              uniforms.uTransitionProgress.value = 0;
-            }
-            // Rebuild gallery stage for new screen size
-            if (getGalleryStageConfig(currentRoomKey).length) {
-              if (galleryStageRegistry[currentRoomKey]) {
-                disposeGalleryStage(currentRoomKey);
-              }
-              var _sectionEl = document.querySelector('.immersive-store');
-              var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
-              var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
-              var _layoutConfig =
-                _semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout]
-                  ? LAYOUT_REGISTRY[_semanticLayout].config
-                  : {};
-              buildGalleryStageForRoom(currentRoomKey, scene, {
-                layout: getGalleryLayout(currentRoomKey),
-                radius: 6,
-                arcDegrees: 120,
-                verticalOffset: 0.3,
-                tiltDegrees: -3,
-                cardSpacing: _layoutConfig.spacing || 3.5,
-                cardHeight: 2.2,
-                cardAspect: 2 / 3,
-                layoutConfig: _layoutConfig,
-              });
-            }
-            hideInitialLoader();
-            hideLoader();
-          });
-        }
-      }
     }
   });
 }
@@ -3975,31 +4191,33 @@ var orientationMediaQuery = null;
 var orientationListener = null;
 
 function bindResizeHandling() {
-  // Use ResizeObserver for canvas size changes when available (more accurate)
-  // Fall back to window resize listener for broader compatibility
-  if ('ResizeObserver' in window && renderer && renderer.domElement) {
+  var canvas = renderer && renderer.domElement;
+  var wrapper = canvas && canvas.closest('.immersive-store__canvas-wrapper');
+
+  // Observe wrapper only — observing canvas causes setSize() feedback loops
+  if ('ResizeObserver' in window && wrapper) {
     resizeObserver = new ResizeObserver(function () {
       onWindowResize();
     });
-    resizeObserver.observe(renderer.domElement);
-  } else {
-    ListenerRegistry.add('window-resize', window, 'resize', onWindowResize);
+    resizeObserver.observe(wrapper);
   }
-  // Issue 13: Removed separate orientation matchMedia listener.
-  // Orientation changes always fire a resize event too, and our RAF
-  // debounce in onWindowResize already deduplicates. The extra listener
-  // caused triple-fires (resize + observer + orientation) leading to
-  // incorrect device flag evaluation on some mobile browsers.
+
+  ListenerRegistry.add('window-resize', window, 'resize', onWindowResize);
+
+  if (window.visualViewport) {
+    ListenerRegistry.add('visual-viewport-resize', window.visualViewport, 'resize', onWindowResize);
+    ListenerRegistry.add('visual-viewport-scroll', window.visualViewport, 'scroll', onWindowResize);
+  }
 }
 
 function unbindResizeHandling() {
-  // Clean up whichever resize mechanism was used
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
-  } else {
-    window.removeEventListener('resize', onWindowResize);
   }
+  ListenerRegistry.cleanup('window-resize');
+  ListenerRegistry.cleanup('visual-viewport-resize');
+  ListenerRegistry.cleanup('visual-viewport-scroll');
   if (orientationMediaQuery && orientationListener) {
     orientationMediaQuery.removeEventListener('change', orientationListener);
     orientationMediaQuery = null;
@@ -4010,12 +4228,28 @@ function unbindResizeHandling() {
 function handleResize(roomKeyOverride) {
   if (!renderer || !camera) return;
   evaluateDeviceFlags();
+
+  var expectedVariant = getTextureVariantKey();
+  if (!roomKeyOverride && currentRoomKey && activeTextureVariant && activeTextureVariant !== expectedVariant) {
+    reloadCurrentRoomTextures();
+    return;
+  }
+
   var canvas = renderer.domElement;
-  // Use canvas client dimensions so the renderer fills its container exactly
-  var width = canvas.clientWidth || window.innerWidth;
-  var height = canvas.clientHeight || window.innerHeight;
+  var wrapper = canvas.closest('.immersive-store__canvas-wrapper');
+  var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
+  var width = (wrapper && wrapper.clientWidth) || canvas.clientWidth || window.innerWidth;
+  var height = (wrapper && wrapper.clientHeight) || canvas.clientHeight || window.innerHeight;
   if (width === 0 || height === 0) return;
 
+  if (width === lastResizeDims.w && height === lastResizeDims.h && dpr === lastResizeDims.dpr && !roomKeyOverride) {
+    return;
+  }
+  lastResizeDims.w = width;
+  lastResizeDims.h = height;
+  lastResizeDims.dpr = dpr;
+
+  renderer.setPixelRatio(dpr);
   renderer.setSize(width, height, false);
 
   // Update camera to match new aspect ratio
@@ -4046,11 +4280,39 @@ function handleResize(roomKeyOverride) {
     var canvasAspect = width / height;
     var imageAspect = currentImageAspect;
     if (canvasAspect > imageAspect) {
-      planeMesh.scale.set(1, canvasAspect / imageAspect, 1);
+      // Viewport wider than image — scale to fill width (object-fit: cover)
+      planeMesh.scale.set(canvasAspect, canvasAspect / imageAspect, 1);
     } else {
-      planeMesh.scale.set(imageAspect / canvasAspect, 1, 1);
+      // Viewport taller than image — scale to fill height (preserve texture aspect)
+      planeMesh.scale.set(imageAspect, 1, 1);
     }
     planeMesh.position.set(0, 0, 0);
+    // #region agent log
+    fetch('http://127.0.0.1:7285/ingest/df92de2b-e66f-4994-92c4-45d829c912c2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7ccb9b' },
+      body: JSON.stringify({
+        sessionId: '7ccb9b',
+        runId: 'texture-variant-fix',
+        hypothesisId: 'H7',
+        location: 'immersive-core.js:handleResize',
+        message: 'Plane scale applied',
+        data: {
+          width: width,
+          height: height,
+          textureVariant: activeTextureVariant,
+          expectedVariant: getTextureVariantKey(),
+          canvasAspect: Math.round(canvasAspect * 1000) / 1000,
+          imageAspect: Math.round(imageAspect * 1000) / 1000,
+          scaleX: planeMesh.scale.x,
+          scaleY: planeMesh.scale.y,
+          planeAspect: Math.round((planeMesh.scale.x / planeMesh.scale.y) * 1000) / 1000,
+          branch: canvasAspect > imageAspect ? 'canvas-wider' : 'canvas-taller',
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(function () {});
+    // #endregion
   }
   if (immersiveState.mode === 'editorial') cacheEditorialOverlay();
 }
@@ -4348,6 +4610,8 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       uniforms.uDepth1.value = depthTexture;
       uniforms.uTexture2.value = baseTexture;
       uniforms.uDepth2.value = depthTexture;
+      syncImageAspectFromTexture(baseTexture);
+      activeTextureVariant = getTextureVariantKey();
       currentRoomKey = roomKey;
       uiLayer.style.transition = '';
       uiLayer.style.opacity = '1';
@@ -4376,6 +4640,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       hideLoader();
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
+      handleResize(roomKey);
       return;
     }
 
@@ -4405,6 +4670,12 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
         uniforms.uDepth1.value = uniforms.uDepth2.value;
         uniforms.uTransitionProgress.value = 0;
         currentRoomKey = roomKey;
+        syncImageAspectFromTexture(uniforms.uTexture1.value);
+        activeTextureVariant = getTextureVariantKey();
+        lastResizeDims.w = 0;
+        lastResizeDims.h = 0;
+        lastResizeDims.dpr = 0;
+        handleResize(roomKey);
 
         if (getGalleryStageConfig(roomKey).length) {
           var _sectionEl2 = document.querySelector('.immersive-store');
@@ -4474,7 +4745,44 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
   });
 }
 
-function loadRoomTextures(roomData, callback) {
+function loadRoomTextures(roomData, callback, _retryCount) {
+  var retryCount = _retryCount || 0;
+
+  // If no depth map URL, use a flat placeholder (mid-gray = no displacement)
+  if (!roomData.depthMapUrl) {
+    var placeholder = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1);
+    placeholder.minFilter = THREE.LinearFilter;
+    placeholder.magFilter = THREE.LinearFilter;
+    placeholder.needsUpdate = true;
+    // Still load the base texture normally
+    var baseLoader = new THREE.TextureLoader();
+    baseLoader.load(
+      roomData.baseTextureUrl,
+      function (tex) {
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        syncImageAspectFromTexture(tex);
+        activeTextureVariant = getTextureVariantKey();
+        callback(tex, placeholder);
+      },
+      undefined,
+      function () {
+        if (retryCount < 1) {
+          setTimeout(function () {
+            loadRoomTextures(roomData, callback, retryCount + 1);
+          }, 1000);
+          return;
+        }
+        hideLoader();
+        if (typeof showFeedback === 'function') {
+          showFeedback('Unable to load scene. Please check your connection and try again.', 'error');
+        }
+        transitioning = false;
+      },
+    );
+    return;
+  }
+
   var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
 
   var cachedIndex = textureCache.findIndex(function (entry) {
@@ -4484,6 +4792,8 @@ function loadRoomTextures(roomData, callback) {
   if (cachedIndex !== -1) {
     var cached = textureCache.splice(cachedIndex, 1)[0];
     textureCache.unshift(cached);
+    syncImageAspectFromTexture(cached.base);
+    activeTextureVariant = getTextureVariantKey();
     callback(cached.base, cached.depth);
     return;
   }
@@ -4491,7 +4801,6 @@ function loadRoomTextures(roomData, callback) {
   var loader = new THREE.TextureLoader();
   var loaded = { base: null, depth: null };
   var failed = false;
-  var retryAttempts = 0;
 
   var timeoutId = setTimeout(function () {
     if (!loaded.base || !loaded.depth) {
@@ -4526,6 +4835,8 @@ function loadRoomTextures(roomData, callback) {
       }
     }
 
+    syncImageAspectFromTexture(loaded.base);
+    activeTextureVariant = getTextureVariantKey();
     callback(loaded.base, loaded.depth);
   }
 
@@ -4533,13 +4844,10 @@ function loadRoomTextures(roomData, callback) {
     if (failed) return;
     failed = true;
     clearTimeout(timeoutId);
-    // Failed to load texture - tracked silently
 
-    if (!retryAttempts || retryAttempts < 1) {
-      retryAttempts = (retryAttempts || 0) + 1;
-      // Retrying texture load
+    if (retryCount < 1) {
       setTimeout(function () {
-        loadRoomTextures(roomData, callback);
+        loadRoomTextures(roomData, callback, retryCount + 1);
       }, 1000);
       return;
     }
@@ -4549,7 +4857,6 @@ function loadRoomTextures(roomData, callback) {
       var canvas = document.getElementById(immersiveCanvasId);
       if (canvas) showWebGLFallback(canvas);
     }
-    // Issue 4: Mid-session texture failure -- show user-facing error and let them retry
     if (typeof showFeedback === 'function') {
       showFeedback('Unable to load scene. Please check your connection and try again.', 'error');
     }
@@ -4561,13 +4868,6 @@ function loadRoomTextures(roomData, callback) {
     function (tex) {
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
-      if (tex.image && tex.image.width && tex.image.height) {
-        currentImageAspect = tex.image.width / tex.image.height;
-        var loadingRoomKey = roomData.roomKey;
-        requestAnimationFrame(function () {
-          handleResize(loadingRoomKey);
-        });
-      }
       loaded.base = tex;
       onBothLoaded();
     },
@@ -4769,9 +5069,9 @@ function closeDialogFocus(panel, triggerEl) {
 function getFocusableElements(container) {
   return Array.from(
     container.querySelectorAll(
-      'a[href]:not([disabled]), button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([disabled]):not([tabindex="-1"])'
-    )
-  ).filter(el => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement);
+      'a[href]:not([disabled]), button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([disabled]):not([tabindex="-1"])',
+    ),
+  ).filter((el) => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement);
 }
 
 function trapFocus(container, event) {
@@ -4782,12 +5082,14 @@ function trapFocus(container, event) {
   const firstFocusableEl = focusableElements[0];
   const lastFocusableEl = focusableElements[focusableElements.length - 1];
 
-  if (event.shiftKey) { // Shift + Tab
+  if (event.shiftKey) {
+    // Shift + Tab
     if (document.activeElement === firstFocusableEl) {
       lastFocusableEl.focus();
       event.preventDefault();
     }
-  } else { // Tab
+  } else {
+    // Tab
     if (document.activeElement === lastFocusableEl) {
       firstFocusableEl.focus();
       event.preventDefault();
@@ -4809,16 +5111,16 @@ function openPanel(panel, triggerEl) {
   panel.setAttribute('data-open', 'true');
   panel.setAttribute('role', 'dialog');
   panel.setAttribute('aria-modal', 'true');
-  
+
   // Store the trigger element to return focus later
   panel._panelTrigger = triggerEl;
 
   // Add focus trap
   const trapFocusHandler = trapFocus.bind(null, panel);
   ListenerRegistry.add('panel-trap-focus-' + panel.id, panel, 'keydown', trapFocusHandler);
-  
+
   // Handle escape key
-  const escapeHandler = function(e) {
+  const escapeHandler = function (e) {
     if (e.key === 'Escape') closePanel(panel);
   };
   ListenerRegistry.add('panel-escape-' + panel.id, panel, 'keydown', escapeHandler);
@@ -4844,7 +5146,7 @@ function openPanel(panel, triggerEl) {
 
 function closePanel(panel) {
   if (!panel) return;
-  
+
   // Remove focus trap and escape handler
   ListenerRegistry.cleanup('panel-trap-focus-' + panel.id);
   ListenerRegistry.cleanup('panel-escape-' + panel.id);
@@ -4855,7 +5157,7 @@ function closePanel(panel) {
 
   // Return focus to the element that opened the panel
   if (panel._panelTrigger && typeof panel._panelTrigger.focus === 'function') {
-    requestAnimationFrame(function() {
+    requestAnimationFrame(function () {
       panel._panelTrigger.focus();
     });
   }
@@ -4881,7 +5183,7 @@ function fetchWithCache(url) {
   var cached = contentCache[url];
   if (cached) {
     // Check staleness — evict entries older than CACHE_TTL_MS
-    if (cached.timestamp && (Date.now() - cached.timestamp) > CACHE_TTL_MS) {
+    if (cached.timestamp && Date.now() - cached.timestamp > CACHE_TTL_MS) {
       delete contentCache[url];
       var staleIdx = contentCacheOrder.indexOf(url);
       if (staleIdx > -1) contentCacheOrder.splice(staleIdx, 1);
@@ -5125,7 +5427,7 @@ function activateGuidedMode() {
 
 function updateCameraForMode() {
   if (!camera) return;
-  var strength = isMobile ? 0.03 : 0.08;
+  var strength = isMobile ? 0.06 : 0.1;
   if (uniforms && uniforms.uParallaxStrength) {
     uniforms.uParallaxStrength.value = strength;
   }
