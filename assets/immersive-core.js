@@ -5573,6 +5573,10 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
       for (var i = 0; i < images.length; i++) {
         images[i].setAttribute('loading', 'lazy');
       }
+      // Strip <script> tags before inserting into overlay
+      temp.querySelectorAll('script').forEach(function (s) {
+        s.parentNode.removeChild(s);
+      });
       overlayContent.innerHTML = temp.innerHTML;
 
       // Fix: Find the specific layout container and ensure it is visible inside the overlay

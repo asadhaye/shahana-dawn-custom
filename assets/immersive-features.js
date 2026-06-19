@@ -112,6 +112,22 @@ function renderSkeletonProduct() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Sanitize fetched section HTML before DOM insertion
+// Strips <script> tags to prevent double-execution of Shopify
+// section scripts that may already be loaded in the bundle.
+// ─────────────────────────────────────────────────────────────
+
+function setPanelHtml(container, html) {
+  if (!container) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('script').forEach(function (s) {
+    s.parentNode.removeChild(s);
+  });
+  container.innerHTML = tmp.innerHTML;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Error feedback UI for panel surfaces
 // ─────────────────────────────────────────────────────────────
 
@@ -165,14 +181,21 @@ function setWishlistItems(items) {
 
 function fadeInContent(container, html) {
   if (!container) return;
+  // Strip <script> tags from fetched HTML before DOM insertion
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('script').forEach(function (s) {
+    s.parentNode.removeChild(s);
+  });
+  var cleanHtml = tmp.innerHTML;
   if (reduceMotion) {
-    container.innerHTML = html;
+    container.innerHTML = cleanHtml;
     return;
   }
   container.style.transition = 'opacity 150ms ease-in-out';
   container.style.opacity = '0';
   setTimeout(function () {
-    container.innerHTML = html;
+    container.innerHTML = cleanHtml;
     container.style.opacity = '1';
   }, 150);
 }
@@ -232,7 +255,7 @@ function openProductPanel(productHandle, collectionHandle) {
           if (contentArea) {
             fadeInContent(contentArea, html);
           } else {
-            panel.innerHTML = html;
+            setPanelHtml(panel, html);
           }
 
           // Panel-specific setup
@@ -429,7 +452,7 @@ function openCollectionPanel(collectionHandle) {
           if (contentArea) {
             fadeInContent(contentArea, html);
           } else {
-            panel.innerHTML = html;
+            setPanelHtml(panel, html);
           }
 
           // Panel-specific setup
@@ -607,7 +630,10 @@ function enterEditorialMode(roomKey, triggerEl) {
   if (!sectionInstanceId) {
     console.warn('[Immersive] No immersive-editorial section instance found on page for room:', roomKey);
     if (sourceSection) {
-      overlayContent.innerHTML = sourceSection.innerHTML;
+      var tmp = document.createElement('div');
+      tmp.innerHTML = sourceSection.innerHTML;
+      tmp.querySelectorAll('script').forEach(function (s) { s.parentNode.removeChild(s); });
+      overlayContent.innerHTML = tmp.innerHTML;
       performEditorialUIActivation(overlay, canvas);
     }
     return;
