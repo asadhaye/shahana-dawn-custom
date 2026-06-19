@@ -4856,31 +4856,33 @@ function handleResize(roomKeyOverride) {
       planeMesh.scale.set(imageAspect, 1, 1);
     }
     planeMesh.position.set(0, 0, 0);
-    // #region agent log
-    fetch('http://127.0.0.1:7285/ingest/df92de2b-e66f-4994-92c4-45d829c912c2', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7ccb9b' },
-      body: JSON.stringify({
-        sessionId: '7ccb9b',
-        runId: 'texture-variant-fix',
-        hypothesisId: 'H7',
-        location: 'immersive-core.js:handleResize',
-        message: 'Plane scale applied',
-        data: {
-          width: width,
-          height: height,
-          textureVariant: activeTextureVariant,
-          expectedVariant: getTextureVariantKey(),
-          canvasAspect: Math.round(canvasAspect * 1000) / 1000,
-          imageAspect: Math.round(imageAspect * 1000) / 1000,
-          scaleX: planeMesh.scale.x,
-          scaleY: planeMesh.scale.y,
-          planeAspect: Math.round((planeMesh.scale.x / planeMesh.scale.y) * 1000) / 1000,
-          branch: canvasAspect > imageAspect ? 'canvas-wider' : 'canvas-taller',
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(function () {});
+    // #region agent log — local debug telemetry (dev only)
+    if (window.__IMMERSIVE_DEV__) {
+      fetch('http://127.0.0.1:7285/ingest/df92de2b-e66f-4994-92c4-45d829c912c2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7ccb9b' },
+        body: JSON.stringify({
+          sessionId: '7ccb9b',
+          runId: 'texture-variant-fix',
+          hypothesisId: 'H7',
+          location: 'immersive-core.js:handleResize',
+          message: 'Plane scale applied',
+          data: {
+            width: width,
+            height: height,
+            textureVariant: activeTextureVariant,
+            expectedVariant: getTextureVariantKey(),
+            canvasAspect: Math.round(canvasAspect * 1000) / 1000,
+            imageAspect: Math.round(imageAspect * 1000) / 1000,
+            scaleX: planeMesh.scale.x,
+            scaleY: planeMesh.scale.y,
+            planeAspect: Math.round((planeMesh.scale.x / planeMesh.scale.y) * 1000) / 1000,
+            branch: canvasAspect > imageAspect ? 'canvas-wider' : 'canvas-taller',
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(function () {});
+    }
     // #endregion
   }
   if (immersiveState.mode === 'editorial') cacheEditorialOverlay();
