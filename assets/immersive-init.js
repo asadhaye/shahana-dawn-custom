@@ -1587,6 +1587,13 @@ document.addEventListener('shopify:section:select', function (e) {
 document.addEventListener('shopify:section:unload', function (e) {
   if (e.target && e.target.querySelector && e.target.querySelector('#immersive-canvas')) {
     _immersiveInitBound = false;
+
+    // Stop main animate loop driven by ImmersiveTheme.ticker
+    if (typeof window.ShahanaImmersive !== 'undefined' &&
+        typeof window.ShahanaImmersive.stopAnimate === 'function') {
+      window.ShahanaImmersive.stopAnimate();
+    }
+
     // Teardown: clean up all ListenerRegistry entries + dispose GPU resources
     if (typeof ListenerRegistry !== 'undefined') ListenerRegistry.cleanupAll();
     if (typeof unbindResizeHandling === 'function') unbindResizeHandling();

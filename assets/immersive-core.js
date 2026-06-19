@@ -4443,6 +4443,11 @@ function stopAnimate() {
   if (unsubscribeAnimate) { unsubscribeAnimate(); unsubscribeAnimate = null; }
 }
 
+// Expose stopAnimate on the namespace for external cleanup (e.g. section unload)
+if (typeof window.ShahanaImmersive === 'object' && window.ShahanaImmersive !== null) {
+  window.ShahanaImmersive.stopAnimate = stopAnimate;
+}
+
 function animateFrame(timestamp, delta) {
   if (!uniforms) return;
 
