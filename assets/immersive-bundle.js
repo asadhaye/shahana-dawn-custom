@@ -600,14 +600,6 @@ if (typeof window.trackImmersiveEvent === 'undefined') {
 
 var STORE_ROOMS = {
   storefront: {
-    baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-d-base.webp?v=1774971846&width=1600&quality=75',
-    mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-m-base.webp?v=1774971846&width=900&quality=75',
-    depthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-d-depth.webp?v=1774971845&width=1600&quality=60',
-    mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/storefront-m-depth.webp?v=1774971846&width=900&quality=60',
     hotspots: [
       {
         x: 50,
@@ -622,10 +614,6 @@ var STORE_ROOMS = {
   },
 
   lounge: {
-    baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/Lounge-Base-flow.jpg?v=1775054500&width=1600&quality=75',
-    mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/lounge-m-base.jpg?v=1775054009&width=900&quality=75',
     depthMapUrl: '',
     mobileDepthMapUrl: '',
     hotspots: [
@@ -638,13 +626,6 @@ var STORE_ROOMS = {
   },
 
   designer_houses: {
-    baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-base.jpg?v=1775510548&width=1600',
-    mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-base.jpg?v=1775516126&width=900',
-    depthMapUrl: 'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-d-depth.webp?v=1775510548&width=1600',
-    mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/designer-m-depth.webp?v=1775516123&width=900',
     hotspots: [
       { x: 50, y: 15, label: 'Explore Designers', targetEditorialRoom: 'designer_houses' },
       { x: 13, y: 40, label: 'Suffuse', targetCollection: 'suffuse' },
@@ -655,14 +636,6 @@ var STORE_ROOMS = {
   },
 
   occasions: {
-    baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah.png?v=1775312813&width=1600&quality=75',
-    mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah.png?v=1775312813&width=900&quality=75',
-    depthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933',
-    mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/occasions-eid-bridal-mehndi-dawat-nikah-depth-map.png?v=1776515933',
     hotspots: [
       { x: 25, y: 40, label: 'Eid Collection', targetCollection: 'eid-collection' },
       { x: 42, y: 50, label: 'Bridal & Mehndi', targetCollection: 'bridal-mehndi' },
@@ -674,14 +647,6 @@ var STORE_ROOMS = {
   },
 
   featured_collections: {
-    baseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=1600&quality=75',
-    mobileBaseTextureUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-base.jpg?v=1772037254&width=900&quality=75',
-    depthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=1600&quality=60',
-    mobileDepthMapUrl:
-      'https://cdn.shopify.com/s/files/1/0594/0435/3692/files/luxurious-depth.png?v=1772037261&width=900&quality=60',
     hotspots: [
       { x: 25, y: 40, label: 'SS5 Summer Pret 26', targetCollection: 'summer-pret-26-eid-edit-saad-bin-shahzad' },
       { x: 50, y: 40, label: 'Suffuse Luxury Pret', targetCollection: 'luxury-pret-suffuse' },
@@ -691,6 +656,55 @@ var STORE_ROOMS = {
     ],
   },
 };
+
+// Fallback textures — loaded from data attributes on the canvas wrapper
+var fallbackBaseTexture = null;
+var fallbackDepthTexture = null;
+
+function loadFallbackTextures(wrapper) {
+  if (!wrapper || !window.THREE) return;
+  var fallbackBaseUrl = wrapper.getAttribute('data-fallback-base-url');
+  var fallbackDepthUrl = wrapper.getAttribute('data-fallback-depth-url');
+  if (!fallbackBaseUrl && !fallbackDepthUrl) return;
+
+  var loader = new THREE.TextureLoader();
+  if (fallbackBaseUrl) {
+    loader.load(fallbackBaseUrl, function (tex) {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      fallbackBaseTexture = tex;
+    }, undefined, function () {
+      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load fallback base texture');
+    });
+  }
+  if (fallbackDepthUrl) {
+    loader.load(fallbackDepthUrl, function (tex) {
+      fallbackDepthTexture = tex;
+    }, undefined, function () {
+      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load fallback depth texture');
+    });
+  }
+}
+
+function loadTextureWithFallback(primaryUrl, fallbackTexture) {
+  return new Promise(function (resolve) {
+    if (!primaryUrl) {
+      resolve(fallbackTexture);
+      return;
+    }
+    if (!window.THREE) {
+      resolve(fallbackTexture);
+      return;
+    }
+    var loader = new THREE.TextureLoader();
+    loader.load(primaryUrl, function (tex) {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      resolve(tex);
+    }, undefined, function () {
+      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load texture, using fallback:', primaryUrl);
+      resolve(fallbackTexture);
+    });
+  });
+}
 
 var CODEX_THEME_TO_ROOM = {
   Eid: 'occasions',
@@ -4227,12 +4241,7 @@ function getRoomTextureUrls(roomKey) {
   var baseUrl = mobile && room.mobileBaseTextureUrl ? room.mobileBaseTextureUrl : room.baseTextureUrl;
   var depthUrl = mobile && room.mobileDepthMapUrl ? room.mobileDepthMapUrl : room.depthMapUrl;
 
-  if (!baseUrl || !depthUrl || baseUrl === 'null' || depthUrl === 'null' || baseUrl === '' || depthUrl === '') {
-    console.warn('[Immersive] Missing texture URLs for room:', roomKey, 'baseUrl:', baseUrl, 'depthUrl:', depthUrl);
-    return null;
-  }
-
-  return { roomKey: roomKey, baseTextureUrl: baseUrl, depthMapUrl: depthUrl, hotspots: room.hotspots };
+  return { roomKey: roomKey, baseTextureUrl: baseUrl || null, depthMapUrl: depthUrl || null, hotspots: room.hotspots };
 }
 
 function preloadAdjacentRoomTextures(currentRoomKey) {
@@ -4334,6 +4343,10 @@ function initImmersiveScene() {
   var canvas = document.getElementById(immersiveCanvasId);
   var uiLayer = document.getElementById(uiLayerId);
   if (!canvas || !uiLayer) return;
+
+  // Load fallback textures from data attributes before scene setup
+  var fallbackWrapper = document.querySelector('.immersive-store__canvas-wrapper');
+  loadFallbackTextures(fallbackWrapper);
 
   // Listen for gallery config ready events from data provider sections
   document.addEventListener('immersive:galleryConfigReady', function (evt) {
@@ -5353,36 +5366,20 @@ function loadRoomTextures(roomData, callback, _retryCount) {
     placeholder.minFilter = THREE.LinearFilter;
     placeholder.magFilter = THREE.LinearFilter;
     placeholder.needsUpdate = true;
-    // Still load the base texture normally
-    var baseLoader = new THREE.TextureLoader();
-    baseLoader.load(
-      roomData.baseTextureUrl,
-      function (tex) {
+    // Load base texture with fallback support
+    loadTextureWithFallback(roomData.baseTextureUrl, fallbackBaseTexture).then(function (tex) {
+      if (tex) {
         tex.minFilter = THREE.LinearFilter;
         tex.magFilter = THREE.LinearFilter;
         syncImageAspectFromTexture(tex);
         activeTextureVariant = getTextureVariantKey();
-        callback(tex, placeholder);
-      },
-      undefined,
-      function () {
-        if (retryCount < 1) {
-          setTimeout(function () {
-            loadRoomTextures(roomData, callback, retryCount + 1);
-          }, 1000);
-          return;
-        }
-        hideLoader();
-        if (typeof showFeedback === 'function') {
-          showFeedback('Unable to load scene. Please check your connection and try again.', 'error');
-        }
-        transitioning = false;
-      },
-    );
+      }
+      callback(tex, placeholder);
+    });
     return;
   }
 
-  var cacheKey = roomData.baseTextureUrl + '|' + roomData.depthMapUrl;
+  var cacheKey = (roomData.baseTextureUrl || 'fallback-base') + '|' + (roomData.depthMapUrl || 'fallback-depth');
 
   var cachedIndex = textureCache.findIndex(function (entry) {
     return entry && entry.key === cacheKey;
@@ -5397,7 +5394,6 @@ function loadRoomTextures(roomData, callback, _retryCount) {
     return;
   }
 
-  var loader = new THREE.TextureLoader();
   var loaded = { base: null, depth: null };
   var failed = false;
 
@@ -5462,41 +5458,37 @@ function loadRoomTextures(roomData, callback, _retryCount) {
     transitioning = false;
   }
 
-  loader.load(
-    roomData.baseTextureUrl,
-    function (tex) {
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      loaded.base = tex;
-      onBothLoaded();
-    },
-    undefined,
-    function () {
+  // Load base texture with fallback
+  loadTextureWithFallback(roomData.baseTextureUrl, fallbackBaseTexture).then(function (tex) {
+    if (!tex) {
       onError('base');
-    },
-  );
+      return;
+    }
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    loaded.base = tex;
+    onBothLoaded();
+  });
 
-  loader.load(
-    roomData.depthMapUrl,
-    function (tex) {
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      loaded.depth = tex;
-      if (window.__IMMERSIVE_DEV__) {
-        console.log(
-          '[Immersive] Depth texture loaded for',
-          roomData.roomKey,
-          'size:',
-          tex.image?.width + 'x' + tex.image?.height,
-        );
-      }
-      onBothLoaded();
-    },
-    undefined,
-    function () {
+  // Load depth texture with fallback
+  loadTextureWithFallback(roomData.depthMapUrl, fallbackDepthTexture).then(function (tex) {
+    if (!tex) {
       onError('depth');
-    },
-  );
+      return;
+    }
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    loaded.depth = tex;
+    if (window.__IMMERSIVE_DEV__) {
+      console.log(
+        '[Immersive] Depth texture loaded for',
+        roomData.roomKey,
+        'size:',
+        tex.image?.width + 'x' + tex.image?.height,
+      );
+    }
+    onBothLoaded();
+  });
 }
 
 function isCachedTexture(texture) {

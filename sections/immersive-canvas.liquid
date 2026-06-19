@@ -97,6 +97,8 @@
     data-depth-url="{{ depth_url }}"
     data-logo-url="{{ logo_src }}"
     data-transition-style="{{ section.settings.transition_style | default: 'crossfade' | escape }}"
+    data-fallback-base-url="{{ 'immersive-fallback-base.jpg' | asset_url }}"
+    data-fallback-depth-url="{{ 'immersive-fallback-depth.jpg' | asset_url }}"
   >
     <div
       id="immersive-initial-loader"
