@@ -33,6 +33,12 @@
       recommendations: {
         dismissedRooms: {}, // Room rec dismissals (session-only)
       },
+      session: {
+        state: {}, // Runtime session state (session-only)
+      },
+      navigation: {
+        history: [], // Room navigation history (session-only)
+      },
     },
     wishlist: {
       items: [], // Array of product handles/IDs (persistent)
@@ -56,6 +62,8 @@
     'immersive.guided.dismissedGlobal': 'local',
     'immersive.guided.dismissedRooms': 'session',
     'immersive.recommendations.dismissedRooms': 'session',
+    'immersive.session.state': 'session',
+    'immersive.navigation.history': 'session',
     'wishlist.items': 'local',
     'onboarding.seen': 'local',
     preferredMode: 'local',
@@ -259,6 +267,24 @@
         storage: 'local',
         transform: function (val) {
           return val === '3d' ? '3d' : null;
+        },
+      },
+      // Session state (sessionStorage)
+      {
+        oldKey: 'immersive_state',
+        newPath: 'immersive.session.state',
+        storage: 'session',
+        transform: function (val) {
+          return (typeof val === 'object' && val !== null && !Array.isArray(val)) ? val : {};
+        },
+      },
+      // Navigation history (sessionStorage)
+      {
+        oldKey: 'immersive_nav_history',
+        newPath: 'immersive.navigation.history',
+        storage: 'session',
+        transform: function (val) {
+          return Array.isArray(val) ? val : [];
         },
       },
     ];

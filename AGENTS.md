@@ -28,17 +28,17 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
   - `npx jest tests/glass-panel-property.test.js -t "opens product panel" --forceExit`
 
 ### Immersive JS bundle
-- After editing `assets/immersive-core.js` or `assets/immersive-features.js`, rebuild:
+- After editing any immersive source file, rebuild:
   - `npm run build:immersive`
-- This concatenates core + features into `assets/immersive-bundle.js` and minifies to `assets/immersive-bundle.min.js`
-- `theme.liquid` loads `immersive-bundle.min.js` on the immersive page template
+- Build order: `immersive-state-manager.js` + `tick-manager.js` + `immersive-core.js` + `immersive-features.js` → `assets/immersive-bundle.js` → `assets/immersive-bundle.min.js`
+- `theme.liquid` loads `immersive-bundle.min.js` on the immersive page template (single file, no separate script tags)
 
-Build note: the immersive JS bundle is built via `npm run build:immersive` (concatenates `immersive-core.js` + `immersive-features.js` → `immersive-bundle.js` + minified `immersive-bundle.min.js`). Always rebuild after editing either source file.
+Build note: the immersive JS bundle is built via `npm run build:immersive`. Always rebuild after editing any source file.
 
 ## High-level architecture
 ### Theme shell and script loading
 - `layout/theme.liquid` is the global shell.
-- It conditionally loads `assets/three.min.js`, `assets/immersive-state-manager.js`, `assets/tick-manager.js`, `assets/immersive-bundle.min.js`, and `assets/immersive-init.js` only on `page.immersive`.
+- It conditionally loads `assets/three.min.js` and `assets/immersive-bundle.min.js` and `assets/immersive-init.js` only on `page.immersive`.
 - It loads `assets/bridge-behavior.js` globally.
 - It also shows the non-immersive preference banner when `localStorage.immersive_preferred_mode === '3d'`.
 
@@ -51,13 +51,19 @@ Build note: the immersive JS bundle is built via `npm run build:immersive` (conc
 - `sections/immersive-editorial.liquid` provides room-scoped editorial content (rendered on-demand in overlay).
 
 ### Runtime orchestration
-- `assets/immersive-store.js` is the monolithic runtime engine:
+- `assets/immersive-core.js` is the core runtime engine:
   - Base room map (`STORE_ROOMS`)
   - Merge of room settings from `#immersive-rooms-config`
   - Three.js scene + shader transitions
   - Hotspots, room navigation, guided mode, onboarding, wishlist, preference state
   - On-demand loading of section HTML for collection/product/editorial surfaces
   - Re-init hooks for Theme Editor (`shopify:section:load`)
+- `assets/immersive-features.js` extends core with wishlist, panels, editorial, analytics
+- `assets/immersive-state-manager.js` defines `window.ImmersiveTheme.state` (single source of truth for all state)
+- `assets/tick-manager.js` defines `window.ImmersiveTheme.ticker` (single rAF loop for all animations)
+- `window.ShahanaImmersive` is an alias for `window.ImmersiveTheme` (backward compatibility)
+- All state access goes through `ImmersiveTheme.state.get()`/`set()` — no direct localStorage/sessionStorage
+- All animation goes through `ImmersiveTheme.ticker.subscribe()` — no direct requestAnimationFrame
 
 ### On-demand panel surfaces
 - Collection panel section: `sections/glass-panel.liquid`
@@ -65,12 +71,17 @@ Build note: the immersive JS bundle is built via `npm run build:immersive` (conc
 - 2D→3D bridge CTA snippet: `snippets/immersive-bridge-btn.liquid`
 
 ## Data/state model to preserve
-- Storage keys used by immersive flow include:
-  - `immersive_preferred_mode`
-  - `immersive_onboarding_seen`
-  - `immersive_wishlist`
-  - `immersive_state`
-  - `immersive_nav_history`
+- All state flows through `window.ImmersiveTheme.state` (StateManager)
+- State paths used by immersive flow:
+  - `preferredMode` (localStorage) — '3d' or null
+  - `onboarding.seen` (localStorage) — boolean
+  - `immersive.browsing.signals` (localStorage) — array of signal objects
+  - `immersive.session.state` (sessionStorage) — runtime session state
+  - `immersive.navigation.history` (sessionStorage) — room nav stack
+  - `immersive.recommendations.dismissedRooms` (sessionStorage) — dismissal map
+  - `immersive.ui.filters` (sessionStorage) — filter state
+- Legacy keys (`immersive_preferred_mode`, `immersive_state`, etc.) are auto-migrated by the StateManager
+- All animation flows through `window.ImmersiveTheme.ticker` (TickManager)
 - Section rendering calls in this codebase use `?sections=<section_id>` and inject the returned section HTML.
 
 ## Practical implementation constraints
