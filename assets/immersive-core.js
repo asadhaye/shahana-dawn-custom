@@ -3927,7 +3927,7 @@ function initImmersiveScene() {
 
   bindResizeHandling();
   handleResize();
-  animate();
+  startAnimate();
 
   var canvasEl = renderer.domElement;
   canvasEl.addEventListener('click', function (event) {
@@ -4443,10 +4443,18 @@ function stopAnimate() {
   if (unsubscribeAnimate) { unsubscribeAnimate(); unsubscribeAnimate = null; }
 }
 
-// Expose stopAnimate on the namespace for external cleanup (e.g. section unload)
+// Expose startAnimate/stopAnimate on the namespace for external cleanup
 if (typeof window.ShahanaImmersive === 'object' && window.ShahanaImmersive !== null) {
+  window.ShahanaImmersive.startAnimate = startAnimate;
   window.ShahanaImmersive.stopAnimate = stopAnimate;
 }
+if (typeof window.ImmersiveTheme === 'object' && window.ImmersiveTheme !== null) {
+  window.ImmersiveTheme.startAnimate = startAnimate;
+  window.ImmersiveTheme.stopAnimate = stopAnimate;
+}
+
+// Backward-compatible wrapper so any remaining animate() calls don't break
+window.animate = function () { startAnimate(); };
 
 function animateFrame(timestamp, delta) {
   if (!uniforms) return;
