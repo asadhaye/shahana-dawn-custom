@@ -38,30 +38,29 @@ skills/
 # Agent/AI skill files (not part of the theme)
 .agent/
 .agents/
-.claude/skills/
-.codebuddy/skills/
-.codex/skills/
-.continue/skills/
-.cursor/skills/
-.gemini/skills/
-.opencode/skills/
-.qoder/skills/
-.roo/skills/
-.trae/skills/
-.vscode
-.windsurf
-.trae
-.roo
-.qodo
-.kilocode
-.gemini
-.devin
-.qwen
-.codex
-.codebuddy
-.claude
-.qopder
-.windsurf/skills/
+.claude/
+.codebuddy/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.windsurf/
+.kiro/
+.notes/
+threejs-ref/
+skills-lock.json
+context-for-shopify-dev-assistant.md
+AUDIT_REPORT*.md
+AUDIT_FINDINGS_AND_PROMPTS.md
+Additional_Code_Issues_Found_*.pdf
+Shahana_Immersive_Store_-_Complete_Implementation_Plan.pdf
+opencode.json
+translation.yml
+memory/
 
 # Theme Editor dynamically modified files
 # These should NOT be tracked - they are modified by Shopify Theme Editor
