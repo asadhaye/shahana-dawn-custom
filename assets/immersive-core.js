@@ -77,8 +77,6 @@ var STORE_ROOMS = {
   },
 
   lounge: {
-    depthMapUrl: '',
-    mobileDepthMapUrl: '',
     hotspots: [
       { x: 20, y: 35, label: 'Designer Houses', targetRoom: 'designer_houses', mobileX: 15, mobileY: 80 },
       { x: 50, y: 35, label: 'Occasions', targetRoom: 'occasions', mobileX: 50, mobileY: 80 },
@@ -132,19 +130,29 @@ function loadFallbackTextures(wrapper) {
 
   var loader = new THREE.TextureLoader();
   if (fallbackBaseUrl) {
-    loader.load(fallbackBaseUrl, function (tex) {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      fallbackBaseTexture = tex;
-    }, undefined, function () {
-      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load fallback base texture');
-    });
+    loader.load(
+      fallbackBaseUrl,
+      function (tex) {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        fallbackBaseTexture = tex;
+      },
+      undefined,
+      function () {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load fallback base texture');
+      },
+    );
   }
   if (fallbackDepthUrl) {
-    loader.load(fallbackDepthUrl, function (tex) {
-      fallbackDepthTexture = tex;
-    }, undefined, function () {
-      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load fallback depth texture');
-    });
+    loader.load(
+      fallbackDepthUrl,
+      function (tex) {
+        fallbackDepthTexture = tex;
+      },
+      undefined,
+      function () {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load fallback depth texture');
+      },
+    );
   }
 }
 
@@ -159,13 +167,18 @@ function loadTextureWithFallback(primaryUrl, fallbackTexture) {
       return;
     }
     var loader = new THREE.TextureLoader();
-    loader.load(primaryUrl, function (tex) {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      resolve(tex);
-    }, undefined, function () {
-      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load texture, using fallback:', primaryUrl);
-      resolve(fallbackTexture);
-    });
+    loader.load(
+      primaryUrl,
+      function (tex) {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        resolve(tex);
+      },
+      undefined,
+      function () {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load texture, using fallback:', primaryUrl);
+        resolve(fallbackTexture);
+      },
+    );
   });
 }
 
@@ -275,68 +288,80 @@ Immersive.layout = Immersive.layout || {
 // ─────────────────────────────────────────────────────────────────────────────
 // STATE HELPERS — route through ImmersiveTheme.state
 // ─────────────────────────────────────────────────────────────────────────────
-function _sm() { return window.ImmersiveTheme && window.ImmersiveTheme.state; }
+function _sm() {
+  return window.ImmersiveTheme && window.ImmersiveTheme.state;
+}
 
 function saveImmersiveSessionState(patch) {
-  var sm = _sm(); if (!sm) return;
+  var sm = _sm();
+  if (!sm) return;
   var current = sm.get('immersive.session.state') || {};
   sm.set('immersive.session.state', Object.assign({}, current, patch), { persist: 'session' });
 }
 
 function loadImmersiveSessionState() {
-  var sm = _sm(); if (!sm) return {};
+  var sm = _sm();
+  if (!sm) return {};
   return sm.get('immersive.session.state') || {};
 }
 
 function clearImmersiveSessionState() {
-  var sm = _sm(); if (!sm) return;
+  var sm = _sm();
+  if (!sm) return;
   sm.set('immersive.session.state', {}, { persist: 'session' });
 }
 
 function _saveNavHistory(history) {
-  var sm = _sm(); if (!sm) return;
+  var sm = _sm();
+  if (!sm) return;
   sm.set('immersive.navigation.history', history || [], { persist: 'session' });
 }
 
 function _loadNavHistory() {
-  var sm = _sm(); if (!sm) return [];
+  var sm = _sm();
+  if (!sm) return [];
   return sm.get('immersive.navigation.history') || [];
 }
 
 function hasSeenOnboarding() {
-  var sm = _sm(); if (!sm) return false;
+  var sm = _sm();
+  if (!sm) return false;
   return !!sm.get('onboarding.seen');
 }
 
 function markOnboardingSeen() {
-  var sm = _sm(); if (!sm) return;
+  var sm = _sm();
+  if (!sm) return;
   sm.set('onboarding.seen', true, { persist: 'local' });
 }
 
 function loadBrowsingSignals() {
-  var sm = _sm(); if (!sm) return [];
+  var sm = _sm();
+  if (!sm) return [];
   var v = sm.get('immersive.browsing.signals');
   return Array.isArray(v) ? v : [];
 }
 
 function saveBrowsingSignals(signals) {
-  var sm = _sm(); if (!sm) return;
+  var sm = _sm();
+  if (!sm) return;
   sm.set('immersive.browsing.signals', signals || [], { persist: 'local' });
 }
 
 function isRoomDismissed(roomKey) {
-  var sm = _sm(); if (!sm) return false;
+  var sm = _sm();
+  if (!sm) return false;
   var map = sm.get('immersive.recommendations.dismissedRooms') || {};
   return !!map[roomKey];
 }
 
 function dismissRoom(roomKey) {
-  var sm = _sm(); if (!sm) return;
+  var sm = _sm();
+  if (!sm) return;
   var map = sm.get('immersive.recommendations.dismissedRooms') || {};
   map[roomKey] = true;
   sm.set('immersive.recommendations.dismissedRooms', map, { persist: 'session' });
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DEVICE OPTIMIZATION
@@ -4451,11 +4476,16 @@ var unsubscribeAnimate = null;
 function startAnimate() {
   if (!ticker) return;
   if (unsubscribeAnimate) return;
-  unsubscribeAnimate = ticker.subscribe(function (ts, dt) { animateFrame(ts, dt); });
+  unsubscribeAnimate = ticker.subscribe(function (ts, dt) {
+    animateFrame(ts, dt);
+  });
 }
 
 function stopAnimate() {
-  if (unsubscribeAnimate) { unsubscribeAnimate(); unsubscribeAnimate = null; }
+  if (unsubscribeAnimate) {
+    unsubscribeAnimate();
+    unsubscribeAnimate = null;
+  }
 }
 
 // Expose startAnimate/stopAnimate on the namespace for external cleanup
@@ -4469,7 +4499,9 @@ if (typeof window.ImmersiveTheme === 'object' && window.ImmersiveTheme !== null)
 }
 
 // Backward-compatible wrapper so any remaining animate() calls don't break
-window.animate = function () { startAnimate(); };
+window.animate = function () {
+  startAnimate();
+};
 
 function animateFrame(timestamp, delta) {
   if (!uniforms) return;
