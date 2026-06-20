@@ -39,13 +39,14 @@
 
   .collection__header {
     display: flex;
-    align-items: center;
-    gap: 2rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
     margin-bottom: 2rem;
   }
   .collection__header-image {
-    flex: 0 0 var(--image-width, 50%);
-    max-width: var(--image-width, 50%);
+    width: var(--image-width, 50%);
+    max-width: 100%;
   }
   .collection__header-image img {
     display: block;
@@ -53,20 +54,22 @@
     height: auto;
   }
   .collection__header-text {
-    flex: 1 1 auto;
-    min-width: 0;
+    width: 100%;
+  }
+  .collection__header--center {
+    align-items: center;
+    text-align: center;
+  }
+  .collection__header--center .collection__header-image {
+    margin-left: auto;
+    margin-right: auto;
   }
   .collection__header--right {
-    flex-direction: row-reverse;
+    align-items: flex-end;
+    text-align: right;
   }
-  @media screen and (max-width: 749px) {
-    .collection__header {
-      flex-direction: column;
-    }
-    .collection__header-image {
-      flex: 0 0 auto;
-      max-width: 100%;
-    }
+  .collection__header--right .collection__header-image {
+    margin-left: auto;
   }
 {%- endstyle -%}
 
@@ -395,10 +398,11 @@
       "id": "image_alignment",
       "options": [
         { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
         { "value": "right", "label": "Right" }
       ],
-      "default": "left",
-      "label": "Image position"
+      "default": "center",
+      "label": "Image alignment"
     },
     {
       "type": "header",
