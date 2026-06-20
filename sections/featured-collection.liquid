@@ -127,7 +127,7 @@
   >
     <div class="collection__title title-wrapper title-wrapper--no-top-margin page-width{% if show_mobile_slider %} title-wrapper--self-padded-tablet-down{% endif %}{% if show_desktop_slider %} collection__title--desktop-slider{% endif %}">
       {%- if section.settings.image != blank -%}
-        <div class="collection__header collection__header--{{ section.settings.image_alignment | default: 'center' }}" style="--image-width: {{ section.settings.image_width | default: 50 }}%;">
+        <div class="collection__header collection__header--{{ section.settings.image_alignment | default: 'center' }}" style="--image-width: {{ section.settings.image_width | default: 30 }}%;">
           <div class="collection__header-image">
             <img
               src="{{ section.settings.image | image_url: width: 1200 }}"
