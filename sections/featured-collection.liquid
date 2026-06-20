@@ -36,6 +36,25 @@
       padding-bottom: {{ section.settings.padding_bottom }}px;
     }
   }
+
+  .collection__hero-image {
+    margin-bottom: 1.5rem;
+  }
+  .collection__hero-image img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  .collection__hero-image--left img {
+    margin-right: auto;
+  }
+  .collection__hero-image--center img {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .collection__hero-image--right img {
+    margin-left: auto;
+  }
 {%- endstyle -%}
 
 {%- liquid
@@ -73,6 +92,17 @@
     data-id="{{ section.id }}"
   >
     <div class="collection__title title-wrapper title-wrapper--no-top-margin page-width{% if show_mobile_slider %} title-wrapper--self-padded-tablet-down{% endif %}{% if show_desktop_slider %} collection__title--desktop-slider{% endif %}">
+      {%- if section.settings.image != blank -%}
+        <div class="collection__hero-image collection__hero-image--{{ section.settings.image_alignment | default: 'center' }}">
+          <img
+            src="{{ section.settings.image | image_url: width: 1200 }}"
+            alt="{{ section.settings.image.alt | escape }}"
+            width="{{ section.settings.image.width }}"
+            height="{{ section.settings.image.height }}"
+            loading="eager"
+          >
+        </div>
+      {%- endif -%}
       {%- if section.settings.title != blank -%}
         <h2 class="title inline-richtext {{ section.settings.heading_size }}{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}">
           {{ section.settings.title }}
@@ -305,6 +335,26 @@
         }
       ],
       "default": "body"
+    },
+    {
+      "type": "header",
+      "content": "Hero image"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image"
+    },
+    {
+      "type": "select",
+      "id": "image_alignment",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "center",
+      "label": "Image alignment"
     },
     {
       "type": "header",
