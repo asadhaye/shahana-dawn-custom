@@ -14,6 +14,17 @@
       padding-bottom: {{ section.settings.padding_bottom }}px;
     }
   }
+
+  @media screen and (min-width: 990px) {
+    .section-{{ section.id }}-padding
+      .collection-list__item
+      .card__media img {
+      width: 70%;        /* shrink image relative to card width */
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+    }
+  }
 {%- endstyle -%}
 
 {%- liquid
