@@ -373,6 +373,11 @@ function initDeviceOptimization() {
   var memory = navigator.deviceMemory || 4;
   var isLowEnd = cores <= 2 || memory <= 2;
 
+  // Ensure namespace objects exist before setting properties
+  window.ShahanaImmersive = window.ShahanaImmersive || {};
+  window.ShahanaImmersive.device = window.ShahanaImmersive.device || {};
+  window.ShahanaImmersive.settings = window.ShahanaImmersive.settings || {};
+
   window.ShahanaImmersive.device.isMobile = isMobile;
   window.ShahanaImmersive.device.isTablet = isTablet;
   window.ShahanaImmersive.device.isLowEnd = isLowEnd;
@@ -382,7 +387,7 @@ function initDeviceOptimization() {
   if (isLowEnd) {
     window.ShahanaImmersive.settings.textureQuality = 0.5;
     window.ShahanaImmersive.settings.targetFPS = 24;
-  } else if (isMobile) {
+  } else if (window.isMobile || isMobile) {
     window.ShahanaImmersive.settings.textureQuality = 0.75;
     window.ShahanaImmersive.settings.targetFPS = 30;
   } else {
@@ -392,8 +397,8 @@ function initDeviceOptimization() {
 
   if (window.__IMMERSIVE_DEV__) {
     console.log('[Immersive] Device optimization initialized:', {
-      isMobile: isMobile,
-      isTablet: isTablet,
+      isMobile: window.isMobile || isMobile,
+      isTablet: window.isTablet || isTablet,
       isLowEnd: isLowEnd,
       textureQuality: window.ShahanaImmersive.settings.textureQuality,
       targetFPS: window.ShahanaImmersive.settings.targetFPS,
@@ -3304,8 +3309,9 @@ function evaluateDeviceFlags() {
 
   // Only use viewport width as a secondary factor for responsive layout
   // but don't override the actual device type detection
-  isMobile = actualDeviceIsMobile || window.innerWidth < 480;
-  isTablet = actualDeviceIsTablet || (window.innerWidth >= 480 && window.innerWidth < 768);
+  // Ensure we're setting global variables properly
+  window.isMobile = actualDeviceIsMobile || window.innerWidth < 480;
+  window.isTablet = actualDeviceIsTablet || (window.innerWidth >= 480 && window.innerWidth < 768);
 
   var connectionQuality = 1.0;
   if ('connection' in navigator && navigator.connection) {
@@ -3899,7 +3905,7 @@ function initImmersiveScene() {
     showWebGLFallback(canvas);
     return;
   }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.isMobile || isMobile ? 1.5 : 2));
 
   // Use canvas client dimensions so the renderer fills its container exactly
   var initWidth = canvas.clientWidth || window.innerWidth || canvas.offsetWidth;
@@ -4207,7 +4213,7 @@ function onWindowResize() {
   }
   resizeRaf = requestAnimationFrame(function () {
     resizeRaf = null;
-    var wasMobile = isMobile;
+    var wasMobile = window.isMobile || isMobile;
     var wasUsesMobileImg = usesMobileImg;
     evaluateDeviceFlags();
     updateCanvasRect();
@@ -4316,7 +4322,7 @@ function handleResize(roomKeyOverride) {
 
   var canvas = renderer.domElement;
   var wrapper = canvas.closest('.immersive-store__canvas-wrapper');
-  var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
+  var dpr = Math.min(window.devicePixelRatio || 1, window.isMobile || isMobile ? 1.5 : 2);
   var width = (wrapper && wrapper.clientWidth) || canvas.clientWidth || window.innerWidth;
   var height = (wrapper && wrapper.clientHeight) || canvas.clientHeight || window.innerHeight;
   if (width === 0 || height === 0) return;
@@ -4395,7 +4401,7 @@ function handleDeviceOrientation(event) {
 
 function enableTiltControl() {
   if (tiltControlEnabled) return;
-  if (!isMobile) return;
+  if (!(window.isMobile || isMobile)) return;
   if (reduceMotion) return;
   if (!window.DeviceOrientationEvent) return;
 
@@ -4641,6 +4647,11 @@ function goToRoom(roomKey, initial, skipHistory) {
   var uiLayer = document.getElementById(uiLayerId);
   if (!uiLayer) return;
 
+  // Update currentRoomKey before starting texture load so the stale-load
+  // guard in _startRoomTextureLoad can correctly detect if user navigated
+  // to a *different* room during the load (not just that it changed).
+  currentRoomKey = roomKey;
+
   if (!initial) {
     transitioning = true;
     showLoader();
@@ -4691,9 +4702,12 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
   // Capture expected room at time of request; reject stale loads
   var expectedRoom = roomKey;
   loadRoomTextures(roomData, function (baseTexture, depthTexture) {
-    // Guard: skip stale texture loads if room changed since this request started
+    // Guard: skip stale texture loads if user navigated to a *different* room
+    // after this request was initiated. currentRoomKey is updated to the new
+    // room before this call, so "stale" means it points to neither null nor
+    // the expected room (i.e. a newer navigation overrode this one).
     if (!initial && currentRoomKey !== null && currentRoomKey !== expectedRoom) return;
-    if (initial || currentRoomKey === null) {
+    if (initial || currentRoomKey === expectedRoom || currentRoomKey === null) {
       uniforms.uTexture1.value = baseTexture;
       uniforms.uDepth1.value = depthTexture;
       uniforms.uTexture2.value = baseTexture;
