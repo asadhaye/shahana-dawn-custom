@@ -4069,61 +4069,63 @@ function showLoader() {
   var logoUrl = wrapper ? wrapper.getAttribute('data-logo-url') : '';
   if (!logoUrl) return;
 
-  // Load logo texture
-  transitionLogoTex = new THREE.TextureLoader().load(logoUrl, function (tex) {
+  // Load logo texture and create mesh only after it's loaded
+  new THREE.TextureLoader().load(logoUrl, function (tex) {
     tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
     tex.anisotropy = 8;
+    transitionLogoTex = tex;
+
+    // Compute aspect-corrected plane that covers the full viewport in screen-space.
+    // We place the plane at z = -1 (just in front of the camera) and size it so
+    // it spans the full frustum at that depth — effectively a fullscreen quad.
+    var aspect = camera && camera.aspect ? camera.aspect : window.innerWidth / window.innerHeight;
+    // Only PerspectiveCamera has fov; OrthographicCamera does not
+    var vFov = (camera && camera.fov) ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
+    var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
+
+    // Logo plane: use a larger plane scaled down so the logo sits in the centre
+    // with plenty of black around it.
+    var logoH = h * 0.35; // logo fills 35 % of viewport height
+    var imgW = tex.image ? tex.image.width : 0;
+    var imgH = tex.image ? tex.image.height : 0;
+    var imgAspect = (imgW > 0 && imgH > 0) ? imgW / imgH : 1;
+    var logoW = logoH * Math.max(imgAspect, 0.5);
+
+    var geom = _safePlaneGeometry(logoW, logoH, 'logo-plane');
+    var mat = new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    transitionLogoMesh = new THREE.Mesh(geom, mat);
+    transitionLogoMesh.renderOrder = 9999;
+    transitionLogoMesh.material.onBeforeCompile = function (shader) {
+      shader.uniforms.uTime = { value: 0 };
+      shader.fragmentShader =
+        'uniform float uTime;\n' +
+        shader.fragmentShader.replace(
+          'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
+          'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
+            'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
+        );
+      transitionLogoMesh.userData.shader = shader;
+    };
+
+    scene.add(transitionLogoMesh);
+
+    // Fade the logo in via the existing room-transition opacity uniform so it
+    // matches the shader cross-fade timing.  We drive the material opacity from
+    // the render loop.
+    transitionLogoMesh.userData.fadeIn = true;
+    transitionLogoMesh.userData.fadeOut = false;
+    transitionLogoMesh.userData.fadeStart = performance.now();
+  }, undefined, function () {
+    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load logo texture');
   });
-  transitionLogoTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-
-  // Compute aspect-corrected plane that covers the full viewport in screen-space.
-  // We place the plane at z = -1 (just in front of the camera) and size it so
-  // it spans the full frustum at that depth — effectively a fullscreen quad.
-  var aspect = camera ? camera.aspect : window.innerWidth / window.innerHeight;
-  var vFov = camera ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
-  var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
-  var w = h * aspect;
-
-  // Logo plane: use a larger plane scaled down so the logo sits in the centre
-  // with plenty of black around it.
-  var logoH = h * 0.35; // logo fills 35 % of viewport height
-  var imgW = transitionLogoTex.image ? transitionLogoTex.image.width : 0;
-  var imgH = transitionLogoTex.image ? transitionLogoTex.image.height : 0;
-  var imgAspect = (imgW > 0 && imgH > 0) ? imgW / imgH : 1;
-  var logoW = logoH * Math.max(imgAspect, 0.5);
-
-  var geom = _safePlaneGeometry(logoW, logoH, 'logo-plane');
-  var mat = new THREE.MeshBasicMaterial({
-    map: transitionLogoTex,
-    transparent: true,
-    opacity: 0,
-    side: THREE.DoubleSide,
-    depthTest: false,
-    depthWrite: false,
-  });
-
-  transitionLogoMesh = new THREE.Mesh(geom, mat);
-  transitionLogoMesh.renderOrder = 9999;
-  transitionLogoMesh.material.onBeforeCompile = function (shader) {
-    shader.uniforms.uTime = { value: 0 };
-    shader.fragmentShader =
-      'uniform float uTime;\n' +
-      shader.fragmentShader.replace(
-        'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
-        'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
-          'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
-      );
-    transitionLogoMesh.userData.shader = shader;
-  };
-
-  scene.add(transitionLogoMesh);
-
-  // Fade the logo in via the existing room-transition opacity uniform so it
-  // matches the shader cross-fade timing.  We drive the material opacity from
-  // the render loop.
-  transitionLogoMesh.userData.fadeIn = true;
-  transitionLogoMesh.userData.fadeOut = false;
-  transitionLogoMesh.userData.fadeStart = performance.now();
 }
 
 function hideLoader() {
@@ -4359,34 +4361,6 @@ function handleResize(roomKeyOverride) {
       planeMesh.scale.set(imageAspect, 1, 1);
     }
     planeMesh.position.set(0, 0, 0);
-    // #region agent log — local debug telemetry (dev only)
-    if (window.__IMMERSIVE_DEV__) {
-      fetch('http://127.0.0.1:7285/ingest/df92de2b-e66f-4994-92c4-45d829c912c2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7ccb9b' },
-        body: JSON.stringify({
-          sessionId: '7ccb9b',
-          runId: 'texture-variant-fix',
-          hypothesisId: 'H7',
-          location: 'immersive-core.js:handleResize',
-          message: 'Plane scale applied',
-          data: {
-            width: width,
-            height: height,
-            textureVariant: activeTextureVariant,
-            expectedVariant: getTextureVariantKey(),
-            canvasAspect: Math.round(canvasAspect * 1000) / 1000,
-            imageAspect: Math.round(imageAspect * 1000) / 1000,
-            scaleX: planeMesh.scale.x,
-            scaleY: planeMesh.scale.y,
-            planeAspect: Math.round((planeMesh.scale.x / planeMesh.scale.y) * 1000) / 1000,
-            branch: canvasAspect > imageAspect ? 'canvas-wider' : 'canvas-taller',
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(function () {});
-    }
-    // #endregion
   }
   if (immersiveState.mode === 'editorial') cacheEditorialOverlay();
 }
