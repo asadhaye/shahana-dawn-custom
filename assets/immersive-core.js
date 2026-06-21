@@ -4740,6 +4740,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       if (tagline) tagline.classList.remove('is-visible');
       hideInitialLoader();
       hideLoader();
+      transitioning = false;
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
       handleResize(roomKey);
