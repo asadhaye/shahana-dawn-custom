@@ -1015,6 +1015,10 @@
           "label": "WhatsApp number",
           "placeholder": "e.g. 971501234567",
           "info": "Enter your WhatsApp number without the + sign. Used for the floating WhatsApp button and product sharing."
+        },
+        "social_sharing_image": {
+          "label": "Share image",
+          "info": "Displayed when your store is shared on social media. Recommended size: 1200 x 628px"
         }
       }
     },
