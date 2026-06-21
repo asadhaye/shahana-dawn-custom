@@ -3977,16 +3977,16 @@ function saveNavigationHistory() {
 function _loadNavHistory() {
   try {
     var stored = sessionStorage.getItem(NAVIGATION_HISTORY_KEY);
-    _navigationHistory = stored ? JSON.parse(stored) : [];
+    return stored ? JSON.parse(stored) : [];
   } catch (e) {
-    _navigationHistory = [];
+    return [];
   }
 }
 
 function updateBackButton() {
   var backBtn = document.querySelector('[data-immersive-back]');
   if (!backBtn) return;
-  if (_navigationHistory.length > 1) {
+  if (!_navigationHistory || _navigationHistory.length > 1) {
     backBtn.hidden = false;
     backBtn.disabled = false;
   } else {
@@ -4607,62 +4607,67 @@ function showLoader() {
   if (!logoUrl) return;
 
   // Load logo texture and create mesh only after it's loaded
-  new THREE.TextureLoader().load(logoUrl, function (tex) {
-    tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-    tex.anisotropy = 8;
-    transitionLogoTex = tex;
+  new THREE.TextureLoader().load(
+    logoUrl,
+    function (tex) {
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      transitionLogoTex = tex;
 
-    // Compute aspect-corrected plane that covers the full viewport in screen-space.
-    // We place the plane at z = -1 (just in front of the camera) and size it so
-    // it spans the full frustum at that depth — effectively a fullscreen quad.
-    var aspect = camera && camera.aspect ? camera.aspect : window.innerWidth / window.innerHeight;
-    // Only PerspectiveCamera has fov; OrthographicCamera does not
-    var vFov = (camera && camera.fov) ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
-    var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
+      // Compute aspect-corrected plane that covers the full viewport in screen-space.
+      // We place the plane at z = -1 (just in front of the camera) and size it so
+      // it spans the full frustum at that depth — effectively a fullscreen quad.
+      var aspect = camera && camera.aspect ? camera.aspect : window.innerWidth / window.innerHeight;
+      // Only PerspectiveCamera has fov; OrthographicCamera does not
+      var vFov = camera && camera.fov ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
+      var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
 
-    // Logo plane: use a larger plane scaled down so the logo sits in the centre
-    // with plenty of black around it.
-    var logoH = h * 0.35; // logo fills 35 % of viewport height
-    var imgW = tex.image ? tex.image.width : 0;
-    var imgH = tex.image ? tex.image.height : 0;
-    var imgAspect = (imgW > 0 && imgH > 0) ? imgW / imgH : 1;
-    var logoW = logoH * Math.max(imgAspect, 0.5);
+      // Logo plane: use a larger plane scaled down so the logo sits in the centre
+      // with plenty of black around it.
+      var logoH = h * 0.35; // logo fills 35 % of viewport height
+      var imgW = tex.image ? tex.image.width : 0;
+      var imgH = tex.image ? tex.image.height : 0;
+      var imgAspect = imgW > 0 && imgH > 0 ? imgW / imgH : 1;
+      var logoW = logoH * Math.max(imgAspect, 0.5);
 
-    var geom = _safePlaneGeometry(logoW, logoH, 'logo-plane');
-    var mat = new THREE.MeshBasicMaterial({
-      map: tex,
-      transparent: true,
-      opacity: 0,
-      side: THREE.DoubleSide,
-      depthTest: false,
-      depthWrite: false,
-    });
+      var geom = _safePlaneGeometry(logoW, logoH, 'logo-plane');
+      var mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthTest: false,
+        depthWrite: false,
+      });
 
-    transitionLogoMesh = new THREE.Mesh(geom, mat);
-    transitionLogoMesh.renderOrder = 9999;
-    transitionLogoMesh.material.onBeforeCompile = function (shader) {
-      shader.uniforms.uTime = { value: 0 };
-      shader.fragmentShader =
-        'uniform float uTime;\n' +
-        shader.fragmentShader.replace(
-          'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
-          'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
-            'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
-        );
-      transitionLogoMesh.userData.shader = shader;
-    };
+      transitionLogoMesh = new THREE.Mesh(geom, mat);
+      transitionLogoMesh.renderOrder = 9999;
+      transitionLogoMesh.material.onBeforeCompile = function (shader) {
+        shader.uniforms.uTime = { value: 0 };
+        shader.fragmentShader =
+          'uniform float uTime;\n' +
+          shader.fragmentShader.replace(
+            'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
+            'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
+              'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
+          );
+        transitionLogoMesh.userData.shader = shader;
+      };
 
-    scene.add(transitionLogoMesh);
+      scene.add(transitionLogoMesh);
 
-    // Fade the logo in via the existing room-transition opacity uniform so it
-    // matches the shader cross-fade timing.  We drive the material opacity from
-    // the render loop.
-    transitionLogoMesh.userData.fadeIn = true;
-    transitionLogoMesh.userData.fadeOut = false;
-    transitionLogoMesh.userData.fadeStart = performance.now();
-  }, undefined, function () {
-    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load logo texture');
-  });
+      // Fade the logo in via the existing room-transition opacity uniform so it
+      // matches the shader cross-fade timing.  We drive the material opacity from
+      // the render loop.
+      transitionLogoMesh.userData.fadeIn = true;
+      transitionLogoMesh.userData.fadeOut = false;
+      transitionLogoMesh.userData.fadeStart = performance.now();
+    },
+    undefined,
+    function () {
+      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load logo texture');
+    },
+  );
 }
 
 function hideLoader() {
