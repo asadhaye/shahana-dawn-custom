@@ -5143,7 +5143,6 @@ function updateRoomBadge(roomKey) {
 }
 
 function goToRoom(roomKey, initial, skipHistory) {
-  console.log('[Immersive] goToRoom called:', roomKey, 'initial:', initial, 'transitioning:', transitioning);
   galleryDragState.isDragging = false;
   galleryDragState.velocity = 0;
   galleryDragState.velocityX = 0;
@@ -5578,8 +5577,9 @@ function renderHotspots(roomKey) {
       });
 
       button.addEventListener('click', function () {
-        console.log('[Immersive] Hotspot clicked:', JSON.stringify(hotspot));
-        console.log('[Immersive] transitioning:', transitioning, 'currentRoomKey:', currentRoomKey);
+        if (window.__IMMERSIVE_DEV__) {
+          console.log('[Immersive] Hotspot clicked:', JSON.stringify(hotspot));
+        }
 
         if (!hotspot.startExperience) {
           exitGuidedMode();
@@ -5592,7 +5592,6 @@ function renderHotspots(roomKey) {
             activateGuidedMode();
             window.ShahanaImmersive.settings.interactionEnabled = true;
           }
-          console.log('[Immersive] Calling goToRoom:', hotspot.targetRoom);
           goToRoom(hotspot.targetRoom);
         } else if (hotspot.targetStory) {
           goToRoom(hotspot.target || 'featured_collections');

@@ -53,9 +53,9 @@ echo "  -> $(basename "$OUTPUT") ($(wc -l < "$OUTPUT") lines)"
 if command -v terser &>/dev/null || npx terser --version &>/dev/null 2>&1; then
   echo "  Minifying with terser..."
   if command -v terser &>/dev/null; then
-    terser "$OUTPUT" --compress --mangle --keep-fnames -o "$OUTPUT_MIN"
+    terser "$OUTPUT" --compress hoist_vars=false,reduce_vars=false,collapse_vars=false --mangle --keep-fnames -o "$OUTPUT_MIN"
   else
-    npx terser "$OUTPUT" --compress --mangle --keep-fnames -o "$OUTPUT_MIN"
+    npx terser "$OUTPUT" --compress hoist_vars=false,reduce_vars=false,collapse_vars=false --mangle --keep-fnames -o "$OUTPUT_MIN"
   fi
   echo "  -> $(basename "$OUTPUT_MIN") ($(wc -c < "$OUTPUT_MIN") bytes, $(wc -l < "$OUTPUT_MIN") lines)"
   echo "  NOTE: To use the minified bundle, update theme.liquid to load immersive-bundle.min.js instead of immersive-bundle.js"
