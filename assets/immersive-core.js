@@ -4087,7 +4087,9 @@ function showLoader() {
   // Logo plane: use a larger plane scaled down so the logo sits in the centre
   // with plenty of black around it.
   var logoH = h * 0.35; // logo fills 35 % of viewport height
-  var imgAspect = transitionLogoTex.image ? transitionLogoTex.image.width / transitionLogoTex.image.height : 1;
+  var imgW = transitionLogoTex.image ? transitionLogoTex.image.width : 0;
+  var imgH = transitionLogoTex.image ? transitionLogoTex.image.height : 0;
+  var imgAspect = (imgW > 0 && imgH > 0) ? imgW / imgH : 1;
   var logoW = logoH * Math.max(imgAspect, 0.5);
 
   var geom = _safePlaneGeometry(logoW, logoH, 'logo-plane');
