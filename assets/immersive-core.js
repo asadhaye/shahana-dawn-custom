@@ -4654,16 +4654,28 @@ function goToRoom(roomKey, initial, skipHistory) {
 
   if (!initial) {
     transitioning = true;
-    showLoader();
+    // Only show the loader logo if the texture load takes longer than
+    // 200ms. Instant (cached) transitions flash the logo otherwise.
+    var loaderShown = false;
+    var loaderTimer = setTimeout(function () {
+      showLoader();
+      loaderShown = true;
+    }, 200);
+
+    function afterLoad() {
+      clearTimeout(loaderTimer);
+      if (loaderShown) hideLoader();
+    }
+
     if (reduceMotion) {
       uiLayer.style.transition = '';
       uiLayer.style.opacity = '0';
-      _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+      _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad);
     } else {
       uiLayer.style.transition = 'opacity 0.25s ease-in-out';
       uiLayer.style.opacity = '0';
       setTimeout(function () {
-        _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
+        _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad);
       }, 250);
     }
   } else {
@@ -4698,7 +4710,7 @@ function focusStoryRailSection() {
   }
 }
 
-function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
+function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad) {
   // Capture expected room at time of request; reject stale loads
   var expectedRoom = roomKey;
   loadRoomTextures(roomData, function (baseTexture, depthTexture) {
@@ -4741,6 +4753,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       hideInitialLoader();
       hideLoader();
       transitioning = false;
+      if (typeof afterLoad === 'function') afterLoad();
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
       handleResize(roomKey);
@@ -4834,11 +4847,13 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
           uiLayer.style.transition = '';
           uiLayer.style.opacity = '1';
           transitioning = false;
+          if (typeof afterLoad === 'function') afterLoad();
         } else {
           uiLayer.style.transition = 'opacity 0.25s ease-in-out';
           uiLayer.style.opacity = '1';
           setTimeout(function () {
             transitioning = false;
+            if (typeof afterLoad === 'function') afterLoad();
           }, 250);
         }
       }
