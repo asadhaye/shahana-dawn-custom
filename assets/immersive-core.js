@@ -3126,11 +3126,9 @@ function reloadCurrentRoomTextures() {
   if (!currentRoomKey) return;
   var roomData = getRoomTextureUrls(currentRoomKey);
   if (!roomData) return;
-  showLoader();
   loadRoomTextures(roomData, function (baseTexture, depthTexture) {
     applyRoomTexturesToScene(baseTexture, depthTexture, currentRoomKey);
     hideInitialLoader();
-    hideLoader();
   });
 }
 
@@ -3882,15 +3880,12 @@ function initImmersiveScene() {
       });
     }
     hideInitialLoader();
-    hideLoader();
   });
 
   if (!window.THREE || !isWebGLSupported()) {
     showWebGLFallback(canvas);
     return;
   }
-
-  showLoader();
 
   try {
     renderer = new THREE.WebGLRenderer({
@@ -4057,136 +4052,6 @@ function showWebGLFallback(canvas) {
 }
 
 // ---------------------------------------------------------------------------
-// Three.js logo transition overlay
-// ---------------------------------------------------------------------------
-
-var transitionLogoMesh = null;
-var transitionLogoTex = null;
-
-function showLoader() {
-  if (!scene || !window.THREE) return;
-  var THREE = window.THREE;
-
-  // Already showing
-  if (transitionLogoMesh) return;
-
-  // Read logo URL from the canvas wrapper data attribute
-  var wrapper = document.querySelector('.immersive-store__canvas-wrapper');
-  var logoUrl = wrapper ? wrapper.getAttribute('data-logo-url') : '';
-  if (!logoUrl) return;
-
-  // Load logo texture and create mesh only after it's loaded
-  new THREE.TextureLoader().load(
-    logoUrl,
-    function (tex) {
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      tex.anisotropy = 8;
-      transitionLogoTex = tex;
-
-      // Compute aspect-corrected plane that covers the full viewport in screen-space.
-      // We place the plane at z = -1 (just in front of the camera) and size it so
-      // it spans the full frustum at that depth — effectively a fullscreen quad.
-      var aspect = camera && camera.aspect ? camera.aspect : window.innerWidth / window.innerHeight;
-      // Only PerspectiveCamera has fov; OrthographicCamera does not
-      var vFov = camera && camera.fov ? (camera.fov * Math.PI) / 180 : (70 * Math.PI) / 180;
-      var h = 2 * Math.tan(vFov / 2) * 1.05; // z = 1
-
-      // Logo plane: use a larger plane scaled down so the logo sits in the centre
-      // with plenty of black around it.
-      var logoH = h * 0.35; // logo fills 35 % of viewport height
-      var imgW = tex.image ? tex.image.width : 0;
-      var imgH = tex.image ? tex.image.height : 0;
-      var imgAspect = imgW > 0 && imgH > 0 ? imgW / imgH : 1;
-      var logoW = logoH * Math.max(imgAspect, 0.5);
-
-      var geom = _safePlaneGeometry(logoW, logoH, 'logo-plane');
-      var mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0,
-        side: THREE.DoubleSide,
-        depthTest: false,
-        depthWrite: false,
-      });
-
-      transitionLogoMesh = new THREE.Mesh(geom, mat);
-      transitionLogoMesh.renderOrder = 9999;
-      transitionLogoMesh.material.onBeforeCompile = function (shader) {
-        shader.uniforms.uTime = { value: 0 };
-        shader.fragmentShader =
-          'uniform float uTime;\n' +
-          shader.fragmentShader.replace(
-            'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
-            'float pulse = 0.85 + 0.15 * sin(uTime * 2.5);\n' +
-              'gl_FragColor = vec4(outgoingLight, diffuseColor.a * pulse);',
-          );
-        transitionLogoMesh.userData.shader = shader;
-      };
-
-      scene.add(transitionLogoMesh);
-
-      // Fade the logo in via the existing room-transition opacity uniform so it
-      // matches the shader cross-fade timing.  We drive the material opacity from
-      // the render loop.
-      transitionLogoMesh.userData.fadeIn = true;
-      transitionLogoMesh.userData.fadeOut = false;
-      transitionLogoMesh.userData.fadeStart = performance.now();
-    },
-    undefined,
-    function () {
-      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Failed to load logo texture');
-    },
-  );
-}
-
-function hideLoader() {
-  if (!transitionLogoMesh) return;
-  transitionLogoMesh.userData.fadeIn = false;
-  transitionLogoMesh.userData.fadeOut = true;
-  transitionLogoMesh.userData.fadeStart = performance.now();
-}
-
-// Called every frame from the main render loop to drive logo opacity.
-function updateTransitionLogo(timeNow) {
-  if (!transitionLogoMesh) return;
-
-  var mesh = transitionLogoMesh;
-  var mat = mesh.material;
-  var ud = mesh.userData;
-  var elapsed = (timeNow - ud.fadeStart) / 1000; // seconds
-
-  if (ud.fadeIn && !ud.fadeOut) {
-    // Fade in over 0.35 s
-    mat.opacity = Math.min(elapsed / 0.35, 1.0);
-    if (mat.opacity >= 1) {
-      ud.fadeIn = false;
-    }
-  } else if (ud.fadeOut) {
-    // Fade out over 0.35 s, then dispose
-    mat.opacity = Math.max(1.0 - elapsed / 0.35, 0.0);
-    if (mat.opacity <= 0) {
-      // Clean up
-      if (transitionLogoTex) {
-        transitionLogoTex.dispose();
-        transitionLogoTex = null;
-      }
-      scene.remove(mesh);
-      if (mesh.geometry) mesh.geometry.dispose();
-      if (mesh.material) mesh.material.dispose();
-      transitionLogoMesh = null;
-      return;
-    }
-  }
-
-  // Pulse animation (glow) while visible
-  if (mat.opacity > 0 && mat.onBeforeCompile) {
-    // handled by onBeforeCompile shader
-  }
-  if (ud.shader) {
-    ud.shader.uniforms.uTime.value = timeNow / 1000;
-  }
-}
-
 var mouseTarget = { x: 0.5, y: 0.5 };
 var mouseCurrent = { x: 0.5, y: 0.5 };
 var lerpFactor = 0.08;
@@ -4227,7 +4092,6 @@ function onWindowResize() {
       renderHotspots(currentRoomKey);
       var roomData = getRoomTextureUrls(currentRoomKey);
       if (roomData) {
-        showLoader();
         loadRoomTextures(roomData, function (baseTexture, depthTexture) {
           applyRoomTexturesToScene(baseTexture, depthTexture, currentRoomKey);
           if (getGalleryStageConfig(currentRoomKey).length) {
@@ -4235,7 +4099,7 @@ function onWindowResize() {
               disposeGalleryStage(currentRoomKey);
             }
             var _sectionEl = document.querySelector('.immersive-store');
-            var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
+            var _perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
             var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
             var _layoutConfig =
               _semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout]
@@ -4254,7 +4118,6 @@ function onWindowResize() {
             });
           }
           hideInitialLoader();
-          hideLoader();
         });
       }
     } else {
@@ -4502,9 +4365,6 @@ function animateFrame(timestamp, delta) {
     animateGalleryCarousel();
   }
 
-  // Animate transition logo overlay
-  updateTransitionLogo(performance.now());
-
   if (!reduceMotion && activeHotspots.length > 0) {
     for (var i = 0; i < activeHotspots.length; i++) {
       var h = activeHotspots[i];
@@ -4654,28 +4514,15 @@ function goToRoom(roomKey, initial, skipHistory) {
 
   if (!initial) {
     transitioning = true;
-    // Only show the loader logo if the texture load takes longer than
-    // 200ms. Instant (cached) transitions flash the logo otherwise.
-    var loaderShown = false;
-    var loaderTimer = setTimeout(function () {
-      showLoader();
-      loaderShown = true;
-    }, 200);
-
-    function afterLoad() {
-      clearTimeout(loaderTimer);
-      if (loaderShown) hideLoader();
-    }
-
     if (reduceMotion) {
       uiLayer.style.transition = '';
       uiLayer.style.opacity = '0';
-      _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad);
+      _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
     } else {
       uiLayer.style.transition = 'opacity 0.25s ease-in-out';
       uiLayer.style.opacity = '0';
       setTimeout(function () {
-        _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad);
+        _startRoomTextureLoad(roomKey, roomData, uiLayer, initial);
       }, 250);
     }
   } else {
@@ -4710,7 +4557,7 @@ function focusStoryRailSection() {
   }
 }
 
-function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad) {
+function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
   // Capture expected room at time of request; reject stale loads
   var expectedRoom = roomKey;
   loadRoomTextures(roomData, function (baseTexture, depthTexture) {
@@ -4751,9 +4598,7 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad) {
       var tagline = document.getElementById('immersive-tagline');
       if (tagline) tagline.classList.remove('is-visible');
       hideInitialLoader();
-      hideLoader();
       transitioning = false;
-      if (typeof afterLoad === 'function') afterLoad();
       showWelcomeToast();
       trackImmersiveEvent('room_viewed', { room_key: roomKey });
       handleResize(roomKey);
@@ -4847,13 +4692,11 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial, afterLoad) {
           uiLayer.style.transition = '';
           uiLayer.style.opacity = '1';
           transitioning = false;
-          if (typeof afterLoad === 'function') afterLoad();
         } else {
           uiLayer.style.transition = 'opacity 0.25s ease-in-out';
           uiLayer.style.opacity = '1';
           setTimeout(function () {
             transitioning = false;
-            if (typeof afterLoad === 'function') afterLoad();
           }, 250);
         }
       }
@@ -4953,7 +4796,6 @@ function loadRoomTextures(roomData, callback, _retryCount) {
       return;
     }
 
-    hideLoader();
     if (!currentRoomKey) {
       var canvas = document.getElementById(immersiveCanvasId);
       if (canvas) showWebGLFallback(canvas);
