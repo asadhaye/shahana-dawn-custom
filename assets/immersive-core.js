@@ -3351,7 +3351,6 @@ var WISHLIST_KEY = 'immersive_wishlist';
 // No authentication tokens, personal data, or payment information is stored.
 // These stores are accessible to any same-origin script per browser security model.
 var PREFERRED_MODE_KEY = 'immersive_preferred_mode';
-var NAVIGATION_HISTORY_KEY = 'immersive_nav_history';
 
 var _wishlistItems = [];
 var _wishlistProductCache = {};
@@ -3443,8 +3442,12 @@ function saveNavigationHistory() {
 
 function _loadNavHistory() {
   try {
-    var stored = sessionStorage.getItem(NAVIGATION_HISTORY_KEY);
-    return stored ? JSON.parse(stored) : [];
+    var sm = _sm();
+    if (sm) {
+      var stored = sm.get('immersive.navigation.history');
+      if (Array.isArray(stored)) return stored;
+    }
+    return [];
   } catch (e) {
     return [];
   }
