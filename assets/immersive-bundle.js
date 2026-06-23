@@ -3702,76 +3702,30 @@ function getGalleryStageConfig(roomKey) {
 // 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
 // 'arc' = original horizontal carousel (default fallback)
 function getGalleryLayout(roomKey) {
-  // Read merchant-chosen layout from per-room section data attributes.
-  // Returns the semantic layout name (asymmetric-gallery, scroll-narrative,
-  // masonry-featured) which buildGalleryStageForRoom handles as distinct branches.
-  var sectionEl = document.querySelector('.immersive-store');
-  if (!sectionEl) {
-    // Fallback per room — use new 3D layout names
-    if (roomKey === 'designer_houses') return 'asymmetric-gallery';
-    if (roomKey === 'occasions') return 'scroll-story';
-    if (roomKey === 'featured_collections') return 'masonry-featured';
-    return 'arc';
+  // Read layout from immersive-webgl-gallery-config sections (page.immersive.json).
+  // These sections set data-layout attributes that loadGalleryConfigsFromDOM()
+  // stores in window.immersiveWebglGalleryLayouts.
+  if (window.immersiveWebglGalleryLayouts && window.immersiveWebglGalleryLayouts[roomKey]) {
+    return window.immersiveWebglGalleryLayouts[roomKey];
   }
 
-  // Try per-room attribute first: data-<room>-layout
-  var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
-  var setting = sectionEl.getAttribute(perRoomAttr);
-
-  // Legacy fallback: single global data-gallery-layout
-  if (!setting) {
-    setting = sectionEl.getAttribute('data-gallery-layout');
-  }
-
-  // Valid semantic layout names (passthrough to buildGalleryStageForRoom)
-  var validLayouts = {
-    // New indrajaal-inspired 3D layouts
-    'narrative-story': 1,
-    'codex-list': 1,
-    'artifact-gallery': 1,
-    // Existing layouts
-    'asymmetric-gallery': 1,
-    'scroll-story': 1,
-    'scroll-tunnel': 1,
-    'masonry-featured': 1,
-    // Legacy/internal names still supported
-    vertical: 1,
-    arc: 1,
-    helix: 1,
-    grid: 1,
-    'infinite-drag-gallery': 1,
-  };
-
-  if (validLayouts[setting]) return setting;
-
-  // Per-room fallback when setting is missing/invalid — use new 3D layouts
-  if (roomKey === 'designer_houses') return 'codex-list';
-  if (roomKey === 'occasions') return 'narrative-story';
-  if (roomKey === 'featured_collections') return 'artifact-gallery';
+  // Fallback per room
+  if (roomKey === 'designer_houses') return 'asymmetric-gallery';
+  if (roomKey === 'occasions') return 'scroll-narrative';
+  if (roomKey === 'featured_collections') return 'masonry-featured';
   return 'arc';
 }
 
 function loadGalleryConfigsFromDOM() {
-  // Method 1: Read from <script id="immersive-webgl-gallery-configs"> (output by immersive-canvas)
-  var el = document.getElementById('immersive-webgl-gallery-configs');
-  if (el) {
-    try {
-      var data = JSON.parse(el.textContent);
-      if (data && typeof data === 'object') {
-        window.immersiveWebglGalleryConfigs = data;
-      }
-    } catch (e) {}
-  }
-
-  // Method 2: Read from [data-immersive-webgl-gallery-config] DOM elements (output by webgl_gallery_exclusives section)
-  // This overrides Method 1 and provides richer data (images, titles, product/collection handles)
+  // Read from [data-immersive-webgl-gallery-config] DOM elements (output by
+  // immersive-webgl-gallery-config sections in page.immersive.json).
+  // Each section has data-room-key and data-layout attributes.
   var configEls = document.querySelectorAll('[data-immersive-webgl-gallery-config]');
   if (configEls.length) {
-    if (!window.immersiveWebglGalleryConfigs) {
-      window.immersiveWebglGalleryConfigs = {};
-    }
+    window.immersiveWebglGalleryConfigs = {};
     configEls.forEach(function (configEl) {
       var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
+      var layout = configEl.getAttribute('data-layout') || null;
       var items = Array.prototype.slice
         .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
         .map(function (itemEl) {
@@ -3790,6 +3744,11 @@ function loadGalleryConfigsFromDOM() {
           };
         });
       window.immersiveWebglGalleryConfigs[roomKey] = items;
+      // Store layout per-room so getGalleryLayout() can read it
+      if (layout) {
+        window.immersiveWebglGalleryLayouts = window.immersiveWebglGalleryLayouts || {};
+        window.immersiveWebglGalleryLayouts[roomKey] = layout;
+      }
     });
   }
 

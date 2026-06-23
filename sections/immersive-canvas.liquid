@@ -79,9 +79,6 @@
   data-low-stock-threshold="{{ section.settings.low_stock_threshold | default: 5 }}"
   data-guided-featured-wing="{{ section.settings.guided_featured_wing | default: 'designer_houses' | escape }}"
   data-gallery-layout="{{ section.settings.gallery_layout | default: 'vertical' }}"
-  data-designer-houses-layout="{{ section.settings.designer_houses_layout | default: default: 'infinite-drag-gallery' }}"
-  data-occasions-layout="{{ section.settings.occasions_layout | default: 'scroll-story' }}"
-  data-featured-collections-layout="{{ section.settings.featured_collections_layout | default: 'masonry-featured' }}"
 >
   {% comment %} Pass Liquid configuration to JavaScript {% endcomment %}
   <div
@@ -97,8 +94,12 @@
     data-depth-url="{{ depth_url }}"
     data-logo-url="{{ logo_src }}"
     data-transition-style="{{ section.settings.transition_style | default: 'crossfade' | escape }}"
-    data-fallback-base-url="{{ 'immersive-fallback-base.jpg' | asset_url }}"
-    data-fallback-depth-url="{{ 'immersive-fallback-depth.jpg' | asset_url }}"
+    {%- if section.settings.fallback_base_image -%}
+    data-fallback-base-url="{{ section.settings.fallback_base_image | asset_url }}"
+    {%- endif -%}
+    {%- if section.settings.fallback_depth_image -%}
+    data-fallback-depth-url="{{ section.settings.fallback_depth_image | asset_url }}"
+    {%- endif -%}
   >
     <div
       id="immersive-initial-loader"
@@ -920,73 +921,6 @@
     { imageSrc, imageWidth, imageHeight, title, collectionHandle }
     Uses collection featured_image as the card image.
   {%- endcomment -%}
-  {%- comment -%}
-    ============================================================
-    WEBGL GALLERY CONFIGS — Per-room 3D gallery card data.
-    Outputs valid JSON arrays of card objects with imageSrc, title, collectionHandle.
-  {%- endcomment -%}
-  {%- assign _gallery_slots = 'designer_houses_slot_1_collection,designer_houses_slot_2_collection,designer_houses_slot_3_collection,occasions_slot_1_collection,occasions_slot_2_collection,occasions_slot_3_collection,occasions_slot_4_collection,featured_collections_slot_1_collection,featured_collections_slot_2_collection,featured_collections_slot_3_collection'
-    | split: ','
-  -%}
-  {%- assign _gallery_rooms = 'designer_houses,occasions,featured_collections' | split: ',' -%}
-  <script type="application/json" id="immersive-webgl-gallery-configs">
-    {
-      "designer_houses": [
-        {%- assign _dh_items = "" | split: "" -%}
-        {%- for i in (1..3) -%}
-          {%- assign _slot_key = "designer_houses_slot_" | append: i | append: "_collection" -%}
-          {%- assign _col = section.settings[_slot_key] -%}
-          {%- if _col != blank -%}
-            {%- assign _label_key = "designer_houses_slot_" | append: i | append: "_label" -%}
-            {%- assign _label = section.settings[_label_key] | default: _col.title -%}
-            {%- if _col.featured_image -%}
-              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800, format: 'webp', quality: 75 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
-            {%- else -%}
-              {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
-            {%- endif -%}
-            {%- assign _dh_items = _dh_items | append: _item -%}
-          {%- endif -%}
-        {%- endfor -%}
-        {{ _dh_items | join: "," }}
-      ],
-      "occasions": [
-        {%- assign _oc_items = "" | split: "" -%}
-        {%- for i in (1..4) -%}
-          {%- assign _slot_key = "occasions_slot_" | append: i | append: "_collection" -%}
-          {%- assign _col = section.settings[_slot_key] -%}
-          {%- if _col != blank -%}
-            {%- assign _label_key = "occasions_slot_" | append: i | append: "_label" -%}
-            {%- assign _label = section.settings[_label_key] | default: _col.title -%}
-            {%- if _col.featured_image -%}
-              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800, format: 'webp', quality: 75 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
-            {%- else -%}
-              {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
-            {%- endif -%}
-            {%- assign _oc_items = _oc_items | append: _item -%}
-          {%- endif -%}
-        {%- endfor -%}
-        {{ _oc_items | join: "," }}
-      ],
-      "featured_collections": [
-        {%- assign _fc_items = "" | split: "" -%}
-        {%- for i in (1..3) -%}
-          {%- assign _slot_key = "featured_collections_slot_" | append: i | append: "_collection" -%}
-          {%- assign _col = section.settings[_slot_key] -%}
-          {%- if _col != blank -%}
-            {%- assign _label_key = "featured_collections_slot_" | append: i | append: "_label" -%}
-            {%- assign _label = section.settings[_label_key] | default: _col.title -%}
-            {%- if _col.featured_image -%}
-              {%- capture _item -%}{"imageSrc":{{ _col.featured_image | image_url: width: 800, format: 'webp', quality: 75 | json }},"imageWidth":{{ _col.featured_image.width }},"imageHeight":{{ _col.featured_image.height }},"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
-            {%- else -%}
-              {%- capture _item -%}{"imageSrc":null,"imageWidth":800,"imageHeight":1200,"title":{{ _label | json }},"collectionHandle":{{ _col.handle | json }},"index":{{ forloop.index0 }}}{% endcapture -%}
-            {%- endif -%}
-            {%- assign _fc_items = _fc_items | append: _item -%}
-          {%- endif -%}
-        {%- endfor -%}
-        {{ _fc_items | join: "," }}
-      ]
-    }
-  </script>
 
   <!-- Editorial overlay — sits above canvas, hidden until enterEditorialMode() activates it -->
   <div
