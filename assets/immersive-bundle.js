@@ -1584,7 +1584,8 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
   // ── Create PerspectiveCamera for tunnel depth effect ──
   // Replace the global OrthographicCamera with a PerspectiveCamera
   // so that cards at different Z depths appear with proper foreshortening
-  var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
+  var size = new THREE.Vector2();
+  renderer.getSize(size);
   var width = size.x || (renderer.domElement ? renderer.domElement.clientWidth : window.innerWidth);
   var height = size.y || (renderer.domElement ? renderer.domElement.clientHeight : window.innerHeight);
   var aspect = width && height ? width / height : 1;
@@ -1813,7 +1814,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   // Restore OrthographicCamera if switching away from scroll-tunnel
   if (layout !== 'scroll-tunnel' && camera instanceof THREE.PerspectiveCamera) {
     if (camera && camera.dispose) camera.dispose();
-    var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
+    var size = new THREE.Vector2();
+    renderer.getSize(size);
     var width = size.x || (renderer.domElement ? renderer.domElement.clientWidth : window.innerWidth);
     var height = size.y || (renderer.domElement ? renderer.domElement.clientHeight : window.innerHeight);
     var aspect = width && height ? width / height : 1;
@@ -2439,7 +2441,8 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
 
   // Switch to PerspectiveCamera for depth
   if (camera instanceof THREE.OrthographicCamera) {
-    var size = renderer.getSize ? renderer.getSize({ x: 0, y: 0 }) : { x: window.innerWidth, y: window.innerHeight };
+    var size = new THREE.Vector2();
+    renderer.getSize(size);
     var w = size.x || window.innerWidth,
       h = size.y || window.innerHeight;
     if (camera && camera.dispose) camera.dispose();
