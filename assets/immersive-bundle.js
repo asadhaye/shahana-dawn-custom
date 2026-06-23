@@ -5116,8 +5116,40 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       currentRoomKey = roomKey;
       uiLayer.style.transition = '';
       uiLayer.style.opacity = '1';
-      // Build gallery stage OR render hotspots for initial room
-      if (scene && getGalleryStageConfig(roomKey).length) {
+      // Build gallery stage OR render hotspots for this room.
+      // Re-read gallery config from DOM each time (Method 2 has images,
+      // Method 1 from section settings does not). Without this, cached
+      // config may have imageSrc: null and gallery items are skipped.
+      var galleryItems = getGalleryStageConfig(roomKey);
+      if (!galleryItems.length) {
+        // Fallback: read directly from [data-immersive-webgl-gallery-config] DOM
+        var configEls = document.querySelectorAll('[data-immersive-webgl-gallery-config]');
+        configEls.forEach(function (configEl) {
+          var rk = configEl.getAttribute('data-room-key') || 'storefront';
+          if (rk !== roomKey) return;
+          if (!window.immersiveWebglGalleryConfigs) window.immersiveWebglGalleryConfigs = {};
+          var items = Array.prototype.slice
+            .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
+            .map(function (itemEl) {
+              var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
+              return {
+                index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
+                room: itemEl.dataset.galleryRoom || rk,
+                title: itemEl.dataset.galleryTitle || '',
+                subtitle: itemEl.dataset.gallerySubtitle || '',
+                productHandle: itemEl.dataset.galleryProductHandle || null,
+                productId: itemEl.dataset.galleryProductId || null,
+                collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
+                imageSrc: imgEl ? imgEl.src : null,
+                imageWidth: imgEl ? parseInt(imgEl.getAttribute('width'), 10) || 1920 : 1920,
+                imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080,
+              };
+            });
+          window.immersiveWebglGalleryConfigs[rk] = items;
+          galleryItems = items;
+        });
+      }
+      if (scene && galleryItems.length) {
         buildGalleryStageForRoom(roomKey, scene, {
           layout: getGalleryLayout(roomKey),
           radius: 6,
