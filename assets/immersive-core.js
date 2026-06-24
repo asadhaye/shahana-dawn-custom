@@ -2866,16 +2866,21 @@ function animateGalleryCarousel() {
   // ── Indrajaal grid: drag-to-explore with LERP + row parallax ──
   if (isIndrajaalGrid) {
     var lerpFactor = 0.085;
+    var needsUpdate = false;
 
-    if (!galleryDragState.isDragging) {
+    if (galleryDragState.isDragging) {
+      needsUpdate = true;
+    } else {
       // Inertia
       if (Math.abs(galleryDragState.velocityX) > 0.001) {
         state.targetX += galleryDragState.velocityX * 0.012;
         galleryDragState.velocityX *= 0.93;
+        needsUpdate = true;
       }
       if (Math.abs(galleryDragState.velocityY) > 0.001) {
         state.targetY += galleryDragState.velocityY * 0.012;
         galleryDragState.velocityY *= 0.93;
+        needsUpdate = true;
       }
     }
 
@@ -2889,19 +2894,29 @@ function animateGalleryCarousel() {
     state.currentX += (state.targetX - state.currentX) * lerpFactor;
     state.currentY += (state.targetY - state.currentY) * lerpFactor;
 
-    // Apply position with row parallax per plane
+    // Skip frame update if nothing changed (saves GPU)
+    if (!needsUpdate) {
+      var diffX = Math.abs(state.targetX - state.currentX);
+      var diffY = Math.abs(state.targetY - state.currentY);
+      if (diffX < 0.001 && diffY < 0.001) {
+        // Still update shader time for subtle animation
+        if (state.sharedUniforms) {
+          state.sharedUniforms.uTime.value = performance.now() * 0.001;
+        }
+        return;
+      }
+    }
+
+    // Apply position with row parallax per plane + label follow (single loop)
     var vel = Math.abs(state.targetX - state.currentX) + Math.abs(state.targetY - state.currentY);
     if (state.sharedUniforms) state.sharedUniforms.uVelocity.value = vel;
 
+    var labelIdx = 0;
     state.planes.forEach(function (plane) {
       var pm = plane.userData.parallaxMult || 1;
       plane.position.x = plane.baseX + state.currentX * pm;
       plane.position.y = plane.baseY + state.currentY * pm;
-    });
-
-    // Labels follow their cards
-    var labelIdx = 0;
-    state.planes.forEach(function (plane) {
+      // Label follows its matching card in same loop
       if (state.labels[labelIdx]) {
         state.labels[labelIdx].position.x = plane.position.x;
         state.labels[labelIdx].position.y = plane.position.y - plane.userData.cardH * 0.55;
