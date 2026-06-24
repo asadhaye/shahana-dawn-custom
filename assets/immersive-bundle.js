@@ -1928,7 +1928,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         roomKey: roomKey,
         galleryIndex: item.index,
         title: item.title || '',
-        productHandle: productHandle || item.productHandle || null,
+        productHandle: item.productHandle || null,
         collectionHandle: item.collectionHandle || null,
         layout: isMasonry ? 'masonry-featured' : 'grid',
         baseX: x,
