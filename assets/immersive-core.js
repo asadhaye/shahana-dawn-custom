@@ -1758,9 +1758,6 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     return;
   }
 
-  // Shared shader uniforms
-  var sharedUniforms = { uTime: { value: 0 }, uVelocity: { value: 0 } };
-
   // ── Grid dimensions ──
   var rows = Math.ceil(loadedItems.length / cols);
   var gridW = cols * cardW + (cols - 1) * spacing;
@@ -1779,41 +1776,10 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     var row = Math.floor(idx / cols);
 
     var geom = _safePlaneGeometry(cardW, cardH, 'indrajaal-grid');
-    var mat = new THREE.ShaderMaterial({
-      vertexShader: [
-        'varying vec2 vUv;',
-        'varying float vDist;',
-        'uniform float uTime;',
-        'uniform float uVelocity;',
-        'void main() {',
-        '  vUv = uv;',
-        '  vec3 pos = position;',
-        '  float wave = sin(pos.y * 1.2 + uTime * 0.6) * abs(uVelocity) * 0.003;',
-        '  pos.x += wave;',
-        '  pos.z += abs(wave) * 0.3;',
-        '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
-        '  vDist = -mv.z;',
-        '  gl_Position = projectionMatrix * mv;',
-        '}',
-      ].join('\n'),
-      fragmentShader: [
-        'precision highp float;',
-        'uniform sampler2D uTexture;',
-        'uniform float uTime;',
-        'varying vec2 vUv;',
-        'varying float vDist;',
-        'void main() {',
-        '  float vig = 1.0 - smoothstep(0.4, 0.95, length(vUv - 0.5));',
-        '  vec4 c = texture2D(uTexture, vUv);',
-        '  gl_FragColor = vec4(c.rgb, c.a * vig);',
-        '}',
-      ].join('\n'),
-      uniforms: {
-        uTexture: { value: entry.tex },
-        uTime: sharedUniforms.uTime,
-        uVelocity: sharedUniforms.uVelocity,
-      },
+    var mat = new THREE.MeshBasicMaterial({
+      map: entry.tex,
       transparent: true,
+      opacity: 0.95,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
@@ -1845,32 +1811,6 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
 
     group.add(mesh);
     planes.push(mesh);
-
-    // Title label below card
-    if (item.title) {
-      var labelCanvas = document.createElement('canvas');
-      var lCtx = labelCanvas.getContext('2d');
-      labelCanvas.width = 512;
-      labelCanvas.height = 80;
-      lCtx.clearRect(0, 0, 512, 80);
-      lCtx.font = 'bold 30px Georgia, serif';
-      lCtx.textAlign = 'center';
-      lCtx.textBaseline = 'middle';
-      lCtx.fillStyle = '#ece3c2';
-      lCtx.fillText(item.title.toUpperCase(), 256, 40);
-
-      var labelTex = new THREE.CanvasTexture(labelCanvas);
-      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
-      var labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, depthTest: false });
-      var labelW = cardW * 0.85;
-      var labelH = labelW * (80 / 512);
-      var labelGeom = _safePlaneGeometry(labelW, labelH, 'indrajaal-label');
-      var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-      labelMesh.position.set(x, y - cardH * 0.55, 0.01);
-      labelMesh.renderOrder = 999;
-      group.add(labelMesh);
-      labels.push(labelMesh);
-    }
   });
 
   scene.add(group);
@@ -1894,7 +1834,6 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     cardH: cardH,
     spacing: spacing,
     rowParallax: rowParallax,
-    sharedUniforms: sharedUniforms,
   };
 }
 
@@ -2907,21 +2846,13 @@ function animateGalleryCarousel() {
       }
     }
 
-    // Apply position with row parallax per plane + label follow (single loop)
+    // Apply position with row parallax per plane
     var vel = Math.abs(state.targetX - state.currentX) + Math.abs(state.targetY - state.currentY);
-    if (state.sharedUniforms) state.sharedUniforms.uVelocity.value = vel;
 
-    var labelIdx = 0;
     state.planes.forEach(function (plane) {
       var pm = plane.userData.parallaxMult || 1;
       plane.position.x = plane.baseX + state.currentX * pm;
       plane.position.y = plane.baseY + state.currentY * pm;
-      // Label follows its matching card in same loop
-      if (state.labels[labelIdx]) {
-        state.labels[labelIdx].position.x = plane.position.x;
-        state.labels[labelIdx].position.y = plane.position.y - plane.userData.cardH * 0.55;
-        labelIdx++;
-      }
     });
 
     return; // skip default scroll animation
