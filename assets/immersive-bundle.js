@@ -2109,12 +2109,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       startY: startY,
     };
   } else if (layout === 'asymmetric-gallery') {
-    // ── Asymmetric Gallery: delegated to infinite-drag-gallery builder ──
-    options.layoutConfig = options.layoutConfig || {};
-    options.layoutConfig.infinite = true;
-    options.layoutConfig.friction = 0.95;
-    options.layoutConfig.shaderEffects = true;
-    _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
+    // ── Indrajaal-style grid: 5-col, equal cards, row parallax, drag-to-explore ──
+    _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
   } else if (layout === 'infinite-drag-gallery') {
     _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
   } else if (layout === 'narrative-story') {
@@ -2241,6 +2237,204 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
 // ─────────────────────────────────────────────────────────────
 // INFINITE DRAG GALLERY — shared builder
+// ─────────────────────────────────────────────────────────────
+// INDRAAJAL GRID — 5-col equal cards, row parallax, drag-to-explore
+// ─────────────────────────────────────────────────────────────
+function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
+  var cfg = options.layoutConfig || {};
+  var cols = cfg.columns || 5;
+  var spacing = cfg.spacing || 2.5;
+  var cardH = options.cardHeight || 2.0;
+  var cardAspect = options.cardAspect || 2 / 3;
+  var cardW = cardH * cardAspect;
+
+  // ── Viewport-adaptive card sizing ──
+  var vpH = camera.top - camera.bottom;
+  var vpW = camera.right - camera.left;
+  var isMobileRoom = vpH < 5;
+
+  if (isMobileRoom) {
+    cols = 3;
+    cardH = vpH * 0.38;
+    cardW = cardH * cardAspect;
+    spacing = cardH * 0.4;
+  }
+
+  var loadedItems = [];
+  var texCache = {};
+  items.forEach(function (item, index) {
+    if (!item.imageSrc) return;
+    if (!texCache[item.imageSrc]) {
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Indrajaal texture error:', err);
+        },
+      );
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.anisotropy = 8;
+      texCache[item.imageSrc] = tex;
+      textures.push(tex);
+    }
+    loadedItems.push({ item: item, tex: texCache[item.imageSrc], index: index });
+  });
+
+  if (loadedItems.length === 0) {
+    scene.add(group);
+    galleryStageRegistry[roomKey] = {
+      group: group, planes: [], labels: [], textures: textures,
+      layout: 'asymmetric-gallery', cardCount: 0,
+      targetX: 0, currentX: 0, targetY: 0, currentY: 0,
+      gridW: 0, gridH: 0, cols: cols, cardW: cardW, cardH: cardH, spacing: spacing,
+    };
+    return;
+  }
+
+  // Shared shader uniforms
+  var sharedUniforms = { uTime: { value: 0 }, uVelocity: { value: 0 } };
+
+  // ── Grid dimensions ──
+  var rows = Math.ceil(loadedItems.length / cols);
+  var gridW = cols * cardW + (cols - 1) * spacing;
+  var gridH = rows * cardH + (rows - 1) * spacing;
+
+  // Parallax multipliers per row (top row moves fastest, deeper rows slower)
+  var rowParallax = [];
+  for (var r = 0; r < rows; r++) {
+    rowParallax.push(1 - (r * 0.08));
+  }
+
+  loadedItems.forEach(function (entry, idx) {
+    if (!entry) return;
+    var item = entry.item;
+    var col = idx % cols;
+    var row = Math.floor(idx / cols);
+
+    var geom = _safePlaneGeometry(cardW, cardH, 'indrajaal-grid');
+    var mat = new THREE.ShaderMaterial({
+      vertexShader: [
+        'varying vec2 vUv;',
+        'varying float vDist;',
+        'uniform float uTime;',
+        'uniform float uVelocity;',
+        'void main() {',
+        '  vUv = uv;',
+        '  vec3 pos = position;',
+        '  float wave = sin(pos.y * 1.2 + uTime * 0.6) * abs(uVelocity) * 0.003;',
+        '  pos.x += wave;',
+        '  pos.z += abs(wave) * 0.3;',
+        '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
+        '  vDist = -mv.z;',
+        '  gl_Position = projectionMatrix * mv;',
+        '}',
+      ].join('\n'),
+      fragmentShader: [
+        'precision highp float;',
+        'uniform sampler2D uTexture;',
+        'uniform float uTime;',
+        'varying vec2 vUv;',
+        'varying float vDist;',
+        'void main() {',
+        '  float vig = 1.0 - smoothstep(0.4, 0.95, length(vUv - 0.5));',
+        '  vec4 c = texture2D(uTexture, vUv);',
+        '  gl_FragColor = vec4(c.rgb, c.a * vig);',
+        '}',
+      ].join('\n'),
+      uniforms: {
+        uTexture: { value: entry.tex },
+        uTime: sharedUniforms.uTime,
+        uVelocity: sharedUniforms.uVelocity,
+      },
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    var mesh = new THREE.Mesh(geom, mat);
+
+    // Center the grid around origin
+    var x = -gridW / 2 + cardW / 2 + col * (cardW + spacing);
+    var y = gridH / 2 - cardH / 2 - row * (cardH + spacing);
+
+    mesh.position.set(x, y, 0);
+
+    mesh.userData = {
+      roomKey: roomKey,
+      galleryIndex: entry.index,
+      title: item.title || '',
+      productHandle: item.productHandle || null,
+      collectionHandle: item.collectionHandle || null,
+      layout: 'asymmetric-gallery',
+      baseX: x,
+      baseY: y,
+      baseZ: 0,
+      cardW: cardW,
+      cardH: cardH,
+      row: row,
+      col: col,
+      parallaxMult: rowParallax[row],
+    };
+
+    group.add(mesh);
+    planes.push(mesh);
+
+    // Title label below card
+    if (item.title) {
+      var labelCanvas = document.createElement('canvas');
+      var lCtx = labelCanvas.getContext('2d');
+      labelCanvas.width = 512;
+      labelCanvas.height = 80;
+      lCtx.clearRect(0, 0, 512, 80);
+      lCtx.font = 'bold 30px Georgia, serif';
+      lCtx.textAlign = 'center';
+      lCtx.textBaseline = 'middle';
+      lCtx.fillStyle = '#ece3c2';
+      lCtx.fillText(item.title.toUpperCase(), 256, 40);
+
+      var labelTex = new THREE.CanvasTexture(labelCanvas);
+      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      var labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, depthTest: false });
+      var labelW = cardW * 0.85;
+      var labelH = labelW * (80 / 512);
+      var labelGeom = _safePlaneGeometry(labelW, labelH, 'indrajaal-label');
+      var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+      labelMesh.position.set(x, y - cardH * 0.55, 0.01);
+      labelMesh.renderOrder = 999;
+      group.add(labelMesh);
+      labels.push(labelMesh);
+    }
+  });
+
+  scene.add(group);
+  galleryStageRegistry[roomKey] = {
+    group: group,
+    planes: planes,
+    labels: labels,
+    textures: textures,
+    layout: 'asymmetric-gallery',
+    cardCount: loadedItems.length,
+    targetX: 0,
+    currentX: 0,
+    targetY: 0,
+    currentY: 0,
+    onX: 0,
+    onY: 0,
+    gridW: gridW,
+    gridH: gridH,
+    cols: cols,
+    cardW: cardW,
+    cardH: cardH,
+    spacing: spacing,
+    rowParallax: rowParallax,
+    sharedUniforms: sharedUniforms,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────
 function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
@@ -2948,7 +3142,6 @@ function initGalleryCarousel(canvas) {
   var state = galleryStageRegistry[currentRoomKey];
   var layout = state ? state.layout : 'arc';
   var isScrollLayout =
-    layout === 'asymmetric-gallery' ||
     layout === 'scroll-narrative' ||
     layout === 'vertical' ||
     layout === 'infinite-drag-gallery' ||
@@ -2962,6 +3155,8 @@ function initGalleryCarousel(canvas) {
   var isNarrativeStory = layout === 'narrative-story';
   var isCodexList = layout === 'codex-list';
   var isArtifactGallery = layout === 'artifact-gallery';
+
+  var isIndrajaalGrid = layout === 'asymmetric-gallery';
 
   var startHandler = function (e) {
     // Guard: don't capture touch/click until user has entered the 3D experience
@@ -2979,6 +3174,14 @@ function initGalleryCarousel(canvas) {
     galleryDragState.lastY = galleryDragState.startY;
     galleryDragState.velocityX = 0;
     galleryDragState.velocityY = 0;
+    // Indrajaal grid: store initial target for drag-to-explore
+    if (isIndrajaalGrid) {
+      var s = galleryStageRegistry[currentRoomKey];
+      if (s) {
+        s.onX = s.targetX - galleryDragState.startX * 2.5;
+        s.onY = s.targetY + galleryDragState.startY * 2.5;
+      }
+    }
     canvas.style.cursor = 'grabbing';
   };
 
@@ -2992,26 +3195,29 @@ function initGalleryCarousel(canvas) {
     var dx = x - galleryDragState.lastX;
     var dy = y - galleryDragState.lastY;
 
-    if (isScrollLayout) {
-      // Scroll-driven layouts: asymmetric-gallery, scroll-narrative, vertical
+    if (isIndrajaalGrid) {
+      // ── Indrajaal grid: drag-to-explore with row parallax ──
+      var dragMult = 2.5;
+      s.targetX = (s.onX || 0) + dx * dragMult;
+      s.targetY = (s.onY || 0) - dy * dragMult;
+      // Clamp to grid bounds (grid extends beyond viewport)
+      var maxX = (s.gridW - (camera.right - camera.left)) * 0.5;
+      var maxY = (s.gridH - (camera.top - camera.bottom)) * 0.5;
+      if (maxX > 0) s.targetX = Math.max(-maxX, Math.min(maxX, s.targetX));
+      if (maxY > 0) s.targetY = Math.max(-maxY, Math.min(maxY, s.targetY));
+      galleryDragState.velocityX = dx * 0.8;
+      galleryDragState.velocityY = dy * 0.8;
+    } else if (isScrollLayout) {
+      // Scroll-driven layouts: scroll-narrative, vertical
       // Y drag translates/scrolls, X drag adds subtle rotation
       var deltaY = dy * 0.012;
       var deltaX = dx * 0.003;
-      if (layout === 'asymmetric-gallery') {
-        // Asymmetric: parallax-driven Y scroll + subtle Y-axis rotation
-        s.targetScrollY = Math.max(
-          -(s.cardCount - 1) * s.asymSpacing * 0.5,
-          Math.min(s.asymSpacing * 0.5, s.targetScrollY - deltaY),
-        );
-        s.targetRotationY += dx * 0.002;
-      } else {
-        // Vertical / scroll-narrative: standard scroll + tilt
-        s.targetScrollY = Math.max(
-          -(s.cardCount - 1) * s.cardSpacing * 0.5,
-          Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY),
-        );
-        s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
-      }
+      // Vertical / scroll-narrative: standard scroll + tilt
+      s.targetScrollY = Math.max(
+        -(s.cardCount - 1) * s.cardSpacing * 0.5,
+        Math.min(s.cardSpacing * 0.5, s.targetScrollY - deltaY),
+      );
+      s.targetRotationX = Math.max(-0.15, Math.min(0.15, s.targetRotationX + deltaX));
       galleryDragState.velocityX = dx * 0.5;
       galleryDragState.velocityY = dy * 0.5;
     } else if (isHelixLayout) {
@@ -3090,18 +3296,15 @@ function initGalleryCarousel(canvas) {
     var s = galleryStageRegistry[currentRoomKey];
     if (!s) return;
 
-    if (isScrollLayout) {
-      if (layout === 'asymmetric-gallery') {
-        s.targetScrollY = Math.max(
-          -(s.cardCount - 1) * s.asymSpacing * 0.5,
-          Math.min(s.asymSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
-        );
-      } else {
-        s.targetScrollY = Math.max(
-          -(s.cardCount - 1) * s.cardSpacing * 0.5,
-          Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
-        );
-      }
+    if (isIndrajaalGrid) {
+      // ── Indrajaal grid: wheel adds to target position (drag-to-explore feel) ──
+      s.targetX -= e.deltaX * 0.5 || 0;
+      s.targetY += e.deltaY * 0.5 || 0;
+    } else if (isScrollLayout) {
+      s.targetScrollY = Math.max(
+        -(s.cardCount - 1) * s.cardSpacing * 0.5,
+        Math.min(s.cardSpacing * 0.5, s.targetScrollY - e.deltaY * 0.008),
+      );
     } else if (isInfiniteDrag) {
       // Wheel adds to velocity for infinite drag
       galleryDragState.velocityY += e.deltaY * 0.05;
@@ -3182,8 +3385,8 @@ function animateGalleryCarousel() {
   if (!state || !state.group) return;
 
   var layout = state.layout;
+  var isIndrajaalGrid = layout === 'asymmetric-gallery';
   var isScrollAnim =
-    layout === 'asymmetric-gallery' ||
     layout === 'scroll-narrative' ||
     layout === 'vertical' ||
     layout === 'scroll-story' ||
@@ -3196,6 +3399,55 @@ function animateGalleryCarousel() {
   var isNarrativeStory = layout === 'narrative-story';
   var isCodexList = layout === 'codex-list';
   var isArtifactGallery = layout === 'artifact-gallery';
+
+  // ── Indrajaal grid: drag-to-explore with LERP + row parallax ──
+  if (isIndrajaalGrid) {
+    var lerpFactor = 0.085;
+
+    if (!galleryDragState.isDragging) {
+      // Inertia
+      if (Math.abs(galleryDragState.velocityX) > 0.001) {
+        state.targetX += galleryDragState.velocityX * 0.012;
+        galleryDragState.velocityX *= 0.93;
+      }
+      if (Math.abs(galleryDragState.velocityY) > 0.001) {
+        state.targetY += galleryDragState.velocityY * 0.012;
+        galleryDragState.velocityY *= 0.93;
+      }
+    }
+
+    // Clamp to grid bounds
+    var maxX = (state.gridW - (camera.right - camera.left)) * 0.5;
+    var maxY = (state.gridH - (camera.top - camera.bottom)) * 0.5;
+    if (maxX > 0) state.targetX = Math.max(-maxX, Math.min(maxX, state.targetX));
+    if (maxY > 0) state.targetY = Math.max(-maxY, Math.min(maxY, state.targetY));
+
+    // LERP
+    state.currentX += (state.targetX - state.currentX) * lerpFactor;
+    state.currentY += (state.targetY - state.currentY) * lerpFactor;
+
+    // Apply position with row parallax per plane
+    var vel = Math.abs(state.targetX - state.currentX) + Math.abs(state.targetY - state.currentY);
+    if (state.sharedUniforms) state.sharedUniforms.uVelocity.value = vel;
+
+    state.planes.forEach(function (plane) {
+      var pm = plane.userData.parallaxMult || 1;
+      plane.position.x = plane.baseX + state.currentX * pm;
+      plane.position.y = plane.baseY + state.currentY * pm;
+    });
+
+    // Labels follow their cards
+    var labelIdx = 0;
+    state.planes.forEach(function (plane) {
+      if (state.labels[labelIdx]) {
+        state.labels[labelIdx].position.x = plane.position.x;
+        state.labels[labelIdx].position.y = plane.position.y - plane.userData.cardH * 0.55;
+        labelIdx++;
+      }
+    });
+
+    return; // skip default scroll animation
+  }
 
   if (isScrollAnim) {
     // ── Scroll-driven animation: scroll-narrative, vertical, scroll-story ──
