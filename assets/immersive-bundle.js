@@ -2243,7 +2243,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
   var cols = cfg.columns || 5;
-  var spacing = cfg.spacing || 2.5;
+  var spacing = cfg.spacing || 0.5;
   var cardH = options.cardHeight || 2.0;
   var cardAspect = options.cardAspect || 2 / 3;
   var cardW = cardH * cardAspect;
