@@ -6881,6 +6881,7 @@ function openCollectionPanel(collectionHandle) {
     fetchSectionHtml(path, 'glass-panel', null)
       .then(function (html) {
         if (!html) {
+          console.warn('[Immersive] glass-panel fetch returned empty for:', collectionHandle, 'URL:', path);
           var errMsg = panel.getAttribute('data-msg-load-error') || 'Unable to load content. Please try again.';
           showErrorFeedback(panel, errMsg);
           closePanel(panel);
