@@ -315,271 +315,271 @@
       "uploading_images": "Uploading images...",
       "try_another": "Try another photo"
     },
-  "immersive_store": {
-    "panel_title": "Shahana Collection",
-    "base_image": "Storefront base image",
-    "depth_map": "Storefront depth map",
-    "explore_heading": "Explore",
-    "nav_exterior": "Exterior",
-    "nav_lounge": "Lounge",
-    "nav_designer": "Designer houses",
-    "nav_festive": "Festive gallery",
-    "nav_eid_edit": "Eid edit 2026",
-    "hotspot_1_label": "Explore collection area 1",
-    "hotspot_2_label": "Explore collection area 2",
-    "close": "Close",
-    "heading": "Shahana Collection",
-    "intro": "Step inside our immersive store and explore our latest collections.",
-    "launch_button": "Enter the store",
-    "menu": {
-      "dialog_title": "Navigation",
-      "close": "Close menu",
-      "nav_aria": "Immersive store navigation",
-      "storefront": "Storefront",
-      "lounge": "Lounge",
-      "designer_houses": "Designer Houses",
-      "occasions": "Occasions",
-      "featured_collections": "Featured Collections",
-      "faq": "FAQ"
-    },
-    "search_aria": "Search",
-    "menu_button": "Menu",
-    "menu_close_button": "Close",
-    "nav_back_to_lounge": "Back to lounge",
-    "nav_explore_designers": "Explore Designers",
-    "nav_our_occasions": "Our Occasions",
-    "nav_featured_stories": "Featured Stories",
-    "nav_back_to_storefront": "Back to storefront",
-    "nav_enter_store": "Enter store",
-    "nav_designer_houses": "Designer Houses",
-    "nav_occasions": "Occasions",
-    "nav_featured_collections": "Featured Collections",
-    "cart_label": "Cart ({{ count }})",
-    "collection_empty": "This collection has no products yet.",
-    "collection_not_found": "Collection not found.",
-    "collection_panel_aria": "Collection panel",
-    "error_select_variant": "Please select a size",
-    "error_add_to_cart": "Unable to add to cart. Please try again.",
-    "error_load_collection": "Unable to load collection. Please check your connection and try again.",
-    "error_load_product": "Unable to load product. Please check your connection and try again.",
-    "added_to_cart": "Added to cart!",
-    "breadcrumb_store": "Shahana Collection",
-    "close_panel": "Close panel",
-    "nav_previous": "Previous",
-    "nav_next": "Next",
-    "cookie_banner": {
-      "aria_label": "Cookie consent",
-      "text": "We use cookies to enhance your experience.",
-      "learn_more": "Learn more",
-      "decline": "Decline",
-      "accept": "Accept"
-    },
-    "recommendations": {
-      "heading": "You May Also Like",
-      "card_aria": "View {{ title }}"
-    },
-    "onboarding": {
-      "title": "Welcome to the Immersive Store",
-      "description": "Move your mouse to see the room come to life. Click the glowing hotspots to explore collections and view products.",
-      "dismiss": "Start exploring"
-    },
-    "wishlist": {
-      "button_aria": "Wishlist",
-      "panel_title": "Your Wishlist",
-      "close": "Close wishlist",
-      "empty": "You haven't saved any products yet.",
-      "save": "Save {{ title }} to wishlist",
-      "saved": "Remove {{ title }} from wishlist",
-      "save_label": "Save",
-      "saved_label": "Saved",
-      "view_product": "View product",
-      "remove": "Remove from wishlist",
-      "item_count": "{{ count }} saved item",
-      "item_count_plural": "{{ count }} saved items",
-      "empty_encouragement": "Start exploring the rooms to discover pieces you love."
-    },
-    "add_to_edit": "Add to my edit",
-    "action_done": "Done",
-    "back_to_previous_room": "Back to previous room",
-    "add_to_cart": "Add to cart",
-    "sold_out": "Sold out",
-    "adding": "Adding...",
-    "back_to_room": "← Back to {{ room_name }}",
-    "welcome_toast": "You're in the 3D store — tap any hotspot to explore. Switch back anytime.",
-    "based_on_saves": "Based on your saves",
-    "tilt_toggle": "Enable tilt control",
-    "tilt_toggle_enabled": "Disable tilt control",
-    "room_badge": {
-      "name_storefront": "Storefront",
-      "guidance_storefront": "Enter the store to begin exploring",
-      "name_lounge": "Lounge",
-      "guidance_lounge": "Explore hotspots to discover curated looks",
-      "name_designer_houses": "Designer Houses",
-      "guidance_designer_houses": "Select a designer to explore their collection",
-      "name_occasions": "Occasions",
-      "guidance_occasions": "Choose an occasion to find the perfect look",
-      "name_featured_collections": "Featured Collections",
-      "guidance_featured_collections": "Discover our latest curated edits"
-    },
-    "search": {
-      "placeholder": "Search products, collections, rooms…",
-      "no_results": "No results for \"{{term}}\"",
-      "no_results_hint": "Try browsing our rooms instead",
-      "unavailable": "Search unavailable",
-      "group_products": "Products",
-      "group_collections": "Collections",
-      "group_rooms": "Rooms",
-      "shortcut_label": "Press ⌘K to search"
-    },
-    "filters": {
-      "heading": "Filter",
-      "color": "Colour",
-      "price": "Price",
-      "price_min": "Min",
-      "price_max": "Max",
-      "designer": "Designer",
-      "sort": "Sort by",
-      "sort_manual": "Featured",
-      "sort_price_asc": "Price: Low to High",
-      "sort_price_desc": "Price: High to Low",
-      "sort_title_asc": "A–Z",
-      "clear_all": "Clear all",
-      "currency_label": "PKR",
-      "active_filters": {
-        "label": "Active filters",
-        "clear_all": "Clear all",
-        "clear_all_aria": "Clear all filters",
-        "remove_filter_aria": "Remove {{filter}} filter"
-      }
-    },
-    "next_actions": {
-      "continue_exploring": "Continue exploring {{room}}",
-      "see_more_from": "See more from {{vendor}}",
-      "complete_the_look": "Complete the look",
-      "view_cart": "View cart",
-      "discover_next": "Discover what's next",
-      "dismiss": "Dismiss"
-    },
-    "room_recommendations": {
-      "heading": "Try next",
-      "reason_saves": "Based on your saves",
-      "reason_browsing": "Based on your browsing",
-      "dismiss": "Dismiss suggestion"
-    },
-    "quick_add": {
-      "button_label": "+ Add",
-      "button_aria": "Quick add {{title}} to cart",
-      "modal_title": "Select size",
+    "immersive_store": {
+      "panel_title": "Shahana Collection",
+      "base_image": "Storefront base image",
+      "depth_map": "Storefront depth map",
+      "explore_heading": "Explore",
+      "nav_exterior": "Exterior",
+      "nav_lounge": "Lounge",
+      "nav_designer": "Designer houses",
+      "nav_festive": "Festive gallery",
+      "nav_eid_edit": "Eid edit 2026",
+      "hotspot_1_label": "Explore collection area 1",
+      "hotspot_2_label": "Explore collection area 2",
+      "close": "Close",
+      "heading": "Shahana Collection",
+      "intro": "Step inside our immersive store and explore our latest collections.",
+      "launch_button": "Enter the store",
+      "menu": {
+        "dialog_title": "Navigation",
+        "close": "Close menu",
+        "nav_aria": "Immersive store navigation",
+        "storefront": "Storefront",
+        "lounge": "Lounge",
+        "designer_houses": "Designer Houses",
+        "occasions": "Occasions",
+        "featured_collections": "Featured Collections",
+        "faq": "FAQ"
+      },
+      "search_aria": "Search",
+      "menu_button": "Menu",
+      "menu_close_button": "Close",
+      "nav_back_to_lounge": "Back to lounge",
+      "nav_explore_designers": "Explore Designers",
+      "nav_our_occasions": "Our Occasions",
+      "nav_featured_stories": "Featured Stories",
+      "nav_back_to_storefront": "Back to storefront",
+      "nav_enter_store": "Enter store",
+      "nav_designer_houses": "Designer Houses",
+      "nav_occasions": "Occasions",
+      "nav_featured_collections": "Featured Collections",
+      "cart_label": "Cart ({{ count }})",
+      "collection_empty": "This collection has no products yet.",
+      "collection_not_found": "Collection not found.",
+      "collection_panel_aria": "Collection panel",
+      "error_select_variant": "Please select a size",
+      "error_add_to_cart": "Unable to add to cart. Please try again.",
+      "error_load_collection": "Unable to load collection. Please check your connection and try again.",
+      "error_load_product": "Unable to load product. Please check your connection and try again.",
+      "added_to_cart": "Added to cart!",
+      "breadcrumb_store": "Shahana Collection",
+      "close_panel": "Close panel",
+      "nav_previous": "Previous",
+      "nav_next": "Next",
+      "cookie_banner": {
+        "aria_label": "Cookie consent",
+        "text": "We use cookies to enhance your experience.",
+        "learn_more": "Learn more",
+        "decline": "Decline",
+        "accept": "Accept"
+      },
+      "recommendations": {
+        "heading": "You May Also Like",
+        "card_aria": "View {{ title }}"
+      },
+      "onboarding": {
+        "title": "Welcome to the Immersive Store",
+        "description": "Move your mouse to see the room come to life. Click the glowing hotspots to explore collections and view products.",
+        "dismiss": "Start exploring"
+      },
+      "wishlist": {
+        "button_aria": "Wishlist",
+        "panel_title": "Your Wishlist",
+        "close": "Close wishlist",
+        "empty": "You haven't saved any products yet.",
+        "save": "Save {{ title }} to wishlist",
+        "saved": "Remove {{ title }} from wishlist",
+        "save_label": "Save",
+        "saved_label": "Saved",
+        "view_product": "View product",
+        "remove": "Remove from wishlist",
+        "item_count": "{{ count }} saved item",
+        "item_count_plural": "{{ count }} saved items",
+        "empty_encouragement": "Start exploring the rooms to discover pieces you love."
+      },
+      "add_to_edit": "Add to my edit",
+      "action_done": "Done",
+      "back_to_previous_room": "Back to previous room",
       "add_to_cart": "Add to cart",
       "sold_out": "Sold out",
-      "added": "Added to cart",
-      "select_size": "Please select a size"
-    },
-    "quick_view": {
-      "button_label": "Quick view",
-      "button_aria": "Quick view {{title}}"
-    },
-    "fab": {
-      "label": "Navigation menu",
-      "open": "Open navigation menu",
-      "close": "Close navigation menu"
-    },
-    "bottom_nav": {
-      "rooms": "Rooms",
-      "wishlist": "Wishlist",
-      "cart": "Cart",
-      "back_to_2d": "Classic store",
-      "room_picker_title": "Go to room",
-      "room_storefront": "Storefront",
-      "room_lounge": "Lounge",
-      "room_designer_houses": "Designer Houses",
-      "room_occasions": "Occasions",
-      "room_featured_collections": "Featured Collections"
-    },
-    "promo_code": {
-      "label": "Enter discount code",
-      "placeholder": "Discount code",
-      "apply": "Apply",
-      "success": "Discount applied successfully!",
-      "error": "Invalid or expired discount code.",
-      "empty": "Please enter a discount code.",
-      "active_codes": "Active discounts",
-      "remove": "Remove {{ code }}"
-    },
-    "limited_time": {
-      "sale_ends": "Sale ends in",
-      "days": "d",
-      "hours": "h",
-      "minutes": "m",
-      "seconds": "s",
-      "low_stock": "Only {{count}} left",
-      "flash_sale": "Flash Sale",
-      "flash_dismiss": "Dismiss"
-    },
-    "room_visited": "Visited",
-    "guided": {
-      "prompt_cta": "Begin the Experience",
-      "prompt_skip": "Explore at Your Own Pace",
-      "step_lounge": "Lounge",
-      "step_editorial": "Editorial",
-      "step_collection": "Collection",
-      "step_product": "Product"
-    },
-    "empty_states": {
-      "collection_heading": "This collection is empty",
-      "collection_body": "We're working on adding new pieces. Check back soon or explore other collections.",
-      "collection_search": "Search products",
-      "collection_browse": "Browse rooms",
-      "search_heading": "No results found",
-      "search_body": "Try different keywords or browse our curated rooms.",
-      "wishlist_heading": "Your wishlist is empty",
-      "wishlist_body": "Start exploring the rooms to discover pieces you love.",
-      "wishlist_action": "Explore collections"
-    },
-    "skeleton": {
-      "loading_collection": "Loading collection...",
-      "loading_product": "Loading product...",
-      "loading_room": "Loading room...",
-      "loading": "Loading...",
-      "error_load_cart": "Unable to load cart. Please try again."
-    }
-  },
-  "codex": {
-    "name": "3D Codex",
-    "instructions": "Drag or swipe to rotate the Codex.",
-    "settings": {
-      "display_header": "Content",
-      "heading": {
-        "label": "Heading"
+      "adding": "Adding...",
+      "back_to_room": "← Back to {{ room_name }}",
+      "welcome_toast": "You're in the 3D store — tap any hotspot to explore. Switch back anytime.",
+      "based_on_saves": "Based on your saves",
+      "tilt_toggle": "Enable tilt control",
+      "tilt_toggle_enabled": "Disable tilt control",
+      "room_badge": {
+        "name_storefront": "Storefront",
+        "guidance_storefront": "Enter the store to begin exploring",
+        "name_lounge": "Lounge",
+        "guidance_lounge": "Explore hotspots to discover curated looks",
+        "name_designer_houses": "Designer Houses",
+        "guidance_designer_houses": "Select a designer to explore their collection",
+        "name_occasions": "Occasions",
+        "guidance_occasions": "Choose an occasion to find the perfect look",
+        "name_featured_collections": "Featured Collections",
+        "guidance_featured_collections": "Discover our latest curated edits"
       },
-      "subheading": {
-        "label": "Subheading"
+      "search": {
+        "placeholder": "Search products, collections, rooms…",
+        "no_results": "No results for \"{{term}}\"",
+        "no_results_hint": "Try browsing our rooms instead",
+        "unavailable": "Search unavailable",
+        "group_products": "Products",
+        "group_collections": "Collections",
+        "group_rooms": "Rooms",
+        "shortcut_label": "Press ⌘K to search"
       },
-      "behavior_header": "Behaviour",
-      "enable_auto_rotate": {
-        "label": "Enable auto-rotation"
+      "filters": {
+        "heading": "Filter",
+        "color": "Colour",
+        "price": "Price",
+        "price_min": "Min",
+        "price_max": "Max",
+        "designer": "Designer",
+        "sort": "Sort by",
+        "sort_manual": "Featured",
+        "sort_price_asc": "Price: Low to High",
+        "sort_price_desc": "Price: High to Low",
+        "sort_title_asc": "A–Z",
+        "clear_all": "Clear all",
+        "currency_label": "PKR",
+        "active_filters": {
+          "label": "Active filters",
+          "clear_all": "Clear all",
+          "clear_all_aria": "Clear all filters",
+          "remove_filter_aria": "Remove {{filter}} filter"
+        }
       },
-      "rotation_speed": {
-        "label": "Rotation speed",
-        "info": "Higher values spin faster. Set to 0 to disable auto-rotation."
+      "next_actions": {
+        "continue_exploring": "Continue exploring {{room}}",
+        "see_more_from": "See more from {{vendor}}",
+        "complete_the_look": "Complete the look",
+        "view_cart": "View cart",
+        "discover_next": "Discover what's next",
+        "dismiss": "Dismiss"
       },
-      "style_header": "Style",
-      "background_color": {
-        "label": "Background colour"
+      "room_recommendations": {
+        "heading": "Try next",
+        "reason_saves": "Based on your saves",
+        "reason_browsing": "Based on your browsing",
+        "dismiss": "Dismiss suggestion"
+      },
+      "quick_add": {
+        "button_label": "+ Add",
+        "button_aria": "Quick add {{title}} to cart",
+        "modal_title": "Select size",
+        "add_to_cart": "Add to cart",
+        "sold_out": "Sold out",
+        "added": "Added to cart",
+        "select_size": "Please select a size"
+      },
+      "quick_view": {
+        "button_label": "Quick view",
+        "button_aria": "Quick view {{title}}"
+      },
+      "fab": {
+        "label": "Navigation menu",
+        "open": "Open navigation menu",
+        "close": "Close navigation menu"
+      },
+      "bottom_nav": {
+        "rooms": "Rooms",
+        "wishlist": "Wishlist",
+        "cart": "Cart",
+        "back_to_2d": "Classic store",
+        "room_picker_title": "Go to room",
+        "room_storefront": "Storefront",
+        "room_lounge": "Lounge",
+        "room_designer_houses": "Designer Houses",
+        "room_occasions": "Occasions",
+        "room_featured_collections": "Featured Collections"
+      },
+      "promo_code": {
+        "label": "Enter discount code",
+        "placeholder": "Discount code",
+        "apply": "Apply",
+        "success": "Discount applied successfully!",
+        "error": "Invalid or expired discount code.",
+        "empty": "Please enter a discount code.",
+        "active_codes": "Active discounts",
+        "remove": "Remove {{ code }}"
+      },
+      "limited_time": {
+        "sale_ends": "Sale ends in",
+        "days": "d",
+        "hours": "h",
+        "minutes": "m",
+        "seconds": "s",
+        "low_stock": "Only {{count}} left",
+        "flash_sale": "Flash Sale",
+        "flash_dismiss": "Dismiss"
+      },
+      "room_visited": "Visited",
+      "guided": {
+        "prompt_cta": "Begin the Experience",
+        "prompt_skip": "Explore at Your Own Pace",
+        "step_lounge": "Lounge",
+        "step_editorial": "Editorial",
+        "step_collection": "Collection",
+        "step_product": "Product"
+      },
+      "empty_states": {
+        "collection_heading": "This collection is empty",
+        "collection_body": "We're working on adding new pieces. Check back soon or explore other collections.",
+        "collection_search": "Search products",
+        "collection_browse": "Browse rooms",
+        "search_heading": "No results found",
+        "search_body": "Try different keywords or browse our curated rooms.",
+        "wishlist_heading": "Your wishlist is empty",
+        "wishlist_body": "Start exploring the rooms to discover pieces you love.",
+        "wishlist_action": "Explore collections"
+      },
+      "skeleton": {
+        "loading_collection": "Loading collection...",
+        "loading_product": "Loading product...",
+        "loading_room": "Loading room...",
+        "loading": "Loading...",
+        "error_load_cart": "Unable to load cart. Please try again."
       }
     },
-    "presets": {
-      "default": "3D Codex"
-    }
-  },
-  "immersive_canvas": {
-    "close_panel": "Close panel",
-    "fab_story_rail": "Our Story",
-    "fab_typo_index": "Typography",
-    "fab_promo_code": "Promo Code",
-    "logo_home": "{{ name }} — Home"
-  },
-  "immersive_editorial": {
+    "codex": {
+      "name": "3D Codex",
+      "instructions": "Drag or swipe to rotate the Codex.",
+      "settings": {
+        "display_header": "Content",
+        "heading": {
+          "label": "Heading"
+        },
+        "subheading": {
+          "label": "Subheading"
+        },
+        "behavior_header": "Behaviour",
+        "enable_auto_rotate": {
+          "label": "Enable auto-rotation"
+        },
+        "rotation_speed": {
+          "label": "Rotation speed",
+          "info": "Higher values spin faster. Set to 0 to disable auto-rotation."
+        },
+        "style_header": "Style",
+        "background_color": {
+          "label": "Background colour"
+        }
+      },
+      "presets": {
+        "default": "3D Codex"
+      }
+    },
+    "immersive_canvas": {
+      "close_panel": "Close panel",
+      "fab_story_rail": "Our Story",
+      "fab_typo_index": "Typography",
+      "fab_promo_code": "Promo Code",
+      "logo_home": "{{ name }} — Home"
+    },
+    "immersive_editorial": {
       "name": "Immersive Editorial",
       "overlay_title": "Editorial Story",
       "loading": "Loading Story...",
@@ -594,89 +594,89 @@
         "learn_more": "Learn more"
       }
     },
-  "immersive": {
-    "product_grid": {
-      "empty": "No products available in this designer yet.",
-      "no_results_filtered": "No products match your filters. Try adjusting or clearing your filters.",
-      "back_to_collection": "Back to collection"
-    },
-    "product_card": {
-      "product_area": "{{ title }} product area",
-      "view_product": "View {{ title }}",
-      "select_variant": "Select variant",
-      "add_to_cart_aria": "Add {{ title }} to cart",
-      "unavailable_aria": "Product unavailable",
-      "badge_new": "New"
-    },
-    "product_panel": {
-      "title": "Product details",
-      "close": "Close",
-      "variant_group_label": "Select variant",
-      "care_heading": "Care Instructions",
-      "care_default_dry_clean": "Dry clean only",
-      "care_default_no_bleach": "Do not bleach",
-      "care_default_iron_low": "Iron on low heat",
-      "care_default_store": "Store in a cool, dry place",
-      "size_heading": "Size Chart",
-      "disclaimer_heading": "Disclaimer",
-      "disclaimer_default": "Product color may slightly vary due to photographic lighting sources or your monitor settings. Actual colors and details may differ from images shown.",
-      "dispatch_heading": "Dispatch & Delivery",
-      "dispatch_notice": "Please allow 4–8 weeks from your order date for dispatch. You'll receive a shipping confirmation with tracking once it's on its way!",
-      "returns_heading": "Returns & Exchanges",
-      "returns_disclaimer": "Each piece in the Shahana Collection is exclusively sourced and curated for you. As such, we're unable to accommodate returns or exchanges based on personal preference. Should you receive an incorrect item, we will resolve this promptly. For craftsmanship or quality queries, we kindly ask that you reach out to the respective designer directly.",
-      "size_table": {
-        "size": "Size",
-        "bust": "Bust",
-        "waist": "Waist",
-        "hip": "Hip"
+    "immersive": {
+      "product_grid": {
+        "empty": "No products available in this designer yet.",
+        "no_results_filtered": "No products match your filters. Try adjusting or clearing your filters.",
+        "back_to_collection": "Back to collection"
       },
-      "related_heading": "You May Also Like",
-      "share_label": "Share",
-      "share_whatsapp": "WhatsApp",
-      "share_facebook": "Facebook",
-      "share_instagram": "Instagram",
-      "share_tiktok": "TikTok",
-      "share_on_whatsapp_aria": "Share on WhatsApp",
-      "share_on_facebook_aria": "Share on Facebook",
-      "share_on_instagram_aria": "Share on Instagram",
-      "share_on_tiktok_aria": "Share on TikTok",
-      "delivery_estimate": "Get it between {{ from }} – {{ to }}",
-      "product_detail_aria": "Product detail"
-    }
-  },
-  "virtual_tryon": {
-    "title": "Virtual Try-On",
-    "gate_title": "Sign in to try this on",
-    "gate_subtitle": "Get 1 free virtual try-on when you sign in. Recent customers get 2.",
-    "gate_button": "Sign in / Create account",
-    "subtitle": "See how this looks on you — upload a photo to get started",
-    "upload_label": "Choose a photo",
-    "upload_aria": "Upload your photo for virtual try-on",
-    "consent_text": "I agree to receive style updates & offers by email",
-    "button_label": "Try this on",
-    "loading_title": "Generating your look…",
-    "loading_subtitle": "This takes about 30–45 seconds",
-    "result_label": "Your virtual try-on",
-    "quota_badge_title": "Try-ons remaining",
-    "quota_available": "{{ count }} try-ons available",
-    "quota_remaining": "{{ count }} try-ons remaining",
-    "error_photo_read": "Could not read your photo. Please try a different image.",
-    "error_quota_exceeded": "You have used all your try-ons.",
-    "error_auth_required": "Please sign in to use Virtual Try-On.",
-    "status_uploading": "Uploading your photo…",
-    "status_processing": "Processing embroidery & texture details…",
-    "status_draping": "Generating realistic drapes…",
-    "status_finalizing": "Finalizing your look… almost there!",
-    "status_success": "Looking great!",
-    "copied": "✓ Copied!"
-  },
-  "announcements": {
-    "previous_announcement": "Previous announcement",
-    "next_announcement": "Next announcement",
-    "carousel": "Carousel",
-    "announcement": "Announcement",
-    "announcement_bar": "Announcement bar"
-  },
+      "product_card": {
+        "product_area": "{{ title }} product area",
+        "view_product": "View {{ title }}",
+        "select_variant": "Select variant",
+        "add_to_cart_aria": "Add {{ title }} to cart",
+        "unavailable_aria": "Product unavailable",
+        "badge_new": "New"
+      },
+      "product_panel": {
+        "title": "Product details",
+        "close": "Close",
+        "variant_group_label": "Select variant",
+        "care_heading": "Care Instructions",
+        "care_default_dry_clean": "Dry clean only",
+        "care_default_no_bleach": "Do not bleach",
+        "care_default_iron_low": "Iron on low heat",
+        "care_default_store": "Store in a cool, dry place",
+        "size_heading": "Size Chart",
+        "disclaimer_heading": "Disclaimer",
+        "disclaimer_default": "Product color may slightly vary due to photographic lighting sources or your monitor settings. Actual colors and details may differ from images shown.",
+        "dispatch_heading": "Dispatch & Delivery",
+        "dispatch_notice": "Please allow 4–8 weeks from your order date for dispatch. You'll receive a shipping confirmation with tracking once it's on its way!",
+        "returns_heading": "Returns & Exchanges",
+        "returns_disclaimer": "Each piece in the Shahana Collection is exclusively sourced and curated for you. As such, we're unable to accommodate returns or exchanges based on personal preference. Should you receive an incorrect item, we will resolve this promptly. For craftsmanship or quality queries, we kindly ask that you reach out to the respective designer directly.",
+        "size_table": {
+          "size": "Size",
+          "bust": "Bust",
+          "waist": "Waist",
+          "hip": "Hip"
+        },
+        "related_heading": "You May Also Like",
+        "share_label": "Share",
+        "share_whatsapp": "WhatsApp",
+        "share_facebook": "Facebook",
+        "share_instagram": "Instagram",
+        "share_tiktok": "TikTok",
+        "share_on_whatsapp_aria": "Share on WhatsApp",
+        "share_on_facebook_aria": "Share on Facebook",
+        "share_on_instagram_aria": "Share on Instagram",
+        "share_on_tiktok_aria": "Share on TikTok",
+        "delivery_estimate": "Get it between {{ from }} – {{ to }}",
+        "product_detail_aria": "Product detail"
+      }
+    },
+    "virtual_tryon": {
+      "title": "Virtual Try-On",
+      "gate_title": "Sign in to try this on",
+      "gate_subtitle": "Get 1 free virtual try-on when you sign in. Recent customers get 2.",
+      "gate_button": "Sign in / Create account",
+      "subtitle": "See how this looks on you — upload a photo to get started",
+      "upload_label": "Choose a photo",
+      "upload_aria": "Upload your photo for virtual try-on",
+      "consent_text": "I agree to receive style updates & offers by email",
+      "button_label": "Try this on",
+      "loading_title": "Generating your look…",
+      "loading_subtitle": "This takes about 30–45 seconds",
+      "result_label": "Your virtual try-on",
+      "quota_badge_title": "Try-ons remaining",
+      "quota_available": "{{ count }} try-ons available",
+      "quota_remaining": "{{ count }} try-ons remaining",
+      "error_photo_read": "Could not read your photo. Please try a different image.",
+      "error_quota_exceeded": "You have used all your try-ons.",
+      "error_auth_required": "Please sign in to use Virtual Try-On.",
+      "status_uploading": "Uploading your photo…",
+      "status_processing": "Processing embroidery & texture details…",
+      "status_draping": "Generating realistic drapes…",
+      "status_finalizing": "Finalizing your look… almost there!",
+      "status_success": "Looking great!",
+      "copied": "✓ Copied!"
+    },
+    "announcements": {
+      "previous_announcement": "Previous announcement",
+      "next_announcement": "Next announcement",
+      "carousel": "Carousel",
+      "announcement": "Announcement",
+      "announcement_bar": "Announcement bar"
+    },
     "header": {
       "announcement": "Announcement",
       "menu": "Menu",
