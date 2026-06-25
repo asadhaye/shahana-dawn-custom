@@ -3900,14 +3900,20 @@ function getGalleryStageConfig(roomKey) {
 // 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
 // 'arc' = original horizontal carousel (default fallback)
 function getGalleryLayout(roomKey) {
-  // Read layout from immersive-webgl-gallery-config sections (page.immersive.json).
-  // These sections set data-layout attributes that loadGalleryConfigsFromDOM()
-  // stores in window.immersiveWebglGalleryLayouts.
+  // 1. Read from immersive-canvas per-room layout settings (data-* attributes)
+  var canvasSection = document.querySelector('.immersive-store');
+  if (canvasSection) {
+    var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
+    var perRoomLayout = canvasSection.getAttribute(perRoomAttr);
+    if (perRoomLayout) return perRoomLayout;
+  }
+
+  // 2. Read from immersive-webgl-gallery-config sections
   if (window.immersiveWebglGalleryLayouts && window.immersiveWebglGalleryLayouts[roomKey]) {
     return window.immersiveWebglGalleryLayouts[roomKey];
   }
 
-  // Fallback per room
+  // 3. Fallback per room
   if (roomKey === 'designer_houses') return 'asymmetric-gallery';
   if (roomKey === 'occasions') return 'scroll-narrative';
   if (roomKey === 'featured_collections') return 'masonry-featured';
