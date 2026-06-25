@@ -334,64 +334,6 @@
         "layout": "masonry-featured"
       }
     },
-    "editorial_designer_houses": {
-      "type": "immersive-editorial",
-      "blocks": {
-        "designer_NzgAHN": {
-          "type": "designer",
-          "settings": {
-            "heading": "Faiza Saqlain",
-            "logo": "shopify://shop_images/faiza_saqlain_logo.webp",
-            "body": "",
-            "collection": "faiza-saqlain"
-          }
-        },
-        "designer_suffuse": {
-          "type": "designer",
-          "settings": {
-            "heading": "Suffuse",
-            "image": "shopify://shop_images/SILK_PRET.webp",
-            "logo": "shopify://shop_images/SUFFUSE_LOGO.webp",
-            "body": "<p>Redefining Pakistani luxury with fluid silhouettes, hand-embroidered textiles, and a palette drawn from the subcontinent's most storied landscapes.</p>",
-            "collection": "suffuse"
-          }
-        },
-        "designer_soraya": {
-          "type": "designer",
-          "settings": {
-            "heading": "Soraya",
-            "image": "shopify://shop_images/Soraya.jpg",
-            "logo": "shopify://shop_images/Soraya-logo.png",
-            "body": "<p>Where heritage craft meets contemporary form. Soraya's collections speak to the modern South Asian woman — bold, refined, and unapologetically elegant.</p>",
-            "collection": "soraya"
-          }
-        },
-        "designer_sbs": {
-          "type": "designer",
-          "settings": {
-            "heading": "Saad Bin Shahzad",
-            "image": "shopify://shop_images/SBS-Summer-Pret-26.webp",
-            "logo": "shopify://shop_images/saad_bin_shahzad_logo.png",
-            "body": "<p>Architectural precision and artisanal embroidery define Saad Bin Shahzad's vision — a house built on the belief that menswear and womenswear can share the same quiet power.</p>",
-            "collection": "saad-bin-shahzad"
-          }
-        }
-      },
-      "block_order": [
-        "designer_NzgAHN",
-        "designer_suffuse",
-        "designer_soraya",
-        "designer_sbs"
-      ],
-      "disabled": true,
-      "settings": {
-        "room_key": "designer_houses",
-        "layout": "designers",
-        "hero_heading": "The Designer Houses",
-        "hero_eyebrow": "Shahana Collection presents",
-        "hero_subheading": "<p>Three distinct creative visions. One immersive destination.</p>"
-      }
-    },
     "editorial_occasions": {
       "type": "immersive-editorial",
       "blocks": {
@@ -563,7 +505,6 @@
     "webgl_gallery_exclusives",
     "immersive_webgl_gallery_config_TnHgLB",
     "immersive_webgl_gallery_config_zAWPaK",
-    "editorial_designer_houses",
     "editorial_occasions",
     "editorial_featured_collections",
     "immersive_story",
