@@ -4794,6 +4794,10 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
         });
       }
       if (scene && galleryItems.length) {
+        // Clear previous room's hotspots before building gallery
+        var existingHotspots = uiLayer.querySelectorAll('.immersive-hotspot');
+        existingHotspots.forEach(function (el) { el.remove(); });
+        activeHotspots = [];
         buildGalleryStageForRoom(roomKey, scene, {
           layout: getGalleryLayout(roomKey),
           radius: 6,
