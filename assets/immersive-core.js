@@ -796,11 +796,15 @@ function _safePlaneGeometry(w, h, label) {
 function _buildScrollStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
   var isScrollStory = options.layout === 'scroll-story';
-  var cardH = options.cardHeight || (isScrollStory ? 0.5 : 0.4);
-  var cardAspect = options.cardAspect || (isScrollStory ? 3 / 4 : 2 / 3);
+  var vpH = (options && options.viewportHeight) || 2;
+  var vpW = (options && options.viewportWidth) || 2;
+
+  // Viewport-aware sizing
+  var cardH = isScrollStory ? vpH * 0.35 : vpH * 0.3;
+  var cardAspect = isScrollStory ? 3 / 4 : 2 / 3;
   var cardW = cardH * cardAspect;
-  var itemSpacing = cfg.itemSpacing || 2.5; // Y gap between items (world units)
-  var lerpFactor = cfg.lerpFactor || 0.1; // LERP smoothing (lower = smoother)
+  var itemSpacing = cardH * 0.5; // 50% of card height as gap
+  var lerpFactor = cfg.lerpFactor || 0.1;
   var isHelix = !isScrollStory;
 
   // ── Scroll state ──
@@ -1036,10 +1040,13 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
 // -----------------------------------------------------------------------------
 function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
-  var cardH = options.cardHeight || 0.5;
+  var vpH = (options && options.viewportHeight) || 2;
+
+  // Viewport-aware sizing
+  var cardH = vpH * 0.35;
   var cardAspect = options.cardAspect || 3 / 4;
   var cardW = cardH * cardAspect;
-  var tunnelLength = cfg.tunnelLength || 15;
+  var tunnelLength = Math.max(cardH * 4, 3); // Visible tunnel: ~4 cards deep
   var fov = cfg.fov || 60;
   var near = cfg.near || 0.1;
   var far = cfg.far || 100;
@@ -1273,6 +1280,12 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   options = options || {};
   var layout = options.layout || 'arc';
+
+  // Inject viewport dimensions for builders to use
+  var vpH = camera.top - camera.bottom;
+  var vpW = camera.right - camera.left;
+  options.viewportHeight = vpH;
+  options.viewportWidth = vpW;
 
   // Restore OrthographicCamera if switching away from scroll-tunnel
   if (layout !== 'scroll-tunnel' && camera instanceof THREE.PerspectiveCamera) {
@@ -2043,11 +2056,13 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
 // ─────────────────────────────────────────────────────────────
 function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
-  var cardSpacing = cfg.cardSpacing || 3.5;
-  var cardH = cfg.cardHeight || 2.2;
+  var vpH = (options && options.viewportHeight) || 2;
+
+  var cardH = vpH * 0.4;
   var cardAspect = cfg.cardAspect || 2 / 3;
   var cardW = cardH * cardAspect;
-  var floatAmp = cfg.floatAmplitude || 0.08;
+  var cardSpacing = cardH * 0.6;
+  var floatAmp = cfg.floatAmplitude || 0.02;
   var floatSpeed = cfg.floatSpeed || 0.8;
 
   // Switch to PerspectiveCamera for depth
@@ -2241,10 +2256,12 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
 // ─────────────────────────────────────────────────────────────
 function _buildCodexList(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
-  var itemSpacing = cfg.itemSpacing || 1.8;
-  var cardH = cfg.cardHeight || 0.6;
+  var vpH = (options && options.viewportHeight) || 2;
+
+  var cardH = vpH * 0.35;
   var cardAspect = cfg.cardAspect || 3 / 4;
   var cardW = cardH * cardAspect;
+  var itemSpacing = cardH * 0.5;
   var lerpFactor = cfg.lerpFactor || 0.12;
   var hoverAspect = cfg.hoverPlaneAspect || 16 / 9;
 
@@ -2372,11 +2389,14 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
 // ─────────────────────────────────────────────────────────────
 function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
+  var vpH = (options && options.viewportHeight) || 2;
+  var vpW = (options && options.viewportWidth) || 2;
+
   var gridCols = cfg.gridCols || 3;
-  var gridSpacing = cfg.gridSpacing || 0.8;
-  var cardH = cfg.cardHeight || 0.5;
+  var cardH = vpH * 0.35;
   var cardAspect = cfg.cardAspect || 3 / 4;
   var cardW = cardH * cardAspect;
+  var gridSpacing = cardW * 0.2;
   var parallaxStr = cfg.parallaxStrength || 0.0005;
   var glassDist = cfg.glassDistortion || 0.015;
 
