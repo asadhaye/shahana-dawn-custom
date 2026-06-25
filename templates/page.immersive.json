@@ -173,11 +173,11 @@
         "gallery_item_hqmG9k": {
           "type": "gallery_item",
           "settings": {
-            "image": "shopify://shop_images/1O9A0502.png",
-            "title": "Aura",
-            "subtitle": "Soraya",
-            "product": "aura",
-            "collection": ""
+            "image": "shopify://shop_images/Soraya-logo.png",
+            "title": "Soraya",
+            "subtitle": "",
+            "product": "",
+            "collection": "soraya"
           }
         },
         "gallery_item_1": {
