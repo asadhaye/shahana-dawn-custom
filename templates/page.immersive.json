@@ -241,7 +241,7 @@
       ],
       "settings": {
         "room_key": "designer_houses",
-        "layout": "asymmetric-gallery"
+        "layout": "default"
       }
     },
     "immersive_webgl_gallery_config_TnHgLB": {
