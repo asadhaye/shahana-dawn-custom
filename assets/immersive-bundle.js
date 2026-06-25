@@ -2249,16 +2249,31 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   var cardW = cardH * cardAspect;
 
   // ── Viewport-adaptive card sizing ──
-  var vpH = camera.top - camera.bottom;
-  var vpW = camera.right - camera.left;
+  // OrthographicCamera: camera frustum is (-aspect, aspect, 1, -1)
+  // So visible height = 2, visible width = 2 * aspect
+  var vpH = camera.top - camera.bottom;    // = 2
+  var vpW = camera.right - camera.left;     // = 2 * aspect
   var isMobileRoom = vpH < 5;
+
+  // Always size cards to fit viewport
+  // Desktop: 5 cols fit in 80% of viewport width, cards ~30% of viewport height
+  // Mobile: 3 cols fit in 80% of viewport width
+  var availableW = vpW * 0.85;
+  var availableH = vpH * 0.85;
 
   if (isMobileRoom) {
     cols = 3;
-    cardH = vpH * 0.38;
-    cardW = cardH * cardAspect;
-    spacing = cardH * 0.4;
+    cardW = availableW / cols;
+    cardH = cardW / cardAspect;
+    if (cardH > availableH * 0.5) cardH = availableH * 0.5;
+    spacing = cardW * 0.15;
+  } else {
+    cardW = availableW / cols;
+    cardH = cardW / cardAspect;
+    if (cardH > availableH * 0.45) cardH = availableH * 0.45;
+    spacing = cardW * 0.12;
   }
+  cardW = cardH * cardAspect;
 
   var loadedItems = [];
   var texCache = {};
