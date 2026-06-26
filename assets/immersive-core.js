@@ -5001,16 +5001,23 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
     var duration = reduceMotion ? 0 : 800;
     var start = performance.now();
     var startProgress = uniforms.uTransitionProgress.value;
+    var transitionUnsubscribe = null;
 
-    function step(now) {
-      var elapsed = now - start;
+    function step(timestamp, delta) {
+      var elapsed = timestamp - start;
       var t = Math.min(elapsed / duration, 1);
       var eased = t * t * (3 - 2 * t);
       uniforms.uTransitionProgress.value = startProgress + (1 - startProgress) * eased;
 
       if (t < 1) {
-        requestAnimationFrame(step);
+        // Animation continues via ticker subscription
+        return;
       } else {
+        // Animation complete
+        if (transitionUnsubscribe) {
+          transitionUnsubscribe();
+          transitionUnsubscribe = null;
+        }
         if (oldBase && !isCachedTexture(oldBase)) oldBase.dispose();
         if (oldDepth && !isCachedTexture(oldDepth)) oldDepth.dispose();
 
@@ -5089,7 +5096,13 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       }
     }
 
-    requestAnimationFrame(step);
+    // Start transition animation via ticker
+    if (ticker) {
+      transitionUnsubscribe = ticker.subscribe(step);
+    } else {
+      // Fallback to rAF if ticker not available
+      requestAnimationFrame(step);
+    }
   });
 }
 
