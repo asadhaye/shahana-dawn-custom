@@ -808,6 +808,8 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
   var isHelix = !isScrollStory;
 
   // ── Scroll state ──
+  // Cards are positioned from Y=0 center, extending downward
+  // This ensures first cards are visible in initial viewport
   group.userData.currentScrollY = 0;
   group.userData.targetScrollY = 0;
   group.userData.itemSpacing = itemSpacing;
@@ -1597,8 +1599,15 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
     _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
   } else {
     // ── Arc carousel layout (original horizontal rotation) ──
-    var step = count > 1 ? arcDegrees / (count - 1) : 0;
-    var startAngle = -arcDegrees / 2;
+    // Cards arranged in an arc in FRONT of the camera (positive Z)
+    // Camera is at Z=1, near=0, far=2, so Z must be > 0
+    var arcRadius = Math.min(vpH, vpW) * 0.25; // 25% of smaller viewport
+    var arcCardH = vpH * 0.35;
+    var arcCardAspect = options.cardAspect || (16 / 9);
+    var arcCardW = arcCardH / arcCardAspect;
+    var arcArcDeg = 120;
+    var step = count > 1 ? arcArcDeg / (count - 1) : 0;
+    var startAngle = -arcArcDeg / 2;
 
     items.forEach(function (item, index) {
       if (!item.imageSrc) return;
@@ -1620,11 +1629,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       tex.anisotropy = 8;
       textures.push(tex);
 
-      var aspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : 16 / 9;
-      var h = 2.0;
-      var w = h * aspect;
-
-      var geom = _safePlaneGeometry(w, h, 'arc-gallery');
+      var geom = _safePlaneGeometry(arcCardW, arcCardH, 'arc-gallery');
       var mat = new THREE.MeshStandardMaterial({
         map: tex,
         roughness: 0.85,
@@ -1636,12 +1641,13 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var mesh = new THREE.Mesh(geom, mat);
       var angleDeg = startAngle + step * index;
       var rad = (angleDeg * Math.PI) / 180;
-      var x = Math.sin(rad) * radius;
-      var z = Math.cos(rad) * radius * -1;
+      // Arc in XY plane at Z=0.5 (in front of camera at Z=1)
+      var x = Math.sin(rad) * arcRadius;
+      var y = Math.cos(rad) * arcRadius * 0.3; // Slight vertical arc
 
-      mesh.position.set(x, verticalOffset, z);
-      mesh.lookAt(new THREE.Vector3(0, verticalOffset, 0));
-      mesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+      mesh.position.set(x, y, 0.5);
+      mesh.lookAt(new THREE.Vector3(0, 0, 1)); // Face the camera
+      mesh.rotation.x = 0;
 
       mesh.userData = {
         roomKey: roomKey,
@@ -2393,10 +2399,10 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
   var vpW = (options && options.viewportWidth) || 2;
 
   var gridCols = cfg.gridCols || 3;
-  var cardH = vpH * 0.35;
+  var cardH = vpH * 0.3;
   var cardAspect = cfg.cardAspect || 3 / 4;
   var cardW = cardH * cardAspect;
-  var gridSpacing = cardW * 0.2;
+  var gridSpacing = cardW * 0.15;
   var parallaxStr = cfg.parallaxStrength || 0.0005;
   var glassDist = cfg.glassDistortion || 0.015;
 
