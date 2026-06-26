@@ -4835,7 +4835,7 @@ function onWindowResize() {
     var mobileImgChanged = usesMobileImg !== wasUsesMobileImg;
 
     // Mobile and desktop room canvases use separate assets — swap when variant changes
-    if (mobileImgChanged && currentRoomKey) {
+    if (mobileImgChanged && currentRoomKey && !transitioning) {
       renderHotspots(currentRoomKey);
       var roomData = getRoomTextureUrls(currentRoomKey);
       if (roomData) {
@@ -4846,7 +4846,7 @@ function onWindowResize() {
               disposeGalleryStage(currentRoomKey);
             }
             var _sectionEl = document.querySelector('.immersive-store');
-            var _perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
+            var _perRoomAttr = 'data-' + currentRoomKey.replace(/_/g, '-') + '-layout';
             var _semanticLayout = _sectionEl ? _sectionEl.getAttribute(_perRoomAttr) : null;
             var _layoutConfig =
               _semanticLayout && LAYOUT_REGISTRY && LAYOUT_REGISTRY[_semanticLayout]
@@ -4862,6 +4862,8 @@ function onWindowResize() {
               cardHeight: 2.2,
               cardAspect: 2 / 3,
               layoutConfig: _layoutConfig,
+              viewportHeight: camera.top - camera.bottom,
+              viewportWidth: camera.right - camera.left,
             });
           }
           hideInitialLoader();
@@ -5744,7 +5746,7 @@ function renderHotspots(roomKey) {
     });
   }
 
-  if (document.startViewTransition) {
+  if (document.startViewTransition && !document.viewTransition) {
     document.startViewTransition(render);
   } else {
     render();
@@ -6207,7 +6209,7 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
     }
   };
 
-  if (document.startViewTransition) {
+  if (document.startViewTransition && !document.viewTransition) {
     document.startViewTransition(performUIActivation);
   } else {
     performUIActivation();
