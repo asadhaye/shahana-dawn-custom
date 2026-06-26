@@ -4836,6 +4836,8 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
         if (renderer && renderer.domElement) {
           initGalleryCarousel(renderer.domElement);
         }
+        // Add back button for gallery rooms
+        addGalleryBackButton(roomKey, uiLayer);
       } else {
         renderHotspots(roomKey);
       }
@@ -5212,6 +5214,36 @@ function renderHotspots(roomKey) {
   } else {
     render();
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// GALLERY BACK BUTTON — adds navigation for gallery rooms
+// ─────────────────────────────────────────────────────────────
+function addGalleryBackButton(roomKey, uiLayer) {
+  // Only add back button if not storefront and not lounge
+  if (roomKey === 'storefront' || roomKey === 'lounge') return;
+
+  // Don't add if already present
+  if (uiLayer.querySelector('[data-gallery-back]')) return;
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'immersive-hotspot immersive-gallery-back';
+  btn.setAttribute('data-gallery-back', '');
+  btn.setAttribute('aria-label', 'Back to lounge');
+  btn.style.cssText = 'position:absolute;left:1rem;bottom:2rem;z-index:315;';
+
+  var label = document.createElement('span');
+  label.className = 'immersive-hotspot__label';
+  label.textContent = '← Back to Lounge';
+  label.setAttribute('aria-hidden', 'true');
+  btn.appendChild(label);
+
+  btn.addEventListener('click', function () {
+    goToRoom('lounge');
+  });
+
+  uiLayer.appendChild(btn);
 }
 
 function openDialogFocus(panel, triggerEl) {
