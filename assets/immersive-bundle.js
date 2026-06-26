@@ -1364,7 +1364,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       var tex = textureLoader.load(
         item.imageSrc,
         function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           texture.anisotropy = 8;
         },
         undefined,
@@ -1372,7 +1372,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
           if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Story texture load error:', err);
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       tex.anisotropy = 8;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
@@ -1536,7 +1536,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       lCtx.fillText('[ TAP TO EXPLORE ]', 384, 90);
 
       var labelTex = new THREE.CanvasTexture(labelCanvas);
-      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       var labelMat = new THREE.MeshBasicMaterial({
         map: labelTex,
         transparent: true,
@@ -1619,7 +1619,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       var tex = textureLoader.load(
         item.imageSrc,
         function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           texture.anisotropy = 8;
         },
         undefined,
@@ -1627,7 +1627,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
           if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Tunnel texture error:', err);
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       tex.anisotropy = 8;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
@@ -1769,7 +1769,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       lCtx.fillText('[ TAP TO EXPLORE ]', 384, 90);
 
       var labelTex = new THREE.CanvasTexture(labelCanvas);
-      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       var labelMat = new THREE.MeshBasicMaterial({
         map: labelTex,
         transparent: true,
@@ -1889,7 +1889,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var tex = textureLoader.load(
         item.imageSrc,
         function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           texture.anisotropy = 8;
         },
         undefined,
@@ -1899,7 +1899,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
           }
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       tex.anisotropy = 8;
       textures.push(tex);
 
@@ -1971,7 +1971,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         lCtx.fillText(item.title, labelCanvas.width / 2, labelCanvas.height / 2);
 
         var labelTex = new THREE.CanvasTexture(labelCanvas);
-        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
         var labelMat = new THREE.MeshBasicMaterial({
           map: labelTex,
           transparent: true,
@@ -2025,7 +2025,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var tex = textureLoader.load(
         item.imageSrc,
         function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           texture.anisotropy = 8;
         },
         undefined,
@@ -2035,7 +2035,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
           }
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       tex.anisotropy = 8;
       textures.push(tex);
 
@@ -2088,7 +2088,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         lCtx.fillText('[ EXPLORE COLLECTION ]', 512, 120);
 
         var labelTex = new THREE.CanvasTexture(labelCanvas);
-        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
         var labelMat = new THREE.MeshBasicMaterial({
           map: labelTex,
           transparent: true,
@@ -2140,7 +2140,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
     // Camera is at Z=1, near=0, far=2, so Z must be > 0
     var arcRadius = Math.min(vpH, vpW) * 0.25; // 25% of smaller viewport
     var arcCardH = vpH * 0.35;
-    var arcCardAspect = options.cardAspect || (16 / 9);
+    var arcCardAspect = options.cardAspect || 16 / 9;
     var arcCardW = arcCardH / arcCardAspect;
     var arcArcDeg = 120;
     var step = count > 1 ? arcArcDeg / (count - 1) : 0;
@@ -2152,7 +2152,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var tex = textureLoader.load(
         item.imageSrc,
         function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           texture.anisotropy = 8;
         },
         undefined,
@@ -2162,7 +2162,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
           }
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       tex.anisotropy = 8;
       textures.push(tex);
 
@@ -2212,7 +2212,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         lCtx.fillText(item.title, 256, 48);
 
         var labelTex = new THREE.CanvasTexture(labelCanvas);
-        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
         var labelMat = new THREE.MeshBasicMaterial({
           map: labelTex,
           transparent: true,
@@ -2270,8 +2270,8 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   // ── Viewport-adaptive card sizing ──
   // OrthographicCamera: camera frustum is (-aspect, aspect, 1, -1)
   // So visible height = 2, visible width = 2 * aspect
-  var vpH = camera.top - camera.bottom;    // = 2
-  var vpW = camera.right - camera.left;     // = 2 * aspect
+  var vpH = camera.top - camera.bottom; // = 2
+  var vpW = camera.right - camera.left; // = 2 * aspect
   var isMobileRoom = vpH < 5;
 
   // Always size cards to fit viewport
@@ -2302,7 +2302,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
       var tex = textureLoader.load(
         item.imageSrc,
         function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           texture.anisotropy = 8;
         },
         undefined,
@@ -2310,7 +2310,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
           if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Indrajaal texture error:', err);
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       tex.anisotropy = 8;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
@@ -2321,10 +2321,22 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   if (loadedItems.length === 0) {
     scene.add(group);
     galleryStageRegistry[roomKey] = {
-      group: group, planes: [], labels: [], textures: textures,
-      layout: 'asymmetric-gallery', cardCount: 0,
-      targetX: 0, currentX: 0, targetY: 0, currentY: 0,
-      gridW: 0, gridH: 0, cols: cols, cardW: cardW, cardH: cardH, spacing: spacing,
+      group: group,
+      planes: [],
+      labels: [],
+      textures: textures,
+      layout: 'asymmetric-gallery',
+      cardCount: 0,
+      targetX: 0,
+      currentX: 0,
+      targetY: 0,
+      currentY: 0,
+      gridW: 0,
+      gridH: 0,
+      cols: cols,
+      cardW: cardW,
+      cardH: cardH,
+      spacing: spacing,
     };
     return;
   }
@@ -2337,7 +2349,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   // Parallax multipliers per row (top row moves fastest, deeper rows slower)
   var rowParallax = [];
   for (var r = 0; r < rows; r++) {
-    rowParallax.push(1 - (r * 0.08));
+    rowParallax.push(1 - r * 0.08);
   }
 
   loadedItems.forEach(function (entry, idx) {
@@ -2425,7 +2437,7 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
       var tex = textureLoader.load(
         item.imageSrc,
         function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           texture.anisotropy = 8;
         },
         undefined,
@@ -2433,7 +2445,7 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
           if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Gallery texture load error:', err);
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       tex.anisotropy = 8;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
@@ -2636,7 +2648,7 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
       var tex = textureLoader.load(
         item.imageSrc,
         function (t) {
-          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           t.anisotropy = 8;
         },
         undefined,
@@ -2644,7 +2656,7 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
           if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Narrative texture error:', err);
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
     }
@@ -2758,7 +2770,7 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
       lCtx.fillStyle = 'rgba(255,255,255,0.5)';
       lCtx.fillText('[ SCROLL TO EXPLORE ]', 512, 120);
       var lTex = new THREE.CanvasTexture(lCanvas);
-      lTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      lTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       var lMat = new THREE.MeshBasicMaterial({
         map: lTex,
         transparent: true,
@@ -2824,7 +2836,7 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
       var tex = textureLoader.load(
         item.imageSrc,
         function (t) {
-          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           t.anisotropy = 8;
         },
         undefined,
@@ -2832,7 +2844,7 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
           if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Codex texture error:', err);
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
     }
@@ -2871,7 +2883,7 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
     tCtx.fillStyle = '#d4af37';
     tCtx.fillText(entry.item.title || entry.item.subtitle || 'Item ' + (idx + 1), 512, 64);
     var tTex = new THREE.CanvasTexture(tCanvas);
-    tTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+    tTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
     var tMat = new THREE.MeshBasicMaterial({ map: tTex, transparent: true, depthTest: false, side: THREE.DoubleSide });
     var tW = cardW * 1.5;
     var tH = tW * (128 / 1024);
@@ -2963,7 +2975,7 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
       var tex = textureLoader.load(
         item.imageSrc,
         function (t) {
-          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
           t.anisotropy = 8;
         },
         undefined,
@@ -2971,7 +2983,7 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
           if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Artifact texture error:', err);
         },
       );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
       texCache[item.imageSrc] = tex;
       textures.push(tex);
     }
@@ -3334,6 +3346,10 @@ function initGalleryCarousel(canvas) {
       // Raycaster hover detection for codex text entries
       galleryMouse.x = mx;
       galleryMouse.y = my;
+      // Check if raycaster is properly initialized
+      if (!galleryRaycaster || typeof galleryRaycaster.setFromCamera !== 'function') {
+        return;
+      }
       galleryRaycaster.setFromCamera(galleryMouse, camera);
       var hits = galleryRaycaster.intersectObjects(s.planes, false);
       if (hits.length > 0) {
@@ -3792,6 +3808,12 @@ function handleGalleryStageClick(event, camera, canvas) {
   var y = (event.clientY - rect.top) / rect.height;
   galleryMouse.x = x * 2 - 1;
   galleryMouse.y = -(y * 2 - 1);
+
+  // Check if raycaster is properly initialized
+  if (!galleryRaycaster || typeof galleryRaycaster.setFromCamera !== 'function') {
+    if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Raycaster not available');
+    return;
+  }
 
   galleryRaycaster.setFromCamera(galleryMouse, camera);
   var intersects = galleryRaycaster.intersectObjects(state.planes, true);
@@ -4578,6 +4600,119 @@ function _dismissWelcomeToast(toast) {
   }, 300);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CLEANUP — Dispose Three.js resources to prevent memory leaks
+// ─────────────────────────────────────────────────────────────────────────────
+function cleanupImmersiveScene() {
+  // Stop animation loop
+  stopAnimate();
+
+  // Dispose renderer
+  if (renderer) {
+    try {
+      renderer.dispose();
+      renderer = null;
+    } catch (e) {
+      if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Renderer disposal failed:', e);
+    }
+  }
+
+  // Dispose scene and its children
+  if (scene) {
+    scene.traverse(function (obj) {
+      if (obj.isMesh) {
+        if (obj.geometry) {
+          try {
+            obj.geometry.dispose();
+          } catch (e) {}
+        }
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(function (m) {
+              if (m.map) {
+                try {
+                  m.map.dispose();
+                } catch (e) {}
+              }
+              try {
+                m.dispose();
+              } catch (e) {}
+            });
+          } else {
+            if (obj.material.map) {
+              try {
+                obj.material.map.dispose();
+              } catch (e) {}
+            }
+            try {
+              obj.material.dispose();
+            } catch (e) {}
+          }
+        }
+      }
+    });
+    try {
+      scene.clear();
+    } catch (e) {}
+    scene = null;
+  }
+
+  // Clear camera reference
+  camera = null;
+
+  // Dispose main plane mesh resources
+  if (planeMesh) {
+    if (planeMesh.geometry) {
+      try {
+        planeMesh.geometry.dispose();
+      } catch (e) {}
+    }
+    if (planeMesh.material) {
+      try {
+        planeMesh.material.dispose();
+      } catch (e) {}
+    }
+    planeMesh = null;
+  }
+
+  // Dispose placeholder texture
+  if (uniforms) {
+    if (uniforms.uTexture1 && uniforms.uTexture1.value) {
+      try {
+        uniforms.uTexture1.value.dispose();
+      } catch (e) {}
+    }
+    if (uniforms.uDepth1 && uniforms.uDepth1.value) {
+      try {
+        uniforms.uDepth1.value.dispose();
+      } catch (e) {}
+    }
+    if (uniforms.uTexture2 && uniforms.uTexture2.value) {
+      try {
+        uniforms.uTexture2.value.dispose();
+      } catch (e) {}
+    }
+    if (uniforms.uDepth2 && uniforms.uDepth2.value) {
+      try {
+        uniforms.uDepth2.value.dispose();
+      } catch (e) {}
+    }
+    uniforms = null;
+  }
+
+  // Dispose all gallery stages
+  Object.keys(galleryStageRegistry).forEach(function (roomKey) {
+    disposeGalleryStage(roomKey);
+  });
+
+  // Cancel all RAFs
+  cancelAllRafs();
+
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] Scene cleanup complete');
+  }
+}
+
 function initImmersiveScene() {
   var canvas = document.getElementById(immersiveCanvasId);
   var uiLayer = document.getElementById(uiLayerId);
@@ -4666,6 +4801,8 @@ function initImmersiveScene() {
   });
   ListenerRegistry.add('webgl-context-restored', canvas, 'webglcontextrestored', function () {
     if (window.__IMMERSIVE_DEV__) console.log('[Immersive] WebGL context restored — reinitializing');
+    // Cleanup existing resources before re-initialization
+    cleanupImmersiveScene();
     initImmersiveScene();
   });
 
@@ -4709,7 +4846,7 @@ function initImmersiveScene() {
   scene.add(planeMesh);
 
   updateCanvasRect();
-  window.addEventListener('mousemove', handleMouseMove);
+  ListenerRegistry.add('mousemove-global', window, 'mousemove', handleMouseMove);
 
   bindResizeHandling();
   handleResize();
@@ -5361,7 +5498,9 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       if (scene && galleryItems.length) {
         // Clear previous room's hotspots before building gallery
         var existingHotspots = uiLayer.querySelectorAll('.immersive-hotspot');
-        existingHotspots.forEach(function (el) { el.remove(); });
+        existingHotspots.forEach(function (el) {
+          el.remove();
+        });
         activeHotspots = [];
         buildGalleryStageForRoom(roomKey, scene, {
           layout: getGalleryLayout(roomKey),
