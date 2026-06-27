@@ -5387,7 +5387,11 @@ function renderHotspots(roomKey) {
   }
 
   if (document.startViewTransition && !document.viewTransition) {
-    document.startViewTransition(render);
+    var transition = document.startViewTransition(render);
+    transition.finished.catch(function (err) {
+      console.warn('[Immersive] View Transition failed, re-rendering hotspots:', err);
+      render();
+    });
   } else {
     render();
   }

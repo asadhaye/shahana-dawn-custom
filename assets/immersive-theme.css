@@ -228,6 +228,10 @@
   z-index: var(--z-base);
 }
 
+.immersive-hotspot {
+  view-transition-name: immersive-hotspot;
+}
+
 .immersive-hotspot:hover .immersive-hotspot__label,
 .immersive-hotspot:focus-visible .immersive-hotspot__label {
   opacity: 1;
@@ -274,6 +278,10 @@
 #immersive-editorial-overlay:not(.immersive-editorial-overlay--entering) {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+}
+
+#immersive-editorial-overlay {
+  view-transition-name: immersive-editorial-overlay;
 }
 
 @supports not (backdrop-filter: blur(1px)) {
