@@ -646,6 +646,16 @@ var ROOM_VISUAL_PROFILES = {
     uScrollVignette: 0.1,
     uScrollChroma: 0.05,
   },
+  designer_houses: {
+    uAtmosphericMood: 0.6,
+    uScrollVignette: 0.25,
+    uScrollChroma: 0.12,
+  },
+  occasions: {
+    uAtmosphericMood: 0.5,
+    uScrollVignette: 0.18,
+    uScrollChroma: 0.09,
+  },
   featured_collections: {
     uAtmosphericMood: 0.5,
     uScrollVignette: 0.18,
@@ -4930,11 +4940,20 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       // Method 1 from section settings does not). Without this, cached
       // config may have imageSrc: null and gallery items are skipped.
       var galleryItems = getGalleryStageConfig(roomKey);
+      if (window.__IMMERSIVE_DEV__) {
+        console.log('[Immersive] goToRoom:', roomKey, 'galleryItems from config:', galleryItems.length);
+      }
       if (!galleryItems.length) {
         // Fallback: read directly from [data-immersive-webgl-gallery-config] DOM
         var configEls = document.querySelectorAll('[data-immersive-webgl-gallery-config]');
+        if (window.__IMMERSIVE_DEV__) {
+          console.log('[Immersive] Fallback: found', configEls.length, 'gallery config elements');
+        }
         configEls.forEach(function (configEl) {
           var rk = configEl.getAttribute('data-room-key') || 'storefront';
+          if (window.__IMMERSIVE_DEV__) {
+            console.log('[Immersive] Checking config element for room:', rk, 'looking for:', roomKey);
+          }
           if (rk !== roomKey) return;
           if (!window.immersiveWebglGalleryConfigs) window.immersiveWebglGalleryConfigs = {};
           var items = Array.prototype.slice
@@ -4956,7 +4975,13 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
             });
           window.immersiveWebglGalleryConfigs[rk] = items;
           galleryItems = items;
+          if (window.__IMMERSIVE_DEV__) {
+            console.log('[Immersive] Fallback loaded', items.length, 'items for room:', roomKey);
+          }
         });
+      }
+      if (window.__IMMERSIVE_DEV__) {
+        console.log('[Immersive] Final galleryItems.length:', galleryItems.length, 'for room:', roomKey);
       }
       if (scene && galleryItems.length) {
         // Clear previous room's hotspots before building gallery
