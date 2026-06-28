@@ -127,7 +127,7 @@
         "share"
       ],
       "custom_css": [
-        ".product__title {font-size: 1.8rem; }"
+        ".product__title {font-size: 1.8rem;}"
       ],
       "settings": {
         "enable_sticky_info": true,
@@ -135,7 +135,7 @@
         "media_size": "large",
         "constrain_to_viewport": false,
         "media_fit": "cover",
-        "gallery_layout": "stacked",
+        "gallery_layout": "thumbnail_slider",
         "mobile_thumbnails": "show",
         "media_position": "left",
         "image_zoom": "lightbox",

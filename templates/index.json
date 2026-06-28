@@ -508,6 +508,10 @@
         "padding_top": 40,
         "padding_bottom": 40
       }
+    },
+    "178265719664d6100a": {
+      "type": "_blocks",
+      "settings": {}
     }
   },
   "order": [
@@ -523,6 +527,7 @@
     "featured_collection_wYNyfe",
     "featured_collection_2",
     "featured_collection_3",
-    "newsletter_section"
+    "newsletter_section",
+    "178265719664d6100a"
   ]
 }
