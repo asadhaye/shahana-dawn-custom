@@ -260,21 +260,21 @@
         "gallery_item_eXAAK4": {
           "type": "gallery_item",
           "settings": {
-            "image": "shopify://shop_images/Mastaani-Cover1.webp",
+            "image": "shopify://shop_images/pakistani-wedding-guest-womens-clothing-collection-card-on-shahana-collection.png",
             "title": "Bridal",
             "subtitle": "",
             "product": "",
-            "collection": "bridal-events"
+            "collection": "wedding-guest"
           }
         },
         "gallery_item_LjLQNp": {
           "type": "gallery_item",
           "settings": {
-            "image": "shopify://shop_images/Mastaani-Cover1.webp",
-            "title": "Bridal",
+            "image": "shopify://shop_images/nikah-banner.png",
+            "title": "Nikah",
             "subtitle": "",
             "product": "",
-            "collection": "bridal-events"
+            "collection": "wedding-guest"
           }
         }
       },
