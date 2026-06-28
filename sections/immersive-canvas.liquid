@@ -79,9 +79,15 @@
   data-low-stock-threshold="{{ section.settings.low_stock_threshold | default: 5 }}"
   data-guided-featured-wing="{{ section.settings.guided_featured_wing | default: 'designer_houses' | escape }}"
   data-gallery-layout="{{ section.settings.gallery_layout | default: 'vertical' }}"
-  {%- if section.settings.designer_houses_layout -%}data-designer-houses-layout="{{ section.settings.designer_houses_layout | escape }}"{%- endif -%}
-  {%- if section.settings.occasions_layout -%}data-occasions-layout="{{ section.settings.occasions_layout | escape }}"{%- endif -%}
-  {%- if section.settings.featured_collections_layout -%}data-featured-collections-layout="{{ section.settings.featured_collections_layout | escape }}"{%- endif -%}
+  {%- if section.settings.designer_houses_layout -%}
+    data-designer-houses-layout="{{ section.settings.designer_houses_layout | escape }}"
+  {%- endif -%}
+  {%- if section.settings.occasions_layout -%}
+    data-occasions-layout="{{ section.settings.occasions_layout | escape }}"
+  {%- endif -%}
+  {%- if section.settings.featured_collections_layout -%}
+    data-featured-collections-layout="{{ section.settings.featured_collections_layout | escape }}"
+  {%- endif -%}
 >
   {% comment %} Pass Liquid configuration to JavaScript {% endcomment %}
   <div
@@ -4860,7 +4866,3 @@
   ]
 }
 {% endschema %}
-
-{% javascript %}
-  })();
-{% endjavascript %}
