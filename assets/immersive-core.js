@@ -3634,6 +3634,14 @@ function loadGalleryConfigsFromDOM() {
             imageHeight: imgEl ? parseInt(imgEl.getAttribute('height'), 10) || 1080 : 1080,
           };
         });
+      // Only overwrite if the new section has items with valid images.
+      // This ensures theme editor sections (with real images) take priority
+      // over fallback sections that may have placeholder/empty data.
+      var hasValidImages = items.some(function (item) {
+        return item.imageSrc && item.imageSrc.indexOf('null') === -1;
+      });
+      var existing = window.immersiveWebglGalleryConfigs[roomKey];
+      if (existing && !hasValidImages) return; // keep existing, skip placeholders
       window.immersiveWebglGalleryConfigs[roomKey] = items;
       // Store layout per-room so getGalleryLayout() can read it
       if (layout) {
