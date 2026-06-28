@@ -931,7 +931,9 @@ function initEditorialScrollReveal() {
   if (_esrWheelBound) return;
   var canvasWrapper = document.querySelector('.immersive-store__canvas-wrapper');
   if (!canvasWrapper) return;
-  canvasWrapper.addEventListener('wheel', _esrOnWheel, { passive: true });
+  // Scroll-to-enter editorial mode removed:
+  // Scrolling on gallery rooms now drives gallery drag-to-explore instead
+  // of triggering enterEditorialMode. Editorial is entered via hotspot click only.
   _esrWheelBound = true;
 }
 
