@@ -57,13 +57,15 @@
           {%- endif -%}
         >
           {%- if block.settings.image -%}
-            {%- assign gallery_img = block.settings.image | image_url: width: 1440, height: 810, quality: 75 -%}
+            {%- assign img_w = block.settings.image.width | default: 1440 -%}
+            {%- assign img_h = block.settings.image.height | default: 810 -%}
+            {%- assign gallery_img = block.settings.image | image_url: width: img_w, height: img_h, quality: 75 -%}
             <img
               class="immersive-webgl-gallery-config__img"
               src="{{ gallery_img }}"
               alt="{{ block.settings.title | default: block.settings.subtitle | escape }}"
-              width="1440"
-              height="810"
+              width="{{ img_w }}"
+              height="{{ img_h }}"
               loading="eager"
               decoding="async"
             >

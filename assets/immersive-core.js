@@ -1874,9 +1874,8 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   var cfg = options.layoutConfig || {};
   var cols = cfg.columns || 5;
   var spacing = cfg.spacing || 0.5;
+  var defaultAspect = options.cardAspect || 2 / 3;
   var cardH = options.cardHeight || 2.0;
-  var cardAspect = options.cardAspect || 2 / 3;
-  var cardW = cardH * cardAspect;
 
   // ── Viewport-adaptive card sizing ──
   // OrthographicCamera: camera frustum is (-aspect, aspect, 1, -1)
@@ -1886,24 +1885,21 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   var isMobileRoom = vpH < 5;
 
   // Always size cards to fit viewport
-  // Desktop: 5 cols fit in 80% of viewport width, cards ~30% of viewport height
-  // Mobile: 3 cols fit in 80% of viewport width
+  // Desktop: 5 cols fit in 85% of viewport width, cards ~30% of viewport height
+  // Mobile: 3 cols fit in 85% of viewport width
   var availableW = vpW * 0.85;
   var availableH = vpH * 0.85;
 
   if (isMobileRoom) {
     cols = 3;
-    cardW = availableW / cols;
-    cardH = cardW / cardAspect;
-    if (cardH > availableH * 0.5) cardH = availableH * 0.5;
-    spacing = cardW * 0.15;
+    spacing = availableW * 0.03;
   } else {
-    cardW = availableW / cols;
-    cardH = cardW / cardAspect;
-    if (cardH > availableH * 0.45) cardH = availableH * 0.45;
-    spacing = cardW * 0.12;
+    spacing = availableW * 0.025;
   }
-  cardW = cardH * cardAspect;
+  var cardW = availableW / cols;
+  var cardH = cardW / defaultAspect;
+  if (cardH > availableH * 0.45) cardH = availableH * 0.45;
+  cardW = cardH * defaultAspect;
 
   var loadedItems = [];
   var texCache = {};
@@ -1969,7 +1965,21 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     var col = idx % cols;
     var row = Math.floor(idx / cols);
 
-    var geom = _safePlaneGeometry(cardW, cardH, 'indrajaal-grid');
+    // Adapt card aspect ratio to the uploaded image (like Dawn's "adapt to image")
+    // Fall back to defaultAspect only if image dimensions are unavailable
+    var itemAspect = defaultAspect;
+    if (item.imageWidth && item.imageHeight && item.imageWidth > 0 && item.imageHeight > 0) {
+      itemAspect = item.imageWidth / item.imageHeight;
+    }
+    var thisCardW = cardW;
+    var thisCardH = cardW / itemAspect;
+    // Cap height to grid row height so cards don't overflow vertically
+    if (thisCardH > cardH * 1.05) {
+      thisCardH = cardH * 1.05;
+      thisCardW = thisCardH * itemAspect;
+    }
+
+    var geom = _safePlaneGeometry(thisCardW, thisCardH, 'indrajaal-grid');
     var mat = new THREE.MeshBasicMaterial({
       map: entry.tex,
       transparent: true,
@@ -1981,7 +1991,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     var mesh = new THREE.Mesh(geom, mat);
 
     // Center the grid around origin
-    var x = -gridW / 2 + cardW / 2 + col * (cardW + spacing);
+    var x = -gridW / 2 + thisCardW / 2 + col * (cardW + spacing);
     var y = gridH / 2 - cardH / 2 - row * (cardH + spacing);
 
     mesh.position.set(x, y, 0);
@@ -1996,8 +2006,8 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
       baseX: x,
       baseY: y,
       baseZ: 0,
-      cardW: cardW,
-      cardH: cardH,
+      cardW: thisCardW,
+      cardH: thisCardH,
       row: row,
       col: col,
       parallaxMult: rowParallax[row],
@@ -3028,23 +3038,10 @@ function animateGalleryCarousel() {
       }
     }
 
-    // Clamp to grid bounds — always applied
-    var vpW = camera.right - camera.left;
-    var vpH = camera.top - camera.bottom;
-    var maxX = (state.gridW - vpW) * 0.5;
-    var maxY = (state.gridH - vpH) * 0.5;
-    if (maxX > 0) {
-      // Grid wider than viewport: clamp to edges
-      state.targetX = Math.max(-maxX, Math.min(maxX, state.targetX));
-    } else {
-      // Grid narrower than viewport: clamp to centered (±small wiggle room)
-      state.targetX = Math.max(maxX, Math.min(-maxX, state.targetX));
-    }
-    if (maxY > 0) {
-      state.targetY = Math.max(-maxY, Math.min(maxY, state.targetY));
-    } else {
-      state.targetY = Math.max(maxY, Math.min(-maxY, state.targetY));
-    }
+    // Infinite drag: no clamp — let user drag freely.
+    // Cards wrap seamlessly using modulo positioning (see below).
+    // targetX and targetY can grow infinitely; the modulo in plane
+    // positioning creates the repeating/looping effect.
 
     // LERP
     state.currentX += (state.targetX - state.currentX) * lerpFactor;
@@ -3055,21 +3052,23 @@ function animateGalleryCarousel() {
       var diffX = Math.abs(state.targetX - state.currentX);
       var diffY = Math.abs(state.targetY - state.currentY);
       if (diffX < 0.001 && diffY < 0.001) {
-        // Still update shader time for subtle animation
-        if (state.sharedUniforms) {
-          state.sharedUniforms.uTime.value = performance.now() * 0.001;
-        }
         return;
       }
     }
 
-    // Apply position with row parallax per plane
-    var vel = Math.abs(state.targetX - state.currentX) + Math.abs(state.targetY - state.currentY);
-
+    // Apply position with row parallax + infinite wrap
+    var cellW = (state.cardW + state.spacing) || 1;
+    var cellH = (state.cardH + state.spacing) || 1;
+    var wrapX = state.cols * cellW;
+    var wrapY = state.rows * cellH;
     state.planes.forEach(function (plane) {
       var pm = plane.userData.parallaxMult || 1;
-      plane.position.x = plane.baseX + state.currentX * pm;
-      plane.position.y = plane.baseY + state.currentY * pm;
+      // Wrap position modulo grid width for seamless infinite drag
+      var rawX = plane.baseX + state.currentX * pm;
+      var wrappedX = wrapX > 0 ? ((rawX % wrapX) + wrapX) % wrapX - wrapX * 0.5 : rawX;
+      var wrappedY = wrapY > 0 ? ((plane.baseY + state.currentY * pm) % wrapY) - wrapY * 0.5 : plane.baseY + state.currentY * pm;
+      plane.position.x = wrappedX;
+      plane.position.y = wrappedY;
     });
 
     return; // skip default scroll animation
@@ -5088,6 +5087,13 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
       uiLayer.style.transition = '';
       uiLayer.style.opacity = '1';
       // Build gallery stage OR render hotspots for this room.
+      // Before building gallery, clear old hotspot buttons from uiLayer
+      // so they don't overlay and block card interactions.
+      var existingHotspots = uiLayer.querySelectorAll('.immersive-hotspot');
+      existingHotspots.forEach(function (el) {
+        el.remove();
+      });
+      activeHotspots = [];
       // Re-read gallery config from DOM each time (Method 2 has images,
       // Method 1 from section settings does not). Without this, cached
       // config may have imageSrc: null and gallery items are skipped.

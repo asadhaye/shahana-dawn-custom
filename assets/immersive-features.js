@@ -573,6 +573,12 @@ function openCollectionPanel(collectionHandle) {
   }
 }
 
+// Empty state action handler (e.g., "Shop Now" buttons on empty editorial)
+function handleEmptyStateAction(action) {
+  if (window.__IMMERSIVE_DEV__) console.log('[Immersive] Empty state action:', action);
+  // Gallery rooms do not have empty-state UI — no-op for gallery mode.
+}
+
 // ─────────────────────────────────────────────────────────────
 // Editorial overlay entry point (single, canonical implementation)
 // ─────────────────────────────────────────────────────────────
