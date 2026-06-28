@@ -1865,6 +1865,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
   if (
     layout === 'scroll-story' ||
+    layout === 'scroll-narrative' ||
     (layout === 'helix' && !(options.layoutConfig && options.layoutConfig.scrollDriven))
   ) {
     _buildScrollStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
@@ -1932,18 +1933,18 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 
       var col, row, x, y, z;
       if (isFeatured) {
-        // Featured: centered, closer to camera (Z=1.5, well within frustum)
+        // Featured: centered, same plane as grid (Z=0)
         x = 0;
         y = 0;
-        z = 1.5;
+        z = 0;
       } else {
-        // Masonry: grid with organic offsets, Z centered around 0.8-1.2
+        // Masonry: grid with organic offsets, same plane (Z=0)
         var masonryIndex = index < featuredIdx ? index : index - 1;
         col = masonryIndex % gridCols;
         row = Math.floor(masonryIndex / gridCols);
         x = startX + col * gridSpacingX + (isMasonry ? ((masonryIndex % 7) - 3) * 0.1 : 0);
         y = startY - row * gridSpacingY + (isMasonry ? ((masonryIndex % 5) - 2) * 0.08 : 0);
-        z = 1.0 + Math.abs(col - gridCols / 2) * parallaxStr * 0.3 + row * parallaxStr * 0.2;
+        z = 0;
       }
 
       mesh.position.set(x, y, z);
@@ -2136,18 +2137,158 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   } else if (layout === 'asymmetric-gallery') {
     // ── Indrajaal-style grid: 5-col, equal cards, row parallax, drag-to-explore ──
     _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
-  } else if (layout === 'infinite-drag-gallery') {
-    _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
-  } else if (layout === 'narrative-story') {
-    _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
-  } else if (layout === 'codex-list') {
-    _buildCodexList(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
-  } else if (layout === 'artifact-gallery') {
-    _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
+  } else if (
+    layout === 'masonry-featured' ||
+    (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
+  ) {
+    // ── Masonry Featured layout ──
+    // First item (featuredIndex) is a large hero card, centered.
+    // Remaining items arranged in masonry grid around it with varying sizes
+    // for a curated editorial feel. All cards on Z=0 plane (visible in ortho).
+    var isMasonry = layout === 'masonry-featured';
+    var featuredIdx =
+      options.layoutConfig && options.layoutConfig.featuredIndex !== undefined ? options.layoutConfig.featuredIndex : 0;
+    var masonrySpacing = (options.layoutConfig && options.layoutConfig.spacing) || 0.6;
+    var gridCols = options.gridCols || 3;
+    var gridSpacingX = options.gridSpacingX || masonrySpacing;
+    var gridSpacingY = options.gridSpacingY || masonrySpacing * 1.2;
+    var baseCardH = options.cardHeight || 0.5;
+    var gridCardAspect = options.cardAspect || 3 / 4;
+    var baseCardW = baseCardH * gridCardAspect;
+
+    var startX = -((gridCols - 1) * gridSpacingX) / 2;
+    var startY = ((Math.ceil(count / gridCols) - 1) * gridSpacingY) / 2;
+
+    items.forEach(function (item, index) {
+      if (!item.imageSrc) return;
+
+      var tex = textureLoader.load(
+        item.imageSrc,
+        function (texture) {
+          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
+          texture.anisotropy = 8;
+        },
+        undefined,
+        function (err) {
+          if (window.__IMMERSIVE_DEV__) {
+            console.warn('[Immersive] Gallery texture load error:', err);
+          }
+        },
+      );
+      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
+      tex.anisotropy = 8;
+      textures.push(tex);
+
+      var isFeatured = index === featuredIdx;
+
+      // Featured card: 2x size, centered, same Z=0 plane
+      var thisCardH = isFeatured ? baseCardH * 1.8 : baseCardH;
+      var thisCardAspect = isFeatured ? gridCardAspect : gridCardAspect * (0.9 + (index % 5) * 0.04);
+      var thisCardW = thisCardH * thisCardAspect;
+
+      var geom = _safePlaneGeometry(thisCardW, thisCardH, 'masonry-card');
+      var mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        opacity: 0.95,
+        side: THREE.DoubleSide,
+      });
+
+      var mesh = new THREE.Mesh(geom, mat);
+
+      var col, row, x, y, z;
+      if (isFeatured) {
+        // Featured: centered, same plane as grid (Z=0)
+        x = 0;
+        y = 0;
+        z = 0;
+      } else {
+        // Masonry: grid with organic offsets, same plane (Z=0)
+        var masonryIndex = index < featuredIdx ? index : index - 1;
+        col = masonryIndex % gridCols;
+        row = Math.floor(masonryIndex / gridCols);
+        x = startX + col * gridSpacingX + (isMasonry ? ((masonryIndex % 7) - 3) * 0.1 : 0);
+        y = startY - row * gridSpacingY + (isMasonry ? ((masonryIndex % 5) - 2) * 0.08 : 0);
+        z = 0;
+      }
+
+      mesh.position.set(x, y, z);
+      mesh.lookAt(0, y, z - 10);
+
+      mesh.userData = {
+        roomKey: roomKey,
+        galleryIndex: item.index,
+        title: item.title || '',
+        productHandle: item.productHandle || null,
+        collectionHandle: item.collectionHandle || null,
+        layout: isMasonry ? 'masonry-featured' : 'grid',
+        baseX: x,
+        baseY: y,
+        baseZ: z,
+        isFeatured: isFeatured,
+        col: isFeatured ? -1 : col,
+        row: isFeatured ? -1 : row,
+      };
+
+      group.add(mesh);
+      planes.push(mesh);
+
+      // Title overlay at bottom of card
+      if (item.title) {
+        var labelCanvas = document.createElement('canvas');
+        var lCtx = labelCanvas.getContext('2d');
+        labelCanvas.width = isFeatured ? 1024 : 512;
+        labelCanvas.height = isFeatured ? 96 : 64;
+        lCtx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+        lCtx.font = 'bold ' + (isFeatured ? 36 : 28) + 'px Georgia, serif';
+        lCtx.textAlign = 'center';
+        lCtx.textBaseline = 'middle';
+        lCtx.fillStyle = isFeatured ? '#d4af37' : '#ffffff';
+        lCtx.fillText(item.title, labelCanvas.width / 2, labelCanvas.height / 2);
+
+        var labelTex = new THREE.CanvasTexture(labelCanvas);
+        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
+        var labelMat = new THREE.MeshBasicMaterial({
+          map: labelTex,
+          transparent: true,
+          depthTest: false,
+          side: THREE.DoubleSide,
+        });
+        var labelW = thisCardW * (isFeatured ? 0.7 : 0.85);
+        var labelH = labelW * (labelCanvas.height / labelCanvas.width);
+        var labelGeom = _safePlaneGeometry(labelW, labelH, 'masonry-label');
+        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.3, z + 0.01);
+        labelMesh.renderOrder = 999;
+        group.add(labelMesh);
+        labels.push(labelMesh);
+      }
+    });
+
+    scene.add(group);
+
+    galleryStageRegistry[roomKey] = {
+      group: group,
+      planes: planes,
+      labels: labels,
+      textures: textures,
+      layout: isMasonry ? 'masonry-featured' : 'grid',
+      currentPage: 0,
+      targetPage: 0,
+      totalPages: 1,
+      gridCols: gridCols,
+      gridSpacingX: gridSpacingX,
+      gridSpacingY: gridSpacingY,
+      baseCardW: baseCardW,
+      baseCardH: baseCardH,
+      startX: startX,
+      startY: startY,
+      featuredIndex: featuredIdx,
+    };
   } else {
-    // ── Arc carousel layout (original horizontal rotation) ──
+    // ── Arc carousel layout (fallback for unknown layouts) ──
     // Cards arranged in an arc in FRONT of the camera (positive Z)
-    // Camera is at Z=1, near=0, far=2, so Z must be > 0
+    // Camera is at Z=1, near=0, far=2, so Z must be in [-1, 1]
     var arcRadius = Math.min(vpH, vpW) * 0.25; // 25% of smaller viewport
     var arcCardH = vpH * 0.35;
     var arcCardAspect = options.cardAspect || 16 / 9;
@@ -2188,7 +2329,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       var mesh = new THREE.Mesh(geom, mat);
       var angleDeg = startAngle + step * index;
       var rad = (angleDeg * Math.PI) / 180;
-      // Arc in XY plane at Z=0.5 (in front of camera at Z=1)
+      // Arc in XY plane at Z=0.5 (in front of camera at Z=1, within [-1,1] visible range)
       var x = Math.sin(rad) * arcRadius;
       var y = Math.cos(rad) * arcRadius * 0.3; // Slight vertical arc
 
@@ -2228,13 +2369,12 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
           transparent: true,
           depthTest: false,
         });
-        var labelW = w * 0.8;
+        var labelW = arcCardW * 0.8;
         var labelH = labelW * (96 / 512);
         var labelGeom = _safePlaneGeometry(labelW, labelH, 'arc-car-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        labelMesh.position.set(x, verticalOffset - h * 0.55, z);
-        labelMesh.lookAt(new THREE.Vector3(0, verticalOffset - h * 0.55, 0));
-        labelMesh.rotation.x += THREE.MathUtils.degToRad(tiltDegrees);
+        labelMesh.position.set(x, y - arcCardH * 0.55, 0.51);
+        labelMesh.lookAt(new THREE.Vector3(0, y - arcCardH * 0.55, 0));
         labelMesh.renderOrder = 999;
         group.add(labelMesh);
         labels.push(labelMesh);
@@ -2251,10 +2391,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       layout: 'arc',
       currentAngle: 0,
       targetAngle: 0,
-      radius: radius,
-      arcDegrees: arcDegrees,
-      verticalOffset: verticalOffset,
-      tiltDegrees: tiltDegrees,
+      radius: arcRadius,
+      arcDegrees: arcArcDeg,
     };
   }
 
@@ -3427,11 +3565,23 @@ function animateGalleryCarousel() {
       }
     }
 
-    // Clamp to grid bounds
-    var maxX = (state.gridW - (camera.right - camera.left)) * 0.5;
-    var maxY = (state.gridH - (camera.top - camera.bottom)) * 0.5;
-    if (maxX > 0) state.targetX = Math.max(-maxX, Math.min(maxX, state.targetX));
-    if (maxY > 0) state.targetY = Math.max(-maxY, Math.min(maxY, state.targetY));
+    // Clamp to grid bounds — always applied
+    var vpW = camera.right - camera.left;
+    var vpH = camera.top - camera.bottom;
+    var maxX = (state.gridW - vpW) * 0.5;
+    var maxY = (state.gridH - vpH) * 0.5;
+    if (maxX > 0) {
+      // Grid wider than viewport: clamp to edges
+      state.targetX = Math.max(-maxX, Math.min(maxX, state.targetX));
+    } else {
+      // Grid narrower than viewport: clamp to centered (±small wiggle room)
+      state.targetX = Math.max(maxX, Math.min(-maxX, state.targetX));
+    }
+    if (maxY > 0) {
+      state.targetY = Math.max(-maxY, Math.min(maxY, state.targetY));
+    } else {
+      state.targetY = Math.max(maxY, Math.min(-maxY, state.targetY));
+    }
 
     // LERP
     state.currentX += (state.targetX - state.currentX) * lerpFactor;
@@ -7169,7 +7319,11 @@ function openCollectionPanel(collectionHandle) {
             if (emptyAction) {
               var action = emptyAction.getAttribute('data-empty-action');
               if (action) {
-                handleEmptyStateAction(action);
+                if (typeof handleEmptyStateAction === 'function') {
+                  handleEmptyStateAction(action);
+                } else if (window.__IMMERSIVE_DEV__) {
+                  console.warn('[Immersive] Empty state action:', action);
+                }
               }
               return;
             }

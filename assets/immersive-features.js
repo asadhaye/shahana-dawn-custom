@@ -514,7 +514,11 @@ function openCollectionPanel(collectionHandle) {
             if (emptyAction) {
               var action = emptyAction.getAttribute('data-empty-action');
               if (action) {
-                handleEmptyStateAction(action);
+                if (typeof handleEmptyStateAction === 'function') {
+                  handleEmptyStateAction(action);
+                } else if (window.__IMMERSIVE_DEV__) {
+                  console.warn('[Immersive] Empty state action:', action);
+                }
               }
               return;
             }
