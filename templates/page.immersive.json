@@ -183,21 +183,21 @@
         "gallery_item_1": {
           "type": "gallery_item",
           "settings": {
-            "image": "shopify://shop_images/6_7eee4c23-ac96-4839-828d-c3a51575d45e.jpg",
-            "title": "Eid Gold Mirage",
-            "subtitle": "Hand-embellished chiffon and organza",
+            "image": "shopify://shop_images/SUFFUSE_LOGO_1.png",
+            "title": "Suffuse",
+            "subtitle": "",
             "product": "",
-            "collection": "eid-collection"
+            "collection": "suffuse"
           }
         },
         "gallery_item_2": {
           "type": "gallery_item",
           "settings": {
-            "image": "shopify://shop_images/5_85fbc7b9-e1c0-4f1b-9fdc-d6da0a63dbf6.jpg",
-            "title": "Bridal Noir",
-            "subtitle": "Midnight velvet with gold zardozi",
+            "image": "shopify://shop_images/saad_bin_shahzad_logo_3966de76-db4f-42c6-a656-17d29eab9a34.png",
+            "title": "Saad Bin Shahzad",
+            "subtitle": "",
             "product": "",
-            "collection": "bridal-mehndi"
+            "collection": "saad-bin-shahzad"
           }
         },
         "gallery_item_3": {
