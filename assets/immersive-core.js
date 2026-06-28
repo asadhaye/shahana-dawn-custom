@@ -3437,11 +3437,13 @@ function getGalleryStageConfig(roomKey) {
 // 'arc' = original horizontal carousel (default fallback)
 function getGalleryLayout(roomKey) {
   // 1. Authoritative: layout from immersive-webgl-gallery-config section (data-layout attr)
+  //    This is the source of truth — each room's gallery section declares its layout.
   if (window.immersiveWebglGalleryLayouts && window.immersiveWebglGalleryLayouts[roomKey]) {
     return window.immersiveWebglGalleryLayouts[roomKey];
   }
 
   // 2. Override from schema dropdown (data-* attribute on .immersive-store)
+  //    Merchants can override the default layout via Theme Editor.
   var canvasSection = document.querySelector('.immersive-store');
   if (canvasSection) {
     var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';

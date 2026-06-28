@@ -228,10 +228,6 @@
   z-index: var(--z-base);
 }
 
-.immersive-hotspot {
-  view-transition-name: immersive-hotspot;
-}
-
 .immersive-hotspot:hover .immersive-hotspot__label,
 .immersive-hotspot:focus-visible .immersive-hotspot__label {
   opacity: 1;
