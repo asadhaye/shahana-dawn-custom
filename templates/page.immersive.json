@@ -380,7 +380,6 @@
         "occasion_formals",
         "occasion_pret"
       ],
-      "disabled": true,
       "settings": {
         "room_key": "occasions",
         "layout": "occasions",
@@ -425,7 +424,6 @@
         "featured_suffuse_pret",
         "featured_soraya_eid"
       ],
-      "disabled": true,
       "settings": {
         "room_key": "featured_collections",
         "layout": "featured_collections",
