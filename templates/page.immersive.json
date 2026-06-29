@@ -240,8 +240,7 @@
         "gallery_item_5"
       ],
       "settings": {
-        "room_key": "designer_houses",
-        "layout": "asymmetric-gallery"
+        "room_key": "designer_houses"
       }
     },
     "immersive_webgl_gallery_config_TnHgLB": {
@@ -285,8 +284,7 @@
       ],
       "name": "t:sections.immersive_webgl_gallery.preset_name",
       "settings": {
-        "room_key": "occasions",
-        "layout": "scroll-narrative"
+        "room_key": "occasions"
       }
     },
     "immersive_webgl_gallery_config_zAWPaK": {
@@ -330,8 +328,7 @@
       ],
       "name": "t:sections.immersive_webgl_gallery.preset_name",
       "settings": {
-        "room_key": "featured_collections",
-        "layout": "masonry-featured"
+        "room_key": "featured_collections"
       }
     },
     "editorial_occasions": {
