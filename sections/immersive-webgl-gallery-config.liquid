@@ -127,14 +127,14 @@
         });
 
       window.immersiveWebglGalleryConfigs[roomKey] = items;
-      
+
       // Dispatch event so immersive-core can rebuild gallery stage
       try {
         var evt = new CustomEvent('immersive:galleryConfigReady', {
-          detail: { roomKey: roomKey, itemCount: items.length }
+          detail: { roomKey: roomKey, itemCount: items.length },
         });
         document.dispatchEvent(evt);
-      } catch(e) {}
+      } catch (e) {}
     });
   })();
 {% endjavascript %}
@@ -165,7 +165,13 @@
         { "value": "default", "label": "Default" },
         { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
         { "value": "scroll-narrative", "label": "Scroll Narrative" },
-        { "value": "masonry-featured", "label": "Masonry Featured" }
+        { "value": "masonry-featured", "label": "Masonry Featured" },
+        { "value": "scroll-story", "label": "Scroll Story" },
+        { "value": "scroll-tunnel", "label": "Scroll Tunnel" },
+        { "value": "narrative-story", "label": "Narrative Story" },
+        { "value": "codex-list", "label": "Codex List" },
+        { "value": "artifact-gallery", "label": "Artifact Gallery" },
+        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery" }
       ],
       "default": "default"
     }
