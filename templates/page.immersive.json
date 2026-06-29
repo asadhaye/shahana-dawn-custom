@@ -240,7 +240,8 @@
         "gallery_item_5"
       ],
       "settings": {
-        "room_key": "designer_houses"
+        "room_key": "designer_houses",
+        "layout": "default"
       }
     },
     "immersive_webgl_gallery_config_TnHgLB": {
@@ -284,7 +285,8 @@
       ],
       "name": "t:sections.immersive_webgl_gallery.preset_name",
       "settings": {
-        "room_key": "occasions"
+        "room_key": "occasions",
+        "layout": "default"
       }
     },
     "immersive_webgl_gallery_config_zAWPaK": {
@@ -328,7 +330,8 @@
       ],
       "name": "t:sections.immersive_webgl_gallery.preset_name",
       "settings": {
-        "room_key": "featured_collections"
+        "room_key": "featured_collections",
+        "layout": "default"
       }
     },
     "editorial_occasions": {
@@ -377,6 +380,7 @@
         "occasion_formals",
         "occasion_pret"
       ],
+      "disabled": true,
       "settings": {
         "room_key": "occasions",
         "layout": "occasions",
@@ -421,12 +425,81 @@
         "featured_suffuse_pret",
         "featured_soraya_eid"
       ],
+      "disabled": true,
       "settings": {
         "room_key": "featured_collections",
         "layout": "featured_collections",
         "hero_heading": "The Edit",
         "hero_eyebrow": "This season",
         "hero_subheading": "<p>Three collections. Three stories. One curated moment in Pakistani fashion.</p>"
+      }
+    },
+    "immersive_story_rail_AJd7UU": {
+      "type": "immersive-story-rail",
+      "blocks": {
+        "intro_bVU7Wa": {
+          "type": "intro",
+          "settings": {
+            "eyebrow": "Origins",
+            "heading": "From Lahore ateliers to London evenings",
+            "body": ""
+          }
+        },
+        "marquee_i7wpQa": {
+          "type": "marquee",
+          "settings": {
+            "marquee_text": "Craft · Heritage · Exclusives · Shahana Collection"
+          }
+        },
+        "journey_3YEt9x": {
+          "type": "journey",
+          "settings": {
+            "image": "shopify://shop_images/FOR-Clearpay-Profile.jpg",
+            "eyebrow": "The journey",
+            "heading": "Craft, ritual, and the garments that carry them",
+            "body": ""
+          }
+        },
+        "closing_YKeP3V": {
+          "type": "closing",
+          "settings": {
+            "eyebrow": "Enter the store",
+            "heading": "Explore the collection",
+            "body": "",
+            "cta_label": "Open the 3D store",
+            "cta_url": "/pages/immersive"
+          }
+        }
+      },
+      "block_order": [
+        "intro_bVU7Wa",
+        "marquee_i7wpQa",
+        "journey_3YEt9x",
+        "closing_YKeP3V"
+      ],
+      "disabled": true,
+      "name": "t:sections.immersive_story.preset_name",
+      "settings": {
+        "show_hero": true,
+        "hero_image": "shopify://shop_images/boutique-designer-houses-all-4-logos.png",
+        "hero_eyebrow": "Designer Houses",
+        "hero_heading": "Designer Houses",
+        "hero_subheading": "Designer Houses"
+      }
+    },
+    "immersive_product_grid_fMyjjD": {
+      "type": "immersive-product-grid",
+      "disabled": true,
+      "name": "t:sections.immersive_product_grid.presets.name",
+      "settings": {
+        "collection": "all",
+        "products_per_page": 24,
+        "columns_desktop": 4,
+        "columns_mobile": "2",
+        "image_ratio": "adapt",
+        "show_secondary_image": true,
+        "show_vendor": true,
+        "show_description": false
       }
     },
     "immersive_story": {
@@ -502,6 +575,8 @@
     "immersive_webgl_gallery_config_zAWPaK",
     "editorial_occasions",
     "editorial_featured_collections",
+    "immersive_story_rail_AJd7UU",
+    "immersive_product_grid_fMyjjD",
     "immersive_story",
     "exclusive_carousel"
   ]
