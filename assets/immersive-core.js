@@ -2037,7 +2037,7 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
     var mesh = new THREE.Mesh(geom, mat);
     var x = startX + col * (cardW + GUTTER);
     var y = startY - row * (cardH + GUTTER);
-    mesh.position.set(x, y, 1.0);
+    mesh.position.set(x, y, 0);
     mesh.userData = {
       roomKey: roomKey,
       galleryIndex: entry.originalIndex,
@@ -2047,7 +2047,7 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
       layout: 'infinite-drag-gallery',
       baseX: x,
       baseY: y,
-      baseZ: 1.0,
+      baseZ: 0,
       cardW: cardW,
       cardH: cardH,
       row: row,
