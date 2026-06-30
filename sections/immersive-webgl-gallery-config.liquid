@@ -64,7 +64,7 @@
             {%- assign img_src = block.settings.image -%}
             {%- if img_src contains 'shopify://shop_images/' -%}
               {%- assign filename = img_src | remove: 'shopify://shop_images/' -%}
-              {%- assign gallery_img = filename | file_img_url: width: img_w, height: img_h, quality: 75 -%}
+              {%- capture gallery_img -%}/cdn/shop/files/{{ filename | split: '?' | first }}?width={{ img_w }}&height={{ img_h }}&crop=center{%- endcapture -%}
             {%- else -%}
               {%- assign gallery_img = img_src | image_url: width: img_w, height: img_h, quality: 75 -%}
             {%- endif -%}
