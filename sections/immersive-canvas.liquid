@@ -79,15 +79,6 @@
   data-low-stock-threshold="{{ section.settings.low_stock_threshold | default: 5 }}"
   data-guided-featured-wing="{{ section.settings.guided_featured_wing | default: 'designer_houses' | escape }}"
   data-gallery-layout="{{ section.settings.gallery_layout | default: 'vertical' }}"
-  {%- if section.settings.designer_houses_layout -%}
-    data-designer-houses-layout="{{ section.settings.designer_houses_layout | escape }}"
-  {%- endif -%}
-  {%- if section.settings.occasions_layout -%}
-    data-occasions-layout="{{ section.settings.occasions_layout | escape }}"
-  {%- endif -%}
-  {%- if section.settings.featured_collections_layout -%}
-    data-featured-collections-layout="{{ section.settings.featured_collections_layout | escape }}"
-  {%- endif -%}
 >
   {% comment %} Pass Liquid configuration to JavaScript {% endcomment %}
   <div
@@ -4695,58 +4686,6 @@
       ],
       "default": "crossfade",
       "info": "t:sections.immersive_store.settings.transition_style.info"
-    },
-    {
-      "type": "header",
-      "content": "Gallery Layouts"
-    },
-    {
-      "type": "select",
-      "id": "designer_houses_layout",
-      "label": "Designer Houses Layout",
-      "default": "infinite-drag-gallery",
-      "options": [
-        { "value": "narrative-story", "label": "Narrative Story (Z-Scroll Cinematic)" },
-        { "value": "codex-list", "label": "Codex (Infinite Text List)" },
-        { "value": "artifact-gallery", "label": "Artifact Gallery (Floating Grid)" },
-        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery (Indrajaal-style)" },
-        { "value": "scroll-story", "label": "Scroll Story (Infinite List)" },
-        { "value": "scroll-tunnel", "label": "Scroll Tunnel (3D Depth)" },
-        { "value": "masonry-featured", "label": "Masonry Featured" },
-        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery (2D Grid)" }
-      ]
-    },
-    {
-      "type": "select",
-      "id": "occasions_layout",
-      "label": "Occasions Layout",
-      "default": "scroll-tunnel",
-      "options": [
-        { "value": "narrative-story", "label": "Narrative Story (Z-Scroll Cinematic)" },
-        { "value": "codex-list", "label": "Codex (Infinite Text List)" },
-        { "value": "artifact-gallery", "label": "Artifact Gallery (Floating Grid)" },
-        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
-        { "value": "scroll-story", "label": "Scroll Story (Infinite List)" },
-        { "value": "scroll-tunnel", "label": "Scroll Tunnel (3D Depth)" },
-        { "value": "masonry-featured", "label": "Masonry Featured" },
-        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery (2D Grid)" }
-      ]
-    },
-    {
-      "type": "select",
-      "id": "featured_collections_layout",
-      "label": "Featured Collections Layout",
-      "default": "scroll-story",
-      "options": [
-        { "value": "artifact-gallery", "label": "Artifact Gallery (Floating Grid)" },
-        { "value": "narrative-story", "label": "Narrative Story (Z-Scroll Cinematic)" },
-        { "value": "codex-list", "label": "Codex (Infinite Text List)" },
-        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
-        { "value": "scroll-story", "label": "Scroll Story (Infinite List)" },
-        { "value": "scroll-tunnel", "label": "Scroll Tunnel (3D Depth)" },
-        { "value": "masonry-featured", "label": "Masonry Featured (Curated)" },
-        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery (2D Grid)" }
-      ]
     }
   ],
   "blocks": [

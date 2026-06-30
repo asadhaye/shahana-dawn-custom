@@ -50,6 +50,37 @@ Build note: the immersive JS bundle is built via `npm run build:immersive`. Alwa
   - Exposes runtime text/settings through `data-*` attributes
 - `sections/immersive-editorial.liquid` provides room-scoped editorial content (rendered on-demand in overlay).
 
+### Gallery layout priority (single source of truth)
+- **The `layout` setting in `immersive-webgl-gallery-config` section is authoritative.**
+- `getGalleryLayout()` in `immersive-core.js` checks `window.immersiveWebglGalleryLayouts[roomKey]` first, then hardcoded fallbacks (designer_houses → asymmetric-gallery, occasions → scroll-narrative, featured_collections → masonry-featured).
+- This is intentional: the layout travels with the room definition, so merchants can add new rooms and set layouts without modifying the canvas section.
+- Do NOT add per-room layout dropdowns to `immersive-canvas` — that creates a conflicting second source of truth.
+- Each gallery-config section in `page.immersive.json` should explicitly set `"layout"` in its settings.
+
+### Available gallery layouts (9)
+- **scroll-story** — Native RAF infinite scroll list with LERP + shaders
+- **scroll-tunnel** — PerspectiveCamera Z-axis depth tunnel with chromatic aberration
+- **masonry-featured** — Curated grid with featured highlight
+- **asymmetric-gallery** — Indrajaal-inspired organic gallery layout (5-col, row parallax, infinite drag)
+- **narrative-story** — Cinematic Z-axis scroll-driven story with floating planes
+- **codex-list** — Infinite vertical text list with hover-reveal detail plane
+- **artifact-gallery** — Floating grid with mouse parallax + glass shader distortion
+- **infinite-drag-gallery** — 2D infinite draggable grid with inertia and wrap
+- **scroll-narrative** — Story-driven vertical scroll layout
+
+### Gallery builder architecture
+- `buildGalleryStageForRoom()` dispatches to layout-specific builders based on `getGalleryLayout()` result
+- `_buildScrollStory()` handles both `scroll-story` and `scroll-narrative` (vertical Y-axis lists)
+- `_buildScrollTunnel()` handles `scroll-tunnel` (PerspectiveCamera, switches from ortho)
+- `_buildIndrajaalGrid()` handles `asymmetric-gallery` (5-col grid, row parallax, modulo wrap)
+- `_buildInfiniteDragGallery()` handles `infinite-drag-gallery` (2D grid, velocity + friction)
+- `_buildNarrativeStory()` handles `narrative-story` (PerspectiveCamera, Z-axis + floating)
+- `_buildCodexList()` handles `codex-list` (text list + hover plane)
+- `_buildArtifactGallery()` handles `artifact-gallery` (mouse parallax + glass shader)
+- `masonry-featured` is built inline (featured hero card + organic grid offsets)
+- Arc carousel is the fallback for any unknown layout
+- All cards positioned at Z=0 (ortho camera visible range: worldZ ∈ [-1, 1])
+
 ### Runtime orchestration
 - `assets/immersive-core.js` is the core runtime engine:
   - Base room map (`STORE_ROOMS`)

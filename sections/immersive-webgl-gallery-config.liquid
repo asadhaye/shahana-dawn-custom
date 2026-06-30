@@ -25,7 +25,9 @@
   aria-hidden="true"
   data-immersive-webgl-gallery-config
   data-room-key="{{ section.settings.room_key }}"
-  data-layout="{{ section.settings.layout | default: 'default' }}"
+  {%- if section.settings.layout -%}
+  data-layout="{{ section.settings.layout | escape }}"
+  {%- endif -%}
 >
   {%- assign has_items = false -%}
 
@@ -162,18 +164,16 @@
       "id": "layout",
       "label": "Gallery Layout for this room",
       "options": [
-        { "value": "default", "label": "Default" },
-        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
-        { "value": "scroll-narrative", "label": "Scroll Narrative" },
-        { "value": "masonry-featured", "label": "Masonry Featured" },
-        { "value": "scroll-story", "label": "Scroll Story" },
-        { "value": "scroll-tunnel", "label": "Scroll Tunnel" },
-        { "value": "narrative-story", "label": "Narrative Story" },
-        { "value": "codex-list", "label": "Codex List" },
-        { "value": "artifact-gallery", "label": "Artifact Gallery" },
-        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery" }
-      ],
-      "default": "default"
+        { "value": "scroll-story", "label": "Scroll Story — Native RAF infinite scroll list with LERP + shaders" },
+        { "value": "scroll-tunnel", "label": "Scroll Tunnel — PerspectiveCamera Z-axis depth tunnel with chromatic aberration" },
+        { "value": "masonry-featured", "label": "Masonry Featured — Curated grid with featured highlight" },
+        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery — Indrajaal-inspired organic gallery layout" },
+        { "value": "narrative-story", "label": "Narrative Story — Cinematic Z-axis scroll-driven story with floating planes" },
+        { "value": "codex-list", "label": "Codex List — Infinite vertical text list with hover-reveal detail plane" },
+        { "value": "artifact-gallery", "label": "Artifact Gallery — Floating grid with mouse parallax + glass shader distortion" },
+        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery — 2D infinite draggable grid with inertia and wrap" },
+        { "value": "scroll-narrative", "label": "Scroll Narrative — Story-driven vertical scroll layout" }
+      ]
     }
   ],
   "blocks": [

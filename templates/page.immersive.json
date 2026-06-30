@@ -161,10 +161,7 @@
         "guided_featured_wing": "designer_houses",
         "fab_text_icon": "S",
         "fab_icon_svg": "shopify://shop_images/S-favicon.webp",
-        "transition_style": "crossfade",
-        "designer_houses_layout": "artifact-gallery",
-        "occasions_layout": "scroll-story",
-        "featured_collections_layout": "scroll-tunnel"
+        "transition_style": "crossfade"
       }
     },
     "webgl_gallery_exclusives": {
@@ -241,7 +238,7 @@
       ],
       "settings": {
         "room_key": "designer_houses",
-        "layout": "default"
+        "layout": "asymmetric-gallery"
       }
     },
     "immersive_webgl_gallery_config_TnHgLB": {
@@ -286,7 +283,7 @@
       "name": "t:sections.immersive_webgl_gallery.preset_name",
       "settings": {
         "room_key": "occasions",
-        "layout": "default"
+        "layout": "scroll-narrative"
       }
     },
     "immersive_webgl_gallery_config_zAWPaK": {
@@ -331,7 +328,7 @@
       "name": "t:sections.immersive_webgl_gallery.preset_name",
       "settings": {
         "room_key": "featured_collections",
-        "layout": "default"
+        "layout": "masonry-featured"
       }
     },
     "editorial_occasions": {

@@ -806,6 +806,7 @@ function _safePlaneGeometry(w, h, label) {
 function _buildScrollStory(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
   var isScrollStory = options.layout === 'scroll-story';
+  var isScrollNarrative = options.layout === 'scroll-narrative';
   var vpH = (options && options.viewportHeight) || 2;
   var vpW = (options && options.viewportWidth) || 2;
 
@@ -815,7 +816,6 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
   var cardW = cardH * cardAspect;
   var itemSpacing = cardH * 0.5; // 50% of card height as gap
   var lerpFactor = cfg.lerpFactor || 0.1;
-  var isHelix = !isScrollStory;
 
   // ── Scroll state ──
   // Cards are positioned from Y=0 center, extending downward
@@ -867,10 +867,11 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       planes: [],
       labels: [],
       textures: textures,
-      layout: isScrollStory ? 'scroll-story' : 'helix',
+      layout: isScrollStory ? 'scroll-story' : (isScrollNarrative ? 'scroll-narrative' : 'helix'),
       cardCount: 0,
       itemSpacing: itemSpacing,
       isScrollStory: isScrollStory,
+      isScrollNarrative: isScrollNarrative,
       currentScrollY: 0,
       targetScrollY: 0,
       lerpFactor: lerpFactor,
@@ -964,13 +965,13 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
 
     var mesh = new THREE.Mesh(geom, mat);
 
-    if (isScrollStory) {
-      // ── Flat Y-axis list ──
+    if (isScrollStory || isScrollNarrative) {
+      // ── Flat Y-axis list (scroll-story and scroll-narrative) ──
       var yPos = -(idx * itemSpacing);
       mesh.position.set(0, yPos, 0);
       mesh.userData.initialY = yPos;
     } else {
-      // ── Helix fallback ──
+      // ── Helix fallback (unknown layouts) ──
       var angle = (idx / count) * Math.PI * 2 * 2.5;
       var y = (idx - count / 2) * 0.6;
       mesh.position.set(Math.cos(angle) * 0.8, y, Math.sin(angle) * 0.8);
@@ -984,7 +985,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       title: item.title || '',
       productHandle: item.productHandle || null,
       collectionHandle: item.collectionHandle || null,
-      layout: isScrollStory ? 'scroll-story' : 'helix',
+      layout: isScrollStory ? 'scroll-story' : (isScrollNarrative ? 'scroll-narrative' : 'helix'),
       initialY: mesh.position.y,
       baseY: mesh.position.y,
     };
@@ -1019,7 +1020,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
       var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, 'scroll-story-label'), labelMat);
-      labelMesh.position.set(0, mesh.position.y - cardH * 0.55, isScrollStory ? 0.05 : 0);
+      labelMesh.position.set(0, mesh.position.y - cardH * 0.55, (isScrollStory || isScrollNarrative) ? 0.05 : 0);
       labelMesh.renderOrder = 999;
       group.add(labelMesh);
       labels.push(labelMesh);
@@ -1033,9 +1034,9 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
     planes: planes,
     labels: labels,
     textures: textures,
-    layout: isScrollStory ? 'scroll-story' : 'helix',
+    layout: isScrollStory ? 'scroll-story' : (isScrollNarrative ? 'scroll-narrative' : 'helix'),
     isScrollStory: isScrollStory,
-    isScrollDriven: isScrollStory,
+    isScrollDriven: isScrollStory || isScrollNarrative,
     itemSpacing: itemSpacing,
     totalHeight: count * itemSpacing,
     lerpFactor: lerpFactor,
@@ -1600,154 +1601,6 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   } else if (layout === 'asymmetric-gallery') {
     // ── Indrajaal-style grid: 5-col, equal cards, row parallax, drag-to-explore ──
     _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options);
-  } else if (
-    layout === 'masonry-featured' ||
-    (layout === 'grid' && options.layoutConfig && options.layoutConfig.featuredIndex !== undefined)
-  ) {
-    // ── Masonry Featured layout ──
-    // First item (featuredIndex) is a large hero card, centered.
-    // Remaining items arranged in masonry grid around it with varying sizes
-    // for a curated editorial feel. All cards on Z=0 plane (visible in ortho).
-    var isMasonry = layout === 'masonry-featured';
-    var featuredIdx =
-      options.layoutConfig && options.layoutConfig.featuredIndex !== undefined ? options.layoutConfig.featuredIndex : 0;
-    var masonrySpacing = (options.layoutConfig && options.layoutConfig.spacing) || 0.6;
-    var gridCols = options.gridCols || 3;
-    var gridSpacingX = options.gridSpacingX || masonrySpacing;
-    var gridSpacingY = options.gridSpacingY || masonrySpacing * 1.2;
-    var baseCardH = options.cardHeight || 0.5;
-    var gridCardAspect = options.cardAspect || 3 / 4;
-    var baseCardW = baseCardH * gridCardAspect;
-
-    var startX = -((gridCols - 1) * gridSpacingX) / 2;
-    var startY = ((Math.ceil(count / gridCols) - 1) * gridSpacingY) / 2;
-
-    items.forEach(function (item, index) {
-      if (!item.imageSrc) return;
-
-      var tex = textureLoader.load(
-        item.imageSrc,
-        function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-          texture.anisotropy = 8;
-        },
-        undefined,
-        function (err) {
-          if (window.__IMMERSIVE_DEV__) {
-            console.warn('[Immersive] Gallery texture load error:', err);
-          }
-        },
-      );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-      tex.anisotropy = 8;
-      textures.push(tex);
-
-      var isFeatured = index === featuredIdx;
-
-      // Featured card: 2x size, centered, same Z=0 plane
-      var thisCardH = isFeatured ? baseCardH * 1.8 : baseCardH;
-      var thisCardAspect = isFeatured ? gridCardAspect : gridCardAspect * (0.9 + (index % 5) * 0.04);
-      var thisCardW = thisCardH * thisCardAspect;
-
-      var geom = _safePlaneGeometry(thisCardW, thisCardH, 'masonry-card');
-      var mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        opacity: 0.95,
-        side: THREE.DoubleSide,
-      });
-
-      var mesh = new THREE.Mesh(geom, mat);
-
-      var col, row, x, y, z;
-      if (isFeatured) {
-        // Featured: centered, same plane as grid (Z=0)
-        x = 0;
-        y = 0;
-        z = 0;
-      } else {
-        // Masonry: grid with organic offsets, same plane (Z=0)
-        var masonryIndex = index < featuredIdx ? index : index - 1;
-        col = masonryIndex % gridCols;
-        row = Math.floor(masonryIndex / gridCols);
-        x = startX + col * gridSpacingX + (isMasonry ? ((masonryIndex % 7) - 3) * 0.1 : 0);
-        y = startY - row * gridSpacingY + (isMasonry ? ((masonryIndex % 5) - 2) * 0.08 : 0);
-        z = 0;
-      }
-
-      mesh.position.set(x, y, z);
-      mesh.lookAt(0, y, z - 10);
-
-      mesh.userData = {
-        roomKey: roomKey,
-        galleryIndex: item.index,
-        title: item.title || '',
-        productHandle: item.productHandle || null,
-        collectionHandle: item.collectionHandle || null,
-        layout: isMasonry ? 'masonry-featured' : 'grid',
-        baseX: x,
-        baseY: y,
-        baseZ: z,
-        isFeatured: isFeatured,
-        col: isFeatured ? -1 : col,
-        row: isFeatured ? -1 : row,
-      };
-
-      group.add(mesh);
-      planes.push(mesh);
-
-      // Title overlay at bottom of card
-      if (item.title) {
-        var labelCanvas = document.createElement('canvas');
-        var lCtx = labelCanvas.getContext('2d');
-        labelCanvas.width = isFeatured ? 1024 : 512;
-        labelCanvas.height = isFeatured ? 96 : 64;
-        lCtx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
-        lCtx.font = 'bold ' + (isFeatured ? 36 : 28) + 'px Georgia, serif';
-        lCtx.textAlign = 'center';
-        lCtx.textBaseline = 'middle';
-        lCtx.fillStyle = isFeatured ? '#d4af37' : '#ffffff';
-        lCtx.fillText(item.title, labelCanvas.width / 2, labelCanvas.height / 2);
-
-        var labelTex = new THREE.CanvasTexture(labelCanvas);
-        labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-        var labelMat = new THREE.MeshBasicMaterial({
-          map: labelTex,
-          transparent: true,
-          depthTest: false,
-          side: THREE.DoubleSide,
-        });
-        var labelW = thisCardW * (isFeatured ? 0.7 : 0.85);
-        var labelH = labelW * (labelCanvas.height / labelCanvas.width);
-        var labelGeom = _safePlaneGeometry(labelW, labelH, 'masonry-label');
-        var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.3, z + 0.01);
-        labelMesh.renderOrder = 999;
-        group.add(labelMesh);
-        labels.push(labelMesh);
-      }
-    });
-
-    scene.add(group);
-
-    galleryStageRegistry[roomKey] = {
-      group: group,
-      planes: planes,
-      labels: labels,
-      textures: textures,
-      layout: isMasonry ? 'masonry-featured' : 'grid',
-      currentPage: 0,
-      targetPage: 0,
-      totalPages: 1,
-      gridCols: gridCols,
-      gridSpacingX: gridSpacingX,
-      gridSpacingY: gridSpacingY,
-      baseCardW: baseCardW,
-      baseCardH: baseCardH,
-      startX: startX,
-      startY: startY,
-      featuredIndex: featuredIdx,
-    };
   } else {
     // ── Arc carousel layout (fallback for unknown layouts) ──
     // Cards arranged in an arc in FRONT of the camera (positive Z)
@@ -3585,13 +3438,13 @@ function getGalleryStageConfig(roomKey) {
 // 'vertical' = indrajaal-museum homepage style (scroll-driven vertical stack)
 // 'arc' = original horizontal carousel (default fallback)
 function getGalleryLayout(roomKey) {
-  // 1. Layout from immersive-canvas dropdown (theme editor setting)
-  //    This is the single source of truth for room layouts.
-  var canvasSection = document.querySelector('.immersive-store');
-  if (canvasSection) {
-    var perRoomAttr = 'data-' + roomKey.replace(/_/g, '-') + '-layout';
-    var perRoomLayout = canvasSection.getAttribute(perRoomAttr);
-    if (perRoomLayout) return perRoomLayout;
+  // 1. Layout from immersive-webgl-gallery-config section (authoritative).
+  //    Each gallery-config section sets data-layout on its <section> element;
+  //    loadGalleryConfigsFromDOM() stores these in window.immersiveWebglGalleryLayouts.
+  //    This is the single source of truth — it travels with the room definition,
+  //    so merchants can add new rooms and set layouts without touching the canvas section.
+  if (window.immersiveWebglGalleryLayouts && window.immersiveWebglGalleryLayouts[roomKey]) {
+    return window.immersiveWebglGalleryLayouts[roomKey];
   }
 
   // 2. Fallback per room
