@@ -1161,6 +1161,12 @@
     /* Ensure canvas matches wrapper width and handles scrollbar correctly */
     max-width: 100vw;
     left: 0;
+    /* Prevent native mobile gestures (pull-to-refresh, scroll, bounce) */
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /* -------------------------------------------------------------------------- */

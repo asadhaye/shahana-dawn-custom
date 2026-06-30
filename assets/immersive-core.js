@@ -1732,39 +1732,47 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 // ─────────────────────────────────────────────────────────────
 // INFINITE DRAG GALLERY — shared builder
 // ─────────────────────────────────────────────────────────────
-// INDRAAJAL GRID — 5-col equal cards, row parallax, drag-to-explore
+// INDRAAJAL GRID — Premium mobile-first index grid with A/B style variants
 // ─────────────────────────────────────────────────────────────
 function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
-  var cols = cfg.columns || 5;
-  var spacing = cfg.spacing || 0.5;
+  var styleVariant = cfg.style || 'default'; // A/B testing: 'default' | 'b' | 'c'
   var defaultAspect = options.cardAspect || 2 / 3;
-  var cardH = options.cardHeight || 2.0;
 
   // ── Viewport-adaptive card sizing ──
-  // OrthographicCamera: camera frustum is (-aspect, aspect, 1, -1)
-  // So visible height = 2, visible width = 2 * aspect
-  var vpH = camera.top - camera.bottom; // = 2
-  var vpW = camera.right - camera.left; // = 2 * aspect
-  var isMobileRoom = vpH < 5;
+  var vpH = camera.top - camera.bottom;
+  var vpW = camera.right - camera.left;
+  var isMobile = vpW < 768 / (window.devicePixelRatio || 1); // mobile breakpoint
 
-  // Always size cards to fit viewport
-  // Desktop: 5 cols fit in 85% of viewport width, cards ~30% of viewport height
-  // Mobile: 3 cols fit in 85% of viewport width
-  var availableW = vpW * 0.85;
-  var availableH = vpH * 0.85;
+  var cols, spacing, cardW, cardH;
 
-  if (isMobileRoom) {
-    cols = 3;
-    spacing = availableW * 0.03;
+  if (isMobile) {
+    // Premium mobile: 2-col interlocking weave, cards at ~85vw scale
+    cols = styleVariant === 'b' ? 1 : 2;
+    cardW = (vpW * 0.85) / cols;
+    cardH = cardW / defaultAspect;
+    // Cap to 30% of viewport height (Artifact gallery approach)
+    var maxCardH = vpH * 0.3;
+    if (cardH > maxCardH) {
+      cardH = maxCardH;
+      cardW = cardH * defaultAspect;
+    }
+    spacing = cardW * 0.08;
   } else {
+    // Desktop: 5-col grid
+    cols = cfg.columns || 5;
+    var availableW = vpW * 0.85;
     spacing = availableW * 0.025;
+    cardW = availableW / cols;
+    cardH = cardW / defaultAspect;
+    var maxCardH = vpH * 0.45;
+    if (cardH > maxCardH) {
+      cardH = maxCardH;
+      cardW = cardH * defaultAspect;
+    }
   }
-  var cardW = availableW / cols;
-  var cardH = cardW / defaultAspect;
-  if (cardH > availableH * 0.45) cardH = availableH * 0.45;
-  cardW = cardH * defaultAspect;
 
+  // ── Load textures ──
   var loadedItems = [];
   var texCache = {};
   items.forEach(function (item, index) {
@@ -1808,6 +1816,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
       cardW: cardW,
       cardH: cardH,
       spacing: spacing,
+      styleVariant: styleVariant,
     };
     return;
   }
@@ -1823,27 +1832,28 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     rowParallax.push(1 - r * 0.08);
   }
 
+  // ── Shared geometry for performance (single instance, all cards reference it) ──
+  // Cards may have slightly different aspects, so we use a unit geometry and scale
+  var sharedGeom = _safePlaneGeometry(1, 1, 'indrajaal-shared');
+
   loadedItems.forEach(function (entry, idx) {
     if (!entry) return;
     var item = entry.item;
     var col = idx % cols;
     var row = Math.floor(idx / cols);
 
-    // Adapt card aspect ratio to the uploaded image (like Dawn's "adapt to image")
-    // Fall back to defaultAspect only if image dimensions are unavailable
+    // Adapt card aspect ratio to the uploaded image
     var itemAspect = defaultAspect;
     if (item.imageWidth && item.imageHeight && item.imageWidth > 0 && item.imageHeight > 0) {
       itemAspect = item.imageWidth / item.imageHeight;
     }
     var thisCardW = cardW;
     var thisCardH = cardW / itemAspect;
-    // Cap height to grid row height so cards don't overflow vertically
     if (thisCardH > cardH * 1.05) {
       thisCardH = cardH * 1.05;
       thisCardW = thisCardH * itemAspect;
     }
 
-    var geom = _safePlaneGeometry(thisCardW, thisCardH, 'indrajaal-grid');
     var mat = new THREE.MeshBasicMaterial({
       map: entry.tex,
       transparent: true,
@@ -1852,8 +1862,9 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
       depthWrite: false,
     });
 
-    var mesh = new THREE.Mesh(geom, mat);
+    var mesh = new THREE.Mesh(sharedGeom, mat);
     mesh.name = 'Card_' + (entry.item.index || idx) + '_indrajaal';
+    mesh.scale.set(thisCardW, thisCardH, 1);
 
     // Center the grid around origin
     var x = -gridW / 2 + thisCardW / 2 + col * (cardW + spacing);
@@ -1861,7 +1872,9 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
 
     mesh.position.set(x, y, 0);
 
+    // Interactive hooks for future CODEX/STORY transitions
     mesh.userData = {
+      type: 'index-card',
       roomKey: roomKey,
       galleryIndex: entry.index,
       title: item.title || '',
@@ -1871,11 +1884,13 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
       baseX: x,
       baseY: y,
       baseZ: 0,
+      isFeatured: false,
+      col: col,
+      row: row,
+      parallaxMult: rowParallax[row],
       cardW: thisCardW,
       cardH: thisCardH,
-      row: row,
-      col: col,
-      parallaxMult: rowParallax[row],
+      styleVariant: styleVariant,
     };
 
     group.add(mesh);
@@ -1883,6 +1898,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   });
 
   scene.add(group);
+
   galleryStageRegistry[roomKey] = {
     group: group,
     planes: planes,
@@ -1903,6 +1919,8 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     cardH: cardH,
     spacing: spacing,
     rowParallax: rowParallax,
+    styleVariant: styleVariant,
+    isMobile: isMobile,
   };
 }
 
@@ -2663,11 +2681,15 @@ function initGalleryCarousel(canvas) {
         s.onY = s.targetY + galleryDragState.startY * 2.5;
       }
     }
+    // Prevent iOS rubber-band and native scroll bounce
+    if (e.cancelable) e.preventDefault();
     canvas.style.cursor = 'grabbing';
   };
 
   var moveHandler = function (e) {
     if (!galleryDragState.isDragging) return;
+    // Prevent native scroll/pull-to-refresh while dragging
+    if (e.cancelable) e.preventDefault();
     var x = e.clientX || e.touches?.[0]?.clientX || 0;
     var y = e.clientY || e.touches?.[0]?.clientY || 0;
     var s = galleryStageRegistry[currentRoomKey];
@@ -2681,11 +2703,13 @@ function initGalleryCarousel(canvas) {
       var dragMult = 2.5;
       s.targetX = (s.onX || 0) + dx * dragMult;
       s.targetY = (s.onY || 0) - dy * dragMult;
-      // Clamp to grid bounds (grid extends beyond viewport)
-      var maxX = (s.gridW - (camera.right - camera.left)) * 0.5;
-      var maxY = (s.gridH - (camera.top - camera.bottom)) * 0.5;
-      if (maxX > 0) s.targetX = Math.max(-maxX, Math.min(maxX, s.targetX));
-      if (maxY > 0) s.targetY = Math.max(-maxY, Math.min(maxY, s.targetY));
+      // Desktop: clamp to grid bounds. Mobile: free drag (infinite feel)
+      if (!s.isMobile) {
+        var maxX = (s.gridW - (camera.right - camera.left)) * 0.5;
+        var maxY = (s.gridH - (camera.top - camera.bottom)) * 0.5;
+        if (maxX > 0) s.targetX = Math.max(-maxX, Math.min(maxX, s.targetX));
+        if (maxY > 0) s.targetY = Math.max(-maxY, Math.min(maxY, s.targetY));
+      }
       galleryDragState.velocityX = dx * 0.8;
       galleryDragState.velocityY = dy * 0.8;
     } else if (isScrollLayout) {
