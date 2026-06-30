@@ -964,6 +964,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
     }
 
     var mesh = new THREE.Mesh(geom, mat);
+    mesh.name = 'Card_' + (item.index || idx) + '_scrollStory';
 
     if (isScrollStory || isScrollNarrative) {
       // ── Flat Y-axis list (scroll-story and scroll-narrative) ──
@@ -1020,6 +1021,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
       var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, 'scroll-story-label'), labelMat);
+      labelMesh.name = 'Label_' + (item.index || idx) + '_scrollStory';
       labelMesh.position.set(0, mesh.position.y - cardH * 0.55, (isScrollStory || isScrollNarrative) ? 0.05 : 0);
       labelMesh.renderOrder = 999;
       group.add(labelMesh);
@@ -1205,6 +1207,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
     });
 
     var mesh = new THREE.Mesh(geom, mat);
+    mesh.name = 'Card_' + (item.index || idx) + '_scrollTunnel';
 
     var zPos = -2 - (idx / Math.max(count - 1, 1)) * tunnelLength;
     var xOff = (idx % 2 === 0 ? -1 : 1) * (0.2 + (idx % 3) * 0.1);
@@ -1253,6 +1256,7 @@ function _buildScrollTunnel(roomKey, scene, group, planes, labels, textures, tex
       var labelW = cardW * 0.9;
       var labelH = labelW * (120 / 768);
       var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, 'tunnel-label'), labelMat);
+      labelMesh.name = 'Label_' + (item.index || idx) + '_scrollTunnel';
       labelMesh.position.set(xOff, yOff - cardH * 0.55, zPos - 0.05);
       labelMesh.renderOrder = 999;
       group.add(labelMesh);
@@ -1319,6 +1323,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
   var tiltDegrees = options.tiltDegrees || -4;
 
   var group = new THREE.Group();
+  group.name = 'GalleryStage_' + roomKey;
   group.position.set(0, 0, 0);
   var textureLoader = new THREE.TextureLoader();
   var planes = [];
@@ -1394,6 +1399,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       });
 
       var mesh = new THREE.Mesh(geom, mat);
+      mesh.name = 'Card_' + (item.index || idx) + '_masonry';
 
       var col, row, x, y, z;
       if (isFeatured) {
@@ -1457,6 +1463,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         var labelH = labelW * (labelCanvas.height / labelCanvas.width);
         var labelGeom = _safePlaneGeometry(labelW, labelH, 'masonry-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.name = 'Label_' + (item.index || idx) + '_masonry';
         labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.3, z + 0.01);
         labelMesh.renderOrder = 999;
         group.add(labelMesh);
@@ -1525,6 +1532,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       });
 
       var mesh = new THREE.Mesh(geom, mat);
+      mesh.name = 'Card_' + (item.index || idx) + '_vertical';
       var y = startY - index * cardSpacing;
       mesh.position.set(0, y, 0);
       mesh.rotation.x = THREE.MathUtils.degToRad(tiltDegrees);
@@ -1574,6 +1582,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         var labelH = labelW * (160 / 1024);
         var labelGeom = _safePlaneGeometry(labelW, labelH, 'arc-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.name = 'Label_' + (item.index || idx) + '_vertical';
         labelMesh.position.set(0, y - cardH * 0.5 - labelH * 0.6, 0.05);
         labelMesh.renderOrder = 999;
         group.add(labelMesh);
@@ -1643,6 +1652,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       });
 
       var mesh = new THREE.Mesh(geom, mat);
+      mesh.name = 'Card_' + (item.index || idx) + '_arc';
       var angleDeg = startAngle + step * index;
       var rad = (angleDeg * Math.PI) / 180;
       // Arc in XY plane at Z=0.5 (in front of camera at Z=1, within [-1,1] visible range)
@@ -1689,6 +1699,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         var labelH = labelW * (96 / 512);
         var labelGeom = _safePlaneGeometry(labelW, labelH, 'arc-car-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
+        labelMesh.name = 'Label_' + (item.index || idx) + '_arc';
         labelMesh.position.set(x, y - arcCardH * 0.55, 0.51);
         labelMesh.lookAt(new THREE.Vector3(0, y - arcCardH * 0.55, 0));
         labelMesh.renderOrder = 999;
@@ -1842,6 +1853,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     });
 
     var mesh = new THREE.Mesh(geom, mat);
+    mesh.name = 'Card_' + (entry.item.index || idx) + '_indrajaal';
 
     // Center the grid around origin
     var x = -gridW / 2 + thisCardW / 2 + col * (cardW + spacing);
@@ -2035,6 +2047,7 @@ function _buildInfiniteDragGallery(roomKey, scene, group, planes, labels, textur
     }
 
     var mesh = new THREE.Mesh(geom, mat);
+    mesh.name = 'Card_' + (entry.item.index || idx) + '_infiniteDrag';
     var x = startX + col * (cardW + GUTTER);
     var y = startY - row * (cardH + GUTTER);
     mesh.position.set(x, y, 0);
@@ -2214,6 +2227,7 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
       depthWrite: false,
     });
     var mesh = new THREE.Mesh(geom, mat);
+    mesh.name = 'Card_' + (entry.item.index || idx) + '_narrativeStory';
     mesh.position.set(0, 0, zPos);
     mesh.userData = {
       roomKey: roomKey,
@@ -2528,6 +2542,7 @@ function _buildArtifactGallery(roomKey, scene, group, planes, labels, textures, 
       side: THREE.DoubleSide,
     });
     var mesh = new THREE.Mesh(geom, mat);
+    mesh.name = 'Card_' + (entry.item.index || idx) + '_artifact';
     mesh.position.set(x, y, z);
     mesh.userData = {
       roomKey: roomKey,
@@ -4286,7 +4301,9 @@ function initImmersiveScene() {
   });
 
   scene = new THREE.Scene();
+  scene.name = 'ImmersiveMainScene';
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 2);
+  camera.name = 'ImmersiveMainCamera';
   camera.position.z = 1;
 
   var geometry = _safePlaneGeometry(2, 2, 'main-scene-plane');
@@ -4322,6 +4339,7 @@ function initImmersiveScene() {
   });
 
   planeMesh = new THREE.Mesh(geometry, material);
+  planeMesh.name = 'RoomBasePlane';
   scene.add(planeMesh);
 
   updateCanvasRect();
