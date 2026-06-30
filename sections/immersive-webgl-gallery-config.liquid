@@ -61,7 +61,13 @@
           {%- if block.settings.image -%}
             {%- assign img_w = block.settings.image.width | default: 1440 -%}
             {%- assign img_h = block.settings.image.height | default: 810 -%}
-            {%- assign gallery_img = block.settings.image | image_url: width: img_w, height: img_h, quality: 75 -%}
+            {%- assign img_src = block.settings.image -%}
+            {%- if img_src contains 'shopify://shop_images/' -%}
+              {%- assign filename = img_src | remove: 'shopify://shop_images/' -%}
+              {%- assign gallery_img = filename | file_img_url: width: img_w, height: img_h, quality: 75 -%}
+            {%- else -%}
+              {%- assign gallery_img = img_src | image_url: width: img_w, height: img_h, quality: 75 -%}
+            {%- endif -%}
             <img
               class="immersive-webgl-gallery-config__img"
               src="{{ gallery_img }}"
@@ -164,16 +170,16 @@
       "id": "layout",
       "label": "Gallery Layout for this room",
       "options": [
-        { "value": "scroll-story", "label": "Scroll Story — Native RAF infinite scroll list with LERP + shaders" },
-        { "value": "scroll-tunnel", "label": "Scroll Tunnel — PerspectiveCamera Z-axis depth tunnel with chromatic aberration" },
-        { "value": "masonry-featured", "label": "Masonry Featured — Curated grid with featured highlight" },
-        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery — Indrajaal-inspired organic gallery layout" },
-        { "value": "narrative-story", "label": "Narrative Story — Cinematic Z-axis scroll-driven story with floating planes" },
-        { "value": "codex-list", "label": "Codex List — Infinite vertical text list with hover-reveal detail plane" },
-        { "value": "artifact-gallery", "label": "Artifact Gallery — Floating grid with mouse parallax + glass shader distortion" },
-        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery — 2D infinite draggable grid with inertia and wrap" },
-        { "value": "scroll-narrative", "label": "Scroll Narrative — Story-driven vertical scroll layout" }
-      ]
+        { "value": "scroll-story", "label": "Scroll Story" },
+        { "value": "scroll-tunnel", "label": "Scroll Tunnel" },
+        { "value": "masonry-featured", "label": "Masonry Featured" },
+        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
+        { "value": "narrative-story", "label": "Narrative Story" },
+        { "value": "codex-list", "label": "Codex List" },
+        { "value": "artifact-gallery", "label": "Artifact Gallery" },
+        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery" },
+        { "value": "scroll-narrative", "label": "Scroll Narrative" }
+      ],
     }
   ],
   "blocks": [
