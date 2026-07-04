@@ -6015,6 +6015,39 @@ window.currentRoomKey = currentRoomKey;
 // Initialize device optimization on load
 initDeviceOptimization();
 
+// Header Dock: auto-hide HUD on 3D interaction, show on proximity
+function initHeaderDock() {
+  var header = document.querySelector('.immersive-header');
+  if (!header) return;
+
+  // 1. Hide the header immediately when the user clicks/touches to drag the 3D scene
+  window.addEventListener('mousedown', function () {
+    header.classList.add('is-hidden');
+  });
+  window.addEventListener('touchstart', function () {
+    header.classList.add('is-hidden');
+  }, { passive: true });
+
+  // 2. Show the header when they release the drag
+  window.addEventListener('mouseup', function () {
+    header.classList.remove('is-hidden');
+  });
+  window.addEventListener('touchend', function () {
+    header.classList.remove('is-hidden');
+  }, { passive: true });
+
+  // 3. Proximity Sensor (The MacBook effect)
+  // If the mouse moves into the top 120px of the screen, force the header to show
+  window.addEventListener('mousemove', function (e) {
+    if (e.clientY < 120) {
+      header.classList.remove('is-hidden');
+    }
+  });
+}
+
+// Initialize header dock on load
+initHeaderDock();
+
 // ---------------------------------------------------------------------------
 // Auto-init: bind initImmersiveScene to DOMContentLoaded (with double-init guard)
 // _immersiveInitBound is defined at top of file (line ~1583)
