@@ -1324,7 +1324,7 @@ function disposeGalleryStage(roomKey) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCROLL STORY — Native RAF infinite scroll list with LERP + modulo recycling
+// SCROLL STORY — Pure CSS 3D Cylindrical Carousel (DOM-based)
 // ─────────────────────────────────────────────────────────────────────────────
 // ── NaN guard: wrap PlaneGeometry creation to catch invalid dimensions ──
 function _safePlaneGeometry(w, h, label) {
@@ -1354,237 +1354,137 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
   var itemSpacing = cardH * 0.5; // 50% of card height as gap
   var lerpFactor = cfg.lerpFactor || 0.1;
 
-  // ── Scroll state ──
-  // Cards are positioned from Y=0 center, extending downward
-  // This ensures first cards are visible in initial viewport
+  // Minimal WebGL group — registers state for physics loop
   group.userData.currentScrollY = 0;
   group.userData.targetScrollY = 0;
   group.userData.itemSpacing = itemSpacing;
   group.userData.totalHeight = items.length * itemSpacing;
   group.userData.lerpFactor = lerpFactor;
   group.userData.isScrollStory = isScrollStory;
+  group.userData.cardCount = items.length;
 
-  var count = items.length;
-  var loadedItems = [];
-  var texCache = {};
-
-  items.forEach(function (item, index) {
-    if (!item.imageSrc) return;
-    if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(
-        item.imageSrc,
-        function (texture) {
-          texture.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-          texture.anisotropy = 8;
-        },
-        undefined,
-        function (err) {
-          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Story texture load error:', err);
-        },
-      );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-      tex.anisotropy = 8;
-      texCache[item.imageSrc] = tex;
-      textures.push(tex);
-    }
-    loadedItems.push({ item: item, tex: texCache[item.imageSrc], index: index });
-  });
-
-  if (loadedItems.length === 0) {
-    var uiLayer = document.getElementById('ui-layer');
-    if (uiLayer) {
-      var emptyMsg = document.createElement('div');
-      emptyMsg.className = 'immersive-gallery-empty-msg';
-      emptyMsg.textContent = uiLayer.getAttribute('data-msg-empty-collection') || 'This collection is currently empty.';
-      uiLayer.appendChild(emptyMsg);
-    }
-    scene.add(group);
-    galleryStageRegistry[roomKey] = {
-      group: group,
-      planes: [],
-      labels: [],
-      textures: textures,
-      layout: isScrollStory ? 'scroll-story' : (isScrollNarrative ? 'scroll-narrative' : 'helix'),
-      cardCount: 0,
-      itemSpacing: itemSpacing,
-      isScrollStory: isScrollStory,
-      isScrollNarrative: isScrollNarrative,
-      currentScrollY: 0,
-      targetScrollY: 0,
-      lerpFactor: lerpFactor,
-    };
-    return;
+  // Build DOM overlay for scroll-story (CSS 3D cylinder)
+  if (isScrollStory) {
+    _buildStoryDOMOverlay(roomKey, items, cardW, cardH);
+  } else {
+    // scroll-narrative keeps legacy flat Y-axis list (handled by shared isScrollAnim branch)
+    _buildScrollNarrativeDOMOverlay(roomKey, items, itemSpacing);
   }
 
-  // ── Shared shader uniforms ──
-  var sharedUniforms = isScrollStory
-    ? {
-        uTime: { value: 0 },
-        uScrollY: { value: 0 },
-        uVelocity: { value: 0 },
-      }
-    : null;
-
-  // ── Vertex shader: wave bend from scroll velocity ──
-  var vertSrc = [
-    'varying vec2 vUv;',
-    'varying float vDist;',
-    'uniform float uTime;',
-    'uniform float uScrollY;',
-    'uniform float uVelocity;',
-    'void main() {',
-    '  vUv = uv;',
-    '  vec3 pos = position;',
-    // Wave bend: skew geometry based on scroll velocity
-    '  float wave = sin(pos.y * 2.0 + uTime * 3.0) * uVelocity * 0.02;',
-    '  pos.x += wave;',
-    '  pos.z += abs(wave) * 0.5;',
-    '  vec4 mv = modelViewMatrix * vec4(pos, 1.0);',
-    '  vDist = -mv.z;',
-    '  gl_Position = projectionMatrix * mv;',
-    '}',
-  ].join('\n');
-
-  // ── Fragment shader: chromatic aberration + vignette ──
-  var fragSrc = [
-    'precision highp float;',
-    'uniform sampler2D uTexture;',
-    'uniform float uTime;',
-    'uniform float uScrollY;',
-    'uniform float uVelocity;',
-    'varying vec2 vUv;',
-    'varying float vDist;',
-    'void main() {',
-    '  float aberration = smoothstep(1.0, 8.0, vDist) * 0.003 * (1.0 + abs(uVelocity) * 0.5);',
-    '  vec2 dir = vUv - 0.5;',
-    '  float edge = smoothstep(0.0, 0.5, length(dir));',
-    '  float shift = aberration * edge;',
-    '  vec2 rUV = clamp(vUv + dir * shift, 0.001, 0.999);',
-    '  vec2 gUV = vUv;',
-    '  vec2 bUV = clamp(vUv - dir * shift, 0.001, 0.999);',
-    '  float r = texture2D(uTexture, rUV).r;',
-    '  float g = texture2D(uTexture, gUV).g;',
-    '  float b = texture2D(uTexture, bUV).b;',
-    '  float a = texture2D(uTexture, gUV).a;',
-    '  float vig = 1.0 - smoothstep(0.3, 0.8, length(vUv - 0.5));',
-    '  gl_FragColor = vec4(r, g, b, a * vig);',
-    '}',
-  ].join('\n');
-
-  loadedItems.forEach(function (entry, idx) {
-    if (!entry) return;
-    var item = entry.item;
-    var geom = _safePlaneGeometry(cardW, cardH, 'gallery-main');
-
-    var mat;
-    if (isScrollStory) {
-      mat = new THREE.ShaderMaterial({
-        vertexShader: vertSrc,
-        fragmentShader: fragSrc,
-        uniforms: {
-          uTexture: { value: entry.tex },
-          uTime: sharedUniforms.uTime,
-          uScrollY: sharedUniforms.uScrollY,
-          uVelocity: sharedUniforms.uVelocity,
-        },
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-    } else {
-      mat = new THREE.MeshBasicMaterial({
-        map: entry.tex,
-        transparent: true,
-        opacity: 0.95,
-        side: THREE.DoubleSide,
-      });
-    }
-
-    var mesh = new THREE.Mesh(geom, mat);
-    mesh.name = 'Card_' + (item.index || idx) + '_scrollStory';
-
-    if (isScrollStory || isScrollNarrative) {
-      // ── Flat Y-axis list (scroll-story and scroll-narrative) ──
-      var yPos = -(idx * itemSpacing);
-      mesh.position.set(0, yPos, 0);
-      mesh.userData.initialY = yPos;
-    } else {
-      // ── Helix fallback (unknown layouts) ──
-      var angle = (idx / count) * Math.PI * 2 * 2.5;
-      var y = (idx - count / 2) * 0.6;
-      mesh.position.set(Math.cos(angle) * 0.8, y, Math.sin(angle) * 0.8);
-      mesh.lookAt(0, y, 0);
-      mesh.rotateY(Math.PI);
-    }
-
-    mesh.userData = {
-      roomKey: roomKey,
-      galleryIndex: entry.index,
-      title: item.title || '',
-      productHandle: item.productHandle || null,
-      collectionHandle: item.collectionHandle || null,
-      layout: isScrollStory ? 'scroll-story' : (isScrollNarrative ? 'scroll-narrative' : 'helix'),
-      initialY: mesh.position.y,
-      baseY: mesh.position.y,
-    };
-
-    group.add(mesh);
-    planes.push(mesh);
-
-    // ── Canvas title label ──
-    if (item.title) {
-      var labelCanvas = document.createElement('canvas');
-      var lCtx = labelCanvas.getContext('2d');
-      labelCanvas.width = 768;
-      labelCanvas.height = 120;
-      lCtx.clearRect(0, 0, 768, 120);
-      lCtx.font = 'bold 48px Georgia, serif';
-      lCtx.textAlign = 'center';
-      lCtx.textBaseline = 'middle';
-      lCtx.fillStyle = '#ece3c2';
-      lCtx.fillText(item.title.toUpperCase(), 384, 40);
-      lCtx.font = '500 12px Arial, sans-serif';
-      lCtx.fillStyle = 'rgba(255,255,255,0.5)';
-      lCtx.fillText('[ TAP TO EXPLORE ]', 384, 90);
-
-      var labelTex = new THREE.CanvasTexture(labelCanvas);
-      labelTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-      var labelMat = new THREE.MeshBasicMaterial({
-        map: labelTex,
-        transparent: true,
-        depthTest: false,
-        side: THREE.DoubleSide,
-      });
-      var labelW = cardW * 0.9;
-      var labelH = labelW * (120 / 768);
-      var labelMesh = new THREE.Mesh(_safePlaneGeometry(labelW, labelH, 'scroll-story-label'), labelMat);
-      labelMesh.name = 'Label_' + (item.index || idx) + '_scrollStory';
-      labelMesh.position.set(0, mesh.position.y - cardH * 0.55, (isScrollStory || isScrollNarrative) ? 0.05 : 0);
-      labelMesh.renderOrder = 999;
-      group.add(labelMesh);
-      labels.push(labelMesh);
-    }
-  });
-
+  // Register minimal stage — physics lives in animateGalleryCarousel
   scene.add(group);
-
   galleryStageRegistry[roomKey] = {
     group: group,
-    planes: planes,
-    labels: labels,
+    planes: [],
+    labels: [],
     textures: textures,
     layout: isScrollStory ? 'scroll-story' : (isScrollNarrative ? 'scroll-narrative' : 'helix'),
     isScrollStory: isScrollStory,
-    isScrollDriven: isScrollStory || isScrollNarrative,
+    isScrollNarrative: isScrollNarrative,
+    isScrollDriven: true,
     itemSpacing: itemSpacing,
-    totalHeight: count * itemSpacing,
+    totalHeight: items.length * itemSpacing,
     lerpFactor: lerpFactor,
     currentScrollY: 0,
     targetScrollY: 0,
     prevScrollY: 0,
-    cardCount: count,
-    sharedUniforms: sharedUniforms,
+    cardCount: items.length,
+    sharedUniforms: null,
   };
+}
+
+function _buildStoryDOMOverlay(roomKey, items, panelWidth, panelHeight) {
+  var uiLayer = document.getElementById('ui-layer');
+  if (!uiLayer) return;
+
+  var existing = uiLayer.querySelector('#story-overlay');
+  if (existing) existing.remove();
+
+  var validItems = items.filter(function (item) { return item.imageSrc; });
+  if (!validItems.length) return;
+
+  var itemCount = validItems.length;
+  var theta = 360 / itemCount;
+  // Cylinder radius: (panelWidth/2) / tan(PI/itemCount)
+  var radius = Math.round((panelWidth / 2) / Math.tan(Math.PI / itemCount));
+
+  var wrapper = document.createElement('section');
+  wrapper.id = 'story-overlay';
+  wrapper.className = 'story-carousel-wrapper';
+  wrapper.setAttribute('data-room-key', roomKey);
+  wrapper.setAttribute('data-item-count', itemCount);
+  wrapper.setAttribute('data-radius', radius);
+  wrapper.setAttribute('data-theta', theta);
+
+  var list = document.createElement('div');
+  list.className = 'story-carousel-list js-story-list';
+  list.style.width = panelWidth + 'px';
+  list.style.height = panelHeight + 'px';
+
+  validItems.forEach(function (item, idx) {
+    var url = item.collectionHandle
+      ? '/pages/immersive?open_collection=' + encodeURIComponent(item.collectionHandle)
+      : (item.productHandle ? '/products/' + encodeURIComponent(item.productHandle) : '#');
+
+    var panel = document.createElement('div');
+    panel.className = 'story-carousel-panel js-story-panel';
+    panel.dataset.index = idx;
+    // Static structural transform: rotateY(index * theta) translateZ(radius)
+    panel.style.transform = 'rotateY(' + (idx * theta) + 'deg) translateZ(' + radius + 'px)';
+
+    panel.innerHTML =
+      '<a href="' + url + '" class="story-link">' +
+        '<img src="' + item.imageSrc + '" alt="' + (item.title || '') + '" loading="lazy" class="story-img">' +
+        '<h4 class="story-title">' + (item.title || 'Untitled') + '</h4>' +
+      '</a>';
+
+    list.appendChild(panel);
+  });
+
+  wrapper.appendChild(list);
+  uiLayer.appendChild(wrapper);
+}
+
+function _buildScrollNarrativeDOMOverlay(roomKey, items, itemSpacing) {
+  var uiLayer = document.getElementById('ui-layer');
+  if (!uiLayer) return;
+
+  var existing = uiLayer.querySelector('#story-overlay');
+  if (existing) existing.remove();
+
+  var validItems = items.filter(function (item) { return item.imageSrc; });
+  if (!validItems.length) return;
+
+  var wrapper = document.createElement('section');
+  wrapper.id = 'story-overlay';
+  wrapper.className = 'story-narrative-wrapper';
+  wrapper.setAttribute('data-room-key', roomKey);
+  wrapper.setAttribute('data-item-spacing', itemSpacing);
+
+  var list = document.createElement('div');
+  list.className = 'story-narrative-list js-story-narrative-list';
+
+  validItems.forEach(function (item, idx) {
+    var url = item.collectionHandle
+      ? '/pages/immersive?open_collection=' + encodeURIComponent(item.collectionHandle)
+      : (item.productHandle ? '/products/' + encodeURIComponent(item.productHandle) : '#');
+
+    var panel = document.createElement('div');
+    panel.className = 'story-narrative-panel js-story-narrative-panel';
+    panel.dataset.index = idx;
+    panel.style.top = (-idx * itemSpacing) + 'px';
+
+    panel.innerHTML =
+      '<a href="' + url + '" class="story-link">' +
+        '<img src="' + item.imageSrc + '" alt="' + (item.title || '') + '" loading="lazy" class="story-img">' +
+        '<h4 class="story-title">' + (item.title || 'Untitled') + '</h4>' +
+      '</a>';
+
+    list.appendChild(panel);
+  });
+
+  wrapper.appendChild(list);
+  uiLayer.appendChild(wrapper);
 }
 
 // -----------------------------------------------------------------------------
@@ -2270,6 +2170,8 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 // INFINITE DRAG GALLERY — shared builder
 // ─────────────────────────────────────────────────────────────
 // INDRAAJAL GRID — Premium mobile-first index grid with A/B style variants
+// Dynamic interlocking masonry: proportional scaling, anti-adjacent duplication,
+// column-parity Y stagger for true asymmetric weave.
 // ─────────────────────────────────────────────────────────────
 function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
@@ -2285,7 +2187,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
 
   if (isMobile) {
     // Premium mobile: 2-col interlocking weave, cards at ~85vw scale
-    cols = styleVariant === 'b' ? 1 : 2;
+    cols = 2;
     cardW = (vpW * 0.85) / cols;
     cardH = cardW / defaultAspect;
     // Cap to 30% of viewport height (Artifact gallery approach)
@@ -2296,10 +2198,10 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     }
     spacing = cardW * 0.08;
   } else {
-    // Desktop: 5-col grid
-    cols = cfg.columns || 5;
+    // Desktop: 5-col dense masonry
+    cols = 5;
     var availableW = vpW * 0.85;
-    spacing = availableW * 0.025;
+    spacing = availableW * 0.04; // tight horizontal spacing
     cardW = availableW / cols;
     cardH = cardW / defaultAspect;
     var maxCardH = vpH * 0.45;
@@ -2310,10 +2212,11 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   }
 
   // ── Load textures ──
+  var validItems = items.filter(function (item) { return item && item.imageSrc; });
   var loadedItems = [];
   var texCache = {};
-  items.forEach(function (item, index) {
-    if (!item.imageSrc) return;
+
+  validItems.forEach(function (item, index) {
     if (!texCache[item.imageSrc]) {
       var tex = textureLoader.load(
         item.imageSrc,
@@ -2373,23 +2276,21 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   // Cards may have slightly different aspects, so we use a unit geometry and scale
   var sharedGeom = _safePlaneGeometry(1, 1, 'indrajaal-shared');
 
+  var itemCount = loadedItems.length;
+
   loadedItems.forEach(function (entry, idx) {
     if (!entry) return;
-    var item = entry.item;
+
+    // Anti-adjacent duplication: shift index by column parity
     var col = idx % cols;
     var row = Math.floor(idx / cols);
+    var shiftIdx = (idx + col * 2) % itemCount;
+    var item = loadedItems[shiftIdx].item;
 
-    // Adapt card aspect ratio to the uploaded image
-    var itemAspect = defaultAspect;
-    if (item.imageWidth && item.imageHeight && item.imageWidth > 0 && item.imageHeight > 0) {
-      itemAspect = item.imageWidth / item.imageHeight;
-    }
+    // Proportional image auto-scaling — preserve exact uploaded aspect
+    var imgAspect = (item.imageWidth && item.imageHeight) ? (item.imageWidth / item.imageHeight) : defaultAspect;
     var thisCardW = cardW;
-    var thisCardH = cardW / itemAspect;
-    if (thisCardH > cardH * 1.05) {
-      thisCardH = cardH * 1.05;
-      thisCardW = thisCardH * itemAspect;
-    }
+    var thisCardH = cardW / imgAspect;
 
     var mat = new THREE.MeshBasicMaterial({
       map: entry.tex,
@@ -2400,12 +2301,16 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     });
 
     var mesh = new THREE.Mesh(sharedGeom, mat);
-    mesh.name = 'Card_' + (entry.item.index || idx) + '_indrajaal';
+    mesh.name = 'Card_' + (item.index || idx) + '_indrajaal';
     mesh.scale.set(thisCardW, thisCardH, 1);
 
-    // Center the grid around origin
+    // Base grid position (centered around origin)
     var x = -gridW / 2 + thisCardW / 2 + col * (cardW + spacing);
     var y = gridH / 2 - cardH / 2 - row * (cardH + spacing);
+
+    // Procedural interlocking masonry: column-parity Y stagger
+    var staggerAmt = isMobile ? (cardH * 0.35) : (cardH * 0.25);
+    y += (col % 2 === 0) ? staggerAmt : -staggerAmt;
 
     mesh.position.set(x, y, 0);
 
@@ -2849,128 +2754,38 @@ function _buildNarrativeStory(roomKey, scene, group, planes, labels, textures, t
 }
 
 // ─────────────────────────────────────────────────────────────
-// LAYOUT B: CODEX — Infinite interactive text list + hover detail plane
-// Indrajaal-museum inspired: typography-driven, raycaster hover, lerp recycling
+// LAYOUT B: CODEX — DOM-based infinite scroll list (brutalist)
+// Replaces WebGL text planes with HTML overlay driven by scroll physics
 // ─────────────────────────────────────────────────────────────
 function _buildCodexList(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
   var vpH = (options && options.viewportHeight) || 2;
 
   var cardH = vpH * 0.35;
-  var cardAspect = cfg.cardAspect || 3 / 4;
-  var cardW = cardH * cardAspect;
   var itemSpacing = cardH * 0.5;
   var lerpFactor = cfg.lerpFactor || 0.12;
-  var hoverAspect = cfg.hoverPlaneAspect || 16 / 9;
 
+  // Minimal WebGL group — just registers state for physics loop
   group.userData.isCodex = true;
   group.userData.scrollY = 0;
   group.userData.targetScrollY = 0;
   group.userData.lerpFactor = lerpFactor;
   group.userData.totalHeight = items.length * itemSpacing;
+  group.userData.itemSpacing = itemSpacing;
+  group.userData.cardCount = items.length;
 
-  var count = items.length;
-  var loadedItems = [];
-  var texCache = {};
+  // Build DOM overlay
+  _buildCodexDOMOverlay(roomKey, items, itemSpacing);
 
-  items.forEach(function (item, index) {
-    if (!item.imageSrc) return;
-    if (!texCache[item.imageSrc]) {
-      var tex = textureLoader.load(
-        item.imageSrc,
-        function (t) {
-          t.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-          t.anisotropy = 8;
-        },
-        undefined,
-        function (err) {
-          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Codex texture error:', err);
-        },
-      );
-      tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-      texCache[item.imageSrc] = tex;
-      textures.push(tex);
-    }
-    loadedItems.push({ item: item, tex: texCache[item.imageSrc], index: index });
-  });
-
-  if (!loadedItems.length) {
-    scene.add(group);
-    galleryStageRegistry[roomKey] = {
-      group: group,
-      planes: [],
-      labels: [],
-      textures: textures,
-      layout: 'codex-list',
-      cardCount: 0,
-      scrollY: 0,
-      targetScrollY: 0,
-    };
-    return;
-  }
-
-  // Create text entry planes (typography-driven)
-  loadedItems.forEach(function (entry, idx) {
-    if (!entry) return;
-    var yPos = -(idx * itemSpacing);
-
-    // Text canvas for the entry name
-    var tCanvas = document.createElement('canvas');
-    var tCtx = tCanvas.getContext('2d');
-    tCanvas.width = 1024;
-    tCanvas.height = 128;
-    tCtx.clearRect(0, 0, 1024, 128);
-    tCtx.font = 'bold 52px Georgia, serif';
-    tCtx.textAlign = 'center';
-    tCtx.textBaseline = 'middle';
-    tCtx.fillStyle = '#d4af37';
-    tCtx.fillText(entry.item.title || entry.item.subtitle || 'Item ' + (idx + 1), 512, 64);
-    var tTex = new THREE.CanvasTexture(tCanvas);
-    tTex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding || THREE.LinearEncoding;
-    var tMat = new THREE.MeshBasicMaterial({ map: tTex, transparent: true, depthTest: false, side: THREE.DoubleSide });
-    var tW = cardW * 1.5;
-    var tH = tW * (128 / 1024);
-    var tMesh = new THREE.Mesh(_safePlaneGeometry(tW, tH, 'codex-text'), tMat);
-    tMesh.position.set(0, yPos, 0);
-    tMesh.userData = {
-      roomKey: roomKey,
-      galleryIndex: entry.index,
-      title: entry.item.title || '',
-      productHandle: entry.item.productHandle || null,
-      collectionHandle: entry.item.collectionHandle || null,
-      layout: 'codex-list',
-      baseY: yPos,
-      isTextEntry: true,
-      itemIndex: idx,
-    };
-    group.add(tMesh);
-    planes.push(tMesh);
-  });
-
-  // Floating detail plane (shows hovered item's image)
-  var hoverW = cardW * 2.5;
-  var hoverH = hoverW / hoverAspect;
-  var hoverMat = new THREE.MeshBasicMaterial({
-    transparent: true,
-    opacity: 0,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  var hoverMesh = new THREE.Mesh(_safePlaneGeometry(hoverW, hoverH, 'codex-hover'), hoverMat);
-  hoverMesh.position.set(cardW * 1.2, 0, 0.5);
-  hoverMesh.renderOrder = 1000;
-  hoverMesh.userData = { isHoverPlane: true };
-  group.add(hoverMesh);
-  group.userData.hoverPlane = hoverMesh;
-
+  // Register empty stage — physics lives in animateGalleryCarousel
   scene.add(group);
   galleryStageRegistry[roomKey] = {
     group: group,
-    planes: planes,
-    labels: labels,
+    planes: [],
+    labels: [],
     textures: textures,
     layout: 'codex-list',
-    cardCount: count,
+    cardCount: items.length,
     itemSpacing: itemSpacing,
     cardH: cardH,
     scrollY: 0,
@@ -2979,6 +2794,59 @@ function _buildCodexList(roomKey, scene, group, planes, labels, textures, textur
     isCodex: true,
     isScrollDriven: true,
   };
+}
+
+function _buildCodexDOMOverlay(roomKey, items, itemSpacing) {
+  var uiLayer = document.getElementById('ui-layer');
+  if (!uiLayer) return;
+
+  // Remove existing codex overlay
+  var existing = uiLayer.querySelector('#codex-overlay');
+  if (existing) existing.remove();
+
+  // Only build if we have items with images
+  var validItems = items.filter(function (item) { return item.imageSrc; });
+  if (!validItems.length) return;
+
+  var wrapper = document.createElement('section');
+  wrapper.id = 'codex-overlay';
+  wrapper.className = 'codex-scroll-wrapper';
+  wrapper.setAttribute('data-room-key', roomKey);
+  wrapper.setAttribute('data-item-spacing', itemSpacing);
+  wrapper.setAttribute('data-total-height', validItems.length * itemSpacing);
+
+  // Build two identical lists for infinite wrap
+  var listsHTML = '';
+  for (var pass = 0; pass < 2; pass++) {
+    listsHTML += '<div class="codex-scroll-list js-codex-list" ' + (pass === 1 ? 'aria-hidden="true"' : '') + '>';
+    validItems.forEach(function (item, idx) {
+      var url = item.collectionHandle
+        ? '/pages/immersive?open_collection=' + encodeURIComponent(item.collectionHandle)
+        : (item.productHandle ? '/products/' + encodeURIComponent(item.productHandle) : '#');
+      listsHTML +=
+        '<div class="codex-item js-codex-item" data-index="' + idx + '" data-collection-handle="' + (item.collectionHandle || '') + '">' +
+          '<a href="' + url + '" class="codex-link">' +
+            '<h3 class="codex-text">' + (item.title || 'Untitled').toUpperCase() + '</h3>' +
+            '<div class="codex-media js-codex-media">' +
+              '<img src="' + item.imageSrc + '" alt="' + (item.title || '') + '" loading="lazy" class="codex-img is--bw">' +
+              '<p class="codex-media-label">[ EXPLORE COLLECTION ]</p>' +
+            '</div>' +
+          '</a>' +
+        '</div>';
+    });
+    listsHTML += '</div>';
+  }
+
+  wrapper.innerHTML = listsHTML;
+  uiLayer.appendChild(wrapper);
+
+  // Initialize active state on center item
+  var firstList = wrapper.querySelector('.js-codex-list');
+  if (firstList) {
+    var centerIdx = Math.floor(validItems.length / 2);
+    var centerItem = firstList.querySelector('.js-codex-item[data-index="' + centerIdx + '"]');
+    if (centerItem) centerItem.classList.add('is-active');
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -3392,25 +3260,6 @@ function initGalleryCarousel(canvas) {
       s.targetRotY = mx * 0.08;
       s.targetRotX = my * 0.04;
     }
-    if (isCodexList && s.hoverPlane) {
-      // Raycaster hover detection for codex text entries
-      galleryMouse.x = mx;
-      galleryMouse.y = my;
-      // Check if raycaster is properly initialized
-      if (!galleryRaycaster || typeof galleryRaycaster.setFromCamera !== 'function') {
-        return;
-      }
-      galleryRaycaster.setFromCamera(galleryMouse, camera);
-      var hits = galleryRaycaster.intersectObjects(s.planes, false);
-      if (hits.length > 0) {
-        var hit = hits[0].object;
-        if (hit.userData && hit.userData.isTextEntry !== undefined) {
-          // Show hover plane next to the text entry
-          s.hoverPlane.position.set(hit.position.x + 1.2, hit.position.y, hit.position.z + 0.5);
-          s.hoverPlane.material.opacity = Math.min(s.hoverPlane.material.opacity + 0.1, 0.95);
-        }
-      }
-    }
   };
   ListenerRegistry.add('gallery-carousel-mouse', canvas, 'mousemove', mouseMoveHandler);
 
@@ -3540,39 +3389,38 @@ function animateGalleryCarousel() {
       }
     });
 
-    // ── Scroll-story specific: LERP scroll + modulo recycling + opacity ──
+    // ── Scroll-story specific: LERP scroll + CSS 3D cylinder rotation ──
     if (isScrollStory) {
       var lerp = state.lerpFactor || 0.1;
       var prev = state.currentScrollY;
       // Core LERP: current += (target - current) * factor
       state.currentScrollY += (state.targetScrollY - state.currentScrollY) * lerp;
-      // Scroll velocity for shader
+      // Scroll velocity (for potential future use)
       var velocity = state.currentScrollY - prev;
-      // Apply scroll to group Y position
-      state.group.position.y = state.currentScrollY;
-      // Modulo recycling: wrap items that exit viewport
-      var totalH = state.totalHeight;
-      var halfH = totalH / 2;
-      state.planes.forEach(function (plane) {
-        if (!plane.userData) return;
-        var y = plane.userData.initialY + state.currentScrollY;
-        // Modulo wrap for infinite scroll
-        y = ((y + halfH) % totalH) - halfH;
-        plane.position.y = y;
-        // Opacity based on distance from center (hover revelation)
-        var dist = Math.abs(y);
-        var t = Math.min(dist / (state.itemSpacing * 2.0), 1.0);
-        var opacity = 1.0 - t * t * (3.0 - 2.0 * t); // smoothstep
-        if (plane.material && plane.material.opacity !== undefined) {
-          plane.material.opacity = opacity;
-        }
-      });
-      // Update shader uniforms
-      if (state.sharedUniforms) {
-        state.sharedUniforms.uTime.value = performance.now() * 0.001;
-        state.sharedUniforms.uScrollY.value = state.currentScrollY;
-        state.sharedUniforms.uVelocity.value = velocity;
+
+      // Drive CSS 3D cylinder: map scrollY to rotation degrees
+      // Multiplier 0.15 maps scroll distance to cylinder rotation
+      var rotationDeg = state.currentScrollY * 0.15;
+      var storyList = document.querySelector('.js-story-list');
+      if (storyList) {
+        storyList.style.transform = 'rotateY(' + rotationDeg + 'deg)';
       }
+
+      // Opacity fade for panels based on angular distance from front (0°)
+      // Front-facing panel is at rotationDeg ≈ 0 mod 360
+      var frontAngle = ((-rotationDeg % 360) + 360) % 360;
+      var panels = document.querySelectorAll('.js-story-panel');
+      var itemCount = panels.length;
+      var theta = itemCount > 0 ? 360 / itemCount : 0;
+      panels.forEach(function (panel) {
+        var idx = parseInt(panel.dataset.index, 10);
+        var panelAngle = (idx * theta) % 360;
+        // Angular distance from front
+        var diff = Math.abs(panelAngle - frontAngle);
+        diff = diff > 180 ? 360 - diff : diff;
+        var t = Math.min(diff / 90, 1); // 90° = fully faded
+        panel.style.opacity = 0.4 + 0.6 * (1 - t * t * (3 - 2 * t)); // smoothstep
+      });
     }
     // ── Scroll-tunnel specific: move camera through Z-axis tunnel ──
     if (isScrollTunnel) {
@@ -3634,25 +3482,39 @@ function animateGalleryCarousel() {
       state.sharedUniforms.uScrollZ.value = state.scrollZ;
     }
   } else if (isCodexList) {
-    // ── Codex: LERP scroll + modulo recycling + hover plane ──
+    // ── Codex: LERP scroll + modulo recycling + DOM active item ──
     var _cdLerp = state.lerpFactor || 0.12;
     state.scrollY += (state.targetScrollY - state.scrollY) * _cdLerp;
+
+    // Apply scroll to DOM wrapper
+    var wrapper = document.querySelector('#codex-overlay');
+    if (wrapper) {
+      wrapper.style.transform = 'translateY(' + state.scrollY + 'px)';
+    }
+
     // Modulo recycling for infinite scroll
     var _cdTotalH = state.totalHeight || state.cardCount * (state.itemSpacing || 1.8);
     var _cdHalfH = _cdTotalH / 2;
-    state.planes.forEach(function (plane) {
-      if (!plane.userData) return;
-      var y = plane.userData.baseY + state.scrollY;
-      y = ((y + _cdHalfH) % _cdTotalH) - _cdHalfH;
-      plane.position.y = y;
-      var dist = Math.abs(y);
-      var t = Math.min(dist / ((state.itemSpacing || 1.8) * 2), 1);
-      if (plane.material) plane.material.opacity = 0.95 * (1 - t * t);
+
+    // Calculate which item is at viewport center (50vh) and set .is-active
+    var vpCenter = window.innerHeight * 0.5;
+    var lists = document.querySelectorAll('#codex-overlay .js-codex-list:not([aria-hidden])');
+    lists.forEach(function (list) {
+      var items = list.querySelectorAll('.js-codex-item');
+      items.forEach(function (item) {
+        var baseY = parseInt(item.dataset.index, 10) * (state.itemSpacing || 1.8);
+        var y = baseY + state.scrollY;
+        y = ((y + _cdHalfH) % _cdTotalH) - _cdHalfH;
+        var screenY = vpCenter + y;
+        var dist = Math.abs(screenY - vpCenter);
+        var threshold = (state.itemSpacing || 1.8) * 0.5;
+        if (dist < threshold) {
+          item.classList.add('is-active');
+        } else {
+          item.classList.remove('is-active');
+        }
+      });
     });
-    // Hover plane: find closest text entry to mouse and show its image
-    if (state.hoverPlane && state.hoverPlane.material) {
-      state.hoverPlane.material.opacity *= 0.9; // fade out when not hovering
-    }
   } else if (isArtifactGallery) {
     // ── Artifact Gallery: mouse parallax + glass shader hover ──
     var _agTime = performance.now() * 0.001;

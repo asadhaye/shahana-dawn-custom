@@ -3346,3 +3346,290 @@
 .immersive-editorial--source[hidden] {
   display: none !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CODEX — Brutalist DOM Overlay (Phase 2)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#codex-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+  will-change: transform;
+  contain: layout paint;
+}
+
+.codex-scroll-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.codex-scroll-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.codex-item {
+  flex: 0 0 auto;
+  height: 12vh;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  padding: 0 2.5rem;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.codex-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.codex-text {
+  font-family: var(--luxury-font-heading, Georgia, serif);
+  font-size: clamp(4rem, 12vw, 14rem);
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: #222222;
+  mix-blend-mode: difference;
+  white-space: nowrap;
+  flex: 1;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.codex-media {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60vw;
+  max-width: 700px;
+  aspect-ratio: 3 / 4;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.codex-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.codex-img.is--bw {
+  filter: grayscale(100%);
+}
+
+.codex-media-label {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(34, 34, 34, 0.7);
+  white-space: nowrap;
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+
+/* Active state — center item */
+.codex-item.is-active .codex-media {
+  opacity: 1;
+  z-index: 10;
+}
+
+.codex-item.is-active .codex-text {
+  color: #ffffff;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .codex-media {
+    transition: none !important;
+  }
+  .codex-text {
+    transition: none !important;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .codex-item {
+    height: 10vh;
+    min-height: 60px;
+    padding: 0 1.25rem;
+  }
+  .codex-link {
+    gap: 1.5rem;
+  }
+  .codex-text {
+    font-size: clamp(3rem, 10vw, 8rem);
+  }
+  .codex-media {
+    width: 80vw;
+    max-width: 400px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STORY CAROUSEL — Pure CSS 3D Cylindrical Carousel (Phase 3)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+#story-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+  contain: layout paint;
+}
+
+.story-carousel-wrapper {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  pointer-events: auto;
+}
+
+.story-carousel-list {
+  position: relative;
+  width: 40vw;
+  max-width: 500px;
+  aspect-ratio: 3 / 4;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: auto;
+}
+
+.story-carousel-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  backface-visibility: hidden;
+  transition: opacity 0.3s ease;
+}
+
+.story-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.story-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
+}
+
+.story-link:hover .story-img,
+.story-link:focus-visible .story-img {
+  transform: scale(1.03);
+}
+
+.story-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem;
+  margin: 0;
+  font-family: var(--luxury-font-heading, Georgia, serif);
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  background: linear-gradient(to top, rgba(10, 15, 30, 0.95), transparent);
+  pointer-events: none;
+}
+
+/* scroll-narrative variant (flat Y-axis list) */
+.story-narrative-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+  overflow-y: auto;
+  perspective: 1000px;
+}
+
+.story-narrative-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 6rem 2rem;
+  pointer-events: auto;
+}
+
+.story-narrative-panel {
+  width: 80%;
+  max-width: 500px;
+  aspect-ratio: 3 / 4;
+  perspective: 1000px;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  pointer-events: auto;
+}
+
+.story-narrative-panel:hover {
+  transform: translateY(-8px) rotateX(2deg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 768px) {
+  .story-carousel-list {
+    width: 70vw;
+    max-width: 340px;
+  }
+  .story-title {
+    font-size: clamp(0.875rem, 3vw, 1.25rem);
+    padding: 1rem;
+  }
+  .story-narrative-panel {
+    width: 90%;
+    max-width: 400px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-carousel-list,
+  .story-carousel-panel,
+  .story-img,
+  .story-narrative-panel {
+    transition: none !important;
+    animation: none !important;
+  }
+}

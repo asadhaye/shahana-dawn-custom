@@ -37,5 +37,8 @@
   },
   "homepage": "https://github.com/asadhaye/shahana-dawn-custom#readme",
   "license": "ISC",
-  "threeJsVersion": "r150 (vendored as assets/three.min.js — cannot upgrade to r160+ which dropped script-tag builds)"
+  "threeJsVersion": "r150 (vendored as assets/three.min.js — cannot upgrade to r160+ which dropped script-tag builds)",
+  "dependencies": {
+    "threejs-devtools-mcp": "^0.4.1"
+  }
 }
