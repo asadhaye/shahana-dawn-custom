@@ -1378,7 +1378,7 @@ function _buildScrollStory(roomKey, scene, group, planes, labels, textures, text
     planes: [],
     labels: [],
     textures: textures,
-    layout: isScrollStory ? 'scroll-story' : (isScrollNarrative ? 'scroll-narrative' : 'helix'),
+    layout: isScrollStory ? 'scroll-story' : isScrollNarrative ? 'scroll-narrative' : 'helix',
     isScrollStory: isScrollStory,
     isScrollNarrative: isScrollNarrative,
     isScrollDriven: true,
@@ -1400,13 +1400,15 @@ function _buildStoryDOMOverlay(roomKey, items, panelWidth, panelHeight) {
   var existing = uiLayer.querySelector('#story-overlay');
   if (existing) existing.remove();
 
-  var validItems = items.filter(function (item) { return item.imageSrc; });
+  var validItems = items.filter(function (item) {
+    return item.imageSrc;
+  });
   if (!validItems.length) return;
 
   var itemCount = validItems.length;
   var theta = 360 / itemCount;
   // Cylinder radius: (panelWidth/2) / tan(PI/itemCount)
-  var radius = Math.round((panelWidth / 2) / Math.tan(Math.PI / itemCount));
+  var radius = Math.round(panelWidth / 2 / Math.tan(Math.PI / itemCount));
 
   var wrapper = document.createElement('section');
   wrapper.id = 'story-overlay';
@@ -1424,18 +1426,28 @@ function _buildStoryDOMOverlay(roomKey, items, panelWidth, panelHeight) {
   validItems.forEach(function (item, idx) {
     var url = item.collectionHandle
       ? '/pages/immersive?open_collection=' + encodeURIComponent(item.collectionHandle)
-      : (item.productHandle ? '/products/' + encodeURIComponent(item.productHandle) : '#');
+      : item.productHandle
+        ? '/products/' + encodeURIComponent(item.productHandle)
+        : '#';
 
     var panel = document.createElement('div');
     panel.className = 'story-carousel-panel js-story-panel';
     panel.dataset.index = idx;
     // Static structural transform: rotateY(index * theta) translateZ(radius)
-    panel.style.transform = 'rotateY(' + (idx * theta) + 'deg) translateZ(' + radius + 'px)';
+    panel.style.transform = 'rotateY(' + idx * theta + 'deg) translateZ(' + radius + 'px)';
 
     panel.innerHTML =
-      '<a href="' + url + '" class="story-link">' +
-        '<img src="' + item.imageSrc + '" alt="' + (item.title || '') + '" loading="lazy" class="story-img">' +
-        '<h4 class="story-title">' + (item.title || 'Untitled') + '</h4>' +
+      '<a href="' +
+      url +
+      '" class="story-link">' +
+      '<img src="' +
+      item.imageSrc +
+      '" alt="' +
+      (item.title || '') +
+      '" loading="lazy" class="story-img">' +
+      '<h4 class="story-title">' +
+      (item.title || 'Untitled') +
+      '</h4>' +
       '</a>';
 
     list.appendChild(panel);
@@ -1452,7 +1464,9 @@ function _buildScrollNarrativeDOMOverlay(roomKey, items, itemSpacing) {
   var existing = uiLayer.querySelector('#story-overlay');
   if (existing) existing.remove();
 
-  var validItems = items.filter(function (item) { return item.imageSrc; });
+  var validItems = items.filter(function (item) {
+    return item.imageSrc;
+  });
   if (!validItems.length) return;
 
   var wrapper = document.createElement('section');
@@ -1467,17 +1481,27 @@ function _buildScrollNarrativeDOMOverlay(roomKey, items, itemSpacing) {
   validItems.forEach(function (item, idx) {
     var url = item.collectionHandle
       ? '/pages/immersive?open_collection=' + encodeURIComponent(item.collectionHandle)
-      : (item.productHandle ? '/products/' + encodeURIComponent(item.productHandle) : '#');
+      : item.productHandle
+        ? '/products/' + encodeURIComponent(item.productHandle)
+        : '#';
 
     var panel = document.createElement('div');
     panel.className = 'story-narrative-panel js-story-narrative-panel';
     panel.dataset.index = idx;
-    panel.style.top = (-idx * itemSpacing) + 'px';
+    panel.style.top = -idx * itemSpacing + 'px';
 
     panel.innerHTML =
-      '<a href="' + url + '" class="story-link">' +
-        '<img src="' + item.imageSrc + '" alt="' + (item.title || '') + '" loading="lazy" class="story-img">' +
-        '<h4 class="story-title">' + (item.title || 'Untitled') + '</h4>' +
+      '<a href="' +
+      url +
+      '" class="story-link">' +
+      '<img src="' +
+      item.imageSrc +
+      '" alt="' +
+      (item.title || '') +
+      '" loading="lazy" class="story-img">' +
+      '<h4 class="story-title">' +
+      (item.title || 'Untitled') +
+      '</h4>' +
       '</a>';
 
     list.appendChild(panel);
@@ -2212,7 +2236,9 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   }
 
   // ── Load textures ──
-  var validItems = items.filter(function (item) { return item && item.imageSrc; });
+  var validItems = items.filter(function (item) {
+    return item && item.imageSrc;
+  });
   var loadedItems = [];
   var texCache = {};
 
@@ -2288,7 +2314,7 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     var item = loadedItems[shiftIdx].item;
 
     // Proportional image auto-scaling — preserve exact uploaded aspect
-    var imgAspect = (item.imageWidth && item.imageHeight) ? (item.imageWidth / item.imageHeight) : defaultAspect;
+    var imgAspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : defaultAspect;
     var thisCardW = cardW;
     var thisCardH = cardW / imgAspect;
 
@@ -2309,8 +2335,8 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
     var y = gridH / 2 - cardH / 2 - row * (cardH + spacing);
 
     // Procedural interlocking masonry: column-parity Y stagger
-    var staggerAmt = isMobile ? (cardH * 0.35) : (cardH * 0.25);
-    y += (col % 2 === 0) ? staggerAmt : -staggerAmt;
+    var staggerAmt = isMobile ? cardH * 0.35 : cardH * 0.25;
+    y += col % 2 === 0 ? staggerAmt : -staggerAmt;
 
     mesh.position.set(x, y, 0);
 
@@ -2805,7 +2831,9 @@ function _buildCodexDOMOverlay(roomKey, items, itemSpacing) {
   if (existing) existing.remove();
 
   // Only build if we have items with images
-  var validItems = items.filter(function (item) { return item.imageSrc; });
+  var validItems = items.filter(function (item) {
+    return item.imageSrc;
+  });
   if (!validItems.length) return;
 
   var wrapper = document.createElement('section');
@@ -2822,16 +2850,30 @@ function _buildCodexDOMOverlay(roomKey, items, itemSpacing) {
     validItems.forEach(function (item, idx) {
       var url = item.collectionHandle
         ? '/pages/immersive?open_collection=' + encodeURIComponent(item.collectionHandle)
-        : (item.productHandle ? '/products/' + encodeURIComponent(item.productHandle) : '#');
+        : item.productHandle
+          ? '/products/' + encodeURIComponent(item.productHandle)
+          : '#';
       listsHTML +=
-        '<div class="codex-item js-codex-item" data-index="' + idx + '" data-collection-handle="' + (item.collectionHandle || '') + '">' +
-          '<a href="' + url + '" class="codex-link">' +
-            '<h3 class="codex-text">' + (item.title || 'Untitled').toUpperCase() + '</h3>' +
-            '<div class="codex-media js-codex-media">' +
-              '<img src="' + item.imageSrc + '" alt="' + (item.title || '') + '" loading="lazy" class="codex-img is--bw">' +
-              '<p class="codex-media-label">[ EXPLORE COLLECTION ]</p>' +
-            '</div>' +
-          '</a>' +
+        '<div class="codex-item js-codex-item" data-index="' +
+        idx +
+        '" data-collection-handle="' +
+        (item.collectionHandle || '') +
+        '">' +
+        '<a href="' +
+        url +
+        '" class="codex-link">' +
+        '<h3 class="codex-text">' +
+        (item.title || 'Untitled').toUpperCase() +
+        '</h3>' +
+        '<div class="codex-media js-codex-media">' +
+        '<img src="' +
+        item.imageSrc +
+        '" alt="' +
+        (item.title || '') +
+        '" loading="lazy" class="codex-img is--bw">' +
+        '<p class="codex-media-label">[ EXPLORE COLLECTION ]</p>' +
+        '</div>' +
+        '</a>' +
         '</div>';
     });
     listsHTML += '</div>';
@@ -3335,16 +3377,17 @@ function animateGalleryCarousel() {
     }
 
     // Apply position with row parallax + infinite wrap
-    var cellW = (state.cardW + state.spacing) || 1;
-    var cellH = (state.cardH + state.spacing) || 1;
+    var cellW = state.cardW + state.spacing || 1;
+    var cellH = state.cardH + state.spacing || 1;
     var wrapX = state.cols * cellW;
     var wrapY = state.rows * cellH;
     state.planes.forEach(function (plane) {
       var pm = plane.userData.parallaxMult || 1;
       // Wrap position modulo grid width for seamless infinite drag
       var rawX = plane.baseX + state.currentX * pm;
-      var wrappedX = wrapX > 0 ? ((rawX % wrapX) + wrapX) % wrapX - wrapX * 0.5 : rawX;
-      var wrappedY = wrapY > 0 ? ((plane.baseY + state.currentY * pm) % wrapY) - wrapY * 0.5 : plane.baseY + state.currentY * pm;
+      var wrappedX = wrapX > 0 ? (((rawX % wrapX) + wrapX) % wrapX) - wrapX * 0.5 : rawX;
+      var wrappedY =
+        wrapY > 0 ? ((plane.baseY + state.currentY * pm) % wrapY) - wrapY * 0.5 : plane.baseY + state.currentY * pm;
       plane.position.x = wrappedX;
       plane.position.y = wrappedY;
     });
@@ -4763,6 +4806,8 @@ function initImmersiveScene() {
 
   planeMesh = new THREE.Mesh(geometry, material);
   planeMesh.name = 'RoomBasePlane';
+  // Scale up backdrop by 20% to prevent edge leak during parallax/camera pan
+  planeMesh.scale.multiplyScalar(1.2);
   scene.add(planeMesh);
 
   updateCanvasRect();
@@ -6561,17 +6606,25 @@ function initHeaderDock() {
   window.addEventListener('mousedown', function () {
     header.classList.add('is-hidden');
   });
-  window.addEventListener('touchstart', function () {
-    header.classList.add('is-hidden');
-  }, { passive: true });
+  window.addEventListener(
+    'touchstart',
+    function () {
+      header.classList.add('is-hidden');
+    },
+    { passive: true },
+  );
 
   // 2. Show the header when they release the drag
   window.addEventListener('mouseup', function () {
     header.classList.remove('is-hidden');
   });
-  window.addEventListener('touchend', function () {
-    header.classList.remove('is-hidden');
-  }, { passive: true });
+  window.addEventListener(
+    'touchend',
+    function () {
+      header.classList.remove('is-hidden');
+    },
+    { passive: true },
+  );
 
   // 3. Proximity Sensor (The MacBook effect)
   // If the mouse moves into the top 120px of the screen, force the header to show

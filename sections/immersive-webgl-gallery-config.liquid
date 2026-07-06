@@ -1,223 +1,300 @@
-{%- comment -%}
-  Immersive WebGL Gallery Config ("gallery-stage")
-
-  This section does NOT render its own canvas or visual UI.
-  It exposes a semantic list of gallery entries in the DOM so that
-  assets/immersive-store.js can:
-    - Query [data-immersive-webgl-gallery-config][data-room-key=...]
-    - Read each .immersive-webgl-gallery-config__item
-    - Load its <img> as a WebGL texture
-    - Use title / subtitle / product / collection metadata to drive interactions
-
-  This is intentionally "headless" and room-scoped.
-  Adapted for Shahana Collection — Pakistani luxury fashion.
-
-  TODO: Schema label strings (e.g., "Gallery Layout for this room", "Default",
-  "Asymmetric Gallery") are currently hardcoded English. In a future iteration,
-  these should be converted to Liquid `| t` translation keys (e.g.,
-  "t:sections.immersive_webgl_gallery.layout_label") for multi-language support.
-  This is deferred to avoid breaking existing theme editor configurations.
-{%- endcomment -%}
+{% comment %}
+  Immersive WebGL Gallery Config Section
+  Allows merchants to configure WebGL gallery layouts for specific rooms.
+  Supports all 9 layouts from LAYOUT_REGISTRY:
+  - asymmetric-gallery, scroll-narrative, masonry-featured
+  - infinite-drag-gallery, scroll-story, scroll-tunnel
+  - narrative-story, codex-list, artifact-gallery
+{% endcomment %}
 
 <section
-  id="immersive-webgl-gallery-config-{{ section.id }}"
+  id="immersive-webgl-gallery-{{ section.id }}"
   class="immersive-webgl-gallery-config"
-  aria-hidden="true"
-  data-immersive-webgl-gallery-config
-  data-room-key="{{ section.settings.room_key }}"
-  {%- if section.settings.layout -%}
+  data-section-id="{{ section.id }}"
+  data-room-key="{{ section.settings.room_key | escape }}"
   data-layout="{{ section.settings.layout | escape }}"
-  {%- endif -%}
+  {% unless request.design_mode %}hidden{% endunless %}
+  {% unless request.design_mode %}aria-hidden="true"{% endunless %}
 >
-  {%- assign has_items = false -%}
-
-  <ul class="immersive-webgl-gallery-config__list" role="list">
-    {%- for block in section.blocks -%}
-      {%- if block.type == 'gallery_item' -%}
-        {%- assign has_items = true -%}
-        {%- assign product_obj = block.settings.product -%}
-        {%- assign collection_obj = block.settings.collection -%}
-        {%- assign room_key = section.settings.room_key -%}
-
-        <li
-          class="immersive-webgl-gallery-config__item"
-          {{ block.shopify_attributes }}
-          data-gallery-index="{{ forloop.index0 }}"
-          data-gallery-room="{{ room_key }}"
-          {%- if block.settings.title != blank -%}
-            data-gallery-title="{{ block.settings.title | escape }}"
-          {%- endif -%}
-          {%- if block.settings.subtitle != blank -%}
-            data-gallery-subtitle="{{ block.settings.subtitle | escape }}"
-          {%- endif -%}
-          {%- if product_obj -%}
-            data-gallery-product-handle="{{ product_obj.handle }}"
-            data-gallery-product-id="{{ product_obj.id }}"
-          {%- endif -%}
-          {%- if collection_obj -%}
-            data-gallery-collection-handle="{{ collection_obj.handle }}"
-          {%- endif -%}
-        >
-          {%- if block.settings.image -%}
-            {%- assign img_w = block.settings.image.width | default: 1440 -%}
-            {%- assign img_h = block.settings.image.height | default: 810 -%}
-            {%- assign img_src = block.settings.image -%}
-            {%- if img_src contains 'shopify://shop_images/' -%}
-              {%- assign filename = img_src | remove: 'shopify://shop_images/' -%}
-              {%- capture gallery_img -%}/cdn/shop/files/{{ filename | split: '?' | first }}?width={{ img_w }}&height={{ img_h }}&crop=center{%- endcapture -%}
-            {%- else -%}
-              {%- assign gallery_img = img_src | image_url: width: img_w, height: img_h, quality: 75 -%}
-            {%- endif -%}
-            <img
-              class="immersive-webgl-gallery-config__img"
-              src="{{ gallery_img }}"
-              alt="{{ block.settings.title | default: block.settings.subtitle | escape }}"
-              width="{{ img_w }}"
-              height="{{ img_h }}"
-              loading="eager"
-              decoding="async"
-            >
-          {%- endif -%}
-        </li>
-      {%- endif -%}
-    {%- endfor -%}
-  </ul>
-
-  {%- unless has_items -%}
-    <p class="immersive-webgl-gallery-config__empty">
-      {{ 'sections.immersive_webgl_gallery.empty_state' | t }}
-    </p>
-  {%- endunless -%}
+  {%- comment -%}Gallery items rendered by JS based on layout config{%- endcomment -%}
+  <div class="immersive-webgl-gallery__container"></div>
 </section>
-
-{% stylesheet %}
-  .immersive-webgl-gallery-config {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
-    z-index: -1;
-    view-transition-name: immersive-gallery-config;
-  }
-{% endstylesheet %}
-
-{% javascript %}
-  (function () {
-    // This section is primarily a data provider for assets/immersive-store.js.
-    // It exposes a global registry that the immersive engine reads on room entry.
-    var configs = document.querySelectorAll('[data-immersive-webgl-gallery-config]');
-    if (!configs.length) return;
-
-    if (!window.immersiveWebglGalleryConfigs) {
-      window.immersiveWebglGalleryConfigs = {};
-    }
-
-    configs.forEach(function (configEl) {
-      var roomKey = configEl.getAttribute('data-room-key') || 'storefront';
-      var items = Array.prototype.slice
-        .call(configEl.querySelectorAll('.immersive-webgl-gallery-config__item'))
-        .map(function (itemEl) {
-          var imgEl = itemEl.querySelector('.immersive-webgl-gallery-config__img');
-          return {
-            index: parseInt(itemEl.dataset.galleryIndex || '0', 10),
-            room: itemEl.dataset.galleryRoom || roomKey,
-            title: itemEl.dataset.galleryTitle || '',
-            subtitle: itemEl.dataset.gallerySubtitle || '',
-            productHandle: itemEl.dataset.galleryProductHandle || null,
-            productId: itemEl.dataset.galleryProductId || null,
-            collectionHandle: itemEl.dataset.galleryCollectionHandle || null,
-            imageSrc: imgEl ? imgEl.src : null,
-            imageWidth: imgEl ? imgEl.width : null,
-            imageHeight: imgEl ? imgEl.height : null,
-          };
-        });
-
-      window.immersiveWebglGalleryConfigs[roomKey] = items;
-
-      // Dispatch event so immersive-core can rebuild gallery stage
-      try {
-        var evt = new CustomEvent('immersive:galleryConfigReady', {
-          detail: { roomKey: roomKey, itemCount: items.length },
-        });
-        document.dispatchEvent(evt);
-      } catch (e) {}
-    });
-  })();
-{% endjavascript %}
 
 {% schema %}
 {
   "name": "t:sections.immersive_webgl_gallery.name",
-  "max_blocks": 24,
+  "tag": "section",
+  "class": "section",
   "settings": [
     {
       "type": "select",
       "id": "room_key",
-      "label": "t:sections.immersive_webgl_gallery.room_key_label",
+      "default": "featured_collections",
+      "label": "t:sections.immersive_webgl_gallery.settings.room_key.label",
+      "info": "t:sections.immersive_webgl_gallery.settings.room_key.info",
       "options": [
-        { "value": "storefront", "label": "t:sections.immersive_webgl_gallery.room_storefront" },
-        { "value": "lounge", "label": "t:sections.immersive_webgl_gallery.room_lounge" },
-        { "value": "designer_houses", "label": "t:sections.immersive_webgl_gallery.room_designer_houses" },
-        { "value": "occasions", "label": "t:sections.immersive_webgl_gallery.room_occasions" },
-        { "value": "featured_collections", "label": "t:sections.immersive_webgl_gallery.room_featured_collections" }
-      ],
-      "default": "featured_collections"
+        { "value": "designer_houses", "label": "Designer Houses" },
+        { "value": "occasions", "label": "Occasions" },
+        { "value": "featured_collections", "label": "Featured Collections" }
+      ]
     },
     {
       "type": "select",
       "id": "layout",
-      "label": "Gallery Layout for this room",
+      "default": "asymmetric-gallery",
+      "label": "t:sections.immersive_webgl_gallery.settings.layout.label",
+      "info": "t:sections.immersive_webgl_gallery.settings.layout.info",
       "options": [
+        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
+        { "value": "scroll-narrative", "label": "Scroll Narrative" },
+        { "value": "masonry-featured", "label": "Masonry Featured" },
+        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery" },
         { "value": "scroll-story", "label": "Scroll Story" },
         { "value": "scroll-tunnel", "label": "Scroll Tunnel" },
-        { "value": "masonry-featured", "label": "Masonry Featured" },
-        { "value": "asymmetric-gallery", "label": "Asymmetric Gallery" },
         { "value": "narrative-story", "label": "Narrative Story" },
         { "value": "codex-list", "label": "Codex List" },
-        { "value": "artifact-gallery", "label": "Artifact Gallery" },
-        { "value": "infinite-drag-gallery", "label": "Infinite Drag Gallery" },
-        { "value": "scroll-narrative", "label": "Scroll Narrative" }
+        { "value": "artifact-gallery", "label": "Artifact Gallery" }
       ]
+    },
+    {
+      "type": "range",
+      "id": "max_items",
+      "min": 3,
+      "max": 24,
+      "step": 1,
+      "default": 12,
+      "label": "Maximum Items",
+      "info": "Limit the number of items displayed in this gallery"
+    },
+    {
+      "type": "checkbox",
+      "id": "draggable",
+      "default": true,
+      "label": "Enable Dragging",
+      "info": "Allow users to drag the gallery"
+    },
+    {
+      "type": "checkbox",
+      "id": "physics",
+      "default": true,
+      "label": "Enable Physics",
+      "info": "Apply inertia and physics to gallery movement"
+    },
+    {
+      "type": "checkbox",
+      "id": "shader_effects",
+      "default": true,
+      "label": "Shader Effects",
+      "info": "Enable WebGL shader effects on hover/scroll"
+    },
+    {
+      "type": "range",
+      "id": "parallax_strength",
+      "min": 0,
+      "max": 2,
+      "step": 0.1,
+      "default": 0.6,
+      "label": "Parallax Strength",
+      "info": "Intensity of mouse parallax effect"
     }
   ],
   "blocks": [
     {
       "type": "gallery_item",
-      "name": "t:sections.immersive_webgl_gallery.item_name",
+      "name": "t:sections.immersive_webgl_gallery.blocks.gallery_item.name",
+      "limit": 50,
       "settings": [
         {
           "type": "image_picker",
           "id": "image",
-          "label": "t:sections.immersive_webgl_gallery.image_label"
+          "label": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.image.label"
         },
         {
           "type": "text",
           "id": "title",
-          "label": "t:sections.immersive_webgl_gallery.title_label"
+          "label": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.title.label",
+          "default": "Collection Title"
         },
         {
           "type": "text",
           "id": "subtitle",
-          "label": "t:sections.immersive_webgl_gallery.subtitle_label"
+          "label": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.subtitle.label",
+          "default": ""
         },
         {
           "type": "product",
           "id": "product",
-          "label": "t:sections.immersive_webgl_gallery.product_label"
+          "label": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.product.label",
+          "info": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.product.info"
         },
         {
           "type": "collection",
           "id": "collection",
-          "label": "t:sections.immersive_webgl_gallery.collection_label"
+          "label": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.collection.label",
+          "info": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.collection.info"
+        },
+        {
+          "type": "url",
+          "id": "cta_url",
+          "label": "t:sections.immersive_webgl_gallery.blocks.gallery_item.settings.cta_url.label"
         }
       ]
     }
   ],
   "presets": [
     {
-      "name": "t:sections.immersive_webgl_gallery.preset_name"
+      "name": "t:sections.immersive_webgl_gallery.presets.asymmetric_gallery.name",
+      "settings": {
+        "room_key": "designer_houses",
+        "layout": "asymmetric-gallery",
+        "max_items": 12,
+        "draggable": true,
+        "physics": true,
+        "shader_effects": true,
+        "parallax_strength": 0.8
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Designer One" } },
+        { "type": "gallery_item", "settings": { "title": "Designer Two" } },
+        { "type": "gallery_item", "settings": { "title": "Designer Three" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.scroll_narrative.name",
+      "settings": {
+        "room_key": "occasions",
+        "layout": "scroll-narrative",
+        "max_items": 8,
+        "draggable": false,
+        "physics": false,
+        "shader_effects": true,
+        "parallax_strength": 0.4
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Eid Collection" } },
+        { "type": "gallery_item", "settings": { "title": "Bridal & Mehndi" } },
+        { "type": "gallery_item", "settings": { "title": "Luxury Formals" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.masonry_featured.name",
+      "settings": {
+        "room_key": "featured_collections",
+        "layout": "masonry-featured",
+        "max_items": 9,
+        "draggable": true,
+        "physics": false,
+        "shader_effects": true,
+        "parallax_strength": 0.6
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Featured Collection" } },
+        { "type": "gallery_item", "settings": { "title": "Summer Pret" } },
+        { "type": "gallery_item", "settings": { "title": "Luxury Pret" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.infinite_drag_gallery.name",
+      "settings": {
+        "room_key": "featured_collections",
+        "layout": "infinite-drag-gallery",
+        "max_items": 16,
+        "draggable": true,
+        "physics": true,
+        "shader_effects": true,
+        "parallax_strength": 0
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Item One" } },
+        { "type": "gallery_item", "settings": { "title": "Item Two" } },
+        { "type": "gallery_item", "settings": { "title": "Item Three" } },
+        { "type": "gallery_item", "settings": { "title": "Item Four" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.scroll_story.name",
+      "settings": {
+        "room_key": "designer_houses",
+        "layout": "scroll-story",
+        "max_items": 12,
+        "draggable": true,
+        "physics": true,
+        "shader_effects": true,
+        "parallax_strength": 0
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Story Item" } },
+        { "type": "gallery_item", "settings": { "title": "Story Item" } },
+        { "type": "gallery_item", "settings": { "title": "Story Item" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.scroll_tunnel.name",
+      "settings": {
+        "room_key": "occasions",
+        "layout": "scroll-tunnel",
+        "max_items": 10,
+        "draggable": true,
+        "physics": true,
+        "shader_effects": true,
+        "parallax_strength": 0
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Tunnel Item" } },
+        { "type": "gallery_item", "settings": { "title": "Tunnel Item" } },
+        { "type": "gallery_item", "settings": { "title": "Tunnel Item" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.narrative_story.name",
+      "settings": {
+        "room_key": "occasions",
+        "layout": "narrative-story",
+        "max_items": 8,
+        "draggable": true,
+        "physics": false,
+        "shader_effects": true,
+        "parallax_strength": 0
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Narrative Chapter" } },
+        { "type": "gallery_item", "settings": { "title": "Narrative Chapter" } },
+        { "type": "gallery_item", "settings": { "title": "Narrative Chapter" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.codex_list.name",
+      "settings": {
+        "room_key": "designer_houses",
+        "layout": "codex-list",
+        "max_items": 15,
+        "draggable": true,
+        "physics": false,
+        "shader_effects": true,
+        "parallax_strength": 0
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Codex Entry" } },
+        { "type": "gallery_item", "settings": { "title": "Codex Entry" } },
+        { "type": "gallery_item", "settings": { "title": "Codex Entry" } }
+      ]
+    },
+    {
+      "name": "t:sections.immersive_webgl_gallery.presets.artifact_gallery.name",
+      "settings": {
+        "room_key": "featured_collections",
+        "layout": "artifact-gallery",
+        "max_items": 12,
+        "draggable": true,
+        "physics": false,
+        "shader_effects": true,
+        "parallax_strength": 0.1
+      },
+      "blocks": [
+        { "type": "gallery_item", "settings": { "title": "Artifact" } },
+        { "type": "gallery_item", "settings": { "title": "Artifact" } },
+        { "type": "gallery_item", "settings": { "title": "Artifact" } }
+      ]
     }
   ]
 }

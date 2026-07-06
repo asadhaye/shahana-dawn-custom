@@ -740,20 +740,48 @@
   },
 
   "immersive_webgl_gallery": {
-    "name": "Immersive gallery",
-    "preset_name": "Immersive gallery",
-    "room_key_label": "Room to target",
-    "room_storefront": "Storefront",
-    "room_lounge": "Lounge",
-    "room_designer_houses": "Designer houses",
-    "room_occasions": "Occasions",
-    "room_featured_collections": "Featured collections",
-    "item_name": "Gallery item",
-    "image_label": "Gallery image",
-    "title_label": "Title",
-    "subtitle_label": "Subtitle",
-    "product_label": "Linked product (optional)",
-    "collection_label": "Linked collection (optional)"
+    "name": "Immersive WebGL Gallery",
+    "preset_name": "Immersive WebGL Gallery",
+    "settings": {
+      "room_key": {
+        "label": "Room to target",
+        "info": "Select which immersive room this gallery will appear in"
+      },
+      "layout": {
+        "label": "Gallery Layout",
+        "info": "Choose the visual layout style for this gallery"
+      }
+    },
+    "blocks": {
+      "gallery_item": {
+        "name": "Gallery item",
+        "settings": {
+          "image": { "label": "Gallery image" },
+          "title": { "label": "Title" },
+          "subtitle": { "label": "Subtitle" },
+          "product": {
+            "label": "Linked product (optional)",
+            "info": "Link to a specific product"
+          },
+          "collection": {
+            "label": "Linked collection (optional)",
+            "info": "Link to a collection"
+          },
+          "cta_url": { "label": "Custom CTA URL" }
+        }
+      }
+    },
+    "presets": {
+      "asymmetric_gallery": { "name": "Asymmetric Gallery" },
+      "scroll_narrative": { "name": "Scroll Narrative" },
+      "masonry_featured": { "name": "Masonry Featured" },
+      "infinite_drag_gallery": { "name": "Infinite Drag Gallery" },
+      "scroll_story": { "name": "Scroll Story" },
+      "scroll_tunnel": { "name": "Scroll Tunnel" },
+      "narrative_story": { "name": "Narrative Story" },
+      "codex_list": { "name": "Codex List" },
+      "artifact_gallery": { "name": "Artifact Gallery" }
+    }
   },
 
   "codex_collections_hub": {
