@@ -480,6 +480,7 @@ var LAYOUT_REGISTRY = {
       draggable: true,
       physics: true,
       parallaxStrength: 0.08,
+      scrollDriven: true,
     },
   },
   'scroll-narrative': {
@@ -617,6 +618,43 @@ function getLayoutForRoom(roomKey) {
   return null;
 }
 
+/**
+ * Validates layout/room compatibility and configuration
+ * @param {string} layout - The layout type
+ * @param {string} room - The room context
+ * @returns {object} { valid: boolean, message: string }
+ */
+function validateImmersiveConfig(layout, room) {
+  var validCombinations = {
+    'asymmetric-gallery': ['designer_houses'],
+    'scroll-narrative': ['occasions'],
+    'masonry-featured': ['featured_collections'],
+    'infinite-drag-gallery': ['designer_houses', 'occasions', 'featured_collections'],
+    'scroll-story': ['designer_houses', 'occasions', 'featured_collections'],
+    'scroll-tunnel': ['designer_houses', 'occasions', 'featured_collections'],
+    'narrative-story': ['occasions', 'designer_houses', 'featured_collections'],
+    'codex-list': ['designer_houses', 'occasions', 'featured_collections'],
+    'artifact-gallery': ['featured_collections', 'designer_houses', 'occasions'],
+  };
+
+  if (!validCombinations[layout]) {
+    return { valid: false, message: 'Unknown layout type: ' + layout };
+  }
+
+  if (validCombinations[layout].indexOf(room) === -1) {
+    return {
+      valid: false,
+      message: 'Layout \'' + layout + '\' is not optimized for room \'' + room + '\'. Recommended: ' + validCombinations[layout].join(', ')
+    };
+  }
+
+  return { valid: true, message: 'Configuration valid' };
+}
+
+// Usage in your init function:
+// var validation = validateImmersiveConfig(data.layout, data.roomContext);
+// if (!validation.valid) console.warn(validation.message);
+
 function applyLayoutToRoom(roomKey, layoutKey) {
   if (!LAYOUT_REGISTRY[layoutKey]) {
     console.error('[Immersive] Layout not found:', layoutKey);
@@ -720,48 +758,39 @@ function disposeGalleryStage(roomKey) {
   if (state.group) {
     state.group.traverse(function (obj) {
       if (obj.isMesh) {
-        if (obj.geometry) {
-          try {
-            obj.geometry.dispose();
-          } catch (e) {}
-        }
+        // NOTE: Skip individual geometry disposal — Indrajaal grid uses shared geometry.
+        // Shared geometry is disposed once below via state.sharedGeom.
         if (obj.material) {
           if (Array.isArray(obj.material)) {
             obj.material.forEach(function (m) {
               if (m.map) {
-                try {
-                  m.map.dispose();
-                } catch (e) {}
+                try { m.map.dispose(); } catch (e) {}
               }
-              try {
-                m.dispose();
-              } catch (e) {}
+              try { m.dispose(); } catch (e) {}
             });
           } else {
             if (obj.material.map) {
-              try {
-                obj.material.map.dispose();
-              } catch (e) {}
+              try { obj.material.map.dispose(); } catch (e) {}
             }
-            try {
-              obj.material.dispose();
-            } catch (e) {}
+            try { obj.material.dispose(); } catch (e) {}
           }
         }
       }
     });
-    try {
-      scene.remove(state.group);
-    } catch (e) {}
+    try { scene.remove(state.group); } catch (e) {}
+  }
+
+  // Dispose shared geometry (Indrajaal grid) ONCE
+  if (state.sharedGeom) {
+    try { state.sharedGeom.dispose(); } catch (e) {}
+    state.sharedGeom = null;
   }
 
   // Dispose all textures
   if (state.textures) {
     state.textures.forEach(function (tex) {
       if (tex) {
-        try {
-          tex.dispose();
-        } catch (e) {
+        try { tex.dispose(); } catch (e) {
           if (window.__IMMERSIVE_DEV__) {
             console.warn('[Immersive] Texture disposal failed:', tex, e);
           }
@@ -1323,7 +1352,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       });
 
       var mesh = new THREE.Mesh(geom, mat);
-      mesh.name = 'Card_' + (item.index || idx) + '_masonry';
+      mesh.name = 'Card_' + (item.index || index) + '_masonry';
 
       var col, row, x, y, z;
       if (isFeatured) {
@@ -1387,7 +1416,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         var labelH = labelW * (labelCanvas.height / labelCanvas.width);
         var labelGeom = _safePlaneGeometry(labelW, labelH, 'masonry-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        labelMesh.name = 'Label_' + (item.index || idx) + '_masonry';
+        labelMesh.name = 'Label_' + (item.index || index) + '_masonry';
         labelMesh.position.set(x, y - thisCardH * 0.5 - labelH * 0.3, z + 0.01);
         labelMesh.renderOrder = 999;
         group.add(labelMesh);
@@ -1456,7 +1485,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       });
 
       var mesh = new THREE.Mesh(geom, mat);
-      mesh.name = 'Card_' + (item.index || idx) + '_vertical';
+      mesh.name = 'Card_' + (item.index || index) + '_vertical';
       var y = startY - index * cardSpacing;
       mesh.position.set(0, y, 0);
       mesh.rotation.x = THREE.MathUtils.degToRad(tiltDegrees);
@@ -1506,7 +1535,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         var labelH = labelW * (160 / 1024);
         var labelGeom = _safePlaneGeometry(labelW, labelH, 'arc-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        labelMesh.name = 'Label_' + (item.index || idx) + '_vertical';
+        labelMesh.name = 'Label_' + (item.index || index) + '_vertical';
         labelMesh.position.set(0, y - cardH * 0.5 - labelH * 0.6, 0.05);
         labelMesh.renderOrder = 999;
         group.add(labelMesh);
@@ -1576,7 +1605,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
       });
 
       var mesh = new THREE.Mesh(geom, mat);
-      mesh.name = 'Card_' + (item.index || idx) + '_arc';
+      mesh.name = 'Card_' + (item.index || index) + '_arc';
       var angleDeg = startAngle + step * index;
       var rad = (angleDeg * Math.PI) / 180;
       // Arc in XY plane at Z=0.5 (in front of camera at Z=1, within [-1,1] visible range)
@@ -1623,7 +1652,7 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
         var labelH = labelW * (96 / 512);
         var labelGeom = _safePlaneGeometry(labelW, labelH, 'arc-car-label');
         var labelMesh = new THREE.Mesh(labelGeom, labelMat);
-        labelMesh.name = 'Label_' + (item.index || idx) + '_arc';
+        labelMesh.name = 'Label_' + (item.index || index) + '_arc';
         labelMesh.position.set(x, y - arcCardH * 0.55, 0.51);
         labelMesh.lookAt(new THREE.Vector3(0, y - arcCardH * 0.55, 0));
         labelMesh.renderOrder = 999;
@@ -1654,51 +1683,64 @@ function buildGalleryStageForRoom(roomKey, scene, options) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// INFINITE DRAG GALLERY — shared builder
 // ─────────────────────────────────────────────────────────────
-// INDRAAJAL GRID — Premium mobile-first index grid with A/B style variants
-// Dynamic interlocking masonry: proportional scaling, anti-adjacent duplication,
-// column-parity Y stagger for true asymmetric weave.
+// INDRAJAAL GRID — Infinite repeating masonry grid
+// Ghost Grid (CSS Grid) defines the unit cell; JS duplicates items
+// to fill 3× viewport in each direction for seamless infinite drag.
 // ─────────────────────────────────────────────────────────────
 function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, textureLoader, items, options) {
   var cfg = options.layoutConfig || {};
-  var styleVariant = cfg.style || 'default'; // A/B testing: 'default' | 'b' | 'c'
+  var styleVariant = cfg.style || 'default';
   var defaultAspect = options.cardAspect || 2 / 3;
 
-  // ── Viewport-adaptive card sizing ──
+  // ── Viewport / camera dimensions ──
   var vpH = camera.top - camera.bottom;
   var vpW = camera.right - camera.left;
-  var isMobile = vpW < 768 / (window.devicePixelRatio || 1); // mobile breakpoint
+  var canvasEl = renderer && renderer.domElement ? renderer.domElement : null;
+  var canvasRect = canvasEl ? canvasEl.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+  var canvasW = canvasRect.width || window.innerWidth;
+  var canvasH = canvasRect.height || window.innerHeight;
+  var isMobile = canvasW < 768;
 
-  var cols, spacing, cardW, cardH;
+  // ── Ghost Grid: read DOM-computed positions for unit cell size AND per-item placement ──
+    var ghostGridEl = document.querySelector('[data-ghost-grid][data-room-key="' + roomKey + '"]');
+    var ghostItemEls = ghostGridEl ? Array.prototype.slice.call(ghostGridEl.querySelectorAll('.ghost-item')) : [];
 
-  if (isMobile) {
-    // Premium mobile: 2-col interlocking weave, cards at ~85vw scale
-    cols = 2;
-    cardW = (vpW * 0.85) / cols;
-    cardH = cardW / defaultAspect;
-    // Cap to 30% of viewport height (Artifact gallery approach)
-    var maxCardH = vpH * 0.3;
-    if (cardH > maxCardH) {
-      cardH = maxCardH;
-      cardW = cardH * defaultAspect;
-    }
-    spacing = cardW * 0.08;
-  } else {
-    // Desktop: 5-col dense masonry
-    cols = 5;
-    var availableW = vpW * 0.85;
-    spacing = availableW * 0.04; // tight horizontal spacing
-    cardW = availableW / cols;
-    cardH = cardW / defaultAspect;
-    var maxCardH = vpH * 0.45;
-    if (cardH > maxCardH) {
-      cardH = maxCardH;
-      cardW = cardH * defaultAspect;
-    }
+    // Pixel → world unit conversion helpers
+    // Ortho camera: X spans [camera.left, camera.right], Y spans [camera.bottom, camera.top]
+    function pxToWorldX(px) { return (px / canvasW) * vpW; }
+    function pxToWorldY(py) { return -(py / canvasH) * vpH; } // Y inverted: CSS down → WebGL up
+
+    var ghostPositions = [];
+    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+    ghostItemEls.forEach(function (el, idx) {
+      var rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return; // skip un-laid-out items
+      // Center of ghost item, relative to canvas center
+      var centerPxX = (rect.left + rect.width / 2) - canvasRect.left - canvasW / 2;
+      var centerPxY = (rect.top + rect.height / 2) - canvasRect.top - canvasH / 2;
+      var wx = pxToWorldX(centerPxX);
+      var wy = pxToWorldY(centerPxY);
+      ghostPositions.push({ x: wx, y: wy, w: pxToWorldX(rect.width), h: pxToWorldY(rect.height) });
+      minX = Math.min(minX, wx);
+      maxX = Math.max(maxX, wx);
+      minY = Math.min(minY, wy);
+      maxY = Math.max(maxY, wy);
+    });
+
+    var hasGhostGrid = ghostPositions.length > 0;
+    var ghostGridW = hasGhostGrid ? maxX - minX : 0;
+    var ghostGridH = hasGhostGrid ? maxY - minY : 0;
+    var yRange = hasGhostGrid ? maxY - minY : 0;
+
+  if (window.__IMMERSIVE_DEV__) {
+    console.log('[Immersive] Indrajaal grid for room:', roomKey,
+      hasGhostGrid ? 'ghost-grid (' + ghostPositions.length + ' items)' : 'fallback manual',
+      hasGhostGrid ? 'gridW:' + ghostGridW.toFixed(3) + ' gridH:' + ghostGridH.toFixed(3) : '');
   }
 
-  // ── Load textures ──
+  // ── Load textures (unchanged) ──
   var validItems = items.filter(function (item) {
     return item && item.imageSrc;
   });
@@ -1729,99 +1771,139 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   if (loadedItems.length === 0) {
     scene.add(group);
     galleryStageRegistry[roomKey] = {
-      group: group,
-      planes: [],
-      labels: [],
-      textures: textures,
-      layout: 'asymmetric-gallery',
-      cardCount: 0,
-      targetX: 0,
-      currentX: 0,
-      targetY: 0,
-      currentY: 0,
-      gridW: 0,
-      gridH: 0,
-      cols: cols,
-      cardW: cardW,
-      cardH: cardH,
-      spacing: spacing,
-      styleVariant: styleVariant,
+      group: group, planes: [], labels: [], textures: textures,
+      layout: 'asymmetric-gallery', cardCount: 0,
+      targetX: 0, currentX: 0, targetY: 0, currentY: 0,
+      gridW: 0, gridH: 0, cols: 0, cardW: 0, cardH: 0,
+      spacing: 0, styleVariant: styleVariant, isMobile: isMobile,
+      ghostGrid: hasGhostGrid, ghostGridW: 0, ghostGridH: 0,
     };
     return;
   }
 
-  // ── Grid dimensions ──
-  var rows = Math.ceil(loadedItems.length / cols);
-  var gridW = cols * cardW + (cols - 1) * spacing;
-  var gridH = rows * cardH + (rows - 1) * spacing;
-
-  // Parallax multipliers per row (top row moves fastest, deeper rows slower)
-  var rowParallax = [];
-  for (var r = 0; r < rows; r++) {
-    rowParallax.push(1 - r * 0.08);
+  // ── Determine unit cell size from Ghost Grid (or fallback) ──
+  var cellW, cellH, spacingX, spacingY;
+  if (hasGhostGrid && ghostPositions.length > 0) {
+    // Use first ghost item as reference for cell size
+    var ref = ghostPositions[0];
+    cellW = ref.w;
+    cellH = ref.h;
+    // Use CSS gap directly: 1.5vw desktop, 4vw mobile (same for row & column gaps)
+    var cssGapVw = isMobile ? 4 : 1.5; // viewport-width percentage
+    var gapPx = (cssGapVw / 100) * canvasW; // gap in CSS pixels
+    spacingX = (gapPx / canvasW) * vpW; // convert to world X units
+    spacingY = (gapPx / canvasH) * vpH; // convert to world Y units
+  } else {
+    // Fallback: compute from viewport
+    var cols = isMobile ? 2 : 5;
+    var availableW = vpW * 0.85;
+    spacingX = availableW * 0.04;
+    cellW = availableW / cols;
+    cellH = cellW / defaultAspect;
+    var maxCardH = vpH * (isMobile ? 0.3 : 0.45);
+    if (cellH > maxCardH) { cellH = maxCardH; cellW = cellH * defaultAspect; }
+    spacingY = spacingX;
   }
 
-  // ── Shared geometry for performance (single instance, all cards reference it) ──
-  // Cards may have slightly different aspects, so we use a unit geometry and scale
+  // ── INFINITE GRID: Duplicate items to fill 3× viewport in each direction ──
+  // This ensures cards are always visible when dragging toward any edge
+  var tileW, tileH, tilesX, tilesY, totalTiles;
+  var gridTotalW, gridTotalH, firstTileCenterX, firstTileCenterY;
+
+  if (hasGhostGrid && ghostPositions.length > 0) {
+    // Ghost grid defines the pattern: tile dimensions = ghost grid bounding box
+    tileW = ghostGridW;
+    tileH = ghostGridH;
+    tilesX = Math.max(3, Math.ceil((3 * vpW) / tileW));
+    tilesY = Math.max(3, Math.ceil((3 * vpH) / tileH));
+    gridTotalW = tilesX * tileW;
+    gridTotalH = tilesY * tileH;
+    firstTileCenterX = -gridTotalW / 2 + tileW / 2;
+    firstTileCenterY = gridTotalH / 2 - tileH / 2;
+  } else {
+    // Fallback: uniform grid based on cell size
+    tileW = cellW + spacingX;
+    tileH = cellH + spacingY;
+    tilesX = Math.max(3, Math.ceil((3 * vpW) / tileW));
+    tilesY = Math.max(3, Math.ceil((3 * vpH) / tileH));
+    gridTotalW = tilesX * tileW;
+    gridTotalH = tilesY * tileH;
+    firstTileCenterX = -gridTotalW / 2 + tileW / 2;
+    firstTileCenterY = gridTotalH / 2 - tileH / 2;
+  }
+  totalTiles = tilesX * tilesY;
+
+  var dupItems = [];
+  var si = 0;
+  while (dupItems.length < totalTiles) {
+    var src = loadedItems[si % loadedItems.length];
+    if (!src) break;
+    dupItems.push({ item: src.item, tex: src.tex, originalIndex: src.index });
+    si++;
+  }
+
+  // Shared geometry (unit plane, scaled per-card) — stored in state for single disposal
   var sharedGeom = _safePlaneGeometry(1, 1, 'indrajaal-shared');
 
-  var itemCount = loadedItems.length;
-
-  loadedItems.forEach(function (entry, idx) {
+  dupItems.forEach(function (entry, idx) {
     if (!entry) return;
+    var item = entry.item;
+    var tex = entry.tex;
 
-    // Anti-adjacent duplication: shift index by column parity
-    var col = idx % cols;
-    var row = Math.floor(idx / cols);
-    var shiftIdx = (idx + col * 2) % itemCount;
-    var item = loadedItems[shiftIdx].item;
+    // Which tile (col, row) in the infinite grid?
+    var col = idx % tilesX;
+    var row = Math.floor(idx / tilesX);
 
-    // Proportional image auto-scaling — preserve exact uploaded aspect
-    var imgAspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : defaultAspect;
-    var thisCardW = cardW;
-    var thisCardH = cardW / imgAspect;
+    // Base position for this tile's origin
+    var tileOriginX = firstTileCenterX + col * tileW;
+    var tileOriginY = firstTileCenterY - row * tileH;
+
+    // Position within the tile
+    var x, y, thisCardW, thisCardH;
+    if (hasGhostGrid && ghostPositions.length > 0) {
+      // Cycle through ghost positions for items within each tile
+      var ghostIdx = idx % ghostPositions.length;
+      var ghost = ghostPositions[ghostIdx];
+      // Ghost positions are centered at (0,0) for tile (0,0).
+      // For tile (col, row), shift by tile origin.
+      x = tileOriginX + ghost.x;
+      y = tileOriginY + ghost.y;
+      thisCardW = ghost.w;
+      thisCardH = ghost.h;
+    } else {
+      // Fallback: uniform grid within tile (single cell per tile in this mode)
+      x = tileOriginX;
+      y = tileOriginY;
+      var imgAspect = item.imageWidth && item.imageHeight ? item.imageWidth / item.imageHeight : defaultAspect;
+      thisCardW = cellW;
+      thisCardH = cellW / imgAspect;
+    }
 
     var mat = new THREE.MeshBasicMaterial({
-      map: entry.tex,
-      transparent: true,
-      opacity: 0.95,
-      side: THREE.DoubleSide,
-      depthWrite: false,
+      map: tex, transparent: true, opacity: 0.95,
+      side: THREE.DoubleSide, depthWrite: false,
     });
-
     var mesh = new THREE.Mesh(sharedGeom, mat);
-    mesh.name = 'Card_' + (item.index || idx) + '_indrajaal';
+    mesh.name = 'Card_' + (entry.originalIndex || idx) + '_indrajaal';
     mesh.scale.set(thisCardW, thisCardH, 1);
-
-    // Base grid position (centered around origin)
-    var x = -gridW / 2 + thisCardW / 2 + col * (cardW + spacing);
-    var y = gridH / 2 - cardH / 2 - row * (cardH + spacing);
-
-    // Procedural interlocking masonry: column-parity Y stagger
-    var staggerAmt = isMobile ? cardH * 0.35 : cardH * 0.25;
-    y += col % 2 === 0 ? staggerAmt : -staggerAmt;
-
     mesh.position.set(x, y, 0);
 
-    // Interactive hooks for future CODEX/STORY transitions
     mesh.userData = {
-      type: 'index-card',
-      roomKey: roomKey,
-      galleryIndex: entry.index,
+      type: 'index-card', roomKey: roomKey, galleryIndex: entry.originalIndex,
       title: item.title || '',
       productHandle: item.productHandle || null,
       collectionHandle: item.collectionHandle || null,
       layout: 'asymmetric-gallery',
-      baseX: x,
-      baseY: y,
-      baseZ: 0,
+      baseX: x, baseY: y, baseZ: 0,
       isFeatured: false,
-      col: col,
-      row: row,
-      parallaxMult: rowParallax[row],
-      cardW: thisCardW,
-      cardH: thisCardH,
+      col: col, row: row,
+      parallaxMult: 1,
+      cardW: thisCardW, cardH: thisCardH,
       styleVariant: styleVariant,
+      ghostGrid: hasGhostGrid,
+      // Infinite grid metadata
+      tileW: tileW, tileH: tileH,
+      tilesX: tilesX, tilesY: tilesY,
     };
 
     group.add(mesh);
@@ -1831,28 +1913,81 @@ function _buildIndrajaalGrid(roomKey, scene, group, planes, labels, textures, te
   scene.add(group);
 
   galleryStageRegistry[roomKey] = {
-    group: group,
-    planes: planes,
-    labels: labels,
-    textures: textures,
-    layout: 'asymmetric-gallery',
-    cardCount: loadedItems.length,
-    targetX: 0,
-    currentX: 0,
-    targetY: 0,
-    currentY: 0,
-    onX: 0,
-    onY: 0,
-    gridW: gridW,
-    gridH: gridH,
-    cols: cols,
-    cardW: cardW,
-    cardH: cardH,
-    spacing: spacing,
-    rowParallax: rowParallax,
-    styleVariant: styleVariant,
-    isMobile: isMobile,
+    group: group, planes: planes, labels: labels, textures: textures,
+    layout: 'asymmetric-gallery', cardCount: dupItems.length,
+    targetX: 0, currentX: 0, targetY: 0, currentY: 0, onX: 0, onY: 0,
+    gridW: tilesX * tileW, gridH: tilesY * tileH,
+    cols: tilesX, cardW: cellW, cardH: cellH, spacing: spacingX,
+    rows: tilesY,
+    styleVariant: styleVariant, isMobile: isMobile,
+    ghostGrid: hasGhostGrid, ghostGridW: ghostGridW, ghostGridH: ghostGridH,
+    // Infinite grid config
+    tileW: tileW, tileH: tileH,
+    tilesX: tilesX, tilesY: tilesY,
+    infiniteGrid: true,
+    // Shared geometry for Indrajaal grid (dispose once)
+    sharedGeom: sharedGeom,
   };
+}
+
+// ─────────────────────────────────────────────────────────────
+// GHOST GRID RESIZE — re-read DOM positions when viewport changes
+// Called from handleResize() to keep WebGL meshes in sync with the
+// CSS Grid layout after the browser reflows.
+// For infinite grid, we just update the unit cell size from Ghost Grid.
+// ─────────────────────────────────────────────────────────────
+function _refreshGhostGridPositions(roomKey) {
+  var state = galleryStageRegistry[roomKey];
+  if (!state || !state.planes || state.planes.length === 0) return;
+
+  var canvasEl = renderer && renderer.domElement ? renderer.domElement : null;
+  if (!canvasEl) return;
+  var canvasRect = canvasEl.getBoundingClientRect();
+  var canvasW = canvasRect.width;
+  var canvasH = canvasRect.height;
+  if (canvasW === 0 || canvasH === 0) return;
+
+  var vpW = camera.right - camera.left;
+  var vpH = camera.top - camera.bottom;
+
+  var ghostGridEl = document.querySelector('[data-ghost-grid][data-room-key="' + roomKey + '"]');
+  if (!ghostGridEl) return;
+  var ghostItemEls = Array.prototype.slice.call(ghostGridEl.querySelectorAll('.ghost-item'));
+
+  // Update unit cell size from first ghost item
+  var firstEl = ghostItemEls[0];
+  if (firstEl) {
+    var rect = firstEl.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      var newCellW = (rect.width / canvasW) * vpW;
+      var newCellH = (rect.height / canvasH) * vpH;
+      // Use CSS gap directly (matches _buildIndrajaalGrid)
+      var isMobileNow = canvasW < 768;
+      var cssGapVw = isMobileNow ? 4 : 1.5;
+      var gapPx = (cssGapVw / 100) * canvasW;
+      var newSpacingX = (gapPx / canvasW) * vpW;
+      var newSpacingY = (gapPx / canvasH) * vpH;
+
+      // Update all planes with new cell size
+      state.planes.forEach(function (plane) {
+        if (plane.userData) {
+          var imgAspect = plane.userData.cardW && plane.userData.cardH ? plane.userData.cardW / plane.userData.cardH : 1;
+          plane.userData.cardW = newCellW;
+          plane.userData.cardH = newCellH;
+          plane.scale.set(newCellW, newCellH, 1);
+        }
+      });
+
+      // Update state
+      state.cardW = newCellW;
+      state.cardH = newCellH;
+      state.spacing = newSpacingX;
+      state.tileW = newCellW + newSpacingX;
+      state.tileH = newCellH + newSpacingY;
+      state.gridW = state.tilesX * state.tileW;
+      state.gridH = state.tilesY * state.tileH;
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -2808,14 +2943,15 @@ function animateGalleryCarousel() {
     if (galleryDragState.isDragging) {
       needsUpdate = true;
     } else {
-      // Inertia
+      // Inertia with scroll dampening (0.015 factor prevents warp-speed movement)
+      var scrollDampen = 0.015;
       if (Math.abs(galleryDragState.velocityX) > 0.001) {
-        state.targetX += galleryDragState.velocityX * 0.012;
+        state.targetX += galleryDragState.velocityX * scrollDampen;
         galleryDragState.velocityX *= 0.93;
         needsUpdate = true;
       }
       if (Math.abs(galleryDragState.velocityY) > 0.001) {
-        state.targetY += galleryDragState.velocityY * 0.012;
+        state.targetY += galleryDragState.velocityY * scrollDampen;
         galleryDragState.velocityY *= 0.93;
         needsUpdate = true;
       }
@@ -2839,18 +2975,17 @@ function animateGalleryCarousel() {
       }
     }
 
-    // Apply position with row parallax + infinite wrap
-    var cellW = state.cardW + state.spacing || 1;
-    var cellH = state.cardH + state.spacing || 1;
-    var wrapX = state.cols * cellW;
-    var wrapY = state.rows * cellH;
+    // Apply position with parallax + infinite wrap
+    // Infinite Grid: wrap based on tile dimensions (tileW * tilesX, tileH * tilesY)
+    var wrapX = state.tileW ? state.tileW * state.tilesX : (state.gridW || 0);
+    var wrapY = state.tileH ? state.tileH * state.tilesY : (state.gridH || 0);
     state.planes.forEach(function (plane) {
       var pm = plane.userData.parallaxMult || 1;
       // Wrap position modulo grid width for seamless infinite drag
-      var rawX = plane.baseX + state.currentX * pm;
+      var rawX = plane.userData.baseX + state.currentX * pm;
       var wrappedX = wrapX > 0 ? (((rawX % wrapX) + wrapX) % wrapX) - wrapX * 0.5 : rawX;
-      var wrappedY =
-        wrapY > 0 ? ((plane.baseY + state.currentY * pm) % wrapY) - wrapY * 0.5 : plane.baseY + state.currentY * pm;
+      var rawY = plane.userData.baseY + state.currentY * pm;
+      var wrappedY = wrapY > 0 ? (((rawY % wrapY) + wrapY) % wrapY) - wrapY * 0.5 : rawY;
       plane.position.x = wrappedX;
       plane.position.y = wrappedY;
     });
@@ -3308,6 +3443,7 @@ var scene;
 var camera;
 var planeMesh;
 var uniforms;
+var voidFadeTarget = 0; // 0 = visible room, 1 = void (gallery rooms)
 var currentRoomKey = null;
 var currentRoomSubMode = null;
 var transitioning = false;
@@ -3836,6 +3972,7 @@ var fragmentShaderSource = `
   uniform float uScrollChroma;
   uniform float uAtmosphericMood;
   uniform float uTime;
+  uniform float uVoidFade;
 
   float noise(vec2 co) {
     return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
@@ -3909,6 +4046,11 @@ var fragmentShaderSource = `
 
     vec3 moodColor = vec3(1.1, 1.05, 0.9);
     color.rgb = mix(color.rgb, color.rgb * moodColor, uAtmosphericMood);
+
+    // Void fade: blend backdrop toward cinematic dark slate (#080602)
+    vec3 voidColor = vec3(0.031, 0.024, 0.008);
+    color.rgb = mix(color.rgb, voidColor, uVoidFade);
+    color.a = 1.0 - uVoidFade * 0.85;
 
     gl_FragColor = color;
   }
@@ -4258,13 +4400,14 @@ function initImmersiveScene() {
     uScrollVignette: { value: 0 },
     uScrollChroma: { value: 0 },
     uAtmosphericMood: { value: 0 },
+    uVoidFade: { value: 0 },
   };
 
   var material = new THREE.ShaderMaterial({
     vertexShader: vertexShaderSource,
     fragmentShader: fragmentShaderSource,
     uniforms: uniforms,
-    transparent: false,
+    transparent: true,
   });
 
   planeMesh = new THREE.Mesh(geometry, material);
@@ -4550,6 +4693,9 @@ function handleResize(roomKeyOverride) {
     }
     planeMesh.position.set(0, 0, 0);
   }
+  if (currentRoomKey && galleryStageRegistry[currentRoomKey] && galleryStageRegistry[currentRoomKey].ghostGrid) {
+    _refreshGhostGridPositions(currentRoomKey);
+  }
   if (immersiveState.mode === 'editorial') cacheEditorialOverlay();
 }
 
@@ -4673,6 +4819,14 @@ function animateFrame(timestamp, delta) {
   mouseCurrent.x += (mouseTarget.x - mouseCurrent.x) * lerpFactor;
   mouseCurrent.y += (mouseTarget.y - mouseCurrent.y) * lerpFactor;
   uniforms.uMouse.value.set(mouseCurrent.x, mouseCurrent.y);
+
+  // Void fade: smoothly tween backdrop opacity for gallery room transitions
+  if (uniforms.uVoidFade) {
+    var currentFade = uniforms.uVoidFade.value;
+    currentFade += (voidFadeTarget - currentFade) * 0.08;
+    if (Math.abs(voidFadeTarget - currentFade) < 0.001) currentFade = voidFadeTarget;
+    uniforms.uVoidFade.value = currentFade;
+  }
 
   // Animate gallery carousel rotation
   if (galleryStageRegistry[currentRoomKey]) {
@@ -4952,6 +5106,8 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
           el.remove();
         });
         activeHotspots = [];
+        // Fade backdrop to void — gallery cards float over dark cinematic background
+        voidFadeTarget = 1;
         buildGalleryStageForRoom(roomKey, scene, {
           layout: getGalleryLayout(roomKey),
           radius: 6,
@@ -4965,6 +5121,8 @@ function _startRoomTextureLoad(roomKey, roomData, uiLayer, initial) {
           initGalleryCarousel(renderer.domElement);
         }
       } else {
+        // Restore backdrop — room architecture visible
+        voidFadeTarget = 0;
         renderHotspots(roomKey);
       }
       updateRoomBadge(roomKey);
@@ -5816,7 +5974,12 @@ function openOverlay(overlayId, overlayContentId, fetchUrl, onOpenCallback) {
   };
 
   if (document.startViewTransition && !document.viewTransition) {
-    document.startViewTransition(performUIActivation);
+    var transition = document.startViewTransition(performUIActivation);
+    if (transition && transition.finished) {
+      transition.finished.catch(function (err) {
+        if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Editorial activation view transition skipped:', err);
+      });
+    }
   } else {
     performUIActivation();
   }
