@@ -10,15 +10,112 @@
 <section
   id="immersive-webgl-gallery-{{ section.id }}"
   class="immersive-webgl-gallery-config"
+  data-immersive-webgl-gallery-config
   data-section-id="{{ section.id }}"
   data-room-key="{{ section.settings.room_key | escape }}"
   data-layout="{{ section.settings.layout | escape }}"
   {% unless request.design_mode %}hidden{% endunless %}
   {% unless request.design_mode %}aria-hidden="true"{% endunless %}
 >
-  {%- comment -%}Gallery items rendered by JS based on layout config{%- endcomment -%}
-  <div class="immersive-webgl-gallery__container"></div>
+  {%- for block in section.blocks -%}
+    <div
+      class="immersive-webgl-gallery-config__item"
+      data-gallery-index="{{ forloop.index0 }}"
+      data-gallery-room="{{ section.settings.room_key | escape }}"
+      data-gallery-title="{{ block.settings.title | escape }}"
+      data-gallery-subtitle="{{ block.settings.subtitle | escape }}"
+      data-gallery-product-handle="{% if block.settings.product %}{{ block.settings.product.handle | escape }}{% endif %}"
+      data-gallery-collection-handle="{% if block.settings.collection %}{{ block.settings.collection.handle | escape }}{% endif %}"
+      {{ block.shopify_attributes }}
+      {% unless request.design_mode %}hidden{% endunless %}
+    >
+      {%- if block.settings.image != blank -%}
+        <img
+          class="immersive-webgl-gallery-config__img"
+          src="{{ block.settings.image | image_url: width: 1920, format: 'webp', quality: 75 }}"
+          width="{{ block.settings.image.width | default: 1920 }}"
+          height="{{ block.settings.image.height | default: 1080 }}"
+          alt="{{ block.settings.title | escape }}"
+          hidden
+        >
+      {%- endif -%}
+    </div>
+  {%- endfor -%}
 </section>
+
+{%- if section.settings.layout == 'asymmetric-gallery' -%}
+  {% comment %} Ghost Grid: invisible CSS Grid that computes responsive masonry packing.
+      Rendered OUTSIDE the hidden <section> so the browser computes its layout
+      (display:none on the parent would prevent getBoundingClientRect from working).
+      WebGL meshes read getBoundingClientRect() from these items at runtime. {% endcomment %}
+  <div
+    id="ghost-grid-{{ section.id }}"
+    class="ghost-grid"
+    data-ghost-grid
+    data-room-key="{{ section.settings.room_key | escape }}"
+    aria-hidden="true"
+  >
+    {%- for block in section.blocks -%}
+      {% assign span_class = 'span-standard' %}
+      {% if forloop.index0 == 0 or forloop.index0 == 4 %}{% assign span_class = 'span-hero' %}{% endif %}
+      {% if forloop.index0 == 2 or forloop.index0 == 7 %}{% assign span_class = 'span-tall' %}{% endif %}
+
+      <div class="ghost-item {{ span_class }}" data-ghost-index="{{ forloop.index0 }}"></div>
+    {%- endfor -%}
+  </div>
+
+  {%- comment -%} EDITOR PREVIEW: Visual layout preview in Theme Editor {%- endcomment -%}
+  {% if request.design_mode %}
+    <div class="editor-preview editor-preview--indrajaal" data-room-key="{{ section.settings.room_key | escape }}">
+      <div class="editor-preview__header">
+        <span class="editor-preview__label">Indrajaal Grid Preview</span>
+        <span class="editor-preview__room">{{ section.settings.room_key | capitalize }}</span>
+      </div>
+      <div class="editor-preview__grid" style="--grid-cols: 6; --gap: 1.5vw;">
+        {%- for block in section.blocks -%}
+          {% assign span_class = 'span-standard' %}
+          {% if forloop.index0 == 0 or forloop.index0 == 4 %}{% assign span_class = 'span-hero' %}{% endif %}
+          {% if forloop.index0 == 2 or forloop.index0 == 7 %}{% assign span_class = 'span-tall' %}{% endif %}
+          
+          {% if span_class == 'span-hero' %}
+            {% assign item_style = 'grid-column: span 3; grid-row: span 3;' %}
+          {% elsif span_class == 'span-tall' %}
+            {% assign item_style = 'grid-column: span 2; grid-row: span 3;' %}
+          {% else %}
+            {% assign item_style = 'grid-column: span 2; grid-row: span 2;' %}
+          {% endif %}
+          
+          <div class="editor-preview__item editor-preview__item--{{ span_class }}" style="{{ item_style }}">
+            {%- if block.settings.image != blank -%}
+              {% assign img_url = block.settings.image | image_url: width: 400 %}
+              <img class="editor-preview__img" src="{{ img_url }}" alt="{{ block.settings.title | escape }}" loading="lazy" width="400" height="400">
+            {%- else -%}
+              <div class="editor-preview__placeholder">{{ block.settings.title | escape | default: 'Item ' | append: forloop.index }}</div>
+            {%- endif -%}
+            {% if block.settings.title != blank %}
+              <div class="editor-preview__title">{{ block.settings.title | escape }}</div>
+            {% endif %}
+          </div>
+        {%- endfor -%}
+      </div>
+      <style>
+        .editor-preview { background: rgba(10,15,30,0.95); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px; padding: 16px; margin-top: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .editor-preview__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(212,175,55,0.15); }
+        .editor-preview__label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #d4af37; }
+        .editor-preview__room { font-size: 11px; color: rgba(212,175,55,0.6); text-transform: uppercase; letter-spacing: 0.08em; }
+        .editor-preview__grid { display: grid; grid-template-columns: repeat(var(--grid-cols), 1fr); gap: var(--gap); min-height: 200px; }
+        .editor-preview__item { position: relative; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.15); border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
+        .editor-preview__item--span-hero { grid-column: span 3; grid-row: span 3; }
+        .editor-preview__item--span-tall { grid-column: span 2; grid-row: span 3; }
+        .editor-preview__item--span-standard { grid-column: span 2; grid-row: span 2; }
+        .editor-preview__img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+        .editor-preview__placeholder { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 80px; color: rgba(212,175,55,0.5); font-size: 12px; text-align: center; padding: 8px; }
+        .editor-preview__title { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(10,15,30,0.95)); padding: 8px 6px 6px; font-size: 10px; font-weight: 600; color: #d4af37; text-transform: uppercase; letter-spacing: 0.05em; }
+        @media (max-width: 768px) { .editor-preview__grid { --grid-cols: 2; --gap: 4vw; } .editor-preview__item--span-hero, .editor-preview__item--span-tall, .editor-preview__item--span-standard { grid-column: span 1 !important; grid-row: auto !important; } }
+      </style>
+    </div>
+  {% endif %}
+{%- endif -%}
 
 {% schema %}
 {

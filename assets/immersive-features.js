@@ -205,7 +205,12 @@ function transitionPanelContent(panel, renderCallback) {
   if (document.startViewTransition) {
     // Use skipTransition to avoid conflicting with editorial view transitions
     try {
-      document.startViewTransition({ update: renderCallback, types: [] });
+      var transition = document.startViewTransition({ update: renderCallback, types: [] });
+      if (transition && transition.finished) {
+        transition.finished.catch(function (err) {
+          if (window.__IMMERSIVE_DEV__) console.warn('[Immersive] Panel content view transition skipped:', err);
+        });
+      }
     } catch (e) {
       renderCallback();
     }

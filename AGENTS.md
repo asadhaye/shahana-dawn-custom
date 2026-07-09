@@ -72,7 +72,7 @@ Build note: the immersive JS bundle is built via `npm run build:immersive`. Alwa
 - `buildGalleryStageForRoom()` dispatches to layout-specific builders based on `getGalleryLayout()` result
 - `_buildScrollStory()` handles both `scroll-story` and `scroll-narrative` (vertical Y-axis lists)
 - `_buildScrollTunnel()` handles `scroll-tunnel` (PerspectiveCamera, switches from ortho)
-- `_buildIndrajaalGrid()` handles `asymmetric-gallery` (5-col grid, row parallax, modulo wrap)
+- `_buildIndrajaalGrid()` handles `asymmetric-gallery` (Ghost Grid: CSS Grid `grid-auto-flow: dense` drives WebGL mesh positions via `getBoundingClientRect()` → world-unit mapping; fallback to manual 5-col math if no ghost-grid DOM)
 - `_buildInfiniteDragGallery()` handles `infinite-drag-gallery` (2D grid, velocity + friction)
 - `_buildNarrativeStory()` handles `narrative-story` (PerspectiveCamera, Z-axis + floating)
 - `_buildCodexList()` handles `codex-list` (text list + hover plane)
