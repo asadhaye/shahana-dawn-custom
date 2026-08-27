@@ -16,9 +16,9 @@
     "heading_scale": 120,
     "type_body_font": "baskervville_n6",
     "body_scale": 115,
-    "page_width": "1200",
+    "page_width": "",
     "spacing_sections": 0,
-    "spacing_grid_horizontal": 8,
+    "spacing_grid_horizontal": 4,
     "spacing_grid_vertical": 8,
     "animations_hover_elements": "default",
     "buttons_border_thickness": 1,
@@ -165,14 +165,12 @@
         "type": "shopify://apps/inbox/blocks/chat/841fc607-4181-4ad1-842d-e24d7f8bad6b",
         "disabled": false,
         "settings": {
+          "greeting_message": "",
           "button_color": "#000000",
-          "secondary_color": "#ffffff",
-          "ternary_color": "#6a6a6a",
           "button_icon": "chat_bubble",
           "button_text": "chat_with_us",
           "button_horizontal_position": "bottom_right",
-          "button_vertical_position": "higher",
-          "greeting_message": ""
+          "button_vertical_position": "higher"
         }
       }
     },
