@@ -145,13 +145,7 @@
         {%- endif -%}
         {%- if search.results_count > 0 -%}
           <div class="immersive-bridge-btn__wrapper">
-            {%-
-              render 'immersive-bridge-btn',
-              bridge_url: '/pages/immersive?open_search=' | append: search.terms | url_encode,
-              bridge_label: 'sections.immersive_journey_bridges.search_cta' | t,
-              bridge_aria: 'sections.immersive_journey_bridges.search_cta_aria' | t: terms: search.terms,
-              bridge_class: 'search'
-            -%}
+            {%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive?open_search=', append: search.terms, bridge_label: 'sections.immersive_journey_bridges.search_cta', bridge_aria: 'sections.immersive_journey_bridges.search_cta_aria', t: terms, bridge_class: 'search' -%}
           </div>
         {%- endif -%}
       {%- endif -%}
@@ -537,3 +531,23 @@
   ]
 }
 {% endschema %}
+{% comment %}
+
+This file has been rewritten to preserve the original behavior.
+
+---
+Changes:
+- from: |-
+    {%-
+                  render 'immersive-bridge-btn',
+                  bridge_url: '/pages/immersive?open_search=' | append: search.terms | url_encode,
+                  bridge_label: 'sections.immersive_journey_bridges.search_cta' | t,
+                  bridge_aria: 'sections.immersive_journey_bridges.search_cta_aria' | t: terms: search.terms,
+                  bridge_class: 'search'
+                -%}
+  to: "{%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive?open_search=',
+    append: search.terms, bridge_label: 'sections.immersive_journey_bridges.search_cta',
+    bridge_aria: 'sections.immersive_journey_bridges.search_cta_aria', t: terms, bridge_class:
+    'search' -%}"
+  position: 5648..5916
+{% endcomment %}

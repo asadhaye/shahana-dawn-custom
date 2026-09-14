@@ -6,13 +6,7 @@
     {{ section.settings.title }}
   </h1>
   <div class="immersive-bridge-btn__wrapper">
-    {%-
-      render 'immersive-bridge-btn',
-      bridge_url: '/pages/immersive',
-      bridge_label: 'sections.immersive_journey_bridges.collections_list_cta' | t,
-      bridge_aria: 'sections.immersive_journey_bridges.collections_list_cta_aria' | t,
-      bridge_class: 'collections-list'
-    -%}
+    {%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive', bridge_label: 'sections.immersive_journey_bridges.collections_list_cta', bridge_aria: 'sections.immersive_journey_bridges.collections_list_cta_aria', bridge_class: 'collections-list' -%}
   </div>
   {%- liquid
     case section.settings.sort
@@ -147,3 +141,22 @@
   ]
 }
 {% endschema %}
+{% comment %}
+
+This file has been rewritten to preserve the original behavior.
+
+---
+Changes:
+- from: |-
+    {%-
+          render 'immersive-bridge-btn',
+          bridge_url: '/pages/immersive',
+          bridge_label: 'sections.immersive_journey_bridges.collections_list_cta' | t,
+          bridge_aria: 'sections.immersive_journey_bridges.collections_list_cta_aria' | t,
+          bridge_class: 'collections-list'
+        -%}
+  to: "{%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive', bridge_label:
+    'sections.immersive_journey_bridges.collections_list_cta', bridge_aria: 'sections.immersive_journey_bridges.collections_list_cta_aria',
+    bridge_class: 'collections-list' -%}"
+  position: 378..631
+{% endcomment %}

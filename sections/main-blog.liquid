@@ -22,13 +22,7 @@
       {{ blog.title | escape }}
     </h1>
     <div class="immersive-bridge-btn__wrapper">
-      {%-
-        render 'immersive-bridge-btn',
-        bridge_url: '/pages/immersive',
-        bridge_label: 'sections.immersive_journey_bridges.content_cta' | t,
-        bridge_aria: 'sections.immersive_journey_bridges.content_cta_aria' | t,
-        bridge_class: 'content'
-      -%}
+      {%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive', bridge_label: 'sections.immersive_journey_bridges.content_cta', bridge_aria: 'sections.immersive_journey_bridges.content_cta_aria', bridge_class: 'content' -%}
     </div>
 
     <div class="blog-articles {% if section.settings.layout == 'collage' %}blog-articles--collage{% endif %}">
@@ -150,3 +144,22 @@
   ]
 }
 {% endschema %}
+{% comment %}
+
+This file has been rewritten to preserve the original behavior.
+
+---
+Changes:
+- from: |-
+    {%-
+            render 'immersive-bridge-btn',
+            bridge_url: '/pages/immersive',
+            bridge_label: 'sections.immersive_journey_bridges.content_cta' | t,
+            bridge_aria: 'sections.immersive_journey_bridges.content_cta_aria' | t,
+            bridge_class: 'content'
+          -%}
+  to: "{%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive', bridge_label:
+    'sections.immersive_journey_bridges.content_cta', bridge_aria: 'sections.immersive_journey_bridges.content_cta_aria',
+    bridge_class: 'content' -%}"
+  position: 954..1180
+{% endcomment %}
