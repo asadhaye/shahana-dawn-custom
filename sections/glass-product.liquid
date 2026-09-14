@@ -599,13 +599,7 @@
 
           {%- for block in section.blocks -%}
             {%- if block.type == 'size_chart' -%}
-              {%-
-                render 'size-chart',
-                product: panel_product,
-                button_label: block.settings.button_label,
-                modal_id: 'SizeChartModal-' | append: section.id,
-                block: block
-              -%}
+              {%- render 'size-chart', product: panel_product, button_label: block.settings.button_label, modal_id: 'SizeChartModal-', append: section.id, block: block -%}
             {%- endif -%}
           {%- endfor -%}
 
@@ -1990,3 +1984,21 @@
   ]
 }
 {% endschema %}
+{% comment %}
+
+This file has been rewritten to preserve the original behavior.
+
+---
+Changes:
+- from: |-
+    {%-
+                    render 'size-chart',
+                    product: panel_product,
+                    button_label: block.settings.button_label,
+                    modal_id: 'SizeChartModal-' | append: section.id,
+                    block: block
+                  -%}
+  to: "{%- render 'size-chart', product: panel_product, button_label: block.settings.button_label,
+    modal_id: 'SizeChartModal-', append: section.id, block: block -%}"
+  position: 31888..32045
+{% endcomment %}

@@ -614,11 +614,7 @@
               {%- when 'variant_picker' -%}
                 {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
               {%- when 'size_chart' -%}
-                {%- render 'size-chart',
-                  product: product,
-                  button_label: block.settings.button_label,
-                  modal_id: 'SizeChartModal-' | append: section.id
-                -%}
+                {%- render 'size-chart', product: product, button_label: block.settings.button_label, modal_id: 'SizeChartModal-', append: section.id -%}
               {%- when 'delivery_time' -%}
                 {%- render 'delivery-time', product: product -%}
               {%- when 'buy_buttons' -%}
@@ -630,13 +626,7 @@
                   show_pickup_availability: true
                 -%}
                 <div class="immersive-bridge-btn__wrapper">
-                  {%-
-                    render 'immersive-bridge-btn',
-                    bridge_url: '/pages/immersive?open_product=' | append: product.handle,
-                    bridge_label: 'sections.immersive_journey_bridges.product_cta' | t,
-                    bridge_aria: 'sections.immersive_journey_bridges.product_cta_aria' | t: title: product.title,
-                    bridge_class: 'product'
-                  -%}
+                  {%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive?open_product=', append: product.handle, bridge_label: 'sections.immersive_journey_bridges.product_cta', bridge_aria: 'sections.immersive_journey_bridges.product_cta_aria', t: title, bridge_class: 'product' -%}
                 </div>
               {%- when 'rating' -%}
                 {%- if product.metafields.reviews.rating.value != blank -%}
@@ -2441,3 +2431,32 @@
   ]
 }
 {% endschema %}
+{% comment %}
+
+This file has been rewritten to preserve the original behavior.
+
+---
+Changes:
+- from: |-
+    {%- render 'size-chart',
+                      product: product,
+                      button_label: block.settings.button_label,
+                      modal_id: 'SizeChartModal-' | append: section.id
+                    -%}
+  to: "{%- render 'size-chart', product: product, button_label: block.settings.button_label,
+    modal_id: 'SizeChartModal-', append: section.id -%}"
+  position: 31598..31735
+- from: |-
+    {%-
+                        render 'immersive-bridge-btn',
+                        bridge_url: '/pages/immersive?open_product=' | append: product.handle,
+                        bridge_label: 'sections.immersive_journey_bridges.product_cta' | t,
+                        bridge_aria: 'sections.immersive_journey_bridges.product_cta_aria' | t: title: product.title,
+                        bridge_class: 'product'
+                      -%}
+  to: "{%- render 'immersive-bridge-btn', bridge_url: '/pages/immersive?open_product=',
+    append: product.handle, bridge_label: 'sections.immersive_journey_bridges.product_cta',
+    bridge_aria: 'sections.immersive_journey_bridges.product_cta_aria', t: title,
+    bridge_class: 'product' -%}"
+  position: 32236..32510
+{% endcomment %}
